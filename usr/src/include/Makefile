@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.19 (Berkeley) 87/05/30
+#	@(#)Makefile	5.18 (Berkeley) 87/06/03
 #
 # Doing a make install builds /usr/include
 #
@@ -24,14 +24,10 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h disktab.h \
 	sgtty.h stab.h stdio.h string.h strings.h struct.h syscall.h \
 	sysexits.h time.h ttyent.h tzfile.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h syslog.h
-#ifdef vax
-#MACHINE=vax
-#MACHDEP=${MACHINE} vaxif vaxmba vaxuba
-#endif
-MACHINE=tahoe
-MACHDEP=${MACHINE} tahoeif tahoevba tahoemath
-NETDIRS=net netimp netinet netns
-SYSDIRS=${NETDIRS} ${MACHDEP}
+
+NETDIRS=	net netimp netinet netns
+TAHOEDIRS=	tahoe tahoemath tahoevba tahoeif
+VAXDIRS=	vax vaxmba vaxuba vaxif
 SHARED=	symlinks
 TAGSFILE=tags
 
@@ -63,16 +59,7 @@ install: ${SHARED}
 	rm -f ${DESTDIR}/usr/include/frame.h
 	ln -s machine/frame.h ${DESTDIR}/usr/include/frame.h
 
-symlinks:
-	-for i in ${SYSDIRS}; do \
-		rm -rf ${DESTDIR}/usr/include/$$i; \
-		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
-		then \
-			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
-		else \
-			echo ${DESTDIR}/usr/include/$$i not removed; \
-		fi; \
-	done
+symlinks: ${MACHINE}.symlinks
 	rm -rf ${DESTDIR}/usr/include/sys
 	-if [ ! -s ${DESTDIR}/usr/include/sys ]; \
 	then \
@@ -81,16 +68,47 @@ symlinks:
 		echo ${DESTDIR}/usr/include/sys not removed; \
 	fi
 
-copies:
-	-for i in ${SYSDIRS}; do \
+tahoe.symlinks:
+	-for i in ${NETDIRS} ${TAHOEDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
-		cd /sys; \
-		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
+		then \
+			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+		else \
+			echo ${DESTDIR}/usr/include/$$i not removed; \
+		fi; \
 	done
+
+vax.symlinks:
+	-for i in ${NETDIRS} ${VAXDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
+		then \
+			ln -s /sys/$$i ${DESTDIR}/usr/include/$$i; \
+		else \
+			echo ${DESTDIR}/usr/include/$$i not removed; \
+		fi; \
+	done
+
+copies: ${MACHINE}.copies
 	rm -rf ${DESTDIR}/usr/include/sys;
 	mkdir ${DESTDIR}/usr/include/sys; 
 	chmod 775 ${DESTDIR}/usr/include/sys;
 	-(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpfB -))
+
+tahoe.copies:
+	-for i in ${NETDIRS} ${TAHOEDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		cd /sys; \
+		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+	done
+
+vax.copies:
+	-for i in ${NETDIRS} ${VAXDIRS}; do \
+		rm -rf ${DESTDIR}/usr/include/$$i; \
+		cd /sys; \
+		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
+	done
 
 tags:
 	cwd=/usr/include; \
@@ -100,3 +118,5 @@ tags:
 
 clean:
 	rm -f tags
+
+depend:
