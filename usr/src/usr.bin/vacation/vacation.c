@@ -1,10 +1,22 @@
+/*
+**  Vacation
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)vacation.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include <sys/types.h>
 # include <pwd.h>
 # include <stdio.h>
 # include <sysexits.h>
 # include <ctype.h>
-
-static char	SccsId[] =	"@(#)vacation.c	4.3		%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -20,6 +32,7 @@ static char	SccsId[] =	"@(#)vacation.c	4.3		%G%";
 **
 **	Flag Parameters:
 **		-I	initialize the database.
+**		-d	turn on debugging.
 **
 **	Side Effects:
 **		A message is sent back to the sender.
