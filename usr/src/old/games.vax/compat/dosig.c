@@ -1,4 +1,8 @@
-static char sccsid[] = "@(#)dosig.c	4.2  83/07/31";
+#ifndef	lint
+static char sccsid[] = "@(#)dosig.c	4.3  84/05/05";
+#endif
+
+/* From Lou Salkind: compat/RCS/dosig.c,v 1.2 84/01/31 13:34:17 */
 
 /*
  * Handle signal trapping from version 6 or
@@ -12,6 +16,7 @@ static char sccsid[] = "@(#)dosig.c	4.2  83/07/31";
 #include <signal.h>
 #include "defs.h"
 
+int sigtrapped;
 unsigned int  sigvals[NSIG+1];
 
 /* actual catch point for all signals */
@@ -55,6 +60,7 @@ dosig(signum, from)
 #ifdef TRACE
 	fprintf(stderr,"Caught sig %d from 0%o -> 0%o\n",signum,(pc-1),*(pc-1));
 #endif
+	sigtrapped = 1;
 	/* where is the stack */
 	sp = (unsigned short *)regs[6];
 	/* stack up psw condition codes so rti works */
@@ -65,5 +71,5 @@ dosig(signum, from)
 	regs[6] = (unsigned short)(int)sp;
 	/* reset pc to signal catching routine */
 	pc = (unsigned short *)sigvals[signum];
-	signal(signum, SIG_DFL);
+/*	signal(signum, SIG_DFL); */
 }
