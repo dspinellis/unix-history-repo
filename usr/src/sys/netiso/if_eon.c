@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.7 (Berkeley) %G% *
+ *	@(#)if_eon.c	7.8 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -259,7 +259,7 @@ struct sockaddr *gate;
 			return;
 	}
 	el->el_flags |= RTF_UP;
-	eoniphdr(&el->el_ei, &el->el_iproute, ipaddrloc, EON_NORMAL_ADDR, 0);
+	eoniphdr(&el->el_ei, ipaddrloc, &el->el_iproute, EON_NORMAL_ADDR, 0);
 }
 
 /*
