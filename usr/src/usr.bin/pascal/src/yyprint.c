@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yyprint.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yyprint.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "whoami.h"
@@ -37,6 +37,7 @@ charname(ch , which )
 	return (tokname(&Ych , which ));
 }
 
+char strname[] = "'x'\0'x'\0'x'\0'x'";
 /*
  * Printing representation of a token
  * 'which' as above.
@@ -46,7 +47,8 @@ tokname(tp , which )
 	register struct yytok *tp;
 	int	 	      which;
 {
-	register char *cp;
+	char *cp;
+	static char buf[16];
 	register struct kwtab *kp;
 	char	*cp2;
 
@@ -84,7 +86,8 @@ tokname(tp , which )
 			break;
 		default:
 			if (tp->Yychar < 256) {
-				cp = "'x'\0'x'\0'x'\0'x'";
+				bcopy("'x'\0'x'\0'x'\0'x'", buf, 16);
+				cp = buf;
 				/*
 				 * for four times reentrant code!
 				 * used to be:
