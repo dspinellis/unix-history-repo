@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	8.2 (Berkeley) %G%
+ *	@(#)restore.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,7 @@ extern int	yflag;		/* always try to recover from tape errors */
  * Global variables
  */
 extern char	*dumpmap; 	/* map of inodes on this dump tape */
-extern char	*clrimap; 	/* map of inodes to be deleted */
+extern char	*usedinomap; 	/* map of inodes that are in use on this fs */
 extern ino_t	maxino;		/* highest numbered inode in this file system */
 extern long	dumpnum;	/* location of the dump on this tape */
 extern long	volno;		/* current volume being read */
@@ -103,6 +103,8 @@ typedef struct rstdirdesc RST_DIR;
  */
 #define TSTINO(ino, map) \
 	(map[(u_int)((ino) - 1) / NBBY] &  (1 << ((u_int)((ino) - 1) % NBBY)))
+#define	SETINO(ino, map) \
+	map[(u_int)((ino) - 1) / NBBY] |=  1 << ((u_int)((ino) - 1) % NBBY)
 
 #define dprintf		if (dflag) fprintf
 #define vprintf		if (vflag) fprintf
