@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -107,17 +107,17 @@ main(argc, argv)
 			if (p != pager)
 				++p;
 			/* make sure it's "more", not "morex" */
-			if (!strncmp(p, "more", 4) && (!p[4] || isspace(p[4]))) {
-				p += 4;
+			if (!strncmp(p, "more", 4) && (!p[4] || isspace(p[4]))){
+				char *opager = pager;
 				/*
-				 * allocate for the rest of the PAGER
-				 * environment variable, a space, and the EOS.
+				 * allocate space to add the "-s"
 				 */
-				if (!(pager = malloc((u_int)(strlen(p) + sizeof(DEF_PAGER) + 1)))) {
+				if (!(pager = malloc((u_int)(strlen(opager) 
+				    + sizeof("-s") + 1)))) {
 					fputs("man: out of space.\n", stderr);
 					exit(1);
 				}
-				(void)sprintf(pager, "%s %s", DEF_PAGER, p);
+				(void)sprintf(pager, "%s %s", opager, "-s");
 			}
 		}
 		else
