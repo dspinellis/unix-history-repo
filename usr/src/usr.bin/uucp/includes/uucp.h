@@ -1,4 +1,4 @@
-/*	uucp.h	5.9	85/10/24	*/
+/*	uucp.h	5.10	86/01/06	*/
 
 #include <stdio.h>
 
@@ -82,9 +82,10 @@
 #define TCPIP
 #endif
 
-#if defined(VENTEL) || defined(NOVATION) || defined(DF112) || defined(PENRIL)
 /*
- * We need a timer to write slowly to ventels.
+ * We need a timer to write slowly to certain modems.
+ * and for generating breaks.
+ *
  * define INTERVALTIMER to use 4.[23] bsd interval timer.
  * define FASTTIMER if you have the nap() system call.
  * define FTIME if you have the ftime() system call.
@@ -95,7 +96,6 @@
 /*#define FASTTIMER /**/
 /*#define FTIME /**/
 /*#define BUSYLOOP /**/
-#endif VENTEL || NOVATION || DF112 || PENRIL
 
 /*
  * If your site is using "ndir.h" to retrofit the Berkeley

@@ -1,4 +1,4 @@
-/*	pk.h	5.3	85/04/10	*/
+/*	pk.h	5.4	86/01/06	*/
 
 struct header {
 	char	sync;
@@ -8,9 +8,11 @@ struct header {
 	char	ccntl;
 };
 
-#define	HDRSIZ	6
-#define	PACKSIZE	64
-#define WINDOWS	3
+#define	HDRSIZ		6	/* Packet header size */
+#define	PACKSIZE	64	/* Standard packet size */
+#define WINDOWS		3
+
+#define TAILSIZE	2	/* Number of trailing nulls after packet    */
 
 struct pack {
 	short	p_state;	/* line state */
@@ -50,7 +52,6 @@ struct pack {
 #define	CHECK	0125252
 #define	SYN	020
 #define	MOD8	7
-#define	PKASSERT(e, s1, s2, i1) if (!(e)) {assert(s1, s2, i1);pkfail();} else
 #define	ISCNTL(a)	((a & 0300)==0)
 /* MIN may have been defined in <sys/param.h> */
 #undef	MIN
@@ -58,8 +59,6 @@ struct pack {
 
 extern char	next[8];
 extern char	mask[8];
-extern int	npbits;
-extern int	pkactive;
 
 /*
  * driver state
@@ -105,16 +104,14 @@ extern int	pkactive;
 #define	INITB	6
 #define	INITA	7
 
-#define	M_RJ	4
+#define	M_CLOSE	002
+#define	M_RJ	004
 #define	M_SRJ	010
 #define	M_RR	020
 #define	M_INITC	040
-#define	M_CLOSE	2
 #define	M_INITA	0200
 #define	M_INITB	0100
 
-#define	PKOPRI	31
-#define	PKIPRI	30
 #define	NPLINES	20
 
 /*
@@ -128,5 +125,4 @@ struct	piocb {
 	char	window;
 };
 
-extern int pkdebug;
 extern int pksizes[];

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -13,7 +13,9 @@ char next[8] = { 1, 2, 3, 4, 5, 6, 7, 0};	/* packet sequence numbers */
 char mask[8] = { 1, 2, 4, 010, 020, 040, 0100, 0200 };
 
 struct pack *pklines[NPLINES];
-int	pkactive;
+
+#define PKTIME 4
+extern int pktimeout, Ntimeout;
 
 /*
  * receive control messages
@@ -220,6 +222,8 @@ int icount;
 
 	xfr = 0;
 	count = 0;
+	pktimeout = PKTIME;
+	Ntimeout = 0;
 	while (pkaccept(pk) == 0)
 		;
 
@@ -283,6 +287,8 @@ int icount;
 		return -1;
 	}
 
+	pktimeout = PKTIME;
+	Ntimeout = 0;
 	count = icount;
 	do {
 		while (pk->p_xcount>=pk->p_swindow)  {
