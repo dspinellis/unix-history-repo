@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -297,7 +297,7 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 2 && (mfs || argc != 1))
+	if (argc != 2 && (!mfs || argc != 1))
 		usage();
 
 	special = argv[0];
@@ -490,7 +490,12 @@ main(argc, argv)
 		struct mfs_args args;
 
 		sprintf(buf, "mfs:%d", getpid());
-		args.name = buf;
+		args.fspec = buf;
+		args.export.ex_root = -2;
+		if (mntflags & MNT_RDONLY)
+			args.export.ex_flags = MNT_EXRDONLY;
+		else
+			args.export.ex_flags = 0;
 		args.base = membase;
 		args.size = fssize * sectorsize;
 		if (mount(MOUNT_MFS, argv[1], mntflags, &args) < 0)
