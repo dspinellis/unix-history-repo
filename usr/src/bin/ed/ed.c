@@ -1,10 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)ed.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ed.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
  * Editor
  */
+#define CRYPT
 
 #include <signal.h>
 #include <sgtty.h>
@@ -17,7 +18,6 @@ static char sccsid[] = "@(#)ed.c	4.4 (Berkeley) %G%";
 #define	GBSIZE	256
 #define	NBRA	5
 #define	EOF	-1
-#define	KSIZE	9
 
 #define	CBRA	1
 #define	CCHR	2
@@ -60,6 +60,12 @@ long	lseek();
 int	(*oldhup)();
 int	(*oldquit)();
 int	vflag	= 1;
+
+#ifdef CRYPT
+/*
+ * Various flags and buffers needed by the encryption routines.
+ */
+#define	KSIZE	9
 int	xflag;
 int	xtflag;
 int	kflag;
@@ -67,6 +73,8 @@ char	key[KSIZE + 1];
 char	crbuf[512];
 char	perm[768];
 char	tperm[768];
+#endif CRYPT
+
 int	listf;
 int	col;
 char	*globp;
@@ -128,17 +136,21 @@ char **argv;
 			vflag = 1;
 			break;
 
+#ifdef CRYPT
 		case 'x':
 			xflag = 1;
 			break;
+#endif CRYPT
 		}
 		argv++;
 		argc--;
 	}
+#ifdef CRYPT
 	if(xflag){
 		getkey();
 		kflag = crinit(key, perm);
 	}
+#endif CRYPT
 
 	if (argc>1) {
 		p1 = *argv;
@@ -346,6 +358,7 @@ commands()
 			fchange = 0;
 		continue;
 
+#ifdef CRYPT
 	case 'x':
 		setnoaddr();
 		newline();
@@ -354,6 +367,7 @@ commands()
 		getkey();
 		kflag = crinit(key, perm);
 		continue;
+#endif CRYPT
 
 
 	case '=':
@@ -675,8 +689,10 @@ getfile()
 			fp = genbuf;
 			while(fp < &genbuf[ninbuf]) {
 				if (*fp++ & 0200) {
+#ifdef CRYPT
 					if (kflag)
 						crblock(perm, genbuf, ninbuf+1, count);
+#endif CRYPT
 					break;
 				}
 			}
@@ -711,8 +727,10 @@ putfile()
 		for (;;) {
 			if (--nib < 0) {
 				n = fp-genbuf;
+#ifdef CRYPT
 				if(kflag)
 					crblock(perm, genbuf, n, count-n);
+#endif CRYPT
 				if(write(io, genbuf, n) != n) {
 					puts(WRERR);
 					error(Q);
@@ -728,8 +746,10 @@ putfile()
 		}
 	} while (a1 <= addr2);
 	n = fp-genbuf;
+#ifdef CRYPT
 	if(kflag)
 		crblock(perm, genbuf, n, count-n);
+#endif CRYPT
 	if(write(io, genbuf, n) != n) {
 		puts(WRERR);
 		error(Q);
@@ -915,18 +935,23 @@ getblock(atl, iof)
 		return(obuff+off);
 	if (iof==READ) {
 		if (ichanged) {
+#ifdef CRYPT
 			if(xtflag)
 				crblock(tperm, ibuff, 512, (long)0);
+#endif CRYPT
 			blkio(iblock, ibuff, write);
 		}
 		ichanged = 0;
 		iblock = bno;
 		blkio(bno, ibuff, read);
+#ifdef CRYPT
 		if(xtflag)
 			crblock(tperm, ibuff, 512, (long)0);
+#endif CRYPT
 		return(ibuff+off);
 	}
 	if (oblock>=0) {
+#ifdef CRYPT
 		if(xtflag) {
 			p1 = obuff;
 			p2 = crbuf;
@@ -936,6 +961,7 @@ getblock(atl, iof)
 			crblock(tperm, crbuf, 512, (long)0);
 			blkio(oblock, crbuf, write);
 		} else
+#endif CRYPT
 			blkio(oblock, obuff, write);
 	}
 	oblock = bno;
@@ -967,10 +993,12 @@ init()
 	ichanged = 0;
 	close(creat(tfname, 0600));
 	tfile = open(tfname, 2);
+#ifdef CRYPT
 	if(xflag) {
 		xtflag = 1;
 		makekey(key, tperm);
 	}
+#endif CRYPT
 	dot = dol = zero;
 }
 
@@ -1626,6 +1654,11 @@ out:
 	}
 	linp = lp;
 }
+
+#ifdef CRYPT
+/*
+ * Begin routines for doing encryption.
+ */
 crblock(permp, buf, nchar, startn)
 char *permp;
 char *buf;
@@ -1764,3 +1797,4 @@ char *a, *b;
 		temp[i] ^= (t>>(8*i))&0377;
 	crinit(temp, b);
 }
+#endif CRYPT
