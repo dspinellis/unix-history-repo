@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.23 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.24 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -7,7 +7,7 @@
 .SUFFIXES: .out .o .c .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
 
 .8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	nroff -mandoc -h ${.IMPSRC} > ${.TARGET}
+	nroff -mandoc ${.IMPSRC} > ${.TARGET}
 
 CFLAGS+=${COPTS}
 
