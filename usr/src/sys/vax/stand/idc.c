@@ -1,10 +1,7 @@
-/*	idc.c	4.3	82/11/13	*/
+/*	idc.c	4.4	82/11/19	*/
 
 /*
  * IDC (RB730)
- *
- * This driver is full of kludges!
- * It depends heavily on the 1K file system.
  */
 
 #include "../h/param.h"
@@ -55,7 +52,7 @@ idcopen(io)
 		io->i_boff = rb02_off[io->i_boff];
 	}
 	if (io->i_boff < 0)
-		_stop("idc bad unit");
+		_stop("idc%d: bad unit type", io->i_unit);
 }
 
 idcstrategy(io, func)
@@ -65,26 +62,28 @@ idcstrategy(io, func)
 	int com;
 	daddr_t bn;
 	short dn, cn, sn, tn;
+	short ccleft, thiscc = 0;
 	int ubinfo, errcnt = 0;
 
 	idcaddr = (struct idcdevice *)((caddr_t)ubauba(io->i_unit) + 0x200);
-retry:
 	ubinfo = ubasetup(io, 1);
 	bn = io->i_bn;
+	ccleft = io->i_cc;
+retry:
 	dn = io->i_unit;
-	if (io->i_cc != 1024) printf("idc: count %d != 1024\n", io->i_cc);
 	if (idc_type[dn]) {
 		cn = bn/(NRB80SECT*NRB80TRK);
 		sn = bn%NRB80SECT;
 		tn = (bn / NRB80SECT) % NRB80TRK;
-		if (sn == NRB80SECT)
-			io->i_cc = 512;
+		thiscc = (NRB80SECT - sn) * 512;
 	} else {
-		bn *= 2;
-		cn = bn/(NRB02SECT*NRB02TRK);
-		sn = bn%NRB02SECT;
-		tn = (bn / NRB02SECT) % NRB02TRK;
+		cn = 2*bn/(NRB02SECT*NRB02TRK);
+		sn = (2*bn)%NRB02SECT;
+		tn = (2*bn / NRB02SECT) % NRB02TRK;
+		thiscc = (NRB02SECT - sn) * 256;
 	}
+	thiscc = MIN(thiscc, ccleft);
+	ccleft -= thiscc;
 	cn += io->i_boff;
 	idcaddr->idccsr = IDC_CRDY|IDC_SEEK|(dn<<8)|(1<<(dn+16));
 	idcaddr->idcdar = (cn<<16)|(tn<<8)|sn;
@@ -98,16 +97,16 @@ retry:
 		com |= IDC_WRITE;
 	idcaddr->idccsr = IDC_CRDY|com;
 	idcaddr->idcbar = ubinfo&0x3ffff;
-	idcaddr->idcbcr = -io->i_cc;
+	idcaddr->idcbcr = -thiscc;
 	idcaddr->idcdar = (cn<<16)|(tn<<8)|sn;
 	idcaddr->idccsr = com;
 	idcwait(idcaddr);
-	ubafree(io, ubinfo);
 	if (idcaddr->idccsr & IDC_ERR) {
 		printf("idc error: (cyl,trk,sec)=(%d,%d,%d) csr=%b\n",
 		    cn, tn, sn, idcaddr->idccsr, IDCCSR_BITS);
 		if (errcnt == 10) {
 			printf("idc: unrecovered error\n");
+			ubafree(io, ubinfo);
 			return (-1);
 		}
 		errcnt++;
@@ -115,11 +114,13 @@ retry:
 	}
 	if (errcnt)
 		printf("idc: recovered by retry\n");
-	if (idc_type[dn] && sn == NRB80SECT) {
-		io->i_bn++;
+	if (ccleft) {
+		bn += thiscc/(idc_type[dn]?512:256);
+		ubinfo += thiscc;
 		goto retry;
 	}
-	return (1024);
+	ubafree(io, ubinfo);
+	return (io->i_cc);
 }
 
 idcwait(idcaddr)
