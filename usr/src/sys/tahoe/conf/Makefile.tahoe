@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.16 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.17 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -24,7 +24,7 @@ TOUCH=	touch -f -c
 INDIR=	../tahoe/inline
 INLINE=	${INDIR}/inline
 
-INCLUDES= -I. -I../h
+INCLUDES= -I. -I../sys
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
 
@@ -75,9 +75,10 @@ assym.s machdep.o: Makefile
 # depends on KDB (cons.o also depends on GENERIC)
 trap.o cons.o: Makefile
 
-assym.s: ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/vmparam.h \
-    ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../tahoevba/vbaparam.h \
-    ../h/proc.h ../h/msgbuf.h ../tahoe/scb.h machine/vmparam.h
+assym.s: ../sys/param.h ../tahoe/pte.h ../sys/buf.h ../sys/vmparam.h \
+    ../sys/vmmeter.h ../ufs/dir.h ../sys/cmap.h ../sys/map.h \
+    ../tahoevba/vbaparam.h ../sys/proc.h ../sys/msgbuf.h ../tahoe/scb.h \
+    machine/vmparam.h
 	${CC} ${INCLUDES} -DKERNEL ${IDENT} ${PARAM} ../tahoe/genassym.c
 	./a.out >assym.s; rm -f a.out
 
@@ -102,14 +103,14 @@ print:
 	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
 	@(size vmunix *.o) | pr -f -h sizes
 	@ls -ls | pr -f
-	@cd ../h; ls -ls | pr -f ; pr -f *.m *.h
+	@cd ../sys; ls -ls | pr -f ; pr -f *.m *.h
 	@echo 'once upon a time ...'
 	@cd ../tahoe; pr -f Locore.c scb.s locore.s
 	@cd ${INDIR}; make print
 	@pr -f ${CFILES}
 
-ioconf.o: ioconf.c ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/map.h \
-    ../h/vm.h ../tahoevba/vbavar.h
+ioconf.o: ioconf.c ../sys/param.h ../tahoe/pte.h ../sys/buf.h ../sys/map.h \
+    ../sys/vm.h ../tahoevba/vbavar.h
 
 param.c: ../conf/param.c
 	-rm -f param.c
