@@ -1,4 +1,4 @@
-/* ip.h 1.6 81/11/08 */
+/* ip.h 1.7 81/11/14 */
 
 /*
  * Definitions for internet protocol version 4.
@@ -9,40 +9,23 @@
 /*
  * Structure of an internet header, naked of options.
  *
- * SHOULD MAKE A VERSION OF THIS FOR KERNEL SO USER
- * VERSION CAN BE union FREE AND INITIALIZABLE.
+ * We declare ip_len and ip_off to be short, rather than u_short
+ * pragmatically since otherwise unsigned comparisons can result
+ * against negative integers quite easily, and fail in subtle ways.
  */
 struct ip {
 	u_char	ip_hl:4,		/* header length */
 		ip_v:4;			/* version */
 	u_char	ip_tos;			/* type of service */
-/* we copy the IP_MF to ip_tos on input */
-#define	ip_mff	ip_tos			/* more fragments flag */
-/* by rights, ip_len should be a u_short, but this makes operations */
-/* on it very dangerous as comparisons become unsigned and comparing */
-/* against negative numbers then fails... we don't expect any > 32767 */
-/* byte packets, so pragmatically delcare it to be a short */
 	short	ip_len;			/* total length */
 	u_short	ip_id;			/* identification */
-/* ip_off should also, by rights, be u_short, ala ip_len */
 	short	ip_off;			/* fragment offset field */
 #define	IP_DF 0x4000			/* dont fragment flag */
 #define	IP_MF 0x2000			/* more fragments flag */
 	u_char	ip_ttl;			/* time to live */
 	u_char	ip_p;			/* protocol */
 	u_short	ip_sum;			/* checksum */
-	union {
-		struct ip_addr ip_s;	/* source address */
-		struct ip *ip_nxt;	/* next fragment */
-	} I_sun;
-#define	ip_src	I_sun.ip_s
-#define	ip_next	I_sun.ip_nxt
-	union {
-		struct ip_addr ip_d;	/* destination address */
-		struct ip *ip_prv;	/* prev fragment */
-	} I_dun;
-#define	ip_dst	I_dun.ip_d
-#define	ip_prev I_dun.ip_prv
+	struct	ip_addr ip_src,ip_dst;	/* source and dest address */
 };
 
 /*
@@ -100,28 +83,7 @@ struct	ip_timestamp {
 #define	IPOPT_SECUR_TOPSECRET	0x6bc5
 
 /*
- * Ip reassembly queue structure.  Each fragment
- * being reassambled is attached to one of these structures.
- * They are timed out after ipq_ttl drops to 0, and may also
- * be reclaimed if memory becomes tight.
- */
-struct ipq {
-	struct	ipq *next,*prev;	/* to other reass headers */
-	u_char	ipq_ttl;		/* time for reass q to live */
-	u_char	ipq_p;			/* protocol of this fragment */
-	u_short	ipq_id;			/* sequence id for reassembly */
-	struct	ip *ipq_next,*ipq_prev;	/* to ip headers of fragments */
-	struct	ip_addr ipq_src,ipq_dst;
-};
-
-/*
  * Internet implementation parameters.
  */
 #define	MAXTTL		255		/* maximum time to live (seconds) */
 #define	IPFRAGTTL	15		/* time to live for frag chains */
-
-#ifdef KERNEL
-struct	ipq	ipq;			/* ip reass. queue */
-struct	ipq	*ip_freef();
-u_short	ip_id;				/* ip packet ctr, for ids */
-#endif

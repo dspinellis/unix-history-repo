@@ -1,4 +1,4 @@
-/* tcp_input.c 1.21 81/11/08 */
+/* tcp_input.c 1.22 81/11/14 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/socketvar.h"
 #include "../net/inet_cksum.h"
 #include "../net/inet.h"
+#include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/inet_host.h"
@@ -18,18 +19,38 @@
 
 int	tcpcksum = 1;
 
-tcp_advise(mp)
-	struct mbuf *mp;
+tcp_drain()
+{
+	register struct inpcb *ip;
+
+	for (ip = tcb.inp_next; ip != &tcb; ip = ip->inp_next)
+		tcp_drainunack(intotcpcb(ip));
+}
+
+tcp_drainunack(tp)
+	register struct tcpcb *tp;
+{
+	register struct mbuf *m;
+
+	for (m = tp->seg_unack; m; m = m->m_act)
+		m_freem(m);
+	tp->seg_unack = 0;
+}
+	
+tcp_ctlinput(m)
+	struct mbuf *m;
 {
 
+	m_freem(m);
 }
 
 tcp_input(mp)
 	register struct mbuf *mp;
 {
-	register struct th *n;		/* known to be r10 */
+	register struct tcpiphdr *n;		/* known to be r10 */
 	register int j;
-	register struct tcb *tp;
+	register struct tcpcb *tp;
+	struct inpcb *inp;
 	register int thflags;
 	int nstate;
 	struct mbuf *m;
@@ -44,7 +65,7 @@ COUNT(TCP_INPUT);
 	/*
 	 * Build extended tcp header
 	 */
-	n = mtod(mp, struct th *);
+	n = mtod(mp, struct tcpiphdr *);
 	thflags = n->th_flags;
 	tlen = ((struct ip *)n)->ip_len;
 	n->t_len = htons(tlen);
@@ -71,22 +92,11 @@ COUNT(TCP_INPUT);
 	}
 
 	/*
-	 * Find tcb for message (SHOULDN'T USE LINEAR SEARCH!)
+	 * Find tcb for message.
 	 */
-	tp = tcb.tcb_next;
-	for (; tp != (struct tcb *)&tcb; tp = tp->tcb_hd.tcb_next)
-		if (tp->t_lport == lport && tp->t_fport == fport &&
-		    tp->t_host->h_addr.s_addr == n->t_s.s_addr)
-			goto found;
-	tp = tcb.tcb_next;
-	for (; tp != (struct tcb *)&tcb; tp = tp->tcb_hd.tcb_next)
-		if (tp->t_lport == lport &&
-		    (tp->t_fport==fport || tp->t_fport==0) &&
-		    (tp->t_host->h_addr.s_addr == n->t_s.s_addr ||
-		     tp->t_host->h_addr.s_addr == 0))
-			goto found;
-	goto notwanted;
-found:
+	inp = in_pcblookup(&tcb, &n->t_s, fport, &n_lhost, lport);
+	if (inp == 0)
+		goto notwanted;
 
 	/*
 	 * Byte swap header
@@ -139,8 +149,8 @@ found:
 			tp->t_rexmt = 0;
 			tp->t_rexmttl = 0;
 			tp->t_persist = 0;
-			h_free(tp->t_host);
-			tp->t_host = 0;
+			h_free(inp->inp_fhost);
+			inp->inp_fhost = 0;
 			tp->t_state = LISTEN;
 			goto badseg;
 
@@ -172,7 +182,7 @@ goodseg:
 	/*
 	 * Defer processing if no buffer space for this connection.
 	 */
-	so = tp->t_socket;
+	so = inp->inp_socket;
 	if (so->so_rcv.sb_cc >= so->so_rcv.sb_hiwat &&
 	     n->t_len != 0 && mbstat.m_bufs < mbstat.m_lowat) {
 /*
@@ -209,11 +219,11 @@ goodseg:
 
 	case LISTEN:
 		if (!syn_ok(tp, n) ||
-		    ((tp->t_host = h_make(&n->t_s)) == 0)) {
+		    ((inp->inp_lhost = in_hmake(&n->t_s)) == 0)) {
 			nstate = EFAILEC;
 			goto done;
 		}
-		tp->t_fport = n->t_src;
+		inp->inp_fport = n->t_src;
 		tp->t_template = tcp_template(tp);
 		tcp_ctldat(tp, n, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
@@ -221,7 +231,7 @@ goodseg:
 			tp->tc_flags &= ~TC_WAITED_2_ML;
 			nstate = CLOSE_WAIT;
 		} else {
-/* XXX */		/* tp->t_init = T_INIT / 2; */		/* 4 */
+			tp->t_init = T_INIT / 2;		/* 4 */
 			nstate = L_SYN_RCVD;
 		}
 		goto done;
@@ -320,7 +330,7 @@ input:
 		if (j) {
 			if (tp->tc_flags&TC_WAITED_2_ML)
 				if (rcv_empty(tp)) {
-					sowakeup(tp->t_socket); /* ### */
+					sorwakeup(inp->inp_socket);
 					nstate = CLOSED;	/* 15 */
 				} else
 					nstate = RCV_WAIT;	/* 18 */
@@ -332,9 +342,8 @@ input:
 
 	case LAST_ACK:
 		if (ack_fin(tp, n)) {
-			if (rcv_empty(tp)) {			/* 16 */
-				sowakeup(tp->t_socket); /* ### */
-/* XXX */			/* tcp_close(tp, UCLOSED); */
+			if (rcv_empty(tp)) {		/* 16 */
+				sorwakeup(inp->inp_socket);
 				nstate = CLOSED;
 			} else
 				nstate = RCV_WAIT;		/* 19 */
@@ -396,7 +405,7 @@ done:
 notwanted:
 	m_freem(mp->m_next);
 	mp->m_next = NULL;
-	mp->m_len = sizeof(struct th);
+	mp->m_len = sizeof(struct tcpiphdr);
 #define xchg(a,b) j=a; a=b; b=j
 	xchg(n->t_d.s_addr, n->t_s.s_addr); xchg(n->t_dst, n->t_src);
 #undef xchg
@@ -409,22 +418,29 @@ notwanted:
 	n->th_flags = ((thflags & TH_ACK) ? 0 : TH_ACK) | TH_RST;
 	n->t_len = htons(TCPSIZE);
 	n->t_off = 5;
-	n->t_sum = inet_cksum(mp, sizeof(struct th));
-	((struct ip *)n)->ip_len = sizeof(struct th);
+	n->t_sum = inet_cksum(mp, sizeof(struct tcpiphdr));
+	((struct ip *)n)->ip_len = sizeof(struct tcpiphdr);
 	ip_output(mp);
 	netstat.t_badsegs++;
 }
 
-tcp_ctldat(tp, n, dataok)
-	register struct tcb *tp;
-	register struct th *n;
+tcp_ctldat(tp, n0, dataok)
+	register struct tcpcb *tp;
+	struct tcpiphdr *n0;
+	int dataok;
 {
 	register struct mbuf *m;
+	register struct tcpiphdr *n = n0;
 	register int thflags = n->th_flags;
+	struct socket *so = tp->t_inpcb->inp_socket;
+	seq_t past = n->t_seq + n->t_len;
+	seq_t urgent;
 	int sent;
 COUNT(TCP_CTLDAT);
 
-	tp->tc_flags &= ~(TC_DROPPED_TXT|TC_ACK_DUE|TC_NEW_WINDOW);
+	if (thflags & TH_URG)
+		urgent = n->t_seq + n->t_urp;
+	tp->tc_flags &= ~(TC_ACK_DUE|TC_NEW_WINDOW);
 /* syn */
 	if ((tp->tc_flags&TC_SYN_RCVD) == 0 && (thflags&TH_SYN)) {
 		tp->irs = n->t_seq;
@@ -436,42 +452,29 @@ COUNT(TCP_CTLDAT);
 	if ((thflags&TH_ACK) && (tp->tc_flags&TC_SYN_RCVD) &&
 	    n->t_ackno > tp->snd_una) {
 		register struct mbuf *mn;
-		register struct socket *so;
-		int len;
 
-		so = tp->t_socket;
-
-		/* update snd_una and snd_nxt */
+		/*
+		 * Reflect newly acknowledged data.
+		 */
 		tp->snd_una = n->t_ackno;
 		if (tp->snd_una > tp->snd_nxt)
 			tp->snd_nxt = tp->snd_una;
-		/* if timed msg acked, set retrans time value */
+
+		/*
+		 * If timed msg acked, update retransmit time value.
+		 */
 		if ((tp->tc_flags&TC_SYN_ACKED) &&
 		    tp->snd_una > tp->t_xmt_val) {
+			/* NEED SMOOTHING HERE */
 			tp->t_xmtime = (tp->t_xmt != 0 ? tp->t_xmt : T_REXMT);
 			if (tp->t_xmtime > T_REMAX)
 				tp->t_xmtime = T_REMAX;
 		}
 
-		/* remove acked data from send buf */
-		len = tp->snd_una - tp->snd_off;
-		m = so->so_snd.sb_mb;
-		while (len > 0 && m != NULL)
-			if (m->m_len <= len) {
-				len -= m->m_len;
-				if (m->m_off > MMAXOFF)
-					so->so_snd.sb_mbcnt -= NMBPG;
-				MFREE(m, mn);
-				m = mn;
-				so->so_snd.sb_mbcnt--;
-				if (so->so_snd.sb_mbcnt <= 0)
-					panic("tcp_ctldat");
-			} else {
-				m->m_len -= len;
-				m->m_off += len;
-				break;
-			}
-		so->so_snd.sb_mb = m;
+		/*
+		 * Remove acked data from send buf
+		 */
+		sbdrop(&so->so_snd, tp->snd_una - tp->snd_off);
 		tp->snd_off = tp->snd_una;
 		if ((tp->tc_flags&TC_SYN_ACKED) == 0 &&
 		    (tp->snd_una > tp->iss)) {
@@ -483,7 +486,7 @@ COUNT(TCP_CTLDAT);
 		tp->t_rexmt = 0;
 		tp->t_rexmttl = 0;
 		tp->tc_flags |= TC_CANCELLED;
-		sowakeup(tp->t_socket);		/* wasteful */
+		sowwakeup(tp->t_inpcb->inp_socket);
 	}
 /* win */
 	if ((tp->tc_flags & TC_SYN_RCVD) && n->t_seq >= tp->snd_wl) {
@@ -492,169 +495,137 @@ COUNT(TCP_CTLDAT);
 		tp->tc_flags |= TC_NEW_WINDOW;
 		tp->t_persist = 0;
 	}
-	if (dataok == 0)
-		goto ctlonly;
 /* text */
-	if (n->t_len == 0)
-		goto notext;
-	{ register int i;
-	  register struct th *p, *q;
-	  register struct mbuf *m;
-	  int overage;
+	if (dataok && n->t_len) {
+		register struct tcpiphdr *p, *q;
+		int overage;
 
-	/*
-	 * Discard duplicate data already passed to user.
-	 */
-	if (SEQ_LT(n->t_seq, tp->rcv_nxt)) {
-		i = tp->rcv_nxt - n->t_seq;
-		if (i >= n->t_len)
-			goto notext;
-		n->t_seq += i;
-		n->t_len -= i;
-		m_adj(dtom(n), i);
-	}
+/* eol */
+		if ((thflags&TH_EOL)) {
+			register struct mbuf *m;
+			for (m = dtom(n); m->m_next; m = m->m_next)
+				;
+			m->m_act = (struct mbuf *)(mtod(m, caddr_t) - 1);
+		}
 
-	/*
-	 * Find a segment which begins after this one does.
-	 */
-	for (q = tp->tcb_hd.seg_next; q != (struct th *)tp; q = q->t_next)
-		if (SEQ_GT(q->t_seq, n->t_seq))
-			break;
-
-	/*
-	 * If there is a preceding segment, it may provide some of
-	 * our data already.  If so, drop the data from the incoming
-	 * segment.  If it provides all of our data, drop us.
-	 */
-	if (q->t_prev != (struct th *)tp) {
-		/* conversion to int (in i) handles seq wraparound */
-		i = q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
-		if (i > 0) {
+/* text */
+		/*
+		 * Discard duplicate data already passed to user.
+		 */
+		if (SEQ_LT(n->t_seq, tp->rcv_nxt)) {
+			register int i = tp->rcv_nxt - n->t_seq;
 			if (i >= n->t_len)
-				goto notext;	/* w/o setting TC_NET_KEEP */
-			m_adj(dtom(tp), i);
-			n->t_len -= i;
+				goto notext;
 			n->t_seq += i;
+			n->t_len -= i;
+			m_adj(dtom(n), i);
 		}
-	}
 
-	/*
-	 * While we overlap succeeding segments trim them or,
-	 * if they are completely covered, dequeue them.
-	 */
-	while (q != (struct th *)tp && SEQ_GT(n->t_seq + n->t_len, q->t_seq)) {
-		i = (n->t_seq + n->t_len) - q->t_seq;
-		if (i < q->t_len) {
-			q->t_len -= i;
-			m_adj(dtom(q), i);
-			break;
-		}
-		q = q->t_next;
-		m_freem(dtom(q->t_prev));
-		remque(q->t_prev);
-	}
-
-	/*
-	 * Stick new segment in its place.
-	 */
-	insque(n, q->t_prev);
-	tp->seqcnt += n->t_len;
-
-	/*
-	 * Calculate available space and discard segments for
-	 * which there is too much.
-	 */
-	q = tp->tcb_hd.seg_prev;
-	overage = 
-	    (tp->t_socket->so_rcv.sb_cc /* + tp->rcv_seqcnt XXX */) -
-		tp->t_socket->so_rcv.sb_hiwat;
-	if (overage > 0)
-		for (;;) {
-			i = MIN(q->t_len, overage);
-			overage -= i;
-			q->t_len -= i;
-			m_adj(q, -i);
-			if (q == n)
-				tp->tc_flags |= TC_DROPPED_TXT;
-			if (q->t_len)
+		/*
+		 * Find a segment which begins after this one does.
+		 */
+		for (q = tp->seg_next; q != (struct tcpiphdr *)tp;
+		    q = q->t_next)
+			if (SEQ_GT(q->t_seq, n->t_seq))
 				break;
-			if (q == n)
-				panic("tcp_text dropall");
-			q = q->t_prev;
-			remque(q->t_next);
+
+		/*
+		 * If there is a preceding segment, it may provide some of
+		 * our data already.  If so, drop the data from the incoming
+		 * segment.  If it provides all of our data, drop us.
+		 */
+		if (q->t_prev != (struct tcpiphdr *)tp) {
+			/* conversion to int (in i) handles seq wraparound */
+			register int i =
+			    q->t_prev->t_seq + q->t_prev->t_len - n->t_seq;
+			if (i > 0) {
+				if (i >= n->t_len)
+					goto notext;
+						/* w/o setting TC_NET_KEEP */
+				m_adj(dtom(tp), i);
+				n->t_len -= i;
+				n->t_seq += i;
+			}
 		}
 
-	/*
-	 * Advance rcv_next through
-	 * newly completed sequence space
-	 * and return forcing an ack.
-	 */
-	while (n->t_seq == tp->rcv_nxt) {
-		/* present data belongs here */
-		tp->rcv_nxt += n->t_len;
-		n = n->t_next;
-		if (n == (struct th *)tp)
-			break;
-	}
-	tp->tc_flags |= (TC_ACK_DUE|TC_NET_KEEP);
+		/*
+		 * While we overlap succeeding segments trim them or,
+		 * if they are completely covered, dequeue them.
+		 */
+		while (q != (struct tcpiphdr *)tp &&
+		    SEQ_GT(n->t_seq + n->t_len, q->t_seq)) {
+			register int i = (n->t_seq + n->t_len) - q->t_seq;
+			if (i < q->t_len) {
+				q->t_len -= i;
+				m_adj(dtom(q), i);
+				break;
+			}
+			q = q->t_next;
+			m_freem(dtom(q->t_prev));
+			remque(q->t_prev);
+		}
+
+		/*
+		 * Stick new segment in its place.
+		 */
+		insque(n, q->t_prev);
+		tp->seqcnt += n->t_len;
+
+		/*
+		 * Calculate available space and discard segments for
+		 * which there is too much.
+		 */
+		overage = 
+		    (so->so_rcv.sb_cc /*XXX+tp->rcv_seqcnt*/) - so->so_rcv.sb_hiwat;
+		if (overage > 0) {
+			q = tp->seg_prev;
+			for (;;) {
+				register int i = MIN(q->t_len, overage);
+				overage -= i;
+				q->t_len -= i;
+				m_adj(q, -i);
+				if (q->t_len)
+					break;
+				if (q == n)
+					panic("tcp_text dropall");
+				q = q->t_prev;
+				remque(q->t_next);
+			}
+		}
+
+		/*
+		 * Advance rcv_next through newly completed sequence space.
+		 */
+		while (n->t_seq == tp->rcv_nxt) {
+			tp->rcv_nxt += n->t_len;
+			n = n->t_next;
+			if (n == (struct tcpiphdr *)tp)
+				break;
+		}
+/* urg */
+		if (thflags&TH_URG) {
+			/* ... */
+			if (SEQ_GT(urgent, tp->rcv_urp))
+				tp->rcv_urp = urgent;
+		}
+		tp->tc_flags |= (TC_ACK_DUE|TC_NET_KEEP);
 	}
 notext:
-/* urg */
-
-	if (thflags & (TH_URG|TH_EOL|TH_FIN)) {
-		if (thflags&TH_URG) {
-			unsigned urgent;
-
-			urgent = n->t_urp + n->t_seq;
-			if (tp->rcv_nxt < urgent) {
-				if (tp->rcv_urp <= tp->rcv_nxt) {
-					/* DO SOMETHING WITH URGENT!!! ### */
-				}
-				tp->rcv_urp = urgent;
-			}
-		}
-/* eol */
-		if ((thflags&TH_EOL) &&
-		    (tp->tc_flags&TC_DROPPED_TXT) == 0 &&
-		    tp->tcb_hd.seg_prev != (struct th *)tp) {
-			/* mark last mbuf */
-			m = dtom(tp->tcb_hd.seg_prev);
-			if (m != NULL) {
-				while (m->m_next != NULL)
-					m = m->m_next;
-				m->m_act =
-				    (struct mbuf *)(m->m_off + m->m_len - 1);
-			}
-		}
-ctlonly:
 /* fin */
-		if ((thflags&TH_FIN) &&
-		    (tp->tc_flags&TC_DROPPED_TXT) == 0) {
-			seq_t last;
-
-			if ((tp->tc_flags&TC_FIN_RCVD) == 0) {
-				/* do we really have fin ? */
-				last = firstempty(tp);
-				if (tp->tcb_hd.seg_prev == (struct th *)tp ||
-				    last == t_end(tp->tcb_hd.seg_prev)) {
-					tp->tc_flags |= TC_FIN_RCVD;
-					sowakeup(tp->t_socket); /* ### */
-				}
-				if ((tp->tc_flags&TC_FIN_RCVD) &&
-				    tp->rcv_nxt >= last) {
-					tp->rcv_nxt = last + 1;
-					tp->tc_flags |= TC_ACK_DUE;
-				}
-			} else
-				tp->tc_flags |= TC_ACK_DUE;
+	if ((thflags&TH_FIN) && past == tp->rcv_nxt) {
+		if ((tp->tc_flags&TC_FIN_RCVD) == 0) {
+			tp->tc_flags |= TC_FIN_RCVD;
+			sorwakeup(so);
+			tp->rcv_nxt++;
 		}
+		tp->tc_flags |= TC_ACK_DUE;
 	}
 /* respond */
 	sent = 0;
 	if (tp->tc_flags&TC_ACK_DUE)
 		sent = tcp_sndctl(tp);
 	else if ((tp->tc_flags&TC_NEW_WINDOW))
-		if (tp->snd_nxt <= tp->snd_off + tp->t_socket->so_snd.sb_cc ||
+		if (tp->snd_nxt <= tp->snd_off + so->so_snd.sb_cc ||
 		    (tp->tc_flags&TC_SND_FIN))
 			sent = tcp_send(tp);
 
@@ -667,41 +638,16 @@ ctlonly:
 		tp->tc_flags &= ~TC_CANCELLED;
 	}
 /* present data to user */
-	{ register struct mbuf **mp;
-	  register struct socket *so = tp->t_socket;
-	  seq_t ready;
-
-	/* connection must be synced and data available for user */
 	if ((tp->tc_flags&TC_SYN_ACKED) == 0)
 		return;
-	so = tp->t_socket;
-	mp = &so->so_rcv.sb_mb;
-	while (*mp)
-		mp = &(*mp)->m_next;
-	n = tp->tcb_hd.seg_next;
-	/* SHOULD PACK DATA IN HERE */
-	while (n != (struct th *)tp && n->t_seq < tp->rcv_nxt) {
+	n = tp->seg_next;
+	while (n != (struct tcpiphdr *)tp && n->t_seq < tp->rcv_nxt) {
 		remque(n);
-		m = dtom(n);
-		so->so_rcv.sb_cc += n->t_len;
+		sbappend(so->so_rcv, dtom(n));
 		tp->seqcnt -= n->t_len;
-		if (tp->seqcnt < 0) panic("present_data");
+		if (tp->seqcnt < 0)
+			panic("tcp_input present");
 		n = n->t_next;
-		while (m) {
-			if (m->m_len == 0) {
-				MFREE(m, *mp);
-			} else {
-				*mp = m;
-				mp = &m->m_next;
-			}
-			m = *mp;
-		}
 	}
-	sowakeup(so);		/* should be macro/conditional */
-	}
-}
-
-tcp_drain()
-{
-
+	sorwakeup(so);
 }

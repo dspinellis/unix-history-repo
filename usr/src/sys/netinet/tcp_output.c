@@ -1,4 +1,4 @@
-/* tcp_output.c 4.10 81/11/08 */
+/* tcp_output.c 4.11 81/11/14 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +8,7 @@
 #include "../net/inet_cksum.h"
 #include "../net/inet.h"
 #include "../net/inet_host.h"
+#include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
@@ -20,7 +21,7 @@
  * Special routines to send control messages.
  */
 tcp_sndctl(tp)
-	struct tcb *tp;
+	struct tcpcb *tp;
 {
 COUNT(TCP_SNDCTL);
 
@@ -31,13 +32,14 @@ COUNT(TCP_SNDCTL);
 }
 
 tcp_sndwin(tp)
-	struct tcb *tp;
+	struct tcpcb *tp;
 {
 	int ihave, hehas;
-	register struct socket *so = tp->t_socket;
 COUNT(TCP_SNDWIN);
 
 	if (tp->rcv_adv) {
+		register struct socket *so = tp->t_inpcb->inp_socket;
+
 		ihave = so->so_rcv.sb_hiwat -
 		    (so->so_rcv.sb_cc + tp->seqcnt);
 		hehas = tp->rcv_adv - tp->rcv_nxt;
@@ -51,7 +53,7 @@ COUNT(TCP_SNDWIN);
 }
 
 tcp_sndnull(tp)
-	register struct tcb *tp;
+	register struct tcpcb *tp;
 {
 COUNT(TCP_SNDNULL);
 
@@ -60,8 +62,8 @@ COUNT(TCP_SNDNULL);
 }
 
 tcp_sndrst(tp, n)
-	register struct tcb *tp;
-	register struct th *n;
+	register struct tcpcb *tp;
+	register struct tcpiphdr *n;
 {
 COUNT(TCP_SNDRST);
 
@@ -80,17 +82,14 @@ COUNT(TCP_SNDRST);
  * Tcp segment output routine.
  */
 tcp_send(tp)
-	register struct tcb *tp;
+	register struct tcpcb *tp;
 {
-	register struct socket *so;
 	register unsigned long last, wind;
+	register struct socket *so = tp->t_inpcb->inp_socket;
 	struct mbuf *m;
-	int flags = 0, forced, sent;
-	struct mbuf *tcp_sndcopy();
-	int len;
+	int flags = 0, forced, sent, len;
 
 COUNT(TCP_SEND);
-	so = tp->t_socket;
 	tp->snd_lst = tp->snd_nxt;
 	forced = 0;
 	m = NULL;
@@ -122,7 +121,9 @@ COUNT(TCP_SEND);
 			forced = 1;
 		} else if (tp->snd_nxt >= tp->snd_lst && (tp->tc_flags&TC_SND_FIN) == 0)
 			return (0);
-		m = tcp_sndcopy(tp, MAX(tp->iss+1,tp->snd_nxt), tp->snd_lst);
+		m = sb_copy(&so->so_snd,
+		      MAX(tp->iss+1,tp->snd_nxt) - tp->snd_off,
+		      tp->snd_lst - tp->snd_off);
 		if (tp->snd_end > tp->iss && tp->snd_end <= tp->snd_lst)
 			flags |= TH_EOL;
 		if ((tp->tc_flags&TC_SND_FIN) && !forced &&
@@ -163,31 +164,31 @@ COUNT(TCP_SEND);
  * in a skeletal tcp/ip header, minimizing the amount of work
  * necessary when the connection is used.
  */
-struct th *
+struct tcpiphdr *
 tcp_template(tp)
-	struct tcb *tp;
+	struct tcpcb *tp;
 {
-	register struct host *h = tp->t_host;
+	register struct inpcb *inp = tp->t_inpcb;
+	register struct in_host *h = inp->inp_fhost;
 	register struct mbuf *m;
-	register struct th *n;
-	register struct ip *ip;
+	register struct tcpiphdr *n;
 
 	if (h == 0)
 		return (0);
 	m = m_get(1);
 	if (m == 0)
 		return (0);
-	m->m_off = MMAXOFF - sizeof (struct th);
-	m->m_len = sizeof (struct th);
-	n = mtod(m, struct th *);
+	m->m_off = MMAXOFF - sizeof (struct tcpiphdr);
+	m->m_len = sizeof (struct tcpiphdr);
+	n = mtod(m, struct tcpiphdr *);
 	n->t_next = n->t_prev = 0;
 	n->t_x1 = 0;
 	n->t_pr = IPPROTO_TCP;
-	n->t_len = htons(sizeof (struct th) - sizeof (struct ip));
+	n->t_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
 	n->t_s.s_addr = n_lhost.s_addr;
 	n->t_d.s_addr = h->h_addr.s_addr;
-	n->t_src = htons(tp->t_lport);
-	n->t_dst = htons(tp->t_fport);
+	n->t_src = htons(inp->inp_lport);
+	n->t_dst = htons(inp->inp_fport);
 	n->t_seq = 0;
 	n->t_ackno = 0;
 	n->t_x2 = 0;
@@ -200,13 +201,14 @@ tcp_template(tp)
 }
 
 tcp_output(tp, flags, len, dat)
-	register struct tcb *tp;
+	register struct tcpcb *tp;
 	register int flags;
 	int len;
 	struct mbuf *dat;
 {
-	register struct th *t;			/* known to be r9 */
+	register struct tcpiphdr *t;			/* known to be r9 */
 	register struct mbuf *m;
+	struct socket *so = tp->t_inpcb->inp_socket;
 	register struct ip *ip;
 	int i;
 #ifdef TCPDEBUG
@@ -219,15 +221,15 @@ COUNT(TCP_OUTPUT);
 	MGET(m, 0);
 	if (m == 0)
 		return (0);
-	m->m_off = MMAXOFF - sizeof(struct th);
-	m->m_len = sizeof (struct th);
+	m->m_off = MMAXOFF - sizeof(struct tcpiphdr);
+	m->m_len = sizeof (struct tcpiphdr);
 	m->m_next = dat;
 	if (flags & TH_SYN)
 		len--;
 	if (flags & TH_FIN)
 		len--;
-	bcopy((caddr_t)t, mtod(m, caddr_t), sizeof (struct th));
-	t = mtod(m, struct th *);
+	bcopy((caddr_t)t, mtod(m, caddr_t), sizeof (struct tcpiphdr));
+	t = mtod(m, struct tcpiphdr *);
 	if (tp->tc_flags&TC_SND_RST) {
 		flags &= ~TH_SYN;
 		flags |= TH_RST;
@@ -238,15 +240,15 @@ COUNT(TCP_OUTPUT);
 	if (flags & TH_URG)
 		t->t_urp = htons(tp->snd_urp);
 	t->t_win =
-	    tp->t_socket->so_rcv.sb_hiwat -
-		(tp->t_socket->so_rcv.sb_cc + tp->seqcnt);
+	    so->so_rcv.sb_hiwat -
+		(so->so_rcv.sb_cc + tp->seqcnt);
 	if (tp->rcv_nxt + t->t_win > tp->rcv_adv)
 		tp->rcv_adv = tp->rcv_nxt + t->t_win;
 	if (len)
 		t->t_len = htons(len + TCPSIZE);
 	t->t_win = htons(t->t_win);
 #ifdef TCPDEBUG
-	if ((tp->t_socket->so_options & SO_DEBUG) || tcpconsdebug) {
+	if ((so->so_options & SO_DEBUG) || tcpconsdebug) {
 		t->t_seq = tp->snd_nxt;
 		t->t_ackno = tp->rcv_nxt;
 		tdb_setup(tp, t, INSEND, &tdb);
@@ -256,87 +258,17 @@ COUNT(TCP_OUTPUT);
 	t->t_seq = htonl(tp->snd_nxt);
 	t->t_ackno = htonl(tp->rcv_nxt);
 	t->t_sum = 0;		/* gratuitous? */
-	CKSUM_TCPSET(m, t, r9, sizeof (struct th) + len);
+	CKSUM_TCPSET(m, t, r9, sizeof (struct tcpiphdr) + len);
 	ip = (struct ip *)t;
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = 5;
 	ip->ip_tos = 0;
-	ip->ip_len = len + sizeof(struct th);
+	ip->ip_len = len + sizeof(struct tcpiphdr);
 	ip->ip_id = ip_id++;
 	ip->ip_off = 0;
 	ip->ip_ttl = MAXTTL;
 	i = ip_send(ip);
 	return (i);
-}
-
-firstempty(tp)
-	register struct tcb *tp;
-{
-	register struct th *p, *q;
-COUNT(FIRSTEMPTY);
-
-	if ((p = tp->tcb_hd.seg_next) == (struct th *)tp ||
-	    tp->rcv_nxt < p->t_seq)
-		return (tp->rcv_nxt);
-	while ((q = p->t_next) != (struct th *)tp &&
-	    (t_end(p) + 1) == q->t_seq)
-		p = q;
-	return (t_end(p) + 1);
-}
-
-struct mbuf *
-tcp_sndcopy(tp, start, end)
-	struct tcb *tp;
-	u_long start, end;
-{
-	register struct mbuf *m, *n, **np;
-	u_long off;
-	register int len;
-	int adj;
-	struct mbuf *top, *p;
-COUNT(TCP_SNDCOPY);
-
-	if (start >= end)    
-		return (NULL);
-	off = tp->snd_off;
-	m = tp->t_socket->so_snd.sb_mb;
-	while (m != NULL && start >= (off + m->m_len)) {
-		off += m->m_len;
-		m = m->m_next;
-	}
-	np = &top;
-	top = 0;
-	adj = start - off;
-	len = end - start;
-	while (m && len > 0) {
-		MGET(n, 1);
-		*np = n;
-		if (n == 0)
-			goto nospace;
-		n->m_len = MIN(len, m->m_len - adj);
-		if (m->m_off > MMAXOFF) {
-			p = mtod(m, struct mbuf *);
-			n->m_off = ((int)p - (int)n) + adj;
-			mprefcnt[mtopf(p)]++;
-		} else {
-			n->m_off = MMINOFF;
-			bcopy(mtod(m, caddr_t)+adj, mtod(n, caddr_t),
-			    n->m_len);
-		}
-		len -= n->m_len;
-		adj = 0;
-		m = m->m_next;
-		/* SHOULD TRY PACKING INTO SMALL MBUFS HERE */
-		np = &n->m_next;
-	}
-	/* SHOULD NEVER RUN OUT OF m WHEN LEN */
-	if (len)
-		printf("snd_copy: m %x len %d\n", m, len);
-	return (top);
-nospace:
-	printf("snd_copy: no space\n");
-	m_freem(top);
-	return (0);
 }
 
 tcp_fasttimo()

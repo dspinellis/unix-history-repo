@@ -1,4 +1,4 @@
-/* ip_icmp.c 4.2 81/11/08 */
+/* ip_icmp.c 4.3 81/11/14 */
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -171,7 +171,7 @@ icmp_send(ip, icp)
 {
 
 	icp->icmp_cksum = 0;
-	icp->icmp_inet_cksum = cksum(dtom(ip), 0);		/* ### */
+	icp->icmp_cksum = inet_cksum(dtom(ip), 0);		/* XXX */
 	/* what about ttl? */
 	ip_output(ip);
 }

@@ -1,4 +1,4 @@
-/* if_en.c 4.6 81/11/08 */
+/* if_en.c 4.7 81/11/14 */
 
 #include "en.h"
 /*
@@ -12,7 +12,7 @@
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
-#include "../net/tcp.h"			/* ### */
+#include "../net/tcp.h"			/* XXX */
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
@@ -39,7 +39,7 @@ struct	uba_driver endriver =
 struct	en_packet *xpkt, *rpkt;
 struct	en_prefix {
 	struct en_header enp_h;
-	struct th enp_th;
+	struct tcpiphdr enp_th;
 };
 struct	uba_regs *enuba;
 struct	pte *enrmr, *enxmr;
@@ -384,7 +384,7 @@ COUNT(ENRINT);
 	switch (ip->ip_p) {
 
 	case IPPROTO_TCP:
-		hlen += ((struct th *)ip)->t_off * 4;
+		hlen += ((struct tcpiphdr *)ip)->t_off * 4;
 		break;
 	}
 	MGET(m, 0);
