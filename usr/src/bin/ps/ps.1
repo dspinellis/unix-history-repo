@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.14 (Berkeley) %G%
+.\"     @(#)ps.1	6.15 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -12,7 +12,9 @@ ps \- process status
 .SH SYNOPSIS
 .nf
 .ft B
-ps [ \-aChjlmrSTuvwx ] [ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ system ] [ core ] [ swap ]
+ps [ \-aChjlmrSTuvwx ] [ \-M core ] [ \-N system ]
+.ti +5
+[ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ \-W swap ]
 ps [ \-L ]
 .ft R
 .fi
@@ -48,17 +50,22 @@ user, pid, ppid, pgid, sess, jobc, state, tt, time and command.
 .TP
 \-L
 List the set of available keywords.
-If the \-L option is specified more than once,
-.I ps
-will display a long listing of the keywords and their meanings.
 .TP
 \-l
 Display information associated with the following keywords:
 uid, pid, ppid, cpu, pri, nice, vsz, rss, wchan, state, tt, time
 and command.
 .TP
+\-M
+Extract values associated with the name list from the specified core
+instead of the default ``/dev/kmem''.
+.TP
 \-m
 Sort by memory usage, instead of by process ID.
+.TP
+\-N
+Extract the name list from the specified system instead of the default
+``/vmunix''.
 .TP
 \-O
 Add the information associated with the space or comma separated list
@@ -104,6 +111,10 @@ pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trss,
 %cpu, %mem and command.
 The \-v option implies the \-m option.
 .TP
+\-W
+Extract swap information from the specified file instead of the
+default ``/dev/swap''.
+.TP
 \-w
 Use 132 columns to display information, instead of the default which
 is your window size.
@@ -113,14 +124,6 @@ will use as many columns as necessary without regard for your window size.
 .TP
 \-x
 Display information about processes without controlling terminals.
-.PP
-Three additional arguments may be specified.
-The first additional argument is the file to read for the system namelist
-(instead of the default ``/vmunix'').
-The second additional argument is a core file to use for kernel memory
-(instead of the default ``/dev/mem'').
-The third addition argument is a file to be used for swap
-(instead of the default ``/dev/swap'').
 .PP
 A complete list of the available keywords are listed below.
 Some of these keywords are further specifed as follows:
@@ -192,7 +195,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.14p'' format.
+displayed using the ``%a6.15p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state
