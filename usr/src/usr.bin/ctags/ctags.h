@@ -4,11 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctags.h	5.3 (Berkeley) %G%
+ *	@(#)ctags.h	5.4 (Berkeley) %G%
  */
-
-#include <stdio.h>
-#include <ctype.h>
 
 #define	bool	char
 

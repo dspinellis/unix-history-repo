@@ -6,11 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tree.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <ctags.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "ctags.h"
 
 /*
  * pfnote --
@@ -24,8 +27,7 @@ pfnote(name,ln)
 	extern char	*curfile;	/* current input file name */
 	register NODE	*np;
 	register char	*fp;
-	char	nbuf[MAXTOKEN],
-		*malloc(), *savestr();
+	char	nbuf[MAXTOKEN];
 
 	/*NOSTRICT*/
 	if (!(np = (NODE *)malloc(sizeof(NODE)))) {
@@ -49,11 +51,17 @@ pfnote(name,ln)
 			*fp = EOS;
 		name = nbuf;
 	}
-	np->entry = savestr(name);
+	if (!(np->entry = strdup(name))) {
+		(void)fprintf(stderr, "ctags: %s\n", strerror(errno));
+		exit(1);
+	}
 	np->file = curfile;
 	np->lno = ln;
 	np->left = np->right = 0;
-	np->pat = savestr(lbuf);
+	if (!(np->pat = strdup(lbuf))) {
+		(void)fprintf(stderr, "ctags: %s\n", strerror(errno));
+		exit(1);
+	}
 	if (!head)
 		head = np;
 	else

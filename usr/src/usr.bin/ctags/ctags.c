@@ -12,11 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctags.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctags.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <ctags.h>
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "ctags.h"
 
 /*
  * ctags: create a tags file

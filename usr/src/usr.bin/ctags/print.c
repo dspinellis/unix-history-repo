@@ -6,12 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <sys/file.h>
-#include <ctags.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "ctags.h"
 
 extern char	searchar;		/* ex search character */
 
@@ -83,26 +85,4 @@ put_entries(node)
 		    node->entry,node->file,searchar,node->pat,searchar);
 	if (node->right)
 		put_entries(node->right);
-}
-
-char *
-savestr(str)
-	char	*str;
-{
-	register u_int	len;
-	register char	*space;
-	char	*malloc();
-
-	len = strlen(str) + 1;
-	if (!(space = malloc((u_int)len))) {
-		/*
-		 * should probably free up the tree, here,
-		 * we're just as likely to fail here as we
-		 * are when getting the NODE structure
-		 */
-		fputs("ctags: no more space.\n",stderr);
-		exit(1);
-	}
-	bcopy(str,space,len);
-	return(space);
 }

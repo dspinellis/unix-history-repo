@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lisp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lisp.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <ctags.h>
+#include <stdio.h>
 #include <string.h>
+#include "ctags.h"
 
 extern char	*lbp;			/* pointer shared with fortran */
 
