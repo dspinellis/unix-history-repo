@@ -1,0 +1,53 @@
+#! /bin/csh
+# (C) Copyright 1985, 1986  Xerox Corp.
+#
+# This is a shell script that can be used to simulate the MDQS queuing
+# command "qip".  Dipress and maha only use the following options:
+#
+#    -nc		don't make a copy of this file
+#    -nk		don't keep the file after printing it (delete it)
+#    -c copies		number of copies requested
+#    -t banner		set the banner message on the break page
+#    -x Fname		the name it should be filed on
+#
+#
+set flags=() noglob fonts=() device=8044 outputname=()
+unset copies
+unset title
+unset extended
+unset delete
+set copy
+top:
+if ($#argv > 0) then
+	switch ($argv[1])
+
+	case -nc:
+		unset copy
+		shift argv
+		goto top
+
+	case -nk:
+		set delete
+		shift argv
+		goto top
+
+	case -c:
+		shift argv
+		set copies=$argv[1]
+		shift argv
+		goto top
+
+	case -t:
+		shift argv
+		set title=$argv[1]
+		shift argv
+		goto top
+
+	case -x:
+		shift argv
+		set extended=$argv[1]
+		shift argv
+		goto top
+	endsw
+endif
+echo "insert your command here"
