@@ -1,4 +1,4 @@
-/*	proc.h	4.9	81/10/17	*/
+/*	proc.h	4.10	82/01/30	*/
 
 /*
  * One structure allocated per active
@@ -100,7 +100,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSEQL	0x010000	/* user warned of sequential vm behavior */
 #define	SUANOM	0x020000	/* user warned of random vm behavior */
 #define	STIMO	0x040000	/* timing out during sleep */
-#define	SDETACH	0x080000	/* detached inherited by init */
+/* was SDETACH */
 #define	SNUSIG	0x100000	/* using new signal mechanism */
 #define	SOWEUPC	0x200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x400000	/* selecting; wakeup/waiting danger */
