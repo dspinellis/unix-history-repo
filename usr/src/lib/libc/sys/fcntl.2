@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fcntl.2	6.1 (Berkeley) %G%
+.\"	@(#)fcntl.2	6.2 (Berkeley) %G%
 .\"
 .TH FCNTL 2 ""
 .UC 5
@@ -142,6 +142,4 @@ is negative or greater the maximum allowable number
 close(2), execve(2), getdtablesize(2), open(2), sigvec(2)
 .SH BUGS
 The asynchronous I/O facilities of FNDELAY and FASYNC
-are currently available only for tty operations.
-No SIGIO signal is sent upon draining of output sufficiently
-for non-blocking writes to occur.
+are currently available only for tty and socket operations.
