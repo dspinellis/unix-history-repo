@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.10 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -340,6 +340,6 @@ diskerr(bp, dname, what, pri, blkdone, lp)
 		(*pr)(" (%s%d bn %d; cn %d", dname, unit, sn,
 		    sn / lp->d_secpercyl);
 		sn %= lp->d_secpercyl;
-		(*pr)(" tn %d sn %d)", sn / lp->d_ntracks, sn % lp->d_ntracks);
+		(*pr)(" tn %d sn %d)", sn / lp->d_nsectors, sn % lp->d_nsectors);
 	}
 }
