@@ -9,7 +9,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)pccons.c	5.4 (Berkeley) %G%
+ *	@(#)pccons.c	5.5 (Berkeley) %G%
  */
 
 /*
