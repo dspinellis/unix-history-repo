@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_misc.c	8.4 (Berkeley) %G%
+ *	@(#)sun_misc.c	8.5 (Berkeley) %G%
  *
  * from: $Header: sun_misc.c,v 1.16 93/04/07 02:46:27 torek Exp $
  */
@@ -255,7 +255,7 @@ sun_getdents(p, uap, retval)
 		return (EINVAL);
 	buflen = min(MAXBSIZE, uap->nbytes);
 	buf = malloc(buflen, M_TEMP, M_WAITOK);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p)
 	off = fp->f_offset;
 again:
 	aiov.iov_base = buf;
@@ -316,7 +316,7 @@ again:
 eof:
 	*retval = uap->nbytes - resid;
 out:
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	free(buf, M_TEMP);
 	return (error);
 }
@@ -511,12 +511,12 @@ sun_fchroot(p, uap, retval)
 	if ((error = getvnode(fdp, uap->fdes, &fp)) != 0)
 		return (error);
 	vp = (struct vnode *)fp->f_data;
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p)
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
 		error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p);
-	VOP_UNLOCK(vp);
+	VOP_UNLOCK(vp, 0, p);
 	if (error)
 		return (error);
 	VREF(vp);

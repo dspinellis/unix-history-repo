@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -7,13 +7,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_subr.c	8.8 (Berkeley) %G%
+ *	@(#)umap_subr.c	8.9 (Berkeley) %G%
  *
- * $Id: lofs_subr.c, v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
+ * From: $Id: lofs_subr.c, v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
+#include <sys/proc.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/vnode.h>
@@ -107,6 +108,7 @@ umap_node_find(mp, targetvp)
 	struct mount *mp;
 	struct vnode *targetvp;
 {
+	struct proc *p = curproc;		/* XXX */
 	struct umap_node_hashhead *hd;
 	struct umap_node *a;
 	struct vnode *vp;
@@ -132,7 +134,7 @@ loop:
 			 * stuff, but we don't want to lock
 			 * the lower node.
 			 */
-			if (vget(vp, 0)) {
+			if (vget(vp, 0, p)) {
 #ifdef UMAPFS_DIAGNOSTIC
 				printf ("umap_node_find: vget failed.\n");
 #endif
