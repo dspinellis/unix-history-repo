@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -168,6 +168,7 @@ rresvport(alport)
 	int s;
 
 	sin.sin_family = AF_INET;
+	sin.sin_len = sizeof(sin);
 	sin.sin_addr.s_addr = INADDR_ANY;
 	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0)
@@ -188,6 +189,8 @@ rresvport(alport)
 		}
 	}
 }
+
+int	_check_rhosts_file = 1;
 
 ruserok(rhost, superuser, ruser, luser)
 	char *rhost;
@@ -221,7 +224,7 @@ again:
 		}
 		(void) fclose(hostf);
 	}
-	if (first == 1) {
+	if (first == 1 && (_check_rhosts_file || superuser)) {
 		struct stat sbuf;
 		struct passwd *pwd;
 		char pbuf[MAXPATHLEN];
@@ -233,8 +236,13 @@ again:
 		(void)strcat(pbuf, "/.rhosts");
 		if ((hostf = fopen(pbuf, "r")) == NULL)
 			return(-1);
-		(void)fstat(fileno(hostf), &sbuf);
-		if (sbuf.st_uid && sbuf.st_uid != pwd->pw_uid) {
+		/*
+		 * if owned by someone other than user or root or if
+		 * writeable by anyone but the owner, quit
+		 */
+		if (fstat(fileno(hostf), &sbuf) ||
+		    sbuf.st_uid && sbuf.st_uid != pwd->pw_uid ||
+		    sbuf.st_mode&022) {
 			fclose(hostf);
 			return(-1);
 		}
@@ -243,10 +251,11 @@ again:
 	return (-1);
 }
 
+static
 _validuser(hostf, rhost, luser, ruser, baselen)
-char *rhost, *luser, *ruser;
-FILE *hostf;
-int baselen;
+	char *rhost, *luser, *ruser;
+	FILE *hostf;
+	int baselen;
 {
 	char *user;
 	char ahost[MAXHOSTNAMELEN];
@@ -276,9 +285,10 @@ int baselen;
 	return (-1);
 }
 
+static
 _checkhost(rhost, lhost, len)
-char *rhost, *lhost;
-int len;
+	char *rhost, *lhost;
+	int len;
 {
 	static char ldomain[MAXHOSTNAMELEN + 1];
 	static char *domainp = NULL;
