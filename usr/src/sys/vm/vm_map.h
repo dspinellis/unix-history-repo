@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.1 (Berkeley) %G%
+ *	@(#)vm_map.h	8.2 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -150,7 +150,7 @@ typedef struct {
 
 /* XXX: number of kernel maps and entries to statically allocate */
 #define MAX_KMAP	10
-#define	MAX_KMAPENT	500
+#define	MAX_KMAPENT	250
 
 #ifdef KERNEL
 boolean_t	 vm_map_check_protection __P((vm_map_t,
@@ -178,8 +178,6 @@ void		 vm_map_init __P((struct vm_map *,
 		    vm_offset_t, vm_offset_t, boolean_t));
 int		 vm_map_insert __P((vm_map_t,
 		    vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t));
-boolean_t	 vm_map_is_allocated __P((vm_map_t,
-		    vm_offset_t, vm_offset_t, boolean_t));
 int		 vm_map_lookup __P((vm_map_t *, vm_offset_t, vm_prot_t,
 		    vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *,
 		    boolean_t *, boolean_t *));
@@ -188,6 +186,8 @@ boolean_t	 vm_map_lookup_entry __P((vm_map_t,
 		    vm_offset_t, vm_map_entry_t *));
 int		 vm_map_pageable __P((vm_map_t,
 		    vm_offset_t, vm_offset_t, boolean_t));
+int		 vm_map_clean __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, boolean_t, boolean_t));
 void		 vm_map_print __P((vm_map_t, boolean_t));
 int		 vm_map_protect __P((vm_map_t,
 		    vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
