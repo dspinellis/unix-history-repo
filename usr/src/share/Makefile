@@ -1,5 +1,5 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
-SUBDIR=	copyright man me misc mk ms skel tabset termcap tmac zoneinfo
+SUBDIR=	copyright dict man me misc mk ms skel tabset termcap tmac zoneinfo
 
 .include <bsd.subdir.mk>
