@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ispunct.3	5.3 (Berkeley) %G%
+.\"	@(#)ispunct.3	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ISPUNCT 3
@@ -22,10 +22,21 @@
 .Sh DESCRIPTION
 The
 .Fn ispunct
-function tests for any printing character except space (' ') or a
+function tests for any printing character except for space (' ') or a
 character for which
 .Xr isalnum 3
 is true.
+In the ASCII character set, this includes the following characters:
+.sp
+.Bl -column \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__
+.It \&041\ ``!'' \t042\ ``"'' \t043\ ``#'' \t044\ ``$'' \t045\ ``%''
+.It \&046\ ``&'' \t047\ ``''' \t050\ ``('' \t051\ ``)'' \t052\ ``*''
+.It \&053\ ``+'' \t054\ ``,'' \t055\ ``-'' \t056\ ``.'' \t057\ ``/''
+.It \&072\ ``:'' \t073\ ``;'' \t074\ ``<'' \t075\ ``='' \t076\ ``>''
+.It \&077\ ``?'' \t100\ ``@'' \t133\ ``['' \t134\ ``\'' \t135\ ``]''
+.It \&136\ ``^'' \t137\ ``_'' \t140\ ```'' \t173\ ``{'' \t174\ ``|''
+.It \&175\ ``}'' \t176\ ``~''
+.El
 .Sh RETURN VALUES
 The
 .Fn ispunct

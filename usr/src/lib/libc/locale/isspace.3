@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)isspace.3	5.4 (Berkeley) %G%
+.\"     @(#)isspace.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ISSPACE 3
@@ -22,34 +22,13 @@
 .Sh DESCRIPTION
 The
 .Fn isspace
-function tests for the standard white-space characters
-.\" or for any
-.\" of an implementation-defined set of characters
-for which
-.Xr isalnum 3
-is false.
-The standard white-space characters are the following:
-.Pp
-.Bl -tag -width xxxxx -offset indent -compact
-.It Sq \0
-Space character.
-.It Li \ef
-Form feed.
-.It Li \en
-New-line.
-.It Li \er
-Carriage return.
-.It Li \et
-Horizontal tab.
-.It Li \ev
-And vertical tab.
+function tests for the standard white-space characters.
+In the ASCII character set, this includes the following characters:
+.sp
+.Bl -column \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__ \&000_``0''__
+.It \&011\ ht \t012\ nl \t013\ vt \t014\ np \t015\ cr
+.It \&040\ sp
 .El
-.Pp
-In the 
-.Em ``C''
-locale,
-.Fn isspace
-returns true only for the standard white-space characters.
 .Sh RETURN VALUES
 The
 .Fn isspace
