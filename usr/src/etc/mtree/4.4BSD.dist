@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.2 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.3 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -378,7 +378,7 @@ xnscourier
 lib
 
 # ./usr/lib/uucp
-uucp             gname=daemon uname=uucp 
+uucp             gname=daemon uname=uucp
 # ./usr/lib/uucp
 ..
 
@@ -561,22 +561,22 @@ cat8
 
 
 # ./usr/mdec
-mdec           
+mdec
 # ./usr/mdec
 ..
 
 
 # ./usr/new
-new            
+new
 
 # ./usr/new/bin
-bin            
+bin
 # ./usr/new/bin
 ..
 
 
 # ./usr/new/lib
-lib            
+lib
 # ./usr/new/lib
 ..
 
@@ -591,16 +591,16 @@ obj
 
 
 # ./usr/old
-old              
+old
 
 # ./usr/old/bin
-bin              
+bin
 # ./usr/old/bin
 ..
 
 
 # ./usr/old/lib
-lib              
+lib
 
 # ./usr/old/lib/me
 me
@@ -624,7 +624,7 @@ tmac
 
 
 # ./usr/old/libdata
-libdata       
+libdata
 
 # ./usr/old/libdata/term
 term
@@ -663,7 +663,7 @@ sbin
 
 
 # ./usr/share
-share            
+share
 
 # ./usr/share/calendar
 calendar
@@ -690,13 +690,13 @@ special
 
 
 # ./usr/share/doc
-doc           
+doc
 
 # ./usr/share/doc/misc
-misc          
+misc
 
 # ./usr/share/doc/misc/ctour
-ctour         
+ctour
 # ./usr/share/doc/misc/ctour
 ..
 
@@ -708,109 +708,109 @@ ctour
 ps1
 
 # ./usr/share/doc/ps1/01.Clang
-01.Clang       
+01.Clang
 # ./usr/share/doc/ps1/01.Clang
 ..
 
 
 # ./usr/share/doc/ps1/02.f77
-02.f77         
+02.f77
 # ./usr/share/doc/ps1/02.f77
 ..
 
 
 # ./usr/share/doc/ps1/03.f77io
-03.f77io       
+03.f77io
 # ./usr/share/doc/ps1/03.f77io
 ..
 
 
 # ./usr/share/doc/ps1/04.pascal
-04.pascal      
+04.pascal
 # ./usr/share/doc/ps1/04.pascal
 ..
 
 
 # ./usr/share/doc/ps1/05.as
-05.as          
+05.as
 # ./usr/share/doc/ps1/05.as
 ..
 
 
 # ./usr/share/doc/ps1/06.sysman
-06.sysman      
+06.sysman
 # ./usr/share/doc/ps1/06.sysman
 ..
 
 
 # ./usr/share/doc/ps1/07.ipctut
-07.ipctut      
+07.ipctut
 # ./usr/share/doc/ps1/07.ipctut
 ..
 
 
 # ./usr/share/doc/ps1/08.ipc
-08.ipc         
+08.ipc
 # ./usr/share/doc/ps1/08.ipc
 ..
 
 
 # ./usr/share/doc/ps1/09.lint
-09.lint        
+09.lint
 # ./usr/share/doc/ps1/09.lint
 ..
 
 
 # ./usr/share/doc/ps1/10.adb
-10.adb         
+10.adb
 # ./usr/share/doc/ps1/10.adb
 ..
 
 
 # ./usr/share/doc/ps1/11.dbx
-11.dbx         
+11.dbx
 # ./usr/share/doc/ps1/11.dbx
 ..
 
 
 # ./usr/share/doc/ps1/12.make
-12.make        
+12.make
 # ./usr/share/doc/ps1/12.make
 ..
 
 
 # ./usr/share/doc/ps1/13.rcs
-13.rcs         
+13.rcs
 # ./usr/share/doc/ps1/13.rcs
 ..
 
 
 # ./usr/share/doc/ps1/14.sccs
-14.sccs        
+14.sccs
 # ./usr/share/doc/ps1/14.sccs
 ..
 
 
 # ./usr/share/doc/ps1/15.yacc
-15.yacc        
+15.yacc
 # ./usr/share/doc/ps1/15.yacc
 ..
 
 
 # ./usr/share/doc/ps1/16.lex
-16.lex         
+16.lex
 # ./usr/share/doc/ps1/16.lex
 ..
 
 
 # ./usr/share/doc/ps1/17.m4
-17.m4          
+17.m4
 # ./usr/share/doc/ps1/17.m4
 ..
 
 
 # ./usr/share/doc/ps1/18.curses
-18.curses      
+18.curses
 # ./usr/share/doc/ps1/18.curses
 ..
 
@@ -822,37 +822,37 @@ ps1
 ps2
 
 # ./usr/share/doc/ps2/01.cacm
-01.cacm        
+01.cacm
 # ./usr/share/doc/ps2/01.cacm
 ..
 
 
 # ./usr/share/doc/ps2/02.summary
-02.summary     
+02.summary
 # ./usr/share/doc/ps2/02.summary
 ..
 
 
 # ./usr/share/doc/ps2/03.uprog
-03.uprog       
+03.uprog
 # ./usr/share/doc/ps2/03.uprog
 ..
 
 
 # ./usr/share/doc/ps2/04.implement
-04.implement   
+04.implement
 # ./usr/share/doc/ps2/04.implement
 ..
 
 
 # ./usr/share/doc/ps2/05.iosys
-05.iosys       
+05.iosys
 # ./usr/share/doc/ps2/05.iosys
 ..
 
 
 # ./usr/share/doc/ps2/07.fp
-07.fp          
+07.fp
 # ./usr/share/doc/ps2/07.fp
 ..
 
@@ -865,133 +865,133 @@ ps2
 smm
 
 # ./usr/share/doc/smm/01.setup
-01.setup       
+01.setup
 # ./usr/share/doc/smm/01.setup
 ..
 
 
 # ./usr/share/doc/smm/02.config
-02.config      
+02.config
 # ./usr/share/doc/smm/02.config
 ..
 
 
 # ./usr/share/doc/smm/03.kdebug
-03.kdebug      
+03.kdebug
 # ./usr/share/doc/smm/03.kdebug
 ..
 
 
 # ./usr/share/doc/smm/04.quotas
-04.quotas      
+04.quotas
 # ./usr/share/doc/smm/04.quotas
 ..
 
 
 # ./usr/share/doc/smm/05.fsck
-05.fsck        
+05.fsck
 # ./usr/share/doc/smm/05.fsck
 ..
 
 
 # ./usr/share/doc/smm/06.lpd
-06.lpd         
+06.lpd
 # ./usr/share/doc/smm/06.lpd
 ..
 
 
 # ./usr/share/doc/smm/07.sendmailop
-07.sendmailop  
+07.sendmailop
 # ./usr/share/doc/smm/07.sendmailop
 ..
 
 
 # ./usr/share/doc/smm/08.timedop
-08.timedop     
+08.timedop
 # ./usr/share/doc/smm/08.timedop
 ..
 
 
 # ./usr/share/doc/smm/09.uucpimpl
-09.uucpimpl    
+09.uucpimpl
 # ./usr/share/doc/smm/09.uucpimpl
 ..
 
 
 # ./usr/share/doc/smm/10.newsop
-10.newsop      
+10.newsop
 # ./usr/share/doc/smm/10.newsop
 ..
 
 
 # ./usr/share/doc/smm/11.named
-11.named       
+11.named
 # ./usr/share/doc/smm/11.named
 ..
 
 
 # ./usr/share/doc/smm/12.uchanges
-12.uchanges    
+12.uchanges
 # ./usr/share/doc/smm/12.uchanges
 ..
 
 
 # ./usr/share/doc/smm/13.kchanges
-13.kchanges    
+13.kchanges
 # ./usr/share/doc/smm/13.kchanges
 ..
 
 
 # ./usr/share/doc/smm/14.fastfs
-14.fastfs      
+14.fastfs
 # ./usr/share/doc/smm/14.fastfs
 ..
 
 
 # ./usr/share/doc/smm/15.net
-15.net         
+15.net
 # ./usr/share/doc/smm/15.net
 ..
 
 
 # ./usr/share/doc/smm/16.sendmail
-16.sendmail    
+16.sendmail
 # ./usr/share/doc/smm/16.sendmail
 ..
 
 
 # ./usr/share/doc/smm/17.security
-17.security    
+17.security
 # ./usr/share/doc/smm/17.security
 ..
 
 
 # ./usr/share/doc/smm/18.password
-18.password    
+18.password
 # ./usr/share/doc/smm/18.password
 ..
 
 
 # ./usr/share/doc/smm/19.porttour
-19.porttour    
+19.porttour
 # ./usr/share/doc/smm/19.porttour
 ..
 
 
 # ./usr/share/doc/smm/20.termdesc
-20.termdesc    
+20.termdesc
 # ./usr/share/doc/smm/20.termdesc
 ..
 
 
 # ./usr/share/doc/smm/21.uucpnet
-21.uucpnet     
+21.uucpnet
 # ./usr/share/doc/smm/21.uucpnet
 ..
 
 
 # ./usr/share/doc/smm/22.timed
-22.timed       
+22.timed
 # ./usr/share/doc/smm/22.timed
 ..
 
@@ -1003,205 +1003,205 @@ smm
 usd
 
 # ./usr/share/doc/usd/01.begin
-01.begin       
+01.begin
 # ./usr/share/doc/usd/01.begin
 ..
 
 
 # ./usr/share/doc/usd/02.learn
-02.learn       
+02.learn
 # ./usr/share/doc/usd/02.learn
 ..
 
 
 # ./usr/share/doc/usd/03.shell
-03.shell       
+03.shell
 # ./usr/share/doc/usd/03.shell
 ..
 
 
 # ./usr/share/doc/usd/04.csh
-04.csh         
+04.csh
 # ./usr/share/doc/usd/04.csh
 ..
 
 
 # ./usr/share/doc/usd/05.dc
-05.dc          
+05.dc
 # ./usr/share/doc/usd/05.dc
 ..
 
 
 # ./usr/share/doc/usd/06.bc
-06.bc          
+06.bc
 # ./usr/share/doc/usd/06.bc
 ..
 
 
 # ./usr/share/doc/usd/07.Mail
-07.Mail        
+07.Mail
 # ./usr/share/doc/usd/07.Mail
 ..
 
 
 # ./usr/share/doc/usd/08.mh
-08.mh          
+08.mh
 # ./usr/share/doc/usd/08.mh
 ..
 
 
 # ./usr/share/doc/usd/09.newsread
-09.newsread    
+09.newsread
 # ./usr/share/doc/usd/09.newsread
 ..
 
 
 # ./usr/share/doc/usd/10.etiq
-10.etiq        
+10.etiq
 # ./usr/share/doc/usd/10.etiq
 ..
 
 
 # ./usr/share/doc/usd/11.notes
-11.notes       
+11.notes
 # ./usr/share/doc/usd/11.notes
 ..
 
 
 # ./usr/share/doc/usd/12.edtut
-12.edtut       
+12.edtut
 # ./usr/share/doc/usd/12.edtut
 ..
 
 
 # ./usr/share/doc/usd/13.edadv
-13.edadv       
+13.edadv
 # ./usr/share/doc/usd/13.edadv
 ..
 
 
 # ./usr/share/doc/usd/14.edit
-14.edit        
+14.edit
 # ./usr/share/doc/usd/14.edit
 ..
 
 
 # ./usr/share/doc/usd/15.vi
-15.vi          
+15.vi
 # ./usr/share/doc/usd/15.vi
 ..
 
 
 # ./usr/share/doc/usd/16.ex
-16.ex          
+16.ex
 # ./usr/share/doc/usd/16.ex
 ..
 
 
 # ./usr/share/doc/usd/17.jove
-17.jove        
+17.jove
 # ./usr/share/doc/usd/17.jove
 ..
 
 
 # ./usr/share/doc/usd/18.sed
-18.sed         
+18.sed
 # ./usr/share/doc/usd/18.sed
 ..
 
 
 # ./usr/share/doc/usd/19.awk
-19.awk         
+19.awk
 # ./usr/share/doc/usd/19.awk
 ..
 
 
 # ./usr/share/doc/usd/20.msmacros
-20.msmacros    
+20.msmacros
 # ./usr/share/doc/usd/20.msmacros
 ..
 
 
 # ./usr/share/doc/usd/21.msdiffs
-21.msdiffs     
+21.msdiffs
 # ./usr/share/doc/usd/21.msdiffs
 ..
 
 
 # ./usr/share/doc/usd/22.memacros
-22.memacros    
+22.memacros
 # ./usr/share/doc/usd/22.memacros
 ..
 
 
 # ./usr/share/doc/usd/23.meref
-23.meref       
+23.meref
 # ./usr/share/doc/usd/23.meref
 ..
 
 
 # ./usr/share/doc/usd/24.troff
-24.troff       
+24.troff
 # ./usr/share/doc/usd/24.troff
 ..
 
 
 # ./usr/share/doc/usd/25.trofftut
-25.trofftut    
+25.trofftut
 # ./usr/share/doc/usd/25.trofftut
 ..
 
 
 # ./usr/share/doc/usd/26.eqn
-26.eqn         
+26.eqn
 # ./usr/share/doc/usd/26.eqn
 ..
 
 
 # ./usr/share/doc/usd/27.eqnguide
-27.eqnguide    
+27.eqnguide
 # ./usr/share/doc/usd/27.eqnguide
 ..
 
 
 # ./usr/share/doc/usd/28.tbl
-28.tbl         
+28.tbl
 # ./usr/share/doc/usd/28.tbl
 ..
 
 
 # ./usr/share/doc/usd/29.refer
-29.refer       
+29.refer
 # ./usr/share/doc/usd/29.refer
 ..
 
 
 # ./usr/share/doc/usd/30.invert
-30.invert      
+30.invert
 # ./usr/share/doc/usd/30.invert
 ..
 
 
 # ./usr/share/doc/usd/31.bib
-31.bib         
+31.bib
 # ./usr/share/doc/usd/31.bib
 ..
 
 
 # ./usr/share/doc/usd/32.diction
-32.diction     
+32.diction
 # ./usr/share/doc/usd/32.diction
 ..
 
 
 # ./usr/share/doc/usd/33.rogue
-33.rogue       
+33.rogue
 # ./usr/share/doc/usd/33.rogue
 ..
 
 
 # ./usr/share/doc/usd/34.trek
-34.trek        
+34.trek
 # ./usr/share/doc/usd/34.trek
 ..
 
@@ -1213,7 +1213,7 @@ usd
 
 
 # ./usr/share/games
-games            
+games
 
 # ./usr/share/games/atc
 atc
@@ -1282,31 +1282,31 @@ devps
 man
 
 # ./usr/share/man/cat1
-cat1           
+cat1
 # ./usr/share/man/cat1
 ..
 
 
 # ./usr/share/man/cat2
-cat2           
+cat2
 # ./usr/share/man/cat2
 ..
 
 
 # ./usr/share/man/cat3
-cat3           
+cat3
 # ./usr/share/man/cat3
 ..
 
 
 # ./usr/share/man/cat3f
-cat3f          
+cat3f
 # ./usr/share/man/cat3f
 ..
 
 
 # ./usr/share/man/cat4
-cat4           
+cat4
 
 # ./usr/share/man/cat4/hp300
 hp300
@@ -1315,7 +1315,7 @@ hp300
 
 
 # ./usr/share/man/cat4/i386
-i386           
+i386
 # ./usr/share/man/cat4/i386
 ..
 
@@ -1342,25 +1342,25 @@ vax
 
 
 # ./usr/share/man/cat5
-cat5           
+cat5
 # ./usr/share/man/cat5
 ..
 
 
 # ./usr/share/man/cat6
-cat6           
+cat6
 # ./usr/share/man/cat6
 ..
 
 
 # ./usr/share/man/cat7
-cat7           
+cat7
 # ./usr/share/man/cat7
 ..
 
 
 # ./usr/share/man/cat8
-cat8           
+cat8
 
 # ./usr/share/man/cat8/hp300
 hp300
@@ -1546,13 +1546,13 @@ US               mode=0555
 
 
 # ./usr/spool
-spool         
+spool
 
 # ./usr/spool/sockets
-sockets       
+sockets
 
 # ./usr/spool/sockets/X11
-X11            
+X11
 # ./usr/spool/sockets/X11
 ..
 
@@ -1564,13 +1564,13 @@ X11
 
 
 # ./usr/src
-src            
+src
 # ./usr/src
 ..
 
 
 # ./usr/ucb
-ucb              uname=bin 
+ucb              uname=bin
 # ./usr/ucb
 ..
 
@@ -1580,19 +1580,19 @@ ucb              uname=bin
 
 
 # ./var
-var           
+var
 
 # ./var/account
-account        
+account
 # ./var/account
 ..
 
 
 # ./var/at
-at             
+at
 
 # ./var/at/past
-past           
+past
 # ./var/at/past
 ..
 
@@ -1601,13 +1601,13 @@ past
 
 
 # ./var/backups
-backups        
+backups
 # ./var/backups
 ..
 
 
 # ./var/db
-db            
+db
 
 # ./var/db/ns
 ns
@@ -1619,7 +1619,7 @@ ns
 
 
 # ./var/emacs
-emacs          
+emacs
 
 # ./var/emacs/lock
 lock              mode=0777
@@ -1655,19 +1655,19 @@ phantasia        gname=games
 
 
 # ./var/local
-local          
+local
 # ./var/local
 ..
 
 
 # ./var/log
-log            
+log
 # ./var/log
 ..
 
 
 # ./var/mail
-mail             
+mail
 # ./var/mail
 ..
 
@@ -1679,7 +1679,7 @@ msgs
 
 
 # ./var/preserve
-preserve        
+preserve
 # ./var/preserve
 ..
 
@@ -1691,7 +1691,7 @@ quotas            gname=operator mode=0750
 
 
 # ./var/run
-run            
+run
 # ./var/run
 ..
 
@@ -1703,19 +1703,19 @@ rwho
 
 
 # ./var/spool
-spool          
+spool
 
 # ./var/spool/ftp
-ftp           
+ftp
 
 # ./var/spool/ftp/bin
-bin            
+bin
 # ./var/spool/ftp/bin
 ..
 
 
 # ./var/spool/ftp/etc
-etc            
+etc
 # ./var/spool/ftp/etc
 ..
 
@@ -1748,7 +1748,7 @@ news
 
 
 # ./var/spool/output
-output         
+output
 # ./var/spool/output
 ..
 
@@ -1759,29 +1759,30 @@ secretmail
 ..
 
 
+/set uname=uucp gname=daemon
 # ./var/spool/uucp
-uucp          
+uucp
 
 # ./var/spool/uucp/AUDIT
-AUDIT         
+AUDIT
 # ./var/spool/uucp/AUDIT
 ..
 
 
 # ./var/spool/uucp/C.
-C.            
+C.
 # ./var/spool/uucp/C.
 ..
 
 
 # ./var/spool/uucp/CORRUPT
-CORRUPT       
+CORRUPT
 # ./var/spool/uucp/CORRUPT
 ..
 
 
 # ./var/spool/uucp/D.
-D.            
+D.
 # ./var/spool/uucp/D.
 ..
 
@@ -1792,34 +1793,34 @@ LCK              mode=0777
 
 
 # ./var/spool/uucp/LOG
-LOG           
+LOG
 
 # ./var/spool/uucp/LOG/uucico
-uucico        
+uucico
 # ./var/spool/uucp/LOG/uucico
 ..
 
 
 # ./var/spool/uucp/LOG/uucp
-uucp          
+uucp
 # ./var/spool/uucp/LOG/uucp
 ..
 
 
 # ./var/spool/uucp/LOG/uux
-uux           
+uux
 # ./var/spool/uucp/LOG/uux
 ..
 
 
 # ./var/spool/uucp/LOG/uuxqt
-uuxqt         
+uuxqt
 # ./var/spool/uucp/LOG/uuxqt
 ..
 
 
 # ./var/spool/uucp/LOG/xferstats
-xferstats     
+xferstats
 # ./var/spool/uucp/LOG/xferstats
 ..
 
@@ -1828,25 +1829,25 @@ xferstats
 
 
 # ./var/spool/uucp/STST
-STST          
+STST
 # ./var/spool/uucp/STST
 ..
 
 
 # ./var/spool/uucp/TM.
-TM.           
+TM.
 # ./var/spool/uucp/TM.
 ..
 
 
 # ./var/spool/uucp/X.
-X.            
+X.
 # ./var/spool/uucp/X.
 ..
 
 
 # ./var/spool/uucp/XTMP
-XTMP          
+XTMP
 # ./var/spool/uucp/XTMP
 ..
 
@@ -1859,6 +1860,7 @@ uucppublic       mode=0777
 # ./var/spool/uucppublic
 ..
 
+/set uname=root gname=wheel
 # ./var/spool
 ..
 
