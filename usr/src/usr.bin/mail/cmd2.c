@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -352,25 +352,24 @@ undelete(msgvec)
 
 core()
 {
-	register int pid;
-	union wait status;
+	int pid;
+	extern union wait wait_status;
 
-	if ((pid = vfork()) == -1) {
+	switch (pid = vfork()) {
+	case -1:
 		perror("fork");
 		return(1);
-	}
-	if (pid == 0) {
+	case 0:
 		abort();
 		_exit(1);
 	}
 	printf("Okie dokie");
 	fflush(stdout);
-	while (wait(&status) != pid)
-		;
-	if (status.w_coredump)
-		printf(" -- Core dumped\n");
+	wait_child(pid);
+	if (wait_status.w_coredump)
+		printf(" -- Core dumped.\n");
 	else
-		printf("\n");
+		printf(" -- Can't dump core.\n");
 	return 0;
 }
 

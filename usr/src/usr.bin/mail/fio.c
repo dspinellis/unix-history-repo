@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -411,7 +411,7 @@ expand(name)
 	register char *cp, *shell;
 	int pivec[2];
 	struct stat sbuf;
-	union wait s;
+	extern union wait wait_status;
 
 	switch (*name) {
 	case '%':
@@ -454,9 +454,7 @@ expand(name)
 	close(pivec[1]);
 	l = read(pivec[0], xname, BUFSIZ);
 	close(pivec[0]);
-	while (wait(&s) != pid);
-		;
-	if (s.w_status != 0 && s.w_termsig != SIGPIPE) {
+	if (wait_child(pid) < 0 && wait_status.w_termsig != SIGPIPE) {
 		fprintf(stderr, "\"Echo\" failed\n");
 		return NOSTR;
 	}

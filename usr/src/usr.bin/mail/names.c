@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)names.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,7 +26,6 @@ static char sccsid[] = "@(#)names.c	5.11 (Berkeley) %G%";
  */
 
 #include "rcv.h"
-#include <sys/wait.h>
 
 /*
  * Allocate a single element of a name list,
@@ -199,15 +198,11 @@ outof(names, fo, hp)
 {
 	register int c;
 	register struct name *np, *top;
-#ifdef CRAZYWOW
-	register struct name *t, *x;
-#endif
 	time_t now, time();
-	char *date, *fname, *shell, *ctime();
+	char *date, *fname, *ctime();
 	FILE *fout, *fin;
 	int ispipe;
 	extern char tempEdit[];
-	union wait s;
 
 	top = names;
 	np = names;
@@ -243,7 +238,6 @@ outof(names, fo, hp)
 				goto cant;
 			}
 			else {
-				rewind(fo);
 				fprintf(fout, "From %s %s", myname, date);
 				puthead(hp, fout, GTO|GSUBJECT|GCC|GNL);
 				while ((c = getc(fo)) != EOF)
@@ -264,16 +258,20 @@ outof(names, fo, hp)
 		 */
 
 		if (ispipe) {
-			(void) wait(&s);
+			int pid;
+			char *shell;
+
+			/* XXX, can't really reuse the same image file */
 			if ((shell = value("SHELL")) == NOSTR)
 				shell = SHELL;
-			if (start_command(shell,
-					sigmask(SIGHUP)|sigmask(SIGINT)|
-							sigmask(SIGQUIT),
-					image, -1, "-c", fname, NOSTR) < 0) {
+			pid = start_command(shell, sigmask(SIGHUP)|
+					sigmask(SIGINT)|sigmask(SIGQUIT),
+				image, -1, "-c", fname, NOSTR);
+			if (pid < 0) {
 				senderr++;
 				goto cant;
 			}
+			free_child(pid);
 		} else {
 			if ((fout = fopen(fname, "a")) == NULL) {
 				perror(fname);
@@ -295,31 +293,12 @@ outof(names, fo, hp)
 			(void) fclose(fout);
 			(void) fclose(fin);
 		}
-
 cant:
-
 		/*
 		 * In days of old we removed the entry from the
 		 * the list; now for sake of header expansion
 		 * we leave it in and mark it as deleted.
 		 */
-
-#ifdef CRAZYWOW
-		if (np == top) {
-			top = np->n_flink;
-			if (top != NIL)
-				top->n_blink = NIL;
-			np = top;
-			continue;
-		}
-		x = np->n_blink;
-		t = np->n_flink;
-		x->n_flink = t;
-		if (t != NIL)
-			t->n_blink = x;
-		np = t;
-#endif
-
 		np->n_type |= GDEL;
 		np = np->n_flink;
 	}
@@ -492,14 +471,9 @@ unpack(np)
 		*ap++ = "-m";
 	if (verbose)
 		*ap++ = "-v";
-	while (n != NIL) {
-		if (n->n_type & GDEL) {
-			n = n->n_flink;
-			continue;
-		}
-		*ap++ = n->n_name;
-		n = n->n_flink;
-	}
+	for (; n != NIL; n = n->n_flink)
+		if ((n->n_type & GDEL) == 0)
+			*ap++ = n->n_name;
 	*ap = NOSTR;
 	return(top);
 }
@@ -635,7 +609,7 @@ put(list, node)
 }
 
 /*
- * Determine the number of elements in
+ * Determine the number of undeleted elements in
  * a name list and return it.
  */
 count(np)
@@ -643,8 +617,9 @@ count(np)
 {
 	register int c;
 
-	for (c = 0; np != NIL; c++, np = np->n_flink)
-		;
+	for (c = 0; np != NIL; np = np->n_flink)
+		if ((np->n_type & GDEL) == 0)
+			c++;
 	return c;
 }
 
