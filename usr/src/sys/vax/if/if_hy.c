@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_hy.c	6.5 (Berkeley) %G%
+ *	@(#)if_hy.c	6.6 (Berkeley) %G%
  */
 
 /*
@@ -89,10 +89,16 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef	BBNNET
+#define	INET
+#endif
+#ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -1131,7 +1137,7 @@ hyrecvdata(ui, hym, len)
 	/*
 	 * Pull packet off interface.
 	 */
-	m = if_rubaget(&is->hy_ifuba, len, 0);
+	m = if_rubaget(&is->hy_ifuba, len, 0, &is->hy_if);
 	if (m == NULL)
 		return;
 
@@ -1157,7 +1163,7 @@ hyrecvdata(ui, hym, len)
 			struct mbuf *m0;
 
 			MGET(m0, M_DONTWAIT, MT_DATA);
-			if (m == 0) {
+			if (m0 == 0) {
 				m_freem(m);
 				return;
 			}
@@ -1373,7 +1379,7 @@ hyioctl(ifp, cmd, data)
 	switch(cmd) {
 
 	case SIOCSIFADDR:
-		if (sin->sin_family != AF_INET)
+		if (ifa->ifa_addr.sa_family != AF_INET)
 			return(EINVAL);
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			hyinit(ifp->if_unit);
