@@ -1,4 +1,4 @@
-/*	tty.c	6.13	84/12/31	*/
+/*	tty.c	6.14	85/02/08	*/
 
 #include "../machine/reg.h"
 
@@ -467,7 +467,7 @@ ttioctl(tp, com, data, flag)
 		break;
 
 	/*
-	 * Allow SPGRP only if tty is ours and is open for reading.
+	 * Allow SPGRP only if tty is open for reading.
 	 * Quick check: if we can find a process in the new pgrp,
 	 * this user must own that process.
 	 * SHOULD VERIFY THAT PGRP IS IN USE AND IS THIS USER'S.
@@ -479,8 +479,6 @@ ttioctl(tp, com, data, flag)
 
 		if (u.u_uid && (flag & FREAD) == 0)
 			return (EPERM);
-		if (u.u_uid && u.u_ttyp != tp)
-			return (EACCES);
 		p = pfind(pgrp);
 		if (p && p->p_pgrp == pgrp &&
 		    p->p_uid != u.u_uid && u.u_uid && !inferior(p))
