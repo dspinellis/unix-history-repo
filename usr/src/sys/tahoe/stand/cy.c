@@ -1,4 +1,4 @@
-/*	cy.c	7.11	90/12/16	*/
+/*	cy.c	7.12	91/05/04	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -144,7 +144,7 @@ cystrategy(io, func)
 		cycmd(io, CY_SFORW);
 		tpb.tprec = 0;
 	}
-	if (func == READ || func == WRITE) {
+	if (func == F_READ || func == F_WRITE) {
 		struct iob liob;
 		register struct iob *lio = &liob;
 
@@ -184,7 +184,7 @@ cycmd(io, func)
 	cyldmba(ccb.cbtpb, (caddr_t)&tpb);
 	tpb.tpcmd = func;
 	switch (func) {
-	case READ:
+	case F_READ:
 #ifdef notdef
 		if (io->i_cc > cyblocksize)
 			tpb.tpsize = htoms(cyblocksize);
@@ -195,7 +195,7 @@ cycmd(io, func)
 		tpb.tpcmd = CY_RCOM;
 		cyblock++;
 		break;
-	case WRITE:
+	case F_WRITE:
 		tpb.tpcmd = CY_WCOM;
 		tpb.tpsize = htoms(io->i_cc);
 		cyldmba(tpb.tpdata, io->i_ma);
