@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -427,7 +427,7 @@ setsignal(sig, handler)
 	int sig;
 	setsig_t handler;
 {
-#ifdef SYS5SIGNALS
+#if defined(SYS5SIGNALS) || defined(BSD4_3)
 	return signal(sig, handler);
 #else
 	struct sigaction n, o;
