@@ -1,9 +1,9 @@
 # include <stdio.h>
 # include <ctype.h>
 # include <pwd.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 
-static char SccsId[] = "@(#)alias.c	2.2	%G%";
+static char SccsId[] = "@(#)alias.c	3.1	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -54,24 +54,28 @@ static char SccsId[] = "@(#)alias.c	2.2	%G%";
 # define MAXRCRSN	10
 
 #ifdef DBM
-typedef struct {char *dptr; int dsize;} datum;
+typedef struct
+{
+	char	*dptr;
+	int dsize;
+} datum;
 datum lhs, rhs;
 extern datum fetch();
 #endif DBM
 
 alias()
 {
-	register addrq *q;
-	addrq *q2;
+	register ADDRESS *q;
+	ADDRESS *q2;
 	FILE *af;
 	char line[MAXLINE+1];
 	register char *p;
 	extern int errno;
 	bool didalias;
 	bool gotmatch;
-	auto addrq al;
+	auto ADDRESS al;
 	extern bool sameaddr();
-	extern addrq *parse();
+	extern ADDRESS *parse();
 
 	if (NoAlias)
 		return;
@@ -290,7 +294,7 @@ alias()
 
 bool
 forward(user)
-	addrq *user;
+	ADDRESS *user;
 {
 	return (FALSE);
 }

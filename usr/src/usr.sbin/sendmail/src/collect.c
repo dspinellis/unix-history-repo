@@ -1,12 +1,12 @@
 # include <stdio.h>
 # include <ctype.h>
 # include <errno.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 
-static char	SccsId[] = "@(#)collect.c	3.1	%G%";
+static char	SccsId[] = "@(#)collect.c	3.2	%G%";
 
 /*
-**  MAKETEMP -- read & parse message header & make temp file.
+**  COLLECT -- read & parse message header & make temp file.
 **
 **	Creates a temporary file name and copies the standard
 **	input to that file.  While it is doing it, it looks for
@@ -42,7 +42,7 @@ long	MsgSize;		/* size of message in bytes */
 char	*Date;			/* UNIX-style origination date */
 
 char *
-maketemp()
+collect()
 {
 	register FILE *tf;
 	char buf[MAXFIELD+1];
@@ -135,16 +135,12 @@ maketemp()
 		/* search header list for this header */
 		for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
 		{
-			if (strcmp(fname, h->h_field) == 0 && flagset(H_CONCAT|H_DEFAULT, h->h_flags))
+			if (strcmp(fname, h->h_field) == 0 && bitset(H_DEFAULT, h->h_flags))
 				break;
 		}
 		if (h == NULL)
 		{
 			/* create a new node */
-# ifdef DEBUG
-			if (Debug)
-				printf("new field '%s', value '%s'\n", fname, fvalue);
-# endif DEBUG
 			*hp = h = (HDR *) xalloc(sizeof *h);
 			h->h_field = newstr(fname);
 			h->h_value = NULL;
@@ -161,14 +157,9 @@ maketemp()
 				}
 			}
 		}
-		else if (flagset(H_DEFAULT, h->h_flags))
+		else if (bitset(H_DEFAULT, h->h_flags))
 		{
 			/* overriding default, throw out old value */
-# ifdef DEBUG
-			if (Debug)
-				printf("overriding '%s', old='%s', new='%s'\n",
-				       fname, h->h_value, fvalue);
-# endif DEBUG
 			free(h->h_value);
 			h->h_value = NULL;
 		}
@@ -176,10 +167,6 @@ maketemp()
 		/* do something with the value */
 		if (h->h_value == NULL)
 		{
-# ifdef DEBUG
-			if (Debug)
-				printf("installing '%s: %s'\n", fname, fvalue);
-# endif DEBUG
 			h->h_value = newstr(fvalue);
 		}
 		else
@@ -187,11 +174,6 @@ maketemp()
 			register int len;
 
 			/* concatenate the two values */
-# ifdef DEBUG
-			if (Debug)
-				printf("concat '%s: %s' with '%s'\n", fname,
-				       h->h_value, fvalue);
-# endif DEBUG
 			len = strlen(h->h_value) + strlen(fvalue) + 2;
 			p = xalloc(len);
 			strcpy(p, h->h_value);

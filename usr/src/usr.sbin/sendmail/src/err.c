@@ -1,10 +1,10 @@
 # include <stdio.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	2.3	%G%";
+static char	SccsId[] = "@(#)err.c	3.1	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -43,7 +43,7 @@ syserr(fmt, a, b, c, d, e)
 		else
 			sprintf(p, ": error %d", errno);
 	}
-	printf("delivermail: %s\n", errbuf);
+	printf("postbox: %s\n", errbuf);
 	fflush(stdout);
 	Errors++;
 

@@ -4,7 +4,7 @@
 # include <sys/timeb.h>
 # endif
 
-static char SccsId[] = "@(#)arpadate.c	3.1	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.2	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -73,13 +73,13 @@ arpadate(ud)
 	else
 		*q++ = *p++;
 	*q++ = *p++;
-	*q++ = '-';
+	*q++ = ' ';
 
 	p = &ud[4];		/* Sep */
 	*q++ = *p++;
 	*q++ = *p++;
 	*q++ = *p++;
-	*q++ = '-';
+	*q++ = ' ';
 
 	p = &ud[20];		/* 1979 */
 	for (i = 4; i > 0; i--)
