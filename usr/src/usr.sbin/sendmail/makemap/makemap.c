@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -18,11 +18,11 @@ static char sccsid[] = "@(#)makemap.c	6.1 (Berkeley) %G%";
 #include "useful.h"
 #include "conf.h"
 
-#ifdef DBM_MAP
+#ifdef NDBM
 #include <ndbm.h>
 #endif
 
-#if defined(HASH_MAP) || defined(BTREE_MAP)
+#ifdef NEWDB
 #include <db.h>
 #endif
 
@@ -30,10 +30,10 @@ enum type { T_DBM, T_BTREE, T_HASH, T_ERR, T_UNKNOWN };
 
 union dbent
 {
-#ifdef DBM_MAP
+#ifdef NDBM
 	datum	dbm;
 #endif
-#if defined(HASH_MAP) || defined(BTREE_MAP)
+#ifdef NEWDB
 	DBT	db;
 #endif
 	struct
@@ -65,10 +65,10 @@ main(argc, argv)
 	enum type type;
 	union
 	{
-#ifdef DBM_MAP
+#ifdef NDBM
 		DBM	*dbm;
 #endif
-#if defined(HASH_MAP) || defined(BTREE_MAP)
+#ifdef NEWDB
 		DB	*db;
 #endif
 		void	*dbx;
@@ -140,13 +140,11 @@ main(argc, argv)
 			progname, typename);
 		exit(EX_USAGE);
 
-#ifndef DBM_MAP
+#ifndef NDBM
 	  case T_DBM:
 #endif
-#ifndef BTREE_MAP
+#ifndef NEWDB
 	  case T_BTREE:
-#endif
-#ifndef HASH_MAP
 	  case T_HASH:
 #endif
 		fprintf(stderr, "%s: Type %s not supported in this version\n",
@@ -163,19 +161,17 @@ main(argc, argv)
 		mode |= O_CREAT|O_TRUNC;
 	switch (type)
 	{
-#ifdef DBM_MAP
+#ifdef NDBM
 	  case T_DBM:
 		dbp.dbm = dbm_open(mapname, mode, 0644);
 		break;
 #endif
 
-#ifdef HASH_MAP
+#ifdef NEWDB
 	  case T_HASH:
 		dbp.db = dbopen(mapname, mode, 0644, DB_HASH, NULL);
 		break;
-#endif
 
-#ifdef BTREE_MAP
 	  case T_BTREE:
 		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, NULL);
 		break;
@@ -255,14 +251,14 @@ main(argc, argv)
 
 		switch (type)
 		{
-#ifdef DBM_MAP
+#ifdef NDBM
 		  case T_DBM:
 			st = dbm_store(dbp.dbm, key.dbm, val.dbm,
 					allowreplace ? DBM_REPLACE : DBM_INSERT);
 			break;
 #endif
 
-#if defined(BTREE_MAP) || defined(HASH_MAP)
+#ifdef NEWDB
 		  case T_BTREE:
 		  case T_HASH:
 			st = (*dbp.db->put)(dbp.db, &key.db, &val.db,
@@ -291,13 +287,13 @@ main(argc, argv)
 
 	switch (type)
 	{
-#ifdef DBM_MAP
+#ifdef NDBM
 	  case T_DBM:
 		dbm_close(dbp.dbm);
 		break;
 #endif
 
-#if defined(HASH_MAP) || defined(BTREE_MAP)
+#ifdef NEWDB
 	  case T_HASH:
 	  case T_BTREE:
 		if ((*dbp.db->close)(dbp.db) < 0)
