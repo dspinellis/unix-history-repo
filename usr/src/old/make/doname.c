@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.6 (Berkeley) 85/04/16";
+static	char *sccsid = "@(#)doname.c	4.7 (Berkeley) 85/08/30";
 #include "defs"
 #include <strings.h>
 
@@ -26,7 +26,7 @@ struct nameblock *p1, *p2;
 struct shblock *implcom, *explcom;
 register struct lineblock *lp;
 struct lineblock *lp1, *lp2;
-char sourcename[100], prefix[100], temp[100], concsuff[20];
+char sourcename[BUFSIZ], prefix[BUFSIZ], temp[BUFSIZ], concsuff[20];
 char *pnamep, *p1namep, *cp;
 char *mkqlist();
 struct chain *qchain, *appendq();
