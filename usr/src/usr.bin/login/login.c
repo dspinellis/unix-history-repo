@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)login.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c	4.5 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -141,14 +141,14 @@ bad:
 	if((f = open(lastlog, 2)) >= 0) {
 		struct lastlog ll;
 
-		lseek(f, pwd->pw_uid * sizeof (struct lastlog), 0);
+		lseek(f, (long) pwd->pw_uid * sizeof (struct lastlog), 0);
 		if (read(f, (char *) &ll, sizeof ll) == sizeof ll && ll.ll_time != 0) {
 			register char *ep = (char *) ctime(&ll.ll_time);
 			printf("Last login: ");
 			ep[24 - 5] = 0;
 			printf("%s on %.*s\n", ep, LMAX, ll.ll_line);
 		}
-		lseek(f, pwd->pw_uid * sizeof (struct lastlog), 0);
+		lseek(f, (long) pwd->pw_uid * sizeof (struct lastlog), 0);
 		time(&ll.ll_time);
 		strcpyn(ll.ll_line, ttyn+5, LMAX);
 		write(f, (char *) &ll, sizeof ll);
