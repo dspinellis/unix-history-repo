@@ -1,5 +1,5 @@
 .nr _0 \n(c.
-.\"	@(#)float.me	1.3	%G%
+.\"	@(#)float.me	1.4	%G%
 .de (z			\" *** begin floating keep
 .@D 4 \\$1 \\$2
 .@(
@@ -8,19 +8,21 @@
 .de )z			\" *** end floating keep
 .sp \\n(zsu
 .@)
-.if (\\n(dl>\\n($l)&(\\n($m>1) \
-.	nr ?w 1			\" mark wider than one column
 .rr _0
 .if !\\n(?b \
 .	nr dn +(\\n(ppu*\\n($ru)/2u+\\n(zsu
-.ie ((\\n(dn+\n(.V)>=\\n(.t):(\\n(?a):(\\n(?w) \
+.ie ((\\n(dn+\n(.V)>=\\n(.t):(\\n(?a):((\\n(dl>\\n($l)&(\\n($c>1)) \
 \{\
 .	nr ?a 1
+.	if (\\n(dl>\\n($l)&(\\n($m>1) \
+.		nr ?w 1		\" mark wider than one column (top)
 .	ds |x |t
 .\}
 .el \
 \{\
 .	nr ?b 1
+.	if (\\n(dl>\\n($l)&(\\n($m>1) \
+.		nr ?W 1		\" mark wider than one column (bottom)
 .	nr _b +\\n(dnu
 .	ch @f -\\n(_bu
 .	ds |x |b
