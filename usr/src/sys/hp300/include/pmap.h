@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.12 (Berkeley) %G%
+ *	@(#)pmap.h	7.13 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -104,6 +104,7 @@ pv_entry_t	pv_table;		/* array of entries, one per page */
 #define pa_to_pvh(pa)		(&pv_table[pa_index(pa)])
 
 #define	pmap_resident_count(pmap)	((pmap)->pm_stats.resident_count)
+#define	pmap_wired_count(pmap)		((pmap)->pm_stats.wired_count)
 
 extern	struct pte *Sysmap;
 extern	char *vmmap;			/* map for mem, dumps, etc. */
