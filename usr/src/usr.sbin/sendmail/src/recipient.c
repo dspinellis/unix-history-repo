@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -40,10 +40,11 @@ static char sccsid[] = "@(#)recipient.c	5.32 (Berkeley) %G%";
 
 # define MAXRCRSN	10
 
-sendtolist(list, ctladdr, sendq)
+sendtolist(list, ctladdr, sendq, e)
 	char *list;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
+	register ENVELOPE *e;
 {
 	register char *p;
 	register ADDRESS *al;	/* list of addresses to send to */
@@ -61,9 +62,9 @@ sendtolist(list, ctladdr, sendq)
 	if (ctladdr == NULL &&
 	    (index(list, ',') != NULL || index(list, ';') != NULL ||
 	     index(list, '<') != NULL || index(list, '(') != NULL))
-		CurEnv->e_flags &= ~EF_OLDSTYLE;
+		e->e_flags &= ~EF_OLDSTYLE;
 	delimiter = ' ';
-	if (!bitset(EF_OLDSTYLE, CurEnv->e_flags) || ctladdr != NULL)
+	if (!bitset(EF_OLDSTYLE, e->e_flags) || ctladdr != NULL)
 		delimiter = ',';
 
 	firstone = TRUE;
@@ -78,7 +79,7 @@ sendtolist(list, ctladdr, sendq)
 		/* parse the address */
 		while (isspace(*p) || *p == ',')
 			p++;
-		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter);
+		a = parseaddr(p, (ADDRESS *) NULL, 1, delimiter, e);
 		p = DelimChar;
 		if (a == NULL)
 			continue;
@@ -109,14 +110,14 @@ sendtolist(list, ctladdr, sendq)
 		extern ADDRESS *recipient();
 
 		al = a->q_next;
-		a = recipient(a, sendq);
+		a = recipient(a, sendq, e);
 
 		/* arrange to inherit full name */
 		if (a->q_fullname == NULL && ctladdr != NULL)
 			a->q_fullname = ctladdr->q_fullname;
 	}
 
-	CurEnv->e_to = NULL;
+	e->e_to = NULL;
 }
 /*
 **  RECIPIENT -- Designate a message recipient
@@ -141,9 +142,10 @@ extern ADDRESS *getctladdr();
 extern char	*RcptLogFile;
 
 ADDRESS *
-recipient(a, sendq)
+recipient(a, sendq, e)
 	register ADDRESS *a;
 	register ADDRESS **sendq;
+	register ENVELOPE *e;
 {
 	register ADDRESS *q;
 	ADDRESS **pq;
@@ -154,7 +156,7 @@ recipient(a, sendq)
 	char buf[MAXNAME];		/* unquoted image of the user name */
 	extern bool safefile();
 
-	CurEnv->e_to = a->q_paddr;
+	e->e_to = a->q_paddr;
 	m = a->q_mailer;
 	errno = 0;
 	if (tTd(26, 1))
@@ -231,7 +233,7 @@ recipient(a, sendq)
 	/* add address on list */
 	*pq = a;
 	a->q_next = NULL;
-	CurEnv->e_nrcpts++;
+	e->e_nrcpts++;
 
 	if (a->q_alias == NULL && RcptLogFile != NULL &&
 	    !bitset(QDONTSEND, a->q_flags))
@@ -284,13 +286,13 @@ recipient(a, sendq)
 			else
 			{
 				message(Arpa_Info, "including file %s", &a->q_user[9]);
-				include(&a->q_user[9], FALSE, a, sendq);
+				include(&a->q_user[9], FALSE, a, sendq, e);
 			}
 		}
 		else
 		{
 			/* try aliasing */
-			alias(a, sendq);
+			alias(a, sendq, e);
 
 # ifdef USERDB
 			/* if not aliased, look it up in the user database */
@@ -298,15 +300,15 @@ recipient(a, sendq)
 			{
 				extern int udbexpand();
 
-				if (udbexpand(a, sendq) == EX_TEMPFAIL)
+				if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
 				{
 					a->q_flags |= QQUEUEUP;
-					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr("Deferred: user database error");
+					if (e->e_message == NULL)
+						e->e_message = newstr("Deferred: user database error");
 # ifdef LOG
 					if (LogLevel > 3)
 						syslog(LOG_INFO, "%s: deferred: udbexpand",
-							CurEnv->e_id);
+							e->e_id);
 # endif
 					message(Arpa_Info, "queued (user database error)");
 					return (a);
@@ -344,7 +346,7 @@ recipient(a, sendq)
 		    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_CANTCREAT, m, CurEnv);
+			giveresponse(EX_CANTCREAT, m, e);
 		}
 		return (a);
 	}
@@ -365,7 +367,7 @@ recipient(a, sendq)
 	if (!bitset(QNOTREMOTE, a->q_flags) && ConfigLevel >= 2 &&
 	    RewriteRules[5] != NULL)
 	{
-		maplocaluser(a, sendq);
+		maplocaluser(a, sendq, e);
 	}
 
 	/*
@@ -383,7 +385,7 @@ recipient(a, sendq)
 		if (pw == NULL)
 		{
 			a->q_flags |= QBADADDR;
-			giveresponse(EX_NOUSER, m, CurEnv);
+			giveresponse(EX_NOUSER, m, e);
 		}
 		else
 		{
@@ -412,7 +414,7 @@ recipient(a, sendq)
 			if (nbuf[0] != '\0')
 				a->q_fullname = newstr(nbuf);
 			if (!quoted)
-				forward(a, sendq);
+				forward(a, sendq, e);
 		}
 	}
 	return (a);
@@ -558,14 +560,15 @@ writable(s)
 
 static jmp_buf	CtxIncludeTimeout;
 
-include(fname, forwarding, ctladdr, sendq)
+include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
 	bool forwarding;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
+	ENVELOPE *e;
 {
 	register FILE *fp;
-	char *oldto = CurEnv->e_to;
+	char *oldto = e->e_to;
 	char *oldfilename = FileName;
 	int oldlinenumber = LineNumber;
 	register EVENT *ev = NULL;
@@ -626,11 +629,11 @@ include(fname, forwarding, ctladdr, sendq)
 			*p = '\0';
 		if (buf[0] == '\0' || buf[0] == '#')
 			continue;
-		CurEnv->e_to = oldto;
+		e->e_to = oldto;
 		message(Arpa_Info, "%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
 		AliasLevel++;
-		sendtolist(buf, ctladdr, sendq);
+		sendtolist(buf, ctladdr, sendq, e);
 		AliasLevel--;
 	}
 
@@ -658,8 +661,9 @@ includetimeout()
 **			send queue.
 */
 
-sendtoargv(argv)
+sendtoargv(argv, e)
 	register char **argv;
+	register ENVELOPE *e;
 {
 	register char *p;
 
@@ -680,7 +684,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendtolist(p, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+		sendtolist(p, (ADDRESS *) NULL, &e->e_sendqueue, e);
 	}
 }
 /*

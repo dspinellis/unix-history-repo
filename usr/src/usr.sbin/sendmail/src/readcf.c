@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -51,6 +51,7 @@ static char sccsid[] = "@(#)readcf.c	5.40 (Berkeley) %G%";
 **		cfname -- control file name.
 **		safe -- TRUE if this is the system config file;
 **			FALSE otherwise.
+**		e -- the main envelope.
 **
 **	Returns:
 **		none.
@@ -62,6 +63,7 @@ static char sccsid[] = "@(#)readcf.c	5.40 (Berkeley) %G%";
 readcf(cfname)
 	char *cfname;
 	bool safe;
+	register ENVELOPE *e;
 {
 	FILE *cf;
 	int ruleset = 0;
@@ -222,11 +224,11 @@ readcf(cfname)
 			break;
 
 		  case 'D':		/* macro definition */
-			define(buf[1], newstr(munchstring(&buf[2])), CurEnv);
+			define(buf[1], newstr(munchstring(&buf[2])), e);
 			break;
 
 		  case 'H':		/* required header line */
-			(void) chompheader(&buf[1], TRUE);
+			(void) chompheader(&buf[1], TRUE, e);
 			break;
 
 		  case 'C':		/* word class */

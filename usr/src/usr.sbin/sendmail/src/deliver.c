@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -133,14 +133,14 @@ deliver(firstto, editfcn)
 
 	/* rewrite from address, using rewriting rules */
 	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
-	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE));
+	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE, e));
 	if (e->e_returnpath == e->e_sender)
 	{
 		from = rpathbuf;
 	}
 	else
 	{
-		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE));
+		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE, e));
 		from = tfrombuf;
 	}
 
@@ -259,7 +259,7 @@ deliver(firstto, editfcn)
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
 		}
-		if (!checkcompat(to))
+		if (!checkcompat(to, e))
 		{
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
@@ -1285,9 +1285,9 @@ mailfile(filename, ctladdr, e)
 
 		putmessage(f, Mailer[1], FALSE);
 		putfromline(f, ProgMailer, e);
-		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
+		(*e->e_puthdr)(f, ProgMailer, e);
 		putline("\n", f, ProgMailer);
-		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
+		(*e->e_putbody)(f, ProgMailer, e);
 		putline("\n", f, ProgMailer);
 		if (ferror(f))
 		{
@@ -1383,7 +1383,7 @@ sendall(e, mode)
 		extern ADDRESS *recipient();
 
 		e->e_from.q_flags |= QDONTSEND;
-		(void) recipient(&e->e_from, &e->e_sendqueue);
+		(void) recipient(&e->e_from, &e->e_sendqueue, e);
 	}
 
 # ifdef QUEUE

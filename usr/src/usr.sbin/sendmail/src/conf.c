@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -336,8 +336,9 @@ ttypath()
 */
 
 bool
-checkcompat(to)
+checkcompat(to, e)
 	register ADDRESS *to;
+	register ENVELOPE *e;
 {
 # ifdef lint
 	if (to == NULL)
@@ -348,7 +349,7 @@ checkcompat(to)
 	register STAB *s;
 
 	s = stab("arpa", ST_MAILER, ST_FIND);
-	if (s != NULL && CurEnv->e_from.q_mailer != LocalMailer &&
+	if (s != NULL && e->e_from.q_mailer != LocalMailer &&
 	    to->q_mailer == s->s_mailer)
 	{
 		usrerr("No ARPA mail through this machine: see your system administration");

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)headers.c	5.19 (Berkeley) %G%";
 **	Parameters:
 **		line -- header as a text line.
 **		def -- if set, this is a default value.
+**		e -- the envelope including this header.
 **
 **	Returns:
 **		flags for this header.
@@ -31,9 +32,10 @@ static char sccsid[] = "@(#)headers.c	5.19 (Berkeley) %G%";
 **		Contents of 'line' are destroyed.
 */
 
-chompheader(line, def)
+chompheader(line, def, e)
 	char *line;
 	bool def;
+	register ENVELOPE *e;
 {
 	register char *p;
 	register HDR *h;
@@ -95,7 +97,7 @@ chompheader(line, def)
 
 	/* see if this is a resent message */
 	if (!def && bitset(H_RESENT, hi->hi_flags))
-		CurEnv->e_flags |= EF_RESENT;
+		e->e_flags |= EF_RESENT;
 
 	/* if this means "end of header" quit now */
 	if (bitset(H_EOH, hi->hi_flags))
@@ -103,17 +105,17 @@ chompheader(line, def)
 
 	/* drop explicit From: if same as what we would generate -- for MH */
 	p = "resent-from";
-	if (!bitset(EF_RESENT, CurEnv->e_flags))
+	if (!bitset(EF_RESENT, e->e_flags))
 		p += 7;
 	if (!def && !QueueRun && strcmp(fname, p) == 0)
 	{
-		if (CurEnv->e_from.q_paddr != NULL &&
-		    strcmp(fvalue, CurEnv->e_from.q_paddr) == 0)
+		if (e->e_from.q_paddr != NULL &&
+		    strcmp(fvalue, e->e_from.q_paddr) == 0)
 			return (hi->hi_flags);
 	}
 
 	/* delete default value for this header */
-	for (hp = &CurEnv->e_header; (h = *hp) != NULL; hp = &h->h_link)
+	for (hp = &e->e_header; (h = *hp) != NULL; hp = &h->h_link)
 	{
 		if (strcmp(fname, h->h_field) == 0 &&
 		    bitset(H_DEFAULT, h->h_flags) &&
@@ -142,7 +144,7 @@ chompheader(line, def)
 	    (index(fvalue, ',') != NULL || index(fvalue, '(') != NULL ||
 	     index(fvalue, '<') != NULL || index(fvalue, ';') != NULL))
 	{
-		CurEnv->e_flags &= ~EF_OLDSTYLE;
+		e->e_flags &= ~EF_OLDSTYLE;
 	}
 
 	return (h->h_flags);
@@ -155,6 +157,7 @@ chompheader(line, def)
 **
 **	Parameters:
 **		field -- the field name.
+**		e -- the envelope containing the header.
 **
 **	Returns:
 **		pointer to the value part.
@@ -165,12 +168,13 @@ chompheader(line, def)
 */
 
 char *
-hvalue(field)
+hvalue(field, e)
 	char *field;
+	register ENVELOPE *e;
 {
 	register HDR *h;
 
-	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
+	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		if (!bitset(H_DEFAULT, h->h_flags) && strcmp(h->h_field, field) == 0)
 			return (h->h_value);
@@ -244,9 +248,10 @@ eatheader(e)
 		/* send to this person if we so desire */
 		if (GrabTo && bitset(H_RCPT, h->h_flags) &&
 		    !bitset(H_DEFAULT, h->h_flags) &&
-		    (!bitset(EF_RESENT, CurEnv->e_flags) || bitset(H_RESENT, h->h_flags)))
+		    (!bitset(EF_RESENT, e->e_flags) || bitset(H_RESENT, h->h_flags)))
 		{
-			sendtolist(h->h_value, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+			sendtolist(h->h_value, (ADDRESS *) NULL,
+				   &e->e_sendqueue, e);
 		}
 
 		/* log the message-id */
@@ -274,7 +279,7 @@ eatheader(e)
 		e->e_hopcount = hopcnt;
 
 	/* message priority */
-	p = hvalue("precedence");
+	p = hvalue("precedence", e);
 	if (p != NULL)
 		e->e_class = priencode(p);
 	if (!QueueRun)
@@ -283,24 +288,24 @@ eatheader(e)
 				 + e->e_nrcpts * WkRecipFact;
 
 	/* return receipt to */
-	p = hvalue("return-receipt-to");
+	p = hvalue("return-receipt-to", e);
 	if (p != NULL)
 		e->e_receiptto = p;
 
 	/* errors to */
-	p = hvalue("errors-to");
+	p = hvalue("errors-to", e);
 	if (p != NULL)
-		sendtolist(p, (ADDRESS *) NULL, &e->e_errorqueue);
+		sendtolist(p, (ADDRESS *) NULL, &e->e_errorqueue, e);
 
 	/* full name of from person */
-	p = hvalue("full-name");
+	p = hvalue("full-name", e);
 	if (p != NULL)
 		define('x', p, e);
 
 	/* date message originated */
-	p = hvalue("posted-date");
+	p = hvalue("posted-date", e);
 	if (p == NULL)
-		p = hvalue("date");
+		p = hvalue("date", e);
 	if (p != NULL)
 	{
 		define('a', p, e);
@@ -327,8 +332,8 @@ eatheader(e)
 			    RealHostName, inet_ntoa(RealHostAddr.sin_addr));
 		syslog(LOG_INFO,
 		    "%s: from=%s, size=%ld, class=%d, received from %s\n",
-		    CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
-		    CurEnv->e_class, name);
+		    e->e_id, e->e_from.q_paddr, e->e_msgsize,
+		    e->e_class, name);
 	}
 # endif LOG
 }
@@ -553,7 +558,7 @@ putheader(fp, m, e)
 
 			if (bitset(H_FROM, h->h_flags))
 				oldstyle = FALSE;
-			commaize(h, p, fp, oldstyle, m);
+			commaize(h, p, fp, oldstyle, m, e);
 		}
 		else
 		{
@@ -585,6 +590,7 @@ putheader(fp, m, e)
 **		oldstyle -- TRUE if this is an old style header.
 **		m -- a pointer to the mailer descriptor.  If NULL,
 **			don't transform the name at all.
+**		e -- the envelope containing the message.
 **
 **	Returns:
 **		none.
@@ -593,12 +599,13 @@ putheader(fp, m, e)
 **		outputs "p" to file "fp".
 */
 
-commaize(h, p, fp, oldstyle, m)
+commaize(h, p, fp, oldstyle, m, e)
 	register HDR *h;
 	register char *p;
 	FILE *fp;
 	bool oldstyle;
 	register MAILER *m;
+	register ENVELOPE *e;
 {
 	register char *obp;
 	int opos;
@@ -677,7 +684,7 @@ commaize(h, p, fp, oldstyle, m)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		name = remotename(name, m, bitset(H_FROM, h->h_flags), FALSE);
+		name = remotename(name, m, bitset(H_FROM, h->h_flags), FALSE, e);
 		if (*name == '\0')
 		{
 			*p = savechar;

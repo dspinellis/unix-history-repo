@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stats.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)stats.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -29,7 +29,7 @@ markstats(e, to)
 		{
 			Stat.stat_nf[e->e_from.q_mailer->m_mno]++;
 			Stat.stat_bf[e->e_from.q_mailer->m_mno] +=
-				KBYTES(CurEnv->e_msgsize);
+				KBYTES(e->e_msgsize);
 		}
 	}
 	else

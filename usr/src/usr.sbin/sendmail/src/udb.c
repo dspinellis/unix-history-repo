@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	5.18 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	5.19 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	5.18 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	5.19 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -104,9 +104,10 @@ int		UdbSock = -1;
 bool		UdbInitialized = FALSE;
 
 int
-udbexpand(a, sendq)
+udbexpand(a, sendq, e)
 	register ADDRESS *a;
 	ADDRESS **sendq;
+	register ENVELOPE *e;
 {
 	int i;
 	register char *p;
@@ -124,7 +125,7 @@ udbexpand(a, sendq)
 	/* make certain we are supposed to send to this address */
 	if (bitset(QDONTSEND, a->q_flags))
 		return EX_OK;
-	CurEnv->e_to = a->q_paddr;
+	e->e_to = a->q_paddr;
 
 	/* on first call, locate the database */
 	if (!UdbInitialized)
@@ -193,7 +194,7 @@ udbexpand(a, sendq)
 
 				message(Arpa_Info, "expanded to %s", user);
 				AliasLevel++;
-				sendtolist(user, a, sendq);
+				sendtolist(user, a, sendq, e);
 				AliasLevel--;
 
 				if (user != buf)
@@ -222,7 +223,7 @@ udbexpand(a, sendq)
 			(void) sprintf(user, "%s@%s", a->q_user, up->udb_fwdhost);
 			message(Arpa_Info, "expanded to %s", user);
 			AliasLevel++;
-			sendtolist(user, a, sendq);
+			sendtolist(user, a, sendq, e);
 			AliasLevel--;
 			if (user != buf)
 				free(user);
@@ -614,9 +615,10 @@ _udb_parsespec(udbspec, opt, maxopts)
 #else /* not USERDB */
 
 int
-udbexpand(a, sendq)
+udbexpand(a, sendq, e)
 	ADDRESS *a;
 	ADDRESS **sendq;
+	ENVELOPE *e;
 {
 	return EX_OK;
 }

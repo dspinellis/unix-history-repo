@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -73,7 +73,7 @@ savemail(e)
 
 	if (e->e_from.q_paddr == NULL)
 	{
-		if (parseaddr("root", &e->e_from, 0, '\0') == NULL)
+		if (parseaddr("root", &e->e_from, 0, '\0', e) == NULL)
 		{
 			syserr("Cannot parse root!");
 			ExitStat = EX_SOFTWARE;
@@ -200,18 +200,18 @@ savemail(e)
 				if (e->e_errorqueue == NULL)
 					sendtolist(e->e_from.q_paddr,
 						(ADDRESS *) NULL,
-						&e->e_errorqueue);
+						&e->e_errorqueue, e);
 
 				/* deliver a cc: to the postmaster if desired */
 				if (PostMasterCopy != NULL)
 					sendtolist(PostMasterCopy,
 						(ADDRESS *) NULL,
-						&e->e_errorqueue);
+						&e->e_errorqueue, e);
 				q = e->e_errorqueue;
 			}
 			else
 			{
-				if (parseaddr("postmaster", q, 0, '\0') == NULL)
+				if (parseaddr("postmaster", q, 0, '\0', e) == NULL)
 				{
 					syserr("cannot parse postmaster!");
 					ExitStat = EX_SOFTWARE;
@@ -221,7 +221,7 @@ savemail(e)
 			}
 			if (returntosender(e->e_message != NULL ? e->e_message :
 					   "Unable to deliver mail",
-					   q, TRUE) == 0)
+					   q, TRUE, e) == 0)
 			{
 				state = ESM_DONE;
 				break;
@@ -267,7 +267,7 @@ savemail(e)
 				Verbose = oldverb;
 				e->e_to = buf;
 				q = NULL;
-				sendtolist(buf, (ADDRESS *) NULL, &q);
+				sendtolist(buf, (ADDRESS *) NULL, &q, e);
 				if (deliver(e, q) == 0)
 					state = ESM_DONE;
 				else
@@ -327,6 +327,7 @@ savemail(e)
 **		returnq -- the queue of people to send the message to.
 **		sendbody -- if TRUE, also send back the body of the
 **			message; otherwise just send the header.
+**		e -- the current envelope.
 **
 **	Returns:
 **		zero -- if everything went ok.
@@ -344,14 +345,15 @@ static bool	SendBody;
 returntosender(msg, sendbody)
 	char *msg;
 	bool sendbody;
+	register ENVELOPE *e;
 {
 	char buf[MAXNAME];
 	extern errhdr();
 
 	if (tTd(6, 1))
 	{
-		printf("Return To Sender: msg=\"%s\", depth=%d, CurEnv=%x,\n",
-		       msg, returndepth, CurEnv);
+		printf("Return To Sender: msg=\"%s\", depth=%d, e=%x,\n",
+		       msg, returndepth, e);
 		printf("\treturnq=");
 		printaddr(returnq, TRUE);
 	}
@@ -367,8 +369,8 @@ returntosender(msg, sendbody)
 
 	ErrorMessage = msg;
 	SendBody = sendbody;
-	define('g', "\001f", CurEnv);
-	define('<', "\001f", CurEnv);
+	define('g', "\001f", e);
+	define('<', "\001f", e);
 
 	/* fake up an address header for the from person */
 	bmove((char *) &CurEnv->e_from, (char *) &to_addr, sizeof to_addr);
