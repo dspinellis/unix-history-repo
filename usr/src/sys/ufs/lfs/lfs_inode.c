@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.22 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -231,18 +231,18 @@ ufs_inactive(vp)
 	int mode, error = 0;
 
 	if (prtactive && vp->v_count != 0)
-		printf("ufs_inactive: pushing active ino %d dev 0x%x\n",
-			ip->i_number, ip->i_dev);
+		vprint("ufs_inactive: pushing active", vp);
 	/*
 	 * Get rid of inodes related to stale file handles.
 	 */
 	if (ip->i_mode == 0) {
-		vgone(vp);
+		if ((vp->v_flag & VXLOCK) == 0)
+			vgone(vp);
 		return (0);
 	}
 	ILOCK(ip);
 	if (ip->i_nlink <= 0 && (vp->v_mount->m_flag & M_RDONLY) == 0) {
-		error = itrunc(ip, (u_long)0);
+		error = itrunc(ip, (u_long)0, 0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;
@@ -255,14 +255,20 @@ ufs_inactive(vp)
 #endif
 	}
 	IUPDAT(ip, &time, &time, 0);
-	IUNLOCK(ip);
-	ip->i_flag = 0;
 	/*
 	 * If we are done with the inode, reclaim it
 	 * so that it can be reused immediately.
 	 */
-	if (vp->v_count == 0 && ip->i_mode == 0)
-		vgone(vp);
+	if (vp->v_count == 0 && ip->i_mode == 0) {
+		vinvalbuf(vp, 0);
+		IUNLOCK(ip);
+		ip->i_flag = 0;
+		if ((vp->v_flag & VXLOCK) == 0)
+			vgone(vp);
+		return (error);
+	}
+	IUNLOCK(ip);
+	ip->i_flag = 0;
 	return (error);
 }
 
@@ -275,8 +281,7 @@ ufs_reclaim(vp)
 	register struct inode *ip = VTOI(vp);
 
 	if (prtactive && vp->v_count != 0)
-		printf("ufs_reclaim: pushing active ino %d dev 0x%x\n",
-			ip->i_number, ip->i_dev);
+		vprint("ufs_reclaim: pushing active", vp);
 	/*
 	 * Remove the inode from its hash chain.
 	 */
@@ -352,9 +357,10 @@ iupdat(ip, ta, tm, waitfor)
  *
  * NB: triple indirect blocks are untested.
  */
-itrunc(oip, length)
+itrunc(oip, length, flags)
 	register struct inode *oip;
 	u_long length;
+	int flags;
 {
 	register daddr_t lastblock;
 	daddr_t bn, lbn, lastiblock[NIADDR];
@@ -364,7 +370,7 @@ itrunc(oip, length)
 	int offset, osize, size, level;
 	long count, nblocks, blocksreleased = 0;
 	register int i;
-	int error, allerror = 0;
+	int aflags, error, allerror;
 	struct inode tip;
 
 	if (oip->i_size <= length) {
@@ -397,23 +403,22 @@ itrunc(oip, length)
 		oip->i_size = length;
 	} else {
 		lbn = lblkno(fs, length);
-		error = balloc(oip, lbn, offset, &bn, B_CLRBUF);
-		if (error)
+		aflags = B_CLRBUF;
+		if (flags & IO_SYNC)
+			aflags |= B_SYNC;
+		if (error = balloc(oip, lbn, offset, &bp, aflags))
 			return (error);
-		if ((long)bn < 0)
-			panic("itrunc: hole");
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
+		bn = bp->b_blkno;
 		count = howmany(size, CLBYTES);
 			munhash(oip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
-		error = bread(oip->i_devvp, bn, size, NOCRED, &bp);
-		if (error) {
-			oip->i_size = osize;
-			brelse(bp);
-			return (error);
-		}
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
-		bdwrite(bp);
+		brealloc(bp, size);
+		if (flags & IO_SYNC)
+			bwrite(bp);
+		else
+			bdwrite(bp);
 	}
 	/*
 	 * Update file and block pointers
@@ -433,7 +438,8 @@ itrunc(oip, length)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	allerror = syncip(oip, MNT_WAIT);
+	vinvalbuf(ITOV(oip), (length > 0));
+	allerror = iupdat(ip, &time, &time, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.
@@ -574,11 +580,15 @@ indirtrunc(ip, bn, lastbn, level, countp)
 		*countp = 0;
 		return (error);
 	}
+	if ((bp->b_flags & B_CACHE) == 0)
+		reassignbuf(bp, ITOV(ip));
 	bap = bp->b_un.b_daddr;
 	MALLOC(copy, daddr_t *, fs->fs_bsize, M_TEMP, M_WAITOK);
 	bcopy((caddr_t)bap, (caddr_t)copy, (u_int)fs->fs_bsize);
 	bzero((caddr_t)&bap[last + 1],
 	  (u_int)(NINDIR(fs) - (last + 1)) * sizeof (daddr_t));
+	if (last == -1)
+		bp->b_flags |= B_INVAL;
 	error = bwrite(bp);
 	if (error)
 		allerror = error;
@@ -642,8 +652,7 @@ iunlock(ip)
 {
 
 	if ((ip->i_flag & ILOCKED) == 0)
-		printf("unlocking unlocked inode %d on dev 0x%x\n",
-			ip->i_number, ip->i_dev);
+		vprint("iunlock: unlocked inode", ITOV(ip));
 	ip->i_flag &= ~ILOCKED;
 	if (ip->i_flag&IWANT) {
 		ip->i_flag &= ~IWANT;
