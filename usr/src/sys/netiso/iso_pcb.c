@@ -27,7 +27,7 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
- *	@(#)iso_pcb.c	7.6 (Berkeley) %G%
+ *	@(#)iso_pcb.c	7.7 (Berkeley) %G%
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
@@ -459,7 +459,7 @@ iso_pcbdetach(isop)
 	ENDDEBUG
 	if (isop->isop_laddr && (isop->isop_laddr != &isop->isop_sladdr))
 		m_freem(dtom(isop->isop_laddr));
-	free((caddr_t)isop, M_IFADDR);
+	free((caddr_t)isop, M_PCB);
 }
 
 
