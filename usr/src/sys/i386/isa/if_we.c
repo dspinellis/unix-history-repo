@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * Tim L. Tucker
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)if_we.c	5.5 (Berkeley) %G%
+ *	@(#)if_we.c	7.1 (Berkeley) %G%
  */
 
 /*
@@ -34,24 +34,24 @@
 #include "errno.h"
 #include "syslog.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
+#include "net/if.h"
+#include "net/netisr.h"
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
-#include "machine/isa/if_wereg.h"
-#include "machine/isa/isa_device.h"
+#include "i386/isa/if_wereg.h"
+#include "i386/isa/isa_device.h"
  
 /*
  * This constant should really be 60 because the we adds 4 bytes of crc.
@@ -80,16 +80,17 @@ struct	we_softc {
 
 	u_char	we_type;		/* interface type code		*/
 	u_short	we_vector;		/* interrupt vector 		*/
-	caddr_t	we_io_ctl_addr;		/* i/o bus address, control	*/
-	caddr_t	we_io_nic_addr;		/* i/o bus address, DS8390	*/
+	short	we_io_ctl_addr;		/* i/o bus address, control	*/
+	short	we_io_nic_addr;		/* i/o bus address, DS8390	*/
 
 	caddr_t	we_vmem_addr;		/* card RAM virtual memory base */
 	u_long	we_vmem_size;		/* card RAM bytes		*/
 	caddr_t	we_vmem_ring;		/* receive ring RAM vaddress	*/
+	caddr_t	we_vmem_end;		/* receive ring RAM end	*/
 } we_softc[NWE];
 
-int	weprobe(), weattach(), weintr();
-int	weinit(), weoutput(), weioctl(), wereset();
+int	weprobe(), weattach(), weintr(), westart();
+int	weinit(), ether_output(), weioctl(), wereset(), wewatchdog();
 
 struct	isa_driver wedriver = {
 	weprobe, weattach, "we",
@@ -132,6 +133,7 @@ weprobe(is)
 	sc->we_vmem_addr = (caddr_t)is->id_maddr;
 	sc->we_vmem_size = is->id_msize;
 	sc->we_vmem_ring = sc->we_vmem_addr + (WD_PAGE_SIZE * WD_TXBUF_SIZE);
+	sc->we_vmem_end = sc->we_vmem_addr + is->id_msize;
 
 	/*
 	 * Save board ROM station address
@@ -142,8 +144,8 @@ weprobe(is)
 	/*
 	 * Mapin interface memory, setup memory select register
 	 */
-	/* wem.ms_addr = (u_long)sc->we_vmem_addr >> 13;  */
-	wem.ms_addr = (u_long)(0xd0000)>> 13; 
+	/* wem.ms_addr = (u_long)sc->we_vmem_addr >> 13; */
+	wem.ms_addr = (u_long)(0xd0000)>> 13;
 	wem.ms_enable = 1;
 	wem.ms_reset = 0;
 	outb(sc->we_io_ctl_addr, wem.ms_byte);
@@ -173,19 +175,26 @@ weattach(is)
 {
 	register struct we_softc *sc = &we_softc[is->id_unit];
 	register struct ifnet *ifp = &sc->we_if;
+	union we_command wecmd;
  
+	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
+	wecmd.cs_stp = 1;
+	wecmd.cs_sta = 0;
+	wecmd.cs_ps = 0;
+	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	/*
 	 * Initialize ifnet structure
 	 */
 	ifp->if_unit = is->id_unit;
-	ifp->if_name = "we";
+	ifp->if_name = "we" ;
 	ifp->if_mtu = ETHERMTU;
-	ifp->if_flags = IFF_BROADCAST|IFF_NOTRAILERS;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_NOTRAILERS ;
 	ifp->if_init = weinit;
-	ifp->if_output = weoutput;
+	ifp->if_output = ether_output;
+	ifp->if_start = westart;
 	ifp->if_ioctl = weioctl;
 	ifp->if_reset = wereset;
-	ifp->if_watchdog = 0;
+	ifp->if_watchdog = wewatchdog;
 	if_attach(ifp);
  
 	/*
@@ -205,7 +214,7 @@ wereset(unit, uban)
 	if (unit >= NWE)
 		return;
 	printf("we%d: reset\n", unit);
-	we_softc[unit].we_flags &= ~WDF_RUNNING;
+/*	we_softc[unit].we_flags &= ~WDF_RUNNING; */
 	weinit(unit);
 }
  
@@ -231,6 +240,16 @@ westop(unit)
 	(void) splx(s);
 }
 
+wewatchdog(unit) {
+
+	log(LOG_WARNING,"we%d: soft reset\n", unit);
+printf("we: reset!\n");
+	westop(unit);
+DELAY(100000);
+	weinit(unit);
+}
+
+static Bdry;
 /*
  * Initialization of interface (really just DS8390). 
  */
@@ -247,14 +266,15 @@ weinit(unit)
 		return;
 
 	/* already running */
-	if (sc->we_flags & WDF_RUNNING)
-		return;
+/*	if (sc->we_flags & WDF_RUNNING)*/
+	/*if (ifp->if_flags & IFF_RUNNING) return; */
 
 	/*
 	 * Initialize DS8390 in order given in NSC NIC manual.
 	 * this is stock code...please see the National manual for details.
 	 */
 	s = splhigh();
+Bdry = 0;
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_stp = 1;
 	wecmd.cs_sta = 0;
@@ -290,23 +310,22 @@ weinit(unit)
 	 * Take the interface out of reset, program the vector, 
 	 * enable interrupts, and tell the world we are up.
 	 */
-	ifp->if_flags |= IFF_UP | IFF_RUNNING;
-	sc->we_flags |= WDF_RUNNING;
+	ifp->if_flags |= IFF_RUNNING;
 	sc->we_flags &= ~WDF_TXBUSY;
 	(void) splx(s);
-	westart(unit);
+	westart(ifp);
 }
  
 /*
  * Start output on interface.
  */
-westart(unit)
-	int unit;
+westart(ifp)
+	struct ifnet *ifp;
 {
-	register struct we_softc *sc = &we_softc[unit];
+	register struct we_softc *sc = &we_softc[ifp->if_unit];
 	struct mbuf *m0, *m;
 	register caddr_t buffer;
-	int len = 0, s;
+	int len, s;
 	union we_command wecmd;
  
 	/*
@@ -330,30 +349,31 @@ westart(unit)
 	 * Copy the mbuf chain into the transmit buffer
 	 */
 	buffer = sc->we_vmem_addr;
+	len = 0;
+/*printf("\nT   "); */
 	for (m0 = m; m != 0; m = m->m_next) {
+/*int j;*/
 		bcopy(mtod(m, caddr_t), buffer, m->m_len);
+/*for(j=0; j < m->m_len;j++) {
+
+	puthex(buffer[j]);
+	if (j == sizeof(struct ether_header)-1)
+		printf("|");
+}*/
 		buffer += m->m_len;
         	len += m->m_len;
 	}
+/*printf("|%d ", len);*/
 
-	/*
-	 * If this was a broadcast packet loop it
-	 * back because the hardware can't hear its own
-	 * transmits.
-	 */
-	if (bcmp((caddr_t)(mtod(m0, struct ether_header *)->ether_dhost),
-	   (caddr_t)etherbroadcastaddr,
-	   sizeof(etherbroadcastaddr)) == 0) {
-		weread(sc, m0);
-	} else {
-		m_freem(m0);
-	}
+	m_freem(m0);
 
 	/*
 	 * Init transmit length registers, and set transmit start flag.
 	 */
 	s = splhigh();
 	len = MAX(len, ETHER_MIN_LEN);
+/*printf("L %d ", len);
+	if (len < 70) len=70;*/
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
@@ -370,21 +390,20 @@ westart(unit)
 weintr(unit)
 	int unit;
 {
-	register struct we_softc *sc = &we_softc[0];
+	register struct we_softc *sc = &we_softc[unit];
 	union we_command wecmd;
 	union we_interrupt weisr;
-	int s;
+
 	unit =0;
  
 	/* disable onboard interrupts, then get interrupt status */
-	s = splhigh();
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
-	outb(sc->we_io_nic_addr + WD_P0_IMR, 0);
+	/*outb(sc->we_io_nic_addr + WD_P0_IMR, 0);*/
 	weisr.is_byte = inb(sc->we_io_nic_addr + WD_P0_ISR);
-	outb(sc->we_io_nic_addr + WD_P0_ISR, 0xff);
-	(void) splx(s);
+loop:
+	outb(sc->we_io_nic_addr + WD_P0_ISR, weisr.is_byte);
 
 	/* transmit error */
 	if (weisr.is_txe) {
@@ -404,21 +423,23 @@ weintr(unit)
 	}
 
 	/* normal transmit complete */
-	if (weisr.is_ptx)
+	if (weisr.is_ptx || weisr.is_txe)
 		wetint (unit);
 
 	/* normal receive notification */
-	if (weisr.is_prx)
+	if (weisr.is_prx || weisr.is_rxe)
 		werint (unit);
 
 	/* try to start transmit */
-	westart(unit);
+	westart(&sc->we_if);
 
 	/* re-enable onboard interrupts */
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
-	outb(sc->we_io_nic_addr + WD_P0_IMR, WD_I_CONFIG);
+	outb(sc->we_io_nic_addr + WD_P0_IMR, 0xff/*WD_I_CONFIG*/);
+	weisr.is_byte = inb(sc->we_io_nic_addr + WD_P0_ISR);
+	if (weisr.is_byte) goto loop;
 }
  
 /*
@@ -445,14 +466,10 @@ werint(unit)
 	int unit;
 {
 	register struct we_softc *sc = &we_softc[unit];
-	register struct mbuf **m;
-	int mlen, len, count;
 	u_char bnry, curr;
+	long len;
 	union we_command wecmd;
 	struct we_ring *wer;
-	struct mbuf *m0;
-	caddr_t pkt, endp;
-static Bdry;
  
 	/*
 	 * Traverse the receive ring looking for packets to pass back.
@@ -465,177 +482,57 @@ static Bdry;
 	wecmd.cs_ps = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
-if(Bdry && Bdry > bnry)
+if(Bdry)
 	bnry =Bdry;
+
+/*printf("B %d c %d ", bnry, curr);*/
 	while (bnry != curr)
 	{
 		/* get pointer to this buffer header structure */
 		wer = (struct we_ring *)(sc->we_vmem_addr + (bnry << 8));
-        	len = wer->we_count - 4;	/* count includes CRC */
-		pkt = (caddr_t)(wer + 1) /*- 2*/;	/* 2 - word align pkt data */
-        	count = len /*+ 2*/;		/* copy two extra bytes */
-		endp = (caddr_t)(sc->we_vmem_addr + sc->we_vmem_size);
-		++sc->we_if.if_ipackets;
 
-		/* pull packet out of dual ported RAM */
-		m = &m0; m0 = 0;
-		while (count > 0)
-		{
-		    /* drop chain if can't get another buffer */
-		    MGET(*m, M_DONTWAIT, MT_DATA);
-		    if (*m == 0)
-		    {
-			m_freem(m0);
-			goto outofbufs;
-		    }
-
-		    /* fill mbuf and attach to packet list */
-		    mlen = MIN(MLEN, count);
-		    mlen = MIN(mlen, endp - pkt);
-		    bcopy(pkt, mtod(*m, caddr_t), mlen);
-		    (*m)->m_len = mlen;
-		    m = &((*m)->m_next);
-		    pkt += mlen;
-		    count -= mlen;
-
-		    /* wrap memory pointer around circ buffer */
-		    if (pkt == endp)
-			pkt = (caddr_t)sc->we_vmem_ring;
-		}
-
-		/* skip aligment bytes, send packet up to higher levels */
-		if (m0 != 0)
-		{
-/*		    m0->m_off += 2*/;
-		    weread(sc, m0);
-		}
+		/* count includes CRC */
+		len = wer->we_count - 4;
+		if (len > 30 && len <= ETHERMTU+100
+			/*&& (*(char *)wer  == 1 || *(char *) wer == 0x21)*/)
+			weread(sc, (caddr_t)(wer + 1), len);
+		else printf("reject %d", len);
 
 outofbufs:
-		/* advance on chip Boundry register */
-		bnry = wer->we_next_packet;
 		wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 		wecmd.cs_ps = 0;
 		outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 
-		/* watch out for NIC overflow, reset Boundry if invalid */
-		if ((bnry - 1) < WD_TXBUF_SIZE) {
-#ifdef notdef
-		    wereset(unit, 0);
-		    break;
-#else
-		    outb(sc->we_io_nic_addr + WD_P0_BNRY,
-			(sc->we_vmem_size / WD_PAGE_SIZE) - 1);
-#endif
+		/* advance on chip Boundry register */
+		if((caddr_t) wer + WD_PAGE_SIZE - 1 > sc->we_vmem_end) {
+			bnry = WD_TXBUF_SIZE;
+			outb(sc->we_io_nic_addr + WD_P0_BNRY,
+					sc->we_vmem_size / WD_PAGE_SIZE-1);
+	
+		} else {
+			if (len > 30 && len <= ETHERMTU+100)
+				bnry = wer->we_next_packet;
+			else bnry = curr;
+
+			/* watch out for NIC overflow, reset Boundry if invalid */
+			if ((bnry - 1) < WD_TXBUF_SIZE) {
+		    		outb(sc->we_io_nic_addr + WD_P0_BNRY,
+					(sc->we_vmem_size / WD_PAGE_SIZE) - 1);
+				bnry = WD_TXBUF_SIZE;
+			} else
+				outb(sc->we_io_nic_addr + WD_P0_BNRY, bnry-1);
 		}
-		outb(sc->we_io_nic_addr + WD_P0_BNRY, bnry-1);
 
 		/* refresh our copy of CURR */
 		wecmd.cs_ps = 1;
 		outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 		curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
+/*printf("b %d c %d ", bnry, curr); */
 	}
 Bdry = bnry;
 }
 
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- */
-weoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
-	u_char edst[6];
-	struct in_addr idst;
-	register struct we_softc *sc = &we_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *eh;
-	int usetrailers;
- 
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-
-	switch (dst->sa_family) {
- 
-#ifdef INET
-	case AF_INET:
-		/* Note: we ignore usetrailers */
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&sc->we_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		type = ETHERTYPE_IP;
-		break;
-#endif
-#ifdef NS
-	case AF_NS:
-		type = ETHERTYPE_NS;
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-		break;
-#endif
-
- 
-	case AF_UNSPEC:
-		eh = (struct ether_header *)dst->sa_data;
- 		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = eh->ether_type;
-		break;
- 
-	default:
-		printf("we%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
- 
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF || MMINOFF + ETHER_HDR_SIZE > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = ETHER_HDR_SIZE;
-	} else {
-		m->m_off -= ETHER_HDR_SIZE;
-		m->m_len += ETHER_HDR_SIZE;
-	}
-	eh = mtod(m, struct ether_header *);
-	eh->ether_type = htons((u_short)type);
- 	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
- 	bcopy((caddr_t)sc->we_addr, (caddr_t)eh->ether_shost,
-		sizeof (sc->we_addr));
- 
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		(void) splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	(void) splx(s);
-	westart(ifp->if_unit);
-	return (0);
- 
-bad:
-	m_freem(m0);
-	return (error);
-}
- 
+#ifdef shit
 /*
  * Process an ioctl request.
  */
@@ -653,7 +550,7 @@ weioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 		weinit(ifp->if_unit);
-		switch(ifa->ifa_addr.sa_family) {
+		switch(ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
@@ -692,7 +589,86 @@ weioctl(ifp, cmd, data)
 	(void) splx(s);
 	return (error);
 }
+#endif
  
+/*
+ * Process an ioctl request.
+ */
+weioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	register struct ifaddr *ifa = (struct ifaddr *)data;
+	struct we_softc *sc = &we_softc[ifp->if_unit];
+	struct ifreq *ifr = (struct ifreq *)data;
+	int s = splimp(), error = 0;
+
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		ifp->if_flags |= IFF_UP;
+
+		switch (ifa->ifa_addr->sa_family) {
+#ifdef INET
+		case AF_INET:
+			weinit(ifp->if_unit);	/* before arpwhohas */
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+#endif
+#ifdef NS
+		case AF_NS:
+		    {
+			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
+
+			if (ns_nullhost(*ina))
+				ina->x_host = *(union ns_host *)(sc->ns_addr);
+			else {
+				/* 
+				 * The manual says we can't change the address 
+				 * while the receiver is armed,
+				 * so reset everything
+				 */
+				ifp->if_flags &= ~IFF_RUNNING; 
+				bcopy((caddr_t)ina->x_host.c_host,
+				    (caddr_t)sc->ns_addr, sizeof(sc->ns_addr));
+			}
+			weinit(ifp->if_unit); /* does ne_setaddr() */
+			break;
+		    }
+#endif
+		default:
+			weinit(ifp->if_unit);
+			break;
+		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    ifp->if_flags & IFF_RUNNING) {
+			ifp->if_flags &= ~IFF_RUNNING;
+			westop(ifp->if_unit);
+		} else if (ifp->if_flags & IFF_UP &&
+		    (ifp->if_flags & IFF_RUNNING) == 0)
+			weinit(ifp->if_unit);
+		break;
+
+#ifdef notdef
+	case SIOCGHWADDR:
+		bcopy((caddr_t)sc->sc_addr, (caddr_t) &ifr->ifr_data,
+			sizeof(sc->sc_addr));
+		break;
+#endif
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
+}
 /*
  * set ethernet address for unit
  */
@@ -712,70 +688,169 @@ wesetaddr(physaddr, unit)
 	weinit(unit);
 }
  
+#define	wedataaddr(sc, eh, off, type) \
+	((type) ((caddr_t)((eh)+1)+(off) >= (sc)->we_vmem_end) ? \
+		(((caddr_t)((eh)+1)+(off))) - (sc)->we_vmem_end \
+		+ (sc)->we_vmem_ring: \
+		((caddr_t)((eh)+1)+(off)))
 /*
  * Pass a packet to the higher levels.
- * NO TRAILER PROTOCOL!
+ * We deal with the trailer protocol here.
  */
-weread(sc, m)
+weread(sc, buf, len)
 	register struct we_softc *sc;
-    	struct mbuf *m;
+	char *buf;
+	int len;
 {
-	struct ether_header *eh;
-	int scn, type, s;
-	struct ifqueue *inq;
- 
-	/*
-	 * Get ethernet protocol type out of ether header
-	 */
-	eh = mtod(m, struct ether_header *);
-	type = ntohs((u_short)eh->ether_type);
+	register struct ether_header *eh;
+    	struct mbuf *m, *weget();
+	int off, resid;
 
 	/*
-	 * Drop ethernet header
+	 * Deal with trailer protocol: if type is trailer type
+	 * get true type from first 16-bit word past data.
+	 * Remember that type was trailer by setting off.
 	 */
-	m->m_off += ETHER_HDR_SIZE;
-	m->m_len -= ETHER_HDR_SIZE;
-	
+	eh = (struct ether_header *)buf;
+	eh->ether_type = ntohs((u_short)eh->ether_type);
+	if (eh->ether_type >= ETHERTYPE_TRAIL &&
+	    eh->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (eh->ether_type - ETHERTYPE_TRAIL) * 512;
+		if (off >= ETHERMTU) return;		/* sanity */
+		eh->ether_type = ntohs(*wedataaddr(sc, eh, off, u_short *));
+		resid = ntohs(*(wedataaddr(sc, eh, off+2, u_short *)));
+		if (off + resid > len) return;		/* sanity */
+		len = off + resid;
+	} else	off = 0;
+
+	len -= sizeof(struct ether_header);
+	if (len <= 0) return;
+
 	/*
-	 * Insert ifp pointer at start of packet
+	 * Pull packet off interface.  Off is nonzero if packet
+	 * has trailing header; neget will then force this header
+	 * information to be at the front, but we still have to drop
+	 * the type and length which are at the front of any trailer data.
 	 */
-	m->m_off -= sizeof (struct ifnet *);
-	m->m_len += sizeof (struct ifnet *);
-	*(mtod(m, struct ifnet **)) = &sc->we_if;
-
-	switch (type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		scn = NETISR_IP;
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&sc->we_ac, m);
-		return;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		scn = NETISR_NS;
-		inq = &nsintrq;
-		break;
-
-#endif
- 
-	default:
-		m_freem(m);
-		return;
-	}
- 
-	s = splimp();
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
-	schednetisr(scn);
-	(void) splx(s);
+	m = weget(buf, len, off, &sc->we_if, sc);
+	if (m == 0) return;
+	ether_input(&sc->we_if, eh, m);
 }
 
+/*
+ * Supporting routines
+ */
+
+/*
+ * Pull read data off a interface.
+ * Len is length of data, with local net header stripped.
+ * Off is non-zero if a trailer protocol was used, and
+ * gives the offset of the trailer information.
+ * We copy the trailer information and then all the normal
+ * data into mbufs.  When full cluster sized units are present
+ * we copy into clusters.
+ */
+struct mbuf *
+weget(buf, totlen, off0, ifp, sc)
+	caddr_t buf;
+	int totlen, off0;
+	struct ifnet *ifp;
+	struct we_softc *sc;
+{
+	struct mbuf *top, **mp, *m, *p;
+	int off = off0, len;
+	register caddr_t cp = buf;
+	char *epkt;
+int tc =totlen;
+
+/*
+printf("\nR");
+{ int j;
+for(j=0; j < sizeof(struct ether_header);j++) puthex(buf[j]);
+printf("|");
+}*/
+	buf += sizeof(struct ether_header);
+	cp = buf;
+	epkt = cp + totlen;
+
+	if (off) {
+		cp += off + 2 * sizeof(u_short);
+		totlen -= 2 * sizeof(u_short);
+	}
+
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
+	top = 0;
+	mp = &top;
+	while (totlen > 0) {
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
+		}
+		len = min(totlen, epkt - cp);
+#ifdef nope
+		/* only do up to end of buffer */
+		if (epkt > sc->we_vmem_end)
+			len = min(len, sc->we_vmem_end - cp);
+#endif
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
+			else
+				len = m->m_len;
+		} else {
+			/*
+			 * Place initial small packet/header at end of mbuf.
+			 */
+			if (len < m->m_len) {
+				if (top == 0 && len + max_linkhdr <= m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
+		}
+
+		totlen -= len;
+		/* only do up to end of buffer */
+		if (cp+len > sc->we_vmem_end) {
+			unsigned toend = sc->we_vmem_end - cp;
+
+			bcopy(cp, mtod(m, caddr_t), toend);
+			cp = sc->we_vmem_ring;
+			bcopy(cp, mtod(m, caddr_t)+toend, len - toend);
+			cp += len - toend;
+			epkt = cp + totlen;
+		} else {
+			bcopy(cp, mtod(m, caddr_t), (unsigned)len);
+			cp += len;
+		}
+/*{ int j;
+for(j=0; j < m->m_len;j++) puthex(mtod(m, char *)[j]);
+printf("|");
+}*/
+		*mp = m;
+		mp = &m->m_next;
+		if (cp == epkt) {
+			cp = buf;
+			epkt = cp + tc;
+		}
+	}
+/*printf("%d ",tc); */
+	return (top);
+}
+
+puthex(c){
+	printf("%x",(c>>4)&0xf);
+	printf("%x",c&0xf);
+}
 #endif

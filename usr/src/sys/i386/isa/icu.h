@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)icu.h	5.5 (Berkeley) %G%
+ *	@(#)icu.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -41,33 +41,8 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
  * Macro's for interrupt level priority masks (used in interrupt vector entry)
  */
 
-/* Just mask this interrupt only */
-#define	INTR(a)	\
-	pushl	$0 ; \
-	pushl	$ T_ASTFLT ; \
-	pushal ; \
-	push	%ds ; \
-	push	%es ; \
-	movw	$0x10, %ax ; \
-	movw	%ax, %ds ; \
-	movw	%ax,%es ; \
-	incl	_cnt+V_INTR ; \
-	movzwl	_cpl,%eax ; \
-	pushl	%eax ; \
-	pushl	$ a ; \
-	orw	$ IRQ/**/a ,%ax ; \
-	movw	%ax,_cpl ; \
-	orw	_imen,%ax ; \
-	NOP ; \
-	outb	%al,$ IO_ICU1+1 ; \
-	NOP ; \
-	movb	%ah,%al ; \
-	outb	%al,$ IO_ICU2+1	; \
-	NOP	; \
-	sti
-
 /* Mask a group of interrupts atomically */
-#define	INTRN(a,b) \
+#define	INTR(unit,mask,offst) \
 	pushl	$0 ; \
 	pushl	$ T_ASTFLT ; \
 	pushal ; \
@@ -77,11 +52,11 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 	movw	%ax, %ds ; \
 	movw	%ax,%es ; \
 	incl	_cnt+V_INTR ; \
+	incl	_isa_intr + offst * 4 ; \
 	movzwl	_cpl,%eax ; \
 	pushl	%eax ; \
-	pushl	$ a ; \
-	orw	$ IRQ/**/a ,%ax ; \
-	orw	b ,%ax ; \
+	pushl	$ unit ; \
+	orw	mask ,%ax ; \
 	movw	%ax,_cpl ; \
 	orw	_imen,%ax ; \
 	NOP ; \
@@ -90,18 +65,19 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 	movb	%ah,%al ; \
 	outb	%al,$ IO_ICU2+1	; \
 	NOP	; \
+	inb	$0x84,%al ; \
 	sti
 
 /* Interrupt vector exit macros */
 
 /* First eight interrupts (ICU1) */
-#define	INTREXT1	\
+#define	INTREXIT1	\
 	movb	$0x20,%al ; \
 	outb	%al,$ IO_ICU1 ; \
 	jmp	doreti
 
 /* Second eight interrupts (ICU2) */
-#define	INTREXT2	\
+#define	INTREXIT2	\
 	movb	$0x20,%al ; \
 	outb	%al,$ IO_ICU1 ; \
 	outb	%al,$ IO_ICU2 ; \

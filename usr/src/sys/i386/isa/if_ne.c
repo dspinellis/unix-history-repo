@@ -1,9 +1,14 @@
 #include "ne.h"
 #if NNE > 0
-/*
+/*-
  * NE2000 Ethernet driver
- * Copyright (C) 1990 W. Jolitz
- * @(#)if_ne.c	1.6 (Berkeley) %G%
+ * Copyright (C) 1990,91 W. Jolitz
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)if_ne.c	7.1 (Berkeley) %G%
  *
  * Parts inspired from Tim Tucker's if_wd driver for the wd8003,
  * insight on the ne2000 gained from Robert Clements PC/FTP driver.
@@ -19,31 +24,30 @@
 #include "errno.h"
 #include "syslog.h"
 
-#include "../net/if.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
+#include "net/if.h"
+#include "net/netisr.h"
+#include "net/route.h"
 
 #ifdef INET
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
-#include "../netinet/in_var.h"
-#include "../netinet/ip.h"
-#include "../netinet/if_ether.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
+#include "netinet/in_var.h"
+#include "netinet/ip.h"
+#include "netinet/if_ether.h"
 #endif
 
 #ifdef NS
-#include "../netns/ns.h"
-#include "../netns/ns_if.h"
+#include "netns/ns.h"
+#include "netns/ns_if.h"
 #endif
 
-#include "machine/isa/isa_device.h"
-#include "if_nereg.h"
-#include "icu.h"
+#include "i386/isa/isa_device.h"
+#include "i386/isa/if_nereg.h"
+#include "i386/isa/icu.h"
 
 int	neprobe(), neattach(), neintr();
-int	neinit(), neoutput(), neioctl();
+int	nestart(),neinit(), ether_output(), neioctl();
 
-#include "dbg.h"
 struct	isa_driver nedriver = {
 	neprobe, neattach, "ne",
 };
@@ -98,7 +102,7 @@ neprobe(dvp)
 	outb(nec+ds_cmd, DSCM_STOP|DSCM_NODMA);
 	
 	i = 1000000;
-	while ((inb(nec+ds0_isr)&DSIS_RESET) == 0 && i-- > 0) nulldev();
+	while ((inb(nec+ds0_isr)&DSIS_RESET) == 0 && i-- > 0);
 	if (i < 0) return (0);
 
 	outb(nec+ds0_isr, 0xff);
@@ -241,9 +245,10 @@ neattach(dvp)
 	ifp->if_name = nedriver.name ;
 	ifp->if_mtu = ETHERMTU;
 	printf (" ethernet address %s", ether_sprintf(ns->ns_addr)) ;
-	ifp->if_flags = IFF_BROADCAST|IFF_NOTRAILERS;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_NOTRAILERS;
 	ifp->if_init = neinit;
-	ifp->if_output = neoutput;
+	ifp->if_output = ether_output;
+	ifp->if_start = nestart;
 	ifp->if_ioctl = neioctl;
 	ifp->if_reset = nereset;
 	ifp->if_watchdog = 0;
@@ -298,7 +303,7 @@ neinit(unit)
 
 	ns->ns_if.if_flags |= IFF_RUNNING;
 	ns->ns_oactive = 0; ns->ns_mask = ~0;
-	if (ns->ns_if.if_snd.ifq_head) nestart(ns);
+	nestart(ifp);
 	splx(s);
 }
 
@@ -308,12 +313,13 @@ neinit(unit)
  * and map it to the interface before starting the output.
  * called only at splimp or interrupt level.
  */
-nestart(ns)
-	register struct ne_softc *ns;
+nestart(ifp)
+	struct ifnet *ifp;
 {
+	register struct ne_softc *ns = &ne_softc[ifp->if_unit];
 	struct mbuf *m0, *m;
 	int buffer;
-	int len = 0, i;
+	int len = 0, i, total,t;
 
 	/*
 	 * The DS8390 has only one transmit buffer, if it is busy we
@@ -335,34 +341,57 @@ nestart(ns)
 	if (m == 0)
 		return;
 
+	if ((m->m_flags & M_PKTHDR) == 0)
+		printf("should panic: no packet header\n");
 	/*
 	 * Copy the mbuf chain into the transmit buffer
 	 */
 
 	ns->ns_flags |= DSF_LOCK;	/* prevent entering nestart */
 	buffer = TBUF; len = i = 0;
+	t = 0;
+#include "machine/dbg.h"
+dprintf(DPAGIN,"\n before: ");
 	for (m0 = m; m != 0; m = m->m_next) {
+		t += m->m_len;
+dprintf(DPAGIN,"%d ", m->m_len);
+	}
+		
+	m = m0;
+	total = t;
+	if (m->m_flags & M_PKTHDR && total != m->m_pkthdr.len)
+		printf("hdr fucked, len %d should be %d\n", total, m->m_pkthdr.len);
+dprintf(DPAGIN,"\n after: ");
+	for (m0 = m; m != 0; ) {
+		
 /*int j;*/
-		putram(mtod(m, caddr_t), buffer, m->m_len);
-		buffer += m->m_len;
-		len += m->m_len;
+		if (m->m_len&1 && t > m->m_len) {
+dprintf(DPAGIN|DPAUSE,"+%d:%d ", m->m_len, m->m_next->m_len);
+			putram(mtod(m, caddr_t), buffer, m->m_len - 1);
+			t -= m->m_len - 1;
+			buffer += m->m_len - 1;
+			m->m_data += m->m_len - 1;
+			m->m_len = 1;
+			m = m_pullup(m, 2);
+if(m == 0) panic("bloowie!");
+{ struct mbuf *mp;
+dprintf(DPAGIN|DPAUSE, "\n rewritten as: ");
+	for (mp = m; mp != 0; mp = mp->m_next)
+dprintf(DPAGIN,"%d ", mp->m_len);
+}
+dprintf(DPAGIN,"\n");
+		} else {
+dprintf(DPAGIN|DPAUSE,"%d ", m->m_len);
+			putram(mtod(m, caddr_t), buffer, m->m_len);
+			buffer += m->m_len;
+			t -= m->m_len;
+			MFREE(m, m0);
+			m = m0;
+		}
 /*for(j=0; i < len;i++,j++) puthex(mtod(m,u_char *)[j]);
 printf("|"); */
 	}
-
-	/*
-	 * If this was a broadcast packet loop it
-	 * back because the hardware can't hear its own
-	 * transmits.
-	 */
-	/*if (bcmp((caddr_t)(mtod(m0, struct ether_header *)->ether_dhost),
-	   (caddr_t)etherbroadcastaddr,
-	   sizeof(etherbroadcastaddr)) == 0) {
-		neread(ns, m0);
-	} else {
-*/
-		m_freem(m0);
-	/*}*/
+dprintf(DPAGIN|DPAUSE,"send %d\n", total);
 
 	/*
 	 * Init transmit length registers, and set transmit start flag.
@@ -373,7 +402,8 @@ if(len < 0 || len > 1536)
 pg("T Bogus Length %d\n", len);
 dprintf(DEXPAND,"snd %d ", len);
 #endif
-	if (len < 60) len = 60;
+	len = total;
+	if (len < 64) len = 64;
 	outb(nec+ds0_tbcr0,len&0xff);
 	outb(nec+ds0_tbcr1,(len>>8)&0xff);
 	outb(nec+ds0_tpsr, TBUF/DS_PGSIZE);
@@ -385,10 +415,9 @@ dprintf(DEXPAND,"snd %d ", len);
 /*
  * Controller interrupt.
  */
-neintr(vec, ppl)
-	int vec;
+neintr(unit)
 {
-	register struct ne_softc *ns = &ne_softc[0];
+	register struct ne_softc *ns = &ne_softc[unit];
 	u_char cmd,isr;
 static cnt;
 
@@ -404,7 +433,7 @@ dprintf(DEXPAND,"|ppl %x isr %x ", ppl, isr);
 	outb(nec+ds0_isr, isr);
 
 
-	if (isr & (DSIS_RXE|DSIS_TXE|DSIS_ROVRN))
+	if (isr & (/*DSIS_RXE|DSIS_TXE|*/DSIS_ROVRN))
 		log(LOG_ERR, "ne%d: error: isr %x\n", ns-ne_softc, isr/*, DSIS_BITS*/);
 
 #ifdef notdef
@@ -555,7 +584,7 @@ dprintf(DEXPAND,"tx ");
 	}
 
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
-	nestart(ns);
+	nestart(&ns->ns_if);
 	outb (nec+ds_cmd, cmd);
 	outb (nec+ds0_imr, 0xff);
 	isr = inb (nec+ds0_isr);
@@ -684,189 +713,7 @@ neread(ns, buf, len)
 	m = neget(buf, len, off, &ns->ns_if);
 	if (m == 0) return;
 
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (eh->ether_type) {
-#ifdef INET
-	case ETHERTYPE_IP:
-		/*if (ns->ns_ac.ac_ipaddr == 0) goto raw;*/
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&ns->ns_ac, m);
-		return;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		return;
-	}
-
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-		return;
-	}
-	IF_ENQUEUE(inq, m);
-}
-
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-neoutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
-	u_char edst[6];
-	struct in_addr idst;
-	register struct ne_softc *ns = &ne_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *eh;
-	register int off;
-	extern struct ifnet loif;
-        struct mbuf *mcopy = (struct mbuf *)0;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-
-	switch (dst->sa_family) {
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&ns->ns_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
-		    sizeof(edst)))
-                        mcopy = m_copy(m, 0, (int)M_COPYALL);
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-
-
-		/* need per host negotiation */
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ntohs((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		    (caddr_t)edst, sizeof (edst));
-
-		if (!bcmp((caddr_t)edst, (caddr_t)&ns_broadhost,
-			sizeof(edst))) {
-
-				mcopy = m_copy(m, 0, (int)M_COPYALL);
-		} else if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost,
-			sizeof(edst))) {
-
-				return(looutput(&loif, m, dst));
-		}
-		type = ETHERTYPE_NS;
-		off = 0;
-		goto gottype;
-#endif
-
-	case AF_UNSPEC:
-		eh = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = eh->ether_type;
-		goto gottype;
-
-	default:
-		printf("ne%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	eh = mtod(m, struct ether_header *);
-	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)ns->ns_addr, (caddr_t)eh->ether_shost,
-		sizeof (eh->ether_shost));
-	eh->ether_type = htons((u_short)type);
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	nestart(ns);
-	splx(s);
-        return (mcopy ? looutput(&loif, mcopy, dst) : 0);
-
-bad:
-	m_freem(m0);
-	if (mcopy)
-		m_freem(mcopy);
-	return (error);
+	ether_input(&ns->ns_if, eh, m);
 }
 
 /*
@@ -891,89 +738,63 @@ neget(buf, totlen, off0, ifp)
 	struct mbuf *top, **mp, *m, *p;
 	int off = off0, len;
 	register caddr_t cp = buf;
+	char *epkt;
 
-	cp = buf + sizeof(struct ether_header);
+	buf += sizeof(struct ether_header);
+	cp = buf;
+	epkt = cp + totlen;
+
+
+	if (off) {
+		cp += off + 2 * sizeof(u_short);
+		totlen -= 2 * sizeof(u_short);
+	}
+
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
 	top = 0;
 	mp = &top;
 	while (totlen > 0) {
-		u_char *mcp;
-
-		MGET(m, M_DONTWAIT, MT_DATA);
-		if (m == 0)
-			goto bad;
-		if (off) {
-			len = totlen - off;
-			cp = buf + off + sizeof (struct ether_header);
-		} else
-			len = totlen;
-		if (ifp)
-			len += sizeof(ifp);
-		if (len >= NBPG) {
-			MCLGET(m);
-			if (m->m_len == CLBYTES)
-				m->m_len = len = MIN(len, CLBYTES);
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
+		}
+		len = min(totlen, epkt - cp);
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
 			else
-				m->m_len = len = MIN(MLEN, len);
+				len = m->m_len;
 		} else {
-			m->m_len = len = MIN(MLEN, len);
-			m->m_off = MMINOFF;
-		}
-		mcp = mtod(m, u_char *);
-		if (ifp) {
 			/*
-			 * Prepend interface pointer to first mbuf.
+			 * Place initial small packet/header at end of mbuf.
 			 */
-			*(mtod(m, struct ifnet **)) = ifp;
-			mcp += sizeof(ifp);
-			len -= sizeof(ifp);
-			ifp = (struct ifnet *)0;
+			if (len < m->m_len) {
+				if (top == 0 && len + max_linkhdr <= m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
 		}
-		bcopy(cp, mcp, len);
-		cp += len ; mcp += len ;
+		bcopy(cp, mtod(m, caddr_t), (unsigned)len);
+		cp += len;
 		*mp = m;
 		mp = &m->m_next;
-		if (off == 0) {
-			totlen -= len;
-			continue;
-		}
-		off += len;
-		if (off == totlen) {
-			cp = buf + sizeof (struct ether_header);
-			off = 0;
-			totlen = off0;
-		}
+		totlen -= len;
+		if (cp == epkt)
+			cp = buf;
 	}
 	return (top);
-bad:
-	m_freem(top);
-	return (0);
-}
-
-/*
- * Map a chain of mbufs onto a network interface
- * in preparation for an i/o operation.
- * The argument chain of mbufs includes the local network
- * header which is copied to be in the mapped, aligned
- * i/o space.
- */
-neput(cp, m)
-	register caddr_t cp;
-	register struct mbuf *m;
-{
-	register struct mbuf *mp;
-	register int i;
-	int x, cc = 0, t;
-	caddr_t dp;
-
-	while (m) {
-		dp = mtod(m, char *);
-		bcopy(mtod(m, caddr_t), cp, (unsigned)m->m_len);
-		cp += m->m_len;
-		cc += m->m_len;
-		MFREE(m, mp);
-		m = mp;
-	}
-	return (max(cc, ETHERMIN + sizeof(struct ether_header)));
 }
 
 /*
@@ -995,7 +816,7 @@ neioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		ifp->if_flags |= IFF_UP;
 
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			neinit(ifp->if_unit);	/* before arpwhohas */
