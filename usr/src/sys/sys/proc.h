@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	6.5 (Berkeley) %G%
+ *	@(#)proc.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -51,7 +51,6 @@ struct	proc {
 	caddr_t p_wchan;	/* event process is awaiting */
 	struct	text *p_textp;	/* pointer to text structure */
 	struct	pte *p_p0br;	/* page table base P0BR */
-	struct	pte *p_p1br;	/* page table base P1BR */
 	struct	proc *p_xlink;	/* linked list of procs sharing same text */
 	short	p_cpticks;	/* ticks of cpu time */
 	float	p_pctcpu;	/* %cpu for this process during p_time */
