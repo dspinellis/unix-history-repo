@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dtop.c	8.2 (Berkeley) %G%
+ *	@(#)dtop.c	8.3 (Berkeley) %G%
  */
 
 /* 
@@ -279,7 +279,7 @@ dtopwrite(dev, uio, flag)
 /*ARGSUSED*/
 dtopioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;

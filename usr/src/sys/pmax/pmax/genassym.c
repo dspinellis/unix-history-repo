@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	8.2 (Berkeley) %G%
+ *	@(#)genassym.c	8.3 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -44,4 +44,8 @@ main()
 	printf("#define\tSIGILL %d\n", SIGILL);
 	printf("#define\tSIGFPE %d\n", SIGFPE);
 	exit(0);
+}
+
+panic()
+{
 }

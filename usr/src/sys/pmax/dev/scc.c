@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scc.c	8.2 (Berkeley) %G%
+ *	@(#)scc.c	8.3 (Berkeley) %G%
  */
 
 /* 
@@ -394,7 +394,7 @@ sccwrite(dev, uio, flag)
 /*ARGSUSED*/
 sccioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd;
+	u_long cmd;
 	caddr_t data;
 	int flag;
 	struct proc *p;

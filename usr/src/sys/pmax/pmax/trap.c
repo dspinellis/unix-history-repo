@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.6 (Berkeley) %G%
+ *	@(#)trap.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -152,6 +152,7 @@ extern u_long kn03_tc3_imask;
 #endif
 int (*pmax_hardware_intr)() = (int (*)())0;
 extern volatile struct chiptime *Mach_clock_addr;
+extern long intrcnt[];
 
 /*
  * Handle an exception.
@@ -403,22 +404,23 @@ trap(statusReg, causeReg, vadr, pc, args)
 				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
-			i = callp->sy_narg;
+			i = callp->sy_argsize;
 			args.i[0] = locr0[A1];
 			args.i[1] = locr0[A2];
 			args.i[2] = locr0[A3];
-			if (i > 3) {
+			if (i > 3 * sizeof(register_t)) {
 				i = copyin((caddr_t)(locr0[SP] +
-						4 * sizeof(int)),
+						4 * sizeof(register_t)),
 					(caddr_t)&args.i[3],
-					(u_int)(i - 3) * sizeof(int));
+					(u_int)(i - 3 * sizeof(register_t)));
 				if (i) {
 					locr0[V0] = i;
 					locr0[A3] = 1;
 #ifdef KTRACE
 					if (KTRPOINT(p, KTR_SYSCALL))
 						ktrsyscall(p->p_tracep, code,
-							callp->sy_narg, args.i);
+							callp->sy_argsize,
+							args.i);
 #endif
 					goto done;
 				}
@@ -435,21 +437,22 @@ trap(statusReg, causeReg, vadr, pc, args)
 				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
-			i = callp->sy_narg;
+			i = callp->sy_argsize;
 			args.i[0] = locr0[A2];
 			args.i[1] = locr0[A3];
-			if (i > 2) {
+			if (i > 2 * sizeof(register_t)) {
 				i = copyin((caddr_t)(locr0[SP] +
-						4 * sizeof(int)),
+						4 * sizeof(register_t)),
 					(caddr_t)&args.i[2],
-					(u_int)(i - 2) * sizeof(int));
+					(u_int)(i - 2 * sizeof(register_t)));
 				if (i) {
 					locr0[V0] = i;
 					locr0[A3] = 1;
 #ifdef KTRACE
 					if (KTRPOINT(p, KTR_SYSCALL))
 						ktrsyscall(p->p_tracep, code,
-							callp->sy_narg, args.i);
+							callp->sy_argsize,
+							args.i);
 #endif
 					goto done;
 				}
@@ -461,23 +464,24 @@ trap(statusReg, causeReg, vadr, pc, args)
 				callp = &systab[SYS_syscall]; /* (illegal) */
 			else
 				callp = &systab[code];
-			i = callp->sy_narg;
+			i = callp->sy_argsize;
 			args.i[0] = locr0[A0];
 			args.i[1] = locr0[A1];
 			args.i[2] = locr0[A2];
 			args.i[3] = locr0[A3];
-			if (i > 4) {
+			if (i > 4 * sizeof(register_t)) {
 				i = copyin((caddr_t)(locr0[SP] +
-						4 * sizeof(int)),
+						4 * sizeof(register_t)),
 					(caddr_t)&args.i[4],
-					(u_int)(i - 4) * sizeof(int));
+					(u_int)(i - 4 * sizeof(register_t)));
 				if (i) {
 					locr0[V0] = i;
 					locr0[A3] = 1;
 #ifdef KTRACE
 					if (KTRPOINT(p, KTR_SYSCALL))
 						ktrsyscall(p->p_tracep, code,
-							callp->sy_narg, args.i);
+							callp->sy_argsize,
+							args.i);
 #endif
 					goto done;
 				}
@@ -485,7 +489,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 		}
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
+			ktrsyscall(p->p_tracep, code, callp->sy_argsize, args.i);
 #endif
 		rval[0] = 0;
 		rval[1] = locr0[V1];
@@ -738,6 +742,7 @@ interrupt(statusReg, causeReg, pc)
 	if (pmax_hardware_intr)
 		splx((*pmax_hardware_intr)(mask, pc, statusReg, causeReg));
 	if (mask & MACH_INT_MASK_5) {
+		intrcnt[7]++;
 		if (!USERMODE(statusReg)) {
 #ifdef DEBUG
 			trapDump("fpintr");
@@ -751,6 +756,7 @@ interrupt(statusReg, causeReg, pc)
 	if (mask & MACH_SOFT_INT_MASK_0) {
 		clearsoftclock();
 		cnt.v_soft++;
+		intrcnt[0]++;
 		softclock();
 	}
 	/* process network interrupt if we trapped or will very soon */
@@ -758,6 +764,7 @@ interrupt(statusReg, causeReg, pc)
 	    netisr && (statusReg & MACH_SOFT_INT_MASK_1)) {
 		clearsoftnet();
 		cnt.v_soft++;
+		intrcnt[1]++;
 #ifdef INET
 		if (netisr & (1 << NETISR_ARP)) {
 			netisr &= ~(1 << NETISR_ARP);
@@ -801,6 +808,7 @@ pmax_intr(mask, pc, statusReg, causeReg)
 
 	/* handle clock interrupts ASAP */
 	if (mask & MACH_INT_MASK_3) {
+		intrcnt[6]++;
 		temp = c->regc;	/* XXX clear interrupt bits */
 		cf.pc = pc;
 		cf.sr = statusReg;
@@ -811,19 +819,27 @@ pmax_intr(mask, pc, statusReg, causeReg)
 	/* Re-enable clock interrupts */
 	splx(MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR);
 #if NSII > 0
-	if (mask & MACH_INT_MASK_0)
+	if (mask & MACH_INT_MASK_0) {
+		intrcnt[2]++;
 		siiintr(0);
+	}
 #endif
 #if NLE > 0
-	if (mask & MACH_INT_MASK_1)
+	if (mask & MACH_INT_MASK_1) {
+		intrcnt[3]++;
 		leintr(0);
+	}
 #endif
 #if NDC > 0
-	if (mask & MACH_INT_MASK_2)
+	if (mask & MACH_INT_MASK_2) {
+		intrcnt[4]++;
 		dcintr(0);
+	}
 #endif
-	if (mask & MACH_INT_MASK_4)
+	if (mask & MACH_INT_MASK_4) {
+		intrcnt[5]++;
 		pmax_errintr();
+	}
 	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
 		MACH_SR_INT_ENA_CUR);
 }
@@ -855,6 +871,7 @@ kn02_intr(mask, pc, statusReg, causeReg)
 			warned = 0;
 			printf("WARNING: power supply is OK again\n");
 		}
+		intrcnt[6]++;
 
 		temp = c->regc;	/* XXX clear interrupt bits */
 		cf.pc = pc;
@@ -867,6 +884,7 @@ kn02_intr(mask, pc, statusReg, causeReg)
 	/* Re-enable clock interrupts */
 	splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
 	if (mask & MACH_INT_MASK_0) {
+		static int map[8] = { 8, 8, 8, 8, 8, 4, 3, 2 };
 
 		csr = *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
 		m = csr & (csr >> KN02_CSR_IOINTEN_SHIFT) & KN02_CSR_IOINT;
@@ -878,6 +896,7 @@ kn02_intr(mask, pc, statusReg, causeReg)
 		for (i = 0; m; i++, m >>= 1) {
 			if (!(m & 1))
 				continue;
+			intrcnt[map[i]]++;
 			if (tc_slot_info[i].intr)
 				(*tc_slot_info[i].intr)(tc_slot_info[i].unit);
 			else
@@ -888,8 +907,10 @@ kn02_intr(mask, pc, statusReg, causeReg)
 			csr & ~(KN02_CSR_WRESERVED | 0xFF);
 #endif
 	}
-	if (mask & MACH_INT_MASK_3)
+	if (mask & MACH_INT_MASK_3) {
+		intrcnt[5]++;
 		kn02_errintr();
+	}
 	return ((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
 		MACH_SR_INT_ENA_CUR);
 }
