@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)usermem.sh	5.3 (Berkeley) %G%
+#	@(#)usermem.sh	5.4 (Berkeley) %G%
 #
 : This shell script snoops around to find the maximum amount of available
 : user memory.  These variables need to be set only if there is no
@@ -33,7 +33,8 @@ then
 fi
 
 SIZE=0
-if test -r /usr/adm/messages	# probably the most transportable
+# messages: probably the most transportable
+if test -r /usr/adm/messages -a -s /usr/adm/messages
 then
     SIZE=`grep avail /usr/adm/messages | sed -n '$s/.*[ 	]//p'`
 fi
