@@ -1,0 +1,17 @@
+Module: stackres
+Owner: knox
+stdout: text description
+args:
+  name         (name of the input res file)
+
+Description:
+   This program reads an RES file, executes it and produces a
+   text description file.  The name of the RES file is the
+   the first argument of the command line.  The text description
+   written to the standard output describes the results left
+   on the stack after the image has been executed.
+
+   The image raster will be read from the file "name.res",
+   where name is read from the command line.  The ".res"
+   extension will not be added if it is already present in the
+   name.
