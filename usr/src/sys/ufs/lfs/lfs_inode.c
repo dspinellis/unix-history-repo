@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.48 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,9 @@
 int
 lfs_init()
 {
+#ifdef VERBOSE
+	printf("lfs_init\n");
+#endif
 	return (ufs_init());
 }
 
@@ -50,6 +53,9 @@ lfs_vget(mntp, ino, vpp)
 	dev_t dev;
 	int error;
 
+#ifdef VERBOSE
+	printf("lfs_vget\n");
+#endif
 	ump = VFSTOUFS(mntp);
 	dev = ump->um_dev;
 	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
@@ -74,9 +80,9 @@ lfs_vget(mntp, ino, vpp)
 	if (error = bread(ump->um_devvp, lfs_itod(fs, ino),
 	    (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
-		 * The inode does not contain anything useful, so it would
-		 * be misleading to leave it on its hash chain.  Iput() will
-		 * return it to the free list.
+		 * The inode does not contain anything useful, so it
+		 * would be misleading to leave it on its hash chain.
+		 * Iput() will return it to the free list.
 		 */
 		remque(ip);
 		ip->i_forw = ip;
@@ -119,6 +125,9 @@ lfs_update(vp, ta, tm, waitfor)
 {
 	struct inode *ip;
 
+#ifdef VERBOSE
+	printf("lfs_update\n");
+#endif
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
 	ip = VTOI(vp);
@@ -161,6 +170,9 @@ lfs_truncate(ovp, length, flags)
 	daddr_t lbn;
 	int error, offset, size;
 
+#ifdef VERBOSE
+	printf("lfs_truncate\n");
+#endif
 	vnode_pager_setsize(ovp, length);
 	oip = VTOI(ovp);
 
@@ -190,11 +202,13 @@ lfs_truncate(ovp, length, flags)
 		if (error = bread(ovp, lbn, fs->lfs_bsize, NOCRED, &bp))
 			return (error);
 		oip->i_size = length;
-		size = blksize(fs);				/* LFS */
-		(void) vnode_pager_uncache(ovp);
+		size = blksize(fs);
+		(void)vnode_pager_uncache(ovp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
 		lfs_bwrite(bp);
 	}
-	/* BZERO INODE BLOCK POINTERS HERE, FOR CONSISTENCY XXX */
+	/* XXX: BZERO INODE BLOCK POINTERS HERE, FOR CONSISTENCY. */
+	(void)vinvalbuf(ovp, length > 0);
+	return (0);
 }
