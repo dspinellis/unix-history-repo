@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -401,7 +401,7 @@ checkcompat(to, e)
 # ifdef lint
 	if (to == NULL)
 		to++;
-# endif lint
+# endif /* lint */
 # ifdef EXAMPLE_CODE
 	/* this code is intended as an example only */
 	register STAB *s;
