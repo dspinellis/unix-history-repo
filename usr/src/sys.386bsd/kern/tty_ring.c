@@ -48,10 +48,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00112
+ * CURRENT PATCH LEVEL:         2       00163
  * --------------------         -----   ----------------------
  *
  * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
+ * 27 May 93	Bruce Evans		Who really did the changes that David
+ *					supplied in the 14 Mar 93 patch.
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_ring.c,v 1.2 92/01/21 21:29:55 william Exp $";
 

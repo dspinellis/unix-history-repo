@@ -34,10 +34,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00059
+ * CURRENT PATCH LEVEL:         2       00163
  * --------------------         -----   ----------------------
  *
  * 27 Nov 1992	Scott Reynolds		Completed V7 ioctl compatablity
+ * 27 May 93	Guido van Rooij		Comcontrol ioctls
  */
 
 #ifndef	_IOCTL_H_
@@ -153,6 +154,8 @@ struct ttysize {
 #define	TIOCEXT		_IOW('t', 96, int)	/* pty: external processing */
 #define	TIOCSIG		_IO('t', 95)		/* pty: generate signal */
 #define TIOCDRAIN	_IO('t', 94)		/* wait till output drained */
+#define TIOCMSBIDIR	_IOW('t', 93, int)	/* modem: set bidir cap. */
+#define TIOCMGBIDIR	_IOR('t', 92, int)	/* modem: get bidir cap. */
 
 #define TTYDISC		0		/* termios tty line discipline */
 #define	TABLDISC	3		/* tablet discipline */

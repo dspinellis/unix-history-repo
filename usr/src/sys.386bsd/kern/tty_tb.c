@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)tty_tb.c	7.7 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00163
+ * --------------------         -----   ----------------------
+ *
+ * 27 May 93	Andrew A. Chernov	Compatibility fix
+ *
  */
 
 #include "tb.h"
@@ -117,7 +125,9 @@ tbopen(dev, tp)
 	tp->t_inbuf = 0;
 	bzero((caddr_t)&tbp->rets, sizeof (tbp->rets));
 	tp->T_LINEP = (caddr_t)tbp;
+	tp->t_flags = ttcompatgetflags(tp);
 	tp->t_flags |= LITOUT;
+	ttcompatsetlflags(tp, &tp->t_termios);
 	return (0);
 }
 

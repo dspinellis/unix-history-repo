@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00158
+ * CURRENT PATCH LEVEL:         4       00163
  * --------------------         -----   ----------------------
  *
  * 18 Aug 92	Frank Maclachlan	*See comments below
@@ -51,6 +51,7 @@
  *					work with new intr-0.1 code.
  *					Enabled printf for interrupt masks to
  *					aid in bug reports.
+ * 27 May 93	Guido van Rooij		New routine add find_isa_dev
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/01/21 14:34:23 william Exp Locker: root $";
 
@@ -719,6 +720,34 @@ unsigned kbc_8042cmd(val) {
 	if (val) outb(KBCMDP, val);
 	while (inb(KBSTATP)&KBS_IBF);
 	return (inb(KBDATAP));
+}
+
+/*
+ * find an ISA device in a given isa_devtab_* table, given
+ * the table to search, the expected id_driver entry, and the unit number.
+ *
+ * this function is defined in isa_device.h, and this location is debatable;
+ * i put it there because it's useless w/o, and directly operates on
+ * the other stuff in that file.
+ *
+ */
+
+struct isa_device *find_isadev(table, driverp, unit)
+     struct isa_device *table;
+     struct isa_driver *driverp;
+     int unit;
+{
+  if (driverp == NULL) /* sanity check */
+    return NULL;
+
+  while ((table->id_driver != driverp) || (table->id_unit != unit)) {
+    if (table->id_driver == 0)
+      return NULL;
+    
+    table++;
+  }
+
+  return table;
 }
 
 /*

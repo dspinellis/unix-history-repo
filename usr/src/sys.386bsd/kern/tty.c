@@ -35,12 +35,16 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00062
+ * CURRENT PATCH LEVEL:         3       00163
  * --------------------         -----   ----------------------
  *
  * 11 Dec 92	Williams Jolitz		Fixed tty handling
  * 28 Nov 1991	Warren Toomey		Cleaned up the use of COMPAT_43
  *					in the 386BSD kernel.	 
+ * 27 May 93	Bruce Evans		Sign Ext fix for TIOCSTI from the net
+ *					Kludge to hook in RTS/CTS flow control
+ *					Avoid sleeping on lbolt, it slows down
+ *					output unnecessarily.
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty.c,v 1.3 92/01/21 21:31:11 william Exp $";
 
@@ -439,7 +443,7 @@ ttioctl(tp, com, data, flag)
 			return (EPERM);
 		if (p->p_ucred->cr_uid && !isctty(p, tp))
 			return (EACCES);
-		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
+		(*linesw[tp->t_line].l_rint)(*(u_char *)data, tp);
 		break;
 
 	case TIOCGETA: {
@@ -491,13 +495,8 @@ ttioctl(tp, com, data, flag)
 					ttwakeup(tp);
 				}
 				else {
-					/*struct ringb tb;*/
-
 					catb(&tp->t_raw, &tp->t_can);
 					catb(&tp->t_can, &tp->t_raw);
-					/*tb = tp->t_raw;
-					tp->t_raw = tp->t_can;
-					tp->t_can = tb;*/
 				}
 		}
 		tp->t_iflag = t->c_iflag;
@@ -692,6 +691,10 @@ ttyclose(tp)
 	ttyflush(tp, FREAD|FWRITE);
 	tp->t_session = NULL;
 	tp->t_pgrp = NULL;
+/*
+ * XXX - do we need to send cc[VSTART] or do a ttstart() here in some cases?
+ * (TS_TBLOCK and TS_RTSBLOCK are being cleared.)
+ */
 	tp->t_state = 0;
 	tp->t_gen++;
 	return (0);
@@ -1303,6 +1306,7 @@ loop:
 	 * Look to unblock output now that (presumably)
 	 * the input queue has gone down.
 	 */
+#if 0
 	if (tp->t_state&TS_TBLOCK && RB_LEN(&tp->t_raw) < TTYHOG/5) {
 		if (cc[VSTART] != _POSIX_VDISABLE &&
 		    putc(cc[VSTART], &tp->t_out) == 0) {
@@ -1310,6 +1314,14 @@ loop:
 			ttstart(tp);
 		}
 	}
+#else
+#define	TS_RTSBLOCK	TS_TBLOCK	/* XXX */
+#define	RB_I_LOW_WATER	((RBSZ - 2 * 256) * 7 / 8)	/* XXX */
+	if (tp->t_state&TS_RTSBLOCK && RB_LEN(&tp->t_raw) <= RB_I_LOW_WATER) {
+		tp->t_state &= ~TS_RTSBLOCK;
+		ttstart(tp);
+	}
+#endif
 	return (error);
 }
 
@@ -1452,6 +1464,7 @@ loop:
 					if (ttyoutput(*cp, tp) >= 0) {
 					    /* no c-lists, wait a bit */
 					    ttstart(tp);
+printf("\nttysleep - no c-lists\n");	/* XXX */
 					    if (error = ttysleep(tp, 
 						(caddr_t)&lbolt,
 						 TTOPRI | PCATCH, ttybuf, 0))
@@ -1499,9 +1512,12 @@ loop:
 			cp += ce, cc -= ce, tk_nout += ce;
 			tp->t_outcc += ce;
 			if (i > 0) {
-				/* out of space, wait a bit */
 				ttstart(tp);
-				if (error = ttysleep(tp, (caddr_t)&lbolt,
+				if (RB_CONTIGPUT(&tp->t_out) > 0)
+					goto loop;	/* synchronous/fast */
+				/* out of space, wait a bit */
+				tp->t_state |= TS_ASLEEP;
+				if (error = ttysleep(tp, (caddr_t)&tp->t_out,
 					    TTOPRI | PCATCH, ttybuf, 0))
 					break;
 				goto loop;
