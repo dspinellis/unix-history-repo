@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.1 %G%";
+static char *SccsId = "@(#)names.c	2.2 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -566,10 +566,7 @@ unpack(np)
 			n = n->n_flink;
 			continue;
 		}
-		cp = n->n_name;
-		while (*cp == '\\')
-			cp++;
-		*ap++ = cp;
+		*ap++ = n->n_name;
 		n = n->n_flink;
 	}
 	*ap = NOSTR;
