@@ -14,20 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 LIST=	dirblk findproc.nxt frame pcb proc setproc.nxt trapframe tty
 
 all:
 
 install: FRC
-	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/lib/adb
+	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/libdata/adb
 
-clean:
-depend:
-lint:
-tags:
-FRC:
-
-# DO NOT DELETE THIS LINE -- make depend uses it
-
+clean depend lint tags FRC:
