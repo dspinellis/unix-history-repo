@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.10 (Berkeley) %G%
+ *	@(#)proc.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -99,6 +99,8 @@ struct	proc {
 	char	p_comm[MAXCOMLEN+1];
 	char	p_logname[MAXLOGNAME];
 	char	*p_wmesg;
+	struct	timeval p_utime; /* user time */
+	struct	timeval p_stime; /* system time */
 #if defined(tahoe)
 	int	p_ckey;		/* code cache key */
 	int	p_dkey;		/* data cache key */
@@ -167,7 +169,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SSWAP	0x0000008	/* save area flag */
 #define	STRC	0x0000010	/* process is being traced */
 #define	SWTED	0x0000020	/* another tracing flag */
-#define	SULOCK	0x0000040	/* user settable lock in core */
+#define	SSINTR	0x0000040	/* sleep is interruptible */
 #define	SPAGE	0x0000080	/* process in page wait state */
 #define	SKEEP	0x0000100	/* another flag to prevent swap out */
 #define	SOMASK	0x0000200	/* restore old mask after taking signal */
@@ -185,5 +187,6 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define SEXEC	0x0800000	/* process called exec */
+#define	SULOCK	0x1000000	/* locked in core after swap error XXX */
 
 #define	SPTECHG	0x0000000	/* pte's for process have changed XXX */
