@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cron.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)cron.c	4.2 (Berkeley) %G%";
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -8,11 +8,11 @@ static char *sccsid = "@(#)cron.c	4.1 (Berkeley) %G%";
 
 #define	LISTS	512
 
-#define	EXACT	0
-#define	ANY	1
-#define	LIST	2
-#define	RANGE	3
-#define	EOS	4
+#define	EXACT	100
+#define	ANY	101
+#define	LIST	102
+#define	RANGE	103
+#define	EOS	104
 char	crontab[]	= "/usr/lib/crontab";
 time_t	itime;
 struct	tm *loct;
