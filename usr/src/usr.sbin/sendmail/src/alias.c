@@ -30,12 +30,12 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.43 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.44 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	5.43 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	5.44 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.43 (Berkeley) %G% (without NDBM)";
+static char sccsid[] = "@(#)alias.c	5.44 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -182,7 +182,7 @@ aliaslookup(name)
 			return (rhs.dbt.data);
 	}
 # ifdef NDBM
-	else
+	else if (AliasDBMptr != NULL)
 	{
 		rhs.dbm = dbm_fetch(AliasDBMptr, lhs.dbm);
 		return (rhs.dbm.dptr);
@@ -266,6 +266,12 @@ initaliases(aliasfile, init, e)
 		{
 # ifdef NDBM
 			AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
+			if (AliasDBMptr == NULL)
+			{
+				syserr("initaliases: cannot open %s", buf);
+				NoAlias = TRUE;
+				return;
+			}
 # else
 			syserr("initaliases: cannot open %s", buf);
 			NoAlias = TRUE;
@@ -274,6 +280,12 @@ initaliases(aliasfile, init, e)
 		}
 # else
 		AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
+		if (AliasDBMptr == NULL)
+		{
+			syserr("initaliases: cannot open %s", buf);
+			NoAlias = TRUE;
+			return;
+		}
 # endif
 	}
 	atcnt = SafeAlias * 2;
@@ -319,6 +331,12 @@ initaliases(aliasfile, init, e)
 # else
 # ifdef NDBM
 			AliasDBMptr = dbm_open(aliasfile, O_RDONLY, DBMMODE);
+			if (AliasDBMptr == NULL)
+			{
+				syserr("initaliases: cannot open %s", buf);
+				NoAlias = TRUE;
+				return;
+			}
 # endif
 # endif
 		}
@@ -434,7 +452,9 @@ readaliases(aliasfile, init, e)
 
 	if ((af = fopen(aliasfile, "r+")) == NULL)
 	{
-		if (tTd(27, 1))
+		if (init)
+			syserr("Can't open %s", aliasfile);
+		else if (tTd(27, 1))
 			printf("Can't open %s\n", aliasfile);
 		errno = 0;
 		NoAlias++;
