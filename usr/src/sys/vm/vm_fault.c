@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.11 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.12 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -387,7 +387,6 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				 * XXX - we cannot just fall out at this
 				 * point, m has been freed and is invalid!
 				 */
-				panic("vm_fault: free page"); /* XXX */
 			}
 		}
 
