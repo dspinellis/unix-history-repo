@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.h	7.4 (Berkeley) 6/27/88
+ *	@(#)route.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -53,6 +53,8 @@ struct rtentry {
 	u_long	rt_use;			/* raw # packets forwarded */
 	struct	ifnet *rt_ifp;		/* the answer: interface to use */
 	struct	ifaddr *rt_ifa;		/* the answer: interface to use */
+	struct	sockaddr *rt_genmask;	/* for generation of cloned routes */
+	caddr_t	rt_llinfo;		/* pointer to link level info cache */
 };
 
 /*
@@ -76,6 +78,8 @@ struct ortentry {
 #define	RTF_MODIFIED	0x20		/* modified dynamically (by redirect) */
 #define RTF_DONE	0x40		/* message confirmed */
 #define RTF_MASK	0x80		/* subnet mask present */
+#define RTF_CLONING	0x100		/* generate new routes on use */
+#define RTF_XRESOLVE	0x200		/* external daemon resolves name */
 
 
 /*
@@ -137,6 +141,7 @@ struct route_cb {
 #define RTM_LOCK	0x8	/* fix specified metrics */
 #define RTM_OLDADD	0x9	/* caused by SIOCADDRT */
 #define RTM_OLDDEL	0xa	/* caused by SIOCDELRT */
+#define RTM_RESOLVE	0xb	/* req to resolve dst to LL addr */
 
 #define RTV_MTU		0x1	/* init or lock _mtu */
 #define RTV_HOPCOUNT	0x2	/* init or lock _hopcount */
@@ -153,7 +158,7 @@ struct route_cb route_cb;
 
 #ifdef KERNEL
 #define	RTFREE(rt) \
-	if ((rt)->rt_refcnt == 1) \
+	if ((rt)->rt_refcnt <= 1) \
 		rtfree(rt); \
 	else \
 		(rt)->rt_refcnt--;
