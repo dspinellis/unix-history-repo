@@ -1,4 +1,4 @@
-/*	locore.s	4.65	82/05/26	*/
+/*	locore.s	4.66	82/07/15	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -278,7 +278,7 @@ SCBVEC(ustray):
 /*
  * Trap and fault vector routines
  */ 
-#define	TRAP(a)	pushl $a; brw alltraps
+#define	TRAP(a)	pushl $a; jbr alltraps
 
 /*
  * Ast delivery (profiling and/or reschedule)
@@ -727,7 +727,7 @@ _Swtch:				# <<<massaged to jsb by "asm.sed">>>
 sw1:	ffs	$0,$32,_whichqs,r0	# look for non-empty queue
 	bneq	sw1a
 	mtpr	$0,$IPL			# must allow interrupts here
-	brw	sw1			# this is an idle loop!
+	jbr	sw1			# this is an idle loop!
 sw1a:	mtpr	$0x18,$IPL		# lock out all so _whichqs==_qs
 	bbcc	r0,_whichqs,sw1		# proc moved via lbolt interrupt
 	movaq	_qs[r0],r1
