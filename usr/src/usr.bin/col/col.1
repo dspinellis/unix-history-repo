@@ -1,11 +1,14 @@
-.\"	@(#)col.1	4.1 (Berkeley) %G%
+.\"	@(#)col.1	5.1 (Berkeley) %G%
 .\"
-.TH COL 1
+.TH COL 1 "18 January 1983"
 .AT 3
 .SH NAME
 col \- filter reverse line feeds
 .SH SYNOPSIS
-.B col [\|\-bfx\|]
+.B col
+[
+.B \-bfx
+]
 .SH DESCRIPTION
 .I Col
 reads the standard input and writes the standard output.
@@ -63,7 +66,7 @@ This last character is an alternate form of full reverse line feed, for
 compatibility with some other hardware conventions.
 All other non-printing characters are ignored.
 .SH "SEE ALSO"
-troff(1), tbl(1), greek(1)
+troff(1), tbl(1)
 .SH BUGS
 Can't back up more than 128 lines.
 .br
