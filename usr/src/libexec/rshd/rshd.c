@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,11 +59,27 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern int opterr, optind, _check_rhosts_file;
 	struct linger linger;
-	int on = 1, fromlen;
+	int ch, on = 1, fromlen;
 	struct sockaddr_in from;
 
 	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
+
+	opterr = 0;
+	while ((ch = getopt(argc, argv, "l")) != EOF)
+		switch((char)ch) {
+		case 'l':
+			_check_rhosts_file = 0;
+			break;
+		case '?':
+		default:
+			syslog(LOG_ERR, "usage: rshd [-l]");
+			break;
+		}
+	argc -= optind;
+	argv += optind;
+
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
