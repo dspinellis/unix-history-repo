@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: lpa.c,v 1.3 1993/09/24 20:37:32 rgrimes Exp $
+ *	$Id: lpa.c,v 1.4 1993/11/25 01:31:40 wollman Exp $
  */
 
 /*
@@ -130,18 +130,21 @@ struct lpa_softc {
  */
 int
 lpa_port_test(short port, u_char data, u_char mask)
-	{
+{
 	int	temp, timeout;
 
 	data = data & mask;
 	outb(port, data);
-	timeout = 100;
-	do
+	timeout = 10000;
+	do {
+		DELAY(10);
 		temp = inb(port) & mask;
-	while (temp != data && --timeout);
-	lprintf("Port 0x%x\tout=%x\tin=%x\n", port, data, temp);
-	return (temp == data);
 	}
+	while (temp != data && --timeout);
+	lprintf("Port 0x%x\tout=%x\tin=%x\ttout=%d\n",
+		port, data, temp, timeout);
+	return (temp == data);
+}
 
 /*
  * New lpaprobe routine written by Rodney W. Grimes, 3/25/1993
@@ -169,7 +172,7 @@ lpa_port_test(short port, u_char data, u_char mask)
 
 int
 lpaprobe(struct isa_device *dvp)
-	{
+{
 	int	status;
 	short	port;
 	u_char	data;
@@ -211,7 +214,7 @@ lpaprobe(struct isa_device *dvp)
 	outb(dvp->id_iobase+lpt_data, 0);
 	outb(dvp->id_iobase+lpt_control, 0);
 	return (status);
-	}
+}
 
 /*
  * lpaattach()
