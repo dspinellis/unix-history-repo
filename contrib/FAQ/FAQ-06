@@ -1,0 +1,107 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+onfiguration
+
+6.0.1:  When I compile a kernel with multi-port serial code, it tells me
+        that only the first port is probed and the rest skiped due to
+        interupt conflicts.  How do I fix this?
+
+The problem here is that FreeBSD has code built-in to keep the kernel from
+getting trashed due to hardware or software conflicts.  The way to fix this
+is to leave out the irq settings on other ports besides the first.  Here is
+a example:
+
+#
+# Multiport high-speed serial line - 16550 UARTS
+#
+device    sio2    at isa? port 0x2a0 tty irq 5 flags 0x501 vector siointr
+device    sio3    at isa? port 0x2a8 tty flags 0x501 vector siointr 
+device    sio4    at isa? port 0x2b0 tty flags 0x501 vector siointr
+device    sio5    at isa? port 0x2b8 tty flags 0x501 vector siointr
+
+You may also want to look at the multi-port serial FAQ in
+/usr/src/share/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
+
+
+6.0.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
+        when I look, I can't find it.
+
+You need to uncomment the following line in the generic config file (or add
+it to your config file) and recompile.
+
+controller      fdc0    at isa? port "IO_FD1" bio irq 6 drq 2 vector fdintr
+disk            fd0     at fdc0 drive 0
+disk            fd1     at fdc0 drive 1
+#tape           ft0     at fdc0 drive 2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+6.0.3:  Does FreeBSD support SYSV IPC, shared memory, etc?
+
+Yes, FreeBSD supports SYSV IPC.  This includes shared memory, messages and
+semaphores.  You need to add the following lines to your kernel config to
+enable them.
+
+options         SYSVSHM
+options         "SHMMAXPGS=64"          # 256Kb of sharable memory
+options         SYSVSEM                 # enable for semaphores
+options         SYSVMSG                 # enable for messaging
+
+Recompile and install.
+
+
+
+
+
+
+

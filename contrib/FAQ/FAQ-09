@@ -1,0 +1,20 @@
+9.0 Communications
+------------------
+
+9.0.1: When I do a set line in kermit it locks up, whats the problem?
+
+The problem here is that FreeBSD thinks it's talking to a incoming
+modem connection, and is waiting for carrier to come up on it before
+completing the open.  To disable modem control, do an:
+
+	stty -f /dev/ttyXX clocal
+
+(Where `ttyXX' is the tty port you're using).  If you use a given port
+only for outgoing connections, you may wish to put this command in
+your /etc/rc.local to avoid having to do it every time you reboot
+your system.
+
+
+NOTE:  Anyone wishing to submit a FAQ entry on how to get tip and cu working
+       would have it much appreciated!  We all use kermit over here! :-)
+

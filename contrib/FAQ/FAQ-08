@@ -1,0 +1,24 @@
+8.0 Networking
+--------------
+
+8.0.1:	Where can I get information booting FreeBSD `diskless', that is
+	booting and running a FreeBSD box from a server rather than having
+	a local disk?
+
+Look in the directory /src/sys/i386/netboot for the file netboot.doc.
+
+
+8.0.2:	I've heard that you can use a FreeBSD box as a dedicated network
+	router - is there any easy support for this?
+
+After a fashion, yes.  There is a standard `router floppy' that you can
+boot on a FreeBSD machine to configure it as a network router.  [>>>> put
+pointer to router floppy image here ]
+
+
+8.0.3:	Does FreeBSD support SLIP and PPP?
+
+Yes.  See the man pages for slattach and/or pppd if you're using FreeBSD
+to connect to another site.  If you're using FreeBSD as a server for other
+machines, look at the man page for `sliplogin'.
+
