@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"		@(#)ls.1	6.13 (Berkeley) %G%
+.\"		@(#)ls.1	6.14 (Berkeley) %G%
 .\"
 .TH LS 1 "%Q"
 .UC
@@ -11,7 +11,7 @@ ls \- list contents of directory
 .SH SYNOPSIS
 .B ls
 [
-.B \-1AaCcdFfgikLlqRrstu
+.B \-1AaCcdFfgikLlqRrsTtu
 ] [ file ... ]
 .br
 .SH DESCRIPTION
@@ -103,6 +103,15 @@ or oldest first as appropriate.
 .TP
 .B \-s
 Display the sizes of files and directories in 512-byte blocks.
+.TP
+.B \-T
+By default, file times less than six months in the past are
+displayed as month, day, hour and minute, and file times more
+than six months in the past are displayed as month, day and
+year.
+The \-T option causes
+.I ls
+to display all file times as month, day, hour, and minute.
 .TP
 .B \-t
 Sort by time modified (latest first) instead of

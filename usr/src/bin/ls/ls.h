@@ -7,7 +7,7 @@
  *
 %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.10 (Berkeley) %G%
+ *	@(#)ls.h	5.11 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
@@ -32,6 +32,7 @@ extern int f_group;		/* show group ownership of a file */
 extern int f_inode;		/* print inode */
 extern int f_kblocks;		/* print size in kilobytes */
 extern int f_longform;		/* long listing format */
+extern int f_sectime;		/* print the real time for all files */
 extern int f_singlecol;		/* use single column output */
 extern int f_size;		/* list size in short listing */
 extern int f_statustime;	/* use time of last mode change */
