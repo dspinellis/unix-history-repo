@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.14 1994/01/15 15:03:13 davidg Exp $
+ *	$Id: kern_execve.c,v 1.15 1994/02/04 06:58:11 wollman Exp $
  */
 
 #include "param.h"
@@ -270,12 +270,18 @@ interpret:
 	}
 	if ((attr.va_mode&VSUID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
-		p->p_cred->p_svuid = p->p_ucred->cr_uid = attr.va_uid;
+		p->p_ucred->cr_uid = attr.va_uid;
 	}
 	if ((attr.va_mode&VSGID) && (p->p_flag & STRC) == 0) {
 		p->p_ucred = crcopy(p->p_ucred);
-		p->p_cred->p_svgid = p->p_ucred->cr_groups[0] = attr.va_gid;
+		p->p_ucred->cr_groups[0] = attr.va_gid;
 	}
+
+	/*
+	 * Implement correct POSIX saved uid behavior.
+	 */
+	p->p_cred->p_svuid = p->p_ucred->cr_uid;
+	p->p_cred->p_svgid = p->p_ucred->cr_gid;
 
 	/* mark vnode pure text */
  	ndp->ni_vp->v_flag |= VTEXT;

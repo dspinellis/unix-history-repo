@@ -169,6 +169,8 @@
 #define	SYS_semsys	169
 #define	SYS_msgsys	170
 #define	SYS_shmsys	171
+#define	SYS_ntp_gettime	175
+#define	SYS_ntp_adjtime	176
 #define	SYS_vm_allocate	177
 #define	SYS_vm_deallocate	178
 #define	SYS_vm_inherit	179

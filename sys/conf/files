@@ -1,4 +1,4 @@
-# $Id: files,v 1.19 1994/01/24 05:45:09 rgrimes Exp $
+# $Id: files,v 1.20 1994/01/25 11:16:01 rgrimes Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -39,6 +39,7 @@ kern/kern_fork.c	standard
 kern/kern_kinfo.c	standard
 kern/kern_ktrace.c	standard
 kern/kern_malloc.c	standard
+kern/kern_ntptime.c	standard
 kern/kern_proc.c	standard
 kern/kern_prot.c	standard
 kern/kern_resource.c	standard

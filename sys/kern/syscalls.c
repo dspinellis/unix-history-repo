@@ -218,8 +218,8 @@ char *syscallnames[] = {
 	"#172",			/* 172 = nosys */
 	"#173",			/* 173 = nosys */
 	"#174",			/* 174 = nosys */
-	"#175",			/* 175 = nosys */
-	"#176",			/* 176 = nosys */
+	"ntp_gettime",			/* 175 = ntp_gettime */
+	"ntp_adjtime",			/* 176 = ntp_adjtime */
 #ifdef MACHVMCOMPAT
 	"vm_allocate",			/* 177 = vm_allocate */
 	"vm_deallocate",			/* 178 = vm_deallocate */

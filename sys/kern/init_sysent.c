@@ -174,6 +174,8 @@ int	msgsys();
 int	shmsys();
 #else
 #endif
+int	ntp_gettime();
+int	ntp_adjtime();
 #ifdef MACHVMCOMPAT
 int	svm_allocate();
 int	svm_deallocate();
@@ -453,8 +455,8 @@ struct sysent sysent[] = {
 	0, nosys,			/* 172 = nosys */
 	0, nosys,			/* 173 = nosys */
 	0, nosys,			/* 174 = nosys */
-	0, nosys,			/* 175 = nosys */
-	0, nosys,			/* 176 = nosys */
+	1, ntp_gettime,			/* 175 = ntp_gettime */
+	1, ntp_adjtime,			/* 176 = ntp_adjtime */
 #ifdef MACHVMCOMPAT
 	4, svm_allocate,			/* 177 = vm_allocate */
 	3, svm_deallocate,			/* 178 = vm_deallocate */
