@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1984 by Sun Microsystems, Inc.
  *
- *	@(#)portmap.c	5.1 (Berkeley) %G%
+ *	@(#)portmap.c	5.2 (Berkeley) %G%
  */
 
 /* @(#)portmap.c	2.3 88/08/11 4.0 RPCSRC */
@@ -46,47 +46,55 @@ static	char sccsid[] = "@(#)portmap.c 1.32 87/08/06 Copyr 1984 Sun Micro";
 #include <rpc/rpc.h>
 #include <rpc/pmap_prot.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #include <sys/signal.h>
+#include <sys/resource.h>
 
-char *malloc();
 int reg_service();
 void reap();
 struct pmaplist *pmaplist;
-static int debugging = 0;
+int debugging = 0;
+extern int errno;
 
-main()
+main(argc, argv)
+	int argc;
+	char **argv;
 {
 	SVCXPRT *xprt;
-	int sock, pid, t;
+	int sock, c;
 	struct sockaddr_in addr;
 	int len = sizeof(struct sockaddr_in);
 	register struct pmaplist *pml;
 
-#ifndef DEBUG
-	pid = fork();
-	if (pid < 0) {
-		perror("portmap: fork");
+	while ((c = getopt(argc, argv, "d")) != EOF) {
+		switch (c) {
+
+		case 'd':
+			debugging = 1;
+			break;
+
+		default:
+			(void) fprintf(stderr, "usage: %s [-d]\n", argv[0]);
+			exit(1);
+		}
+	}
+
+	if (!debugging && daemon(0, 0)) {
+		(void) fprintf(stderr, "portmap: fork: %s", strerror(errno));
 		exit(1);
 	}
-	if (pid != 0)
-		exit(0);
-	for (t = 0; t < 20; t++)
-		close(t);
- 	open("/", 0);
- 	dup2(0, 1);
- 	dup2(0, 2);
- 	t = open("/dev/tty", 2);
- 	if (t >= 0) {
- 		ioctl(t, TIOCNOTTY, (char *)0);
- 		close(t);
- 	}
-#endif
+
+	openlog("portmap", debugging ? LOG_PID | LOG_PERROR : LOG_PID,
+	    LOG_DAEMON);
+
 	if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		perror("portmap cannot create socket");
+		syslog(LOG_ERR, "cannot create udp socket: %m");
 		exit(1);
 	}
 
@@ -94,12 +102,12 @@ main()
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(PMAPPORT);
 	if (bind(sock, (struct sockaddr *)&addr, len) != 0) {
-		perror("portmap cannot bind");
+		syslog(LOG_ERR, "cannot bind udp: %m");
 		exit(1);
 	}
 
 	if ((xprt = svcudp_create(sock)) == (SVCXPRT *)NULL) {
-		fprintf(stderr, "couldn't do udp_create\n");
+		syslog(LOG_ERR, "couldn't do udp_create");
 		exit(1);
 	}
 	/* make an entry for ourself */
@@ -112,16 +120,16 @@ main()
 	pmaplist = pml;
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-		perror("portmap cannot create socket");
+		syslog(LOG_ERR, "cannot create tcp socket: %m");
 		exit(1);
 	}
 	if (bind(sock, (struct sockaddr *)&addr, len) != 0) {
-		perror("portmap cannot bind");
+		syslog(LOG_ERR, "cannot bind udp: %m");
 		exit(1);
 	}
 	if ((xprt = svctcp_create(sock, RPCSMALLMSGSIZE, RPCSMALLMSGSIZE))
 	    == (SVCXPRT *)NULL) {
-		fprintf(stderr, "couldn't do tcp_create\n");
+		syslog(LOG_ERR, "couldn't do tcp_create");
 		exit(1);
 	}
 	/* make an entry for ourself */
@@ -137,14 +145,24 @@ main()
 
 	(void)signal(SIGCHLD, reap);
 	svc_run();
-	fprintf(stderr, "run_svc returned unexpectedly\n");
+	syslog(LOG_ERR, "run_svc returned unexpectedly");
 	abort();
 }
 
+#ifndef lint
+/* need to override perror calls in rpc library */
+void
+perror(what)
+	char *what;
+{
+
+	syslog(LOG_ERR, "%s: %m", what);
+}
+#endif
+
 static struct pmaplist *
 find_service(prog, vers, prot)
-	u_long prog;
-	u_long vers;
+	u_long prog, vers, prot;
 {
 	register struct pmaplist *hit = NULL;
 	register struct pmaplist *pml;
@@ -172,16 +190,15 @@ reg_service(rqstp, xprt)
 	int ans, port;
 	caddr_t t;
 	
-#ifdef DEBUG
-	fprintf(stderr, "server: about do a switch\n");
-#endif
+	if (debugging)
+		(void) fprintf(stderr, "server: about do a switch\n");
 	switch (rqstp->rq_proc) {
 
 	case PMAPPROC_NULL:
 		/*
 		 * Null proc call
 		 */
-		if ((!svc_sendreply(xprt, xdr_void, NULL)) && debugging) {
+		if (!svc_sendreply(xprt, xdr_void, (caddr_t)0) && debugging) {
 			abort();
 		}
 		break;
@@ -228,7 +245,7 @@ reg_service(rqstp, xprt)
 		done:
 			if ((!svc_sendreply(xprt, xdr_long, (caddr_t)&ans)) &&
 			    debugging) {
-				fprintf(stderr, "svc_sendreply\n");
+				(void) fprintf(stderr, "svc_sendreply\n");
 				abort();
 			}
 		}
@@ -262,7 +279,7 @@ reg_service(rqstp, xprt)
 			}
 			if ((!svc_sendreply(xprt, xdr_long, (caddr_t)&ans)) &&
 			    debugging) {
-				fprintf(stderr, "svc_sendreply\n");
+				(void) fprintf(stderr, "svc_sendreply\n");
 				abort();
 			}
 		}
@@ -282,7 +299,7 @@ reg_service(rqstp, xprt)
 				port = 0;
 			if ((!svc_sendreply(xprt, xdr_long, (caddr_t)&port)) &&
 			    debugging) {
-				fprintf(stderr, "svc_sendreply\n");
+				(void) fprintf(stderr, "svc_sendreply\n");
 				abort();
 			}
 		}
@@ -297,7 +314,7 @@ reg_service(rqstp, xprt)
 		else {
 			if ((!svc_sendreply(xprt, xdr_pmaplist,
 			    (caddr_t)&pmaplist)) && debugging) {
-				fprintf(stderr, "svc_sendreply\n");
+				(void) fprintf(stderr, "svc_sendreply\n");
 				abort();
 			}
 		}
@@ -432,7 +449,7 @@ callit(rqstp, xprt)
 	struct pmaplist *pml;
 	u_short port;
 	struct sockaddr_in me;
-	int pid, socket = -1;
+	int pid, so = -1;
 	CLIENT *client;
 	struct authunix_parms *au = (struct authunix_parms *)rqstp->rq_clntcred;
 	struct timeval timeout;
@@ -442,23 +459,24 @@ callit(rqstp, xprt)
 	timeout.tv_usec = 0;
 	a.rmt_args.args = buf;
 	if (!svc_getargs(xprt, xdr_rmtcall_args, &a))
-	    return;
-	if ((pml = find_service(a.rmt_prog, a.rmt_vers, IPPROTO_UDP)) == NULL)
-	    return;
+		return;
+	if ((pml = find_service(a.rmt_prog, a.rmt_vers,
+	    (u_long)IPPROTO_UDP)) == NULL)
+		return;
 	/*
 	 * fork a child to do the work.  Parent immediately returns.
 	 * Child exits upon completion.
 	 */
 	if ((pid = fork()) != 0) {
-		if (debugging && (pid < 0)) {
-			fprintf(stderr, "portmap CALLIT: cannot fork.\n");
-		}
+		if (pid < 0)
+			syslog(LOG_ERR, "CALLIT (prog %lu): fork: %m",
+			    a.rmt_prog);
 		return;
 	}
 	port = pml->pml_map.pm_port;
 	get_myaddress(&me);
 	me.sin_port = htons(port);
-	client = clntudp_create(&me, a.rmt_prog, a.rmt_vers, timeout, &socket);
+	client = clntudp_create(&me, a.rmt_prog, a.rmt_vers, timeout, &so);
 	if (client != (CLIENT *)NULL) {
 		if (rqstp->rq_cred.oa_flavor == AUTH_UNIX) {
 			client->cl_auth = authunix_create(au->aup_machname,
@@ -467,17 +485,17 @@ callit(rqstp, xprt)
 		a.rmt_port = (u_long)port;
 		if (clnt_call(client, a.rmt_proc, xdr_opaque_parms, &a,
 		    xdr_len_opaque_parms, &a, timeout) == RPC_SUCCESS) {
-			svc_sendreply(xprt, xdr_rmtcall_result, &a);
+			svc_sendreply(xprt, xdr_rmtcall_result, (caddr_t)&a);
 		}
 		AUTH_DESTROY(client->cl_auth);
 		clnt_destroy(client);
 	}
-	(void)close(socket);
+	(void)close(so);
 	exit(0);
 }
 
 void
 reap()
 {
-	while (wait3(NULL, WNOHANG, NULL) > 0);
+	while (wait3((int *)NULL, WNOHANG, (struct rusage *)NULL) > 0);
 }

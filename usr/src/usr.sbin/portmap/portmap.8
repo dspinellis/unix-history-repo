@@ -4,18 +4,21 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)portmap.8	5.1 (Berkeley) %G%
+.\"	@(#)portmap.8	5.2 (Berkeley) %G%
 .\"
 .TH PORTMAP 8 ""
 .UC 6
 .SH NAME
 portmap \- DARPA port to RPC program number mapper
 .SH SYNOPSIS
-.B /usr/etc/rpc.portmap
+.B portmap
+[
+.B \-d
+]
 .SH DESCRIPTION
 .IX  "portmap command"  ""  "\fLportmap\fP \(em DARPA to RPC mapper"
 .IX  DARPA "to RPC mapper \(em \fLportmap\fP"
-.B portmap
+.B Portmap
 is a server that converts
 .SM RPC
 program numbers into
@@ -24,7 +27,7 @@ protocol port numbers.
 It must be running in order to make
 .SM RPC
 calls.
-.LP
+.PP
 When an
 .SM RPC
 server is started, it will tell
@@ -41,20 +44,30 @@ on the server machine to determine
 the port number where
 .SM RPC
 packets should be sent.
-.LP
-Normally, standard
+.PP
+.B Portmap
+must be started before any
 .SM RPC
-servers are started by
-.BR inetd (8C),
-so
+servers are invoked.
+.PP
+Normally
 .B portmap
-must be started before
-.B inetd
-is invoked.
+forks and dissociates itself from the terminal
+like any other daemon.
+.B Portmap
+then logs errors using
+.IR syslog (3).
+The
+.B \-d
+(debug) option prevents
+.B portmap
+from running as a daemon,
+and causes errors and debugging information
+to be printed to the standard error output.
 .SH "SEE ALSO"
-.BR inetd.conf (5),
-.BR rpcinfo (8),
-.BR inetd (8)
+inetd.conf(5),
+rpcinfo(8),
+inetd(8)
 .SH BUGS
 If
 .B portmap
