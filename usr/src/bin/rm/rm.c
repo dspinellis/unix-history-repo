@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.14 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.15 (Berkeley) %G%";
 
 /*
  * rm - for ReMoving files, directories & trees.
@@ -97,23 +97,27 @@ rm(arg, level)
 		pathp = &path;
 	}
 	if (lstat(arg, &buf)) {
-		if (!fflg)
+		if (!fflg) {
 			error("nonexistent");
-		errcode++;
+			errcode++;
+		}
 		return (0);		/* error */
 	}
 	if ((buf.st_mode&S_IFMT) == S_IFDIR) {
 		if (!rflg) {
-			error("directory");
-			errcode++;
+			if (!fflg) {
+				error("directory");
+				errcode++;
+			}
 			return (0);
 		}
 		if (access(arg, R_OK|W_OK|X_OK) != 0) {
 			if (rmdir(arg) == 0)
 				return (1);	/* salvaged: removed empty dir */
-			if (!fflg)
+			if (!fflg) {
 				error("not changed");
-			errcode++;
+				errcode++;
+			}
 			return (0);		/* error */
 		}
 		if (iflg && level != 0) {
@@ -121,9 +125,10 @@ rm(arg, level)
 				return (0);	/* didn't remove everything */
 		}
 		if (chdir(arg) < 0 || (dirp = opendir(".")) == NULL) {
-			if (!fflg)
+			if (!fflg) {
 				error("cannot read?");
-			errcode++;
+				errcode++;
+			}
 			return (0);
 		}
 		nambuf.name = name;
@@ -141,9 +146,10 @@ rm(arg, level)
 			closedir(dirp);
 			ok = rm(name, level + 1);
 			if ((dirp = opendir(".")) == NULL) {
-				if (!fflg)
+				if (!fflg) {
 					error("cannot read?");
-				errcode++;
+					errcode++;
+				}
 				break;
 			}
 			/* pick up where we left off */
@@ -164,9 +170,10 @@ rm(arg, level)
 		pathp = pp;
 		pathp->next = NULL;
 		if (chdir("..") < 0) {
-			if (!fflg)
+			if (!fflg) {
 				error("cannot cd to '..'?");
-			errcode++;
+				errcode++;
+			}
 			return (0);
 		}
 		if (iflg) {
@@ -174,9 +181,10 @@ rm(arg, level)
 				return (0);
 		}
 		if (rmdir(arg) < 0) {
-			if (!fflg || iflg)
+			if (!fflg || iflg) {
 				error("not removed");
-			errcode++;
+				errcode++;
+			}
 			return (0);
 		}
 		return (1);
@@ -194,9 +202,10 @@ rm(arg, level)
 		}
 	}
 	if (unlink(arg) < 0) {
-		if (!fflg || iflg)
+		if (!fflg || iflg) {
 			error("not removed");
-		errcode++;
+			errcode++;
+		}
 		return (0);
 	}
 	return (1);
