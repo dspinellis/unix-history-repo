@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.2	%G%	*/
+/*	fs.h	1.3	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -213,5 +213,5 @@ struct	cg {
 #ifdef KERNEL
 struct	fs *getfs();
 int inside[], around[];
-char fragtbl[];
+unsigned char fragtbl[];
 #endif
