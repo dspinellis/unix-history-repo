@@ -1,4 +1,4 @@
-$Id: options.texi,v 1.1 1994/03/30 20:36:34 wollman Exp $
+$Id: options.texi,v 1.2 1994/04/03 18:38:48 wollman Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -422,12 +422,21 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      glue logic, including DMA and autoconfiguration.
 
 `controller aha0 at isa? port "IO_AHA0" bio irq 11 drq 5 vector ahaintr'
+`options "TUNE_1542"'
      The `aha' device supports the Adaptec 154x series of SCSI
      controllers, and attempts to support other vendors' controllers
      which claim compatibility with the Adaptec 1542, such as the
      BusLogic 545.  This device is included in the `GENERICAH'
      distribution kernel.  The `scbus' device (*note SCSI::.) is a
      prerequisite for this device.
+
+     Some older versions of this code would attempt to set the
+     controller's bus access speed to the fastest possible without
+     losing data; we have found that this makes the driver unusable for
+     some users.  If you wish to enable this optimization, or if you
+     suspect that your SCSI transfers are running slower than they
+     should, then you can use the `TUNE_1542' option to enable
+     bus-timing detection.
 
 `controller bt0 at isa? port "IO_BT0" bio irq 12 vector btintr'
      This device supports the Bustek 742 SCSI controller.  It is
