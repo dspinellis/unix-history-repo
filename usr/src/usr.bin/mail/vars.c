@@ -8,7 +8,7 @@
  * Variable handling stuff.
  */
 
-static char *SccsId = "@(#)vars.c	2.3 %G%";
+static char *SccsId = "@(#)vars.c	2.4 %G%";
 
 /*
  * Assign a value to a variable.
@@ -149,7 +149,7 @@ printgroup(name)
 hash(name)
 	char name[];
 {
-	register int h;
+	register unsigned h;
 	register char *cp;
 
 	for (cp = name, h = 0; *cp; h = (h << 2) + *cp++)
