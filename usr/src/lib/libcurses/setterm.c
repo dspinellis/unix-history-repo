@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -134,7 +134,8 @@ reg char	*type; {
 
 	PC = _PC ? _PC[0] : FALSE;
 	aoftspace = _tspace;
-	strcpy(ttytype, longname(genbuf, type));
+	strncpy(ttytype, longname(genbuf, type), sizeof(ttytype) - 1);
+	ttytype[sizeof(ttytype) - 1] = '\0';
 	if (unknown)
 		return ERR;
 	return OK;
