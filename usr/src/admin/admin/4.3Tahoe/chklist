@@ -1,0 +1,49 @@
+.so /a/staff/anne/HEADERS 
+.NH
+.ND
+.sp 3
+.ce 2
+\fB\s18Checklist for Receiving 4.3BSD
+.sp 2
+\s16(Tahoe Release)
+.sp 2
+.LP 
+After completing the required licensing procedures for the standard 
+release of 4.3BSD,
+the following items are needed by the Computer Systems Research Group 
+and the University of California to complete the purchase of 
+the Tahoe version of
+4.3BSD:
+.sp 2
+.IP "_______1." 15
+\fBTWO\fR completed copies of the appropriate Addendum 
+which are included in this information packet. 
+These should be signed by the office holder who signed your 4.3BSD license
+agreement and returned to us with original signatures.
+(One completed copy will be returned after it is signed by a representative
+of The Regents of the University of California).
+.sp 2
+.IP "_______2." 15
+A \fBPREPAYMENT\fR check for  \fIeither\fR  U.S. $400.00 for 
+those ordering 6250bpi tape 
+density  \fIor\fR  U.S. $450.00 for 1600bpi tape orders.  
+\fB(WE DO NOT INVOICE!)\fR
+Make the check payable to 
+``The Regents of the University of California.''
+.sp 2
+.IP "_______3." 15
+A completed Site Information Form and Equipment List. 
+.sp 4
+.IP "Send all the documents to:" 29
+Pauline Schwartz
+.br
+Distribution Coordinator
+.br
+Computer Systems Research Group
+.br
+Computer Science Division, EECS
+.br
+University of California
+.br
+Berkeley, CA   94720
+
