@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)build.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)build.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,6 +37,7 @@ typedef struct _rlib {
 RLIB *rhead, **pnext;
 
 FILE *fp;
+static void rexec(), symobj();
 
 build()
 {
@@ -88,7 +89,7 @@ long tsymlen;				/* total string length */
  *	Read the exec structure; ignore any files that don't look
  *	exactly right.
  */
-static
+static void
 rexec(rfd, wfd)
 	register int rfd;
 	int wfd;
@@ -186,7 +187,7 @@ bad1:	(void)lseek(rfd, (off_t)r_off, SEEK_SET);
  *	Write the symbol table into the archive, computing offsets as
  *	writing.
  */
-static
+static void
 symobj()
 {
 	register RLIB *rp;
@@ -212,7 +213,7 @@ symobj()
 	/* Put out the ranlib archive file header. */
 #define	DEFMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
 	(void)sprintf(hb, HDR2, RANLIBMAG, 0L, getuid(), getgid(),
-	    DEFMODE & ~umask(), ransize, ARFMAG);
+	    DEFMODE & ~umask(0), ransize, ARFMAG);
 	if (!fwrite(hb, sizeof(struct ar_hdr), 1, fp))
 		error(tname);
 
