@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.1 (Berkeley) %G%
+.\"	@(#)intro.3	6.2 (Berkeley) %G%
 .\"
 .TH INTRO 3 ""
 .UC 4
@@ -109,13 +109,14 @@ The values of EDOM and ERANGE are defined in the include file
 .ta \w'getprotobynumber'u+4n +\w'getprotoent'u+4n
 .sp 5p
 abort	abort.3	generate a fault
-abort	abort.3f	terminate abruptly with memory image
+abort	abort.3f	abnormal termination
 abs	abs.3	integer absolute value
 access	access.3f	determine accessability of a file
 acos	sin.3m	trigonometric functions
 alarm	alarm.3c	schedule signal after specified time
 alarm	alarm.3f	execute a subroutine after a specified time
 alloca	malloc.3	memory allocator
+arc	plot.3f	f77 interface to plot(3x)
 arc	plot.3x	graphics interface
 asctime	ctime.3	convert date and time to ASCII
 asin	sin.3m	trigonometric functions
@@ -127,19 +128,23 @@ atoi	atof.3	convert ASCII to numbers
 atol	atof.3	convert ASCII to numbers
 bcmp	bstring.3	bit and byte string operations
 bcopy	bstring.3	bit and byte string operations
-bessel	bessel.3f	of two kinds for integer orders
+bessel	bessel.3f	bessel functions of two kinds for integer orders
 bit	bit.3f	and, or, xor, not, rshift, lshift bitwise functions
+box	plot.3f	f77 interface to plot(3x)
 bzero	bstring.3	bit and byte string operations
 cabs	hypot.3m	Euclidean distance
 calloc	malloc.3	memory allocator
 ceil	floor.3m	absolute value, floor, ceiling functions
 chdir	chdir.3f	change default directory
 chmod	chmod.3f	change mode of a file
+circle	plot.3f	f77 interface to plot(3x)
 circle	plot.3x	graphics interface
 clearerr	ferror.3s	stream status inquiries
 closedir	directory.3	directory operations
 closelog	syslog.3	control system log
 closepl	plot.3x	graphics interface
+clospl	plot.3f	f77 interface to plot(3x)
+cont	plot.3f	f77 interface to plot(3x)
 cont	plot.3x	graphics interface
 cos	sin.3m	trigonometric functions
 cosh	sinh.3m	hyperbolic functions
@@ -151,10 +156,9 @@ dbminit	dbm.3x	data base subroutines
 delete	dbm.3x	data base subroutines
 dffrac	flmin.3f	return extreme values
 dflmax	flmin.3f	return extreme values
-dflmax	range.3f	return extreme values
 dflmin	flmin.3f	return extreme values
-dflmin	range.3f	return extreme values
 drand	rand.3f	return random values
+drandm	random.3f	better random number generator
 dtime	etime.3f	return elapsed execution time
 ecvt	ecvt.3	output conversion
 edata	end.3	last locations in program
@@ -168,6 +172,7 @@ endprotoent	getprotoent.3n	get protocol entry
 endpwent	getpwent.3	get password file entry
 endservent	getservent.3n	get service entry
 environ	execl.3	execute a file
+erase	plot.3f	f77 interface to plot(3x)
 erase	plot.3x	graphics interface
 etext	end.3	last locations in program
 etime	etime.3f	return elapsed execution time
@@ -183,6 +188,7 @@ exit	exit.3	terminate a process after flushing any pending output
 exit	exit.3f	terminate process with status
 exp	exp.3m	exponential, logarithm, power, square root
 fabs	floor.3m	absolute value, floor, ceiling functions
+falloc	malloc.3f	memory allocator
 fclose	fclose.3s	close or flush a stream
 fcvt	ecvt.3	output conversion
 fdate	fdate.3f	return date and time in an ASCII string
@@ -198,9 +204,7 @@ fgets	gets.3s	get a string from a stream
 fileno	ferror.3s	stream status inquiries
 firstkey	dbm.3x	data base subroutines
 flmax	flmin.3f	return extreme values
-flmax	range.3f	return extreme values
 flmin	flmin.3f	return extreme values
-flmin	range.3f	return extreme values
 floor	floor.3m	absolute value, floor, ceiling functions
 flush	flush.3f	flush output to a logical unit
 fopen	fopen.3s	open a stream
@@ -212,6 +216,7 @@ fputc	putc.3s	put character or word on a stream
 fputs	puts.3s	put a string on a stream
 fread	fread.3s	buffered binary input/output
 free	malloc.3	memory allocator
+free	malloc.3f	memory allocator
 frexp	frexp.3	split into mantissa and exponent
 fscanf	scanf.3s	formatted input conversion
 fseek	fseek.3f	reposition a file on a logical unit
@@ -284,10 +289,10 @@ inet_network	inet.3n	Internet address manipulation routines
 initgroups	initgroups.3x	initialize group access list
 initstate	random.3	better random number generator
 inmax	flmin.3f	return extreme values
-inmax	range.3f	return extreme values
 insque	insque.3	insert/remove element from a queue
 ioinit	ioinit.3f	change f77 I/O initialization
 irand	rand.3f	return random values
+irandm	random.3f	better random number generator
 isalnum	ctype.3	character classification macros
 isalpha	ctype.3	character classification macros
 isascii	ctype.3	character classification macros
@@ -305,11 +310,14 @@ j0	j0.3m	bessel functions
 j1	j0.3m	bessel functions
 jn	j0.3m	bessel functions
 kill	kill.3f	send a signal to a process
+label	plot.3f	f77 interface to plot(3x)
 label	plot.3x	graphics interface
 ldexp	frexp.3	split into mantissa and exponent
 len	index.3f	tell about character objects
 lib2648	lib2648.3x	subroutines for the HP 2648 graphics terminal
+line	plot.3f	f77 interface to plot(3x)
 line	plot.3x	graphics interface
+linemd	plot.3f	f77 interface to plot(3x)
 linemod	plot.3x	graphics interface
 link	link.3f	make a link to an existing file
 lnblnk	index.3f	tell about character objects
@@ -322,11 +330,13 @@ longjmp	setjmp.3	non-local goto
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
 malloc	malloc.3	memory allocator
+malloc	malloc.3f	memory allocator
 mktemp	mktemp.3	make a unique file name
 modf	frexp.3	split into mantissa and exponent
 moncontrol	monitor.3	prepare execution profile
 monitor	monitor.3	prepare execution profile
 monstartup	monitor.3	prepare execution profile
+move	plot.3f	f77 interface to plot(3x)
 move	plot.3x	graphics interface
 nextkey	dbm.3x	data base subroutines
 nice	nice.3c	set program priority
@@ -335,11 +345,13 @@ ntohl	byteorder.3n	convert values between host and network byte order
 ntohs	byteorder.3n	convert values between host and network byte order
 opendir	directory.3	directory operations
 openlog	syslog.3	control system log
+openpl	plot.3f	f77 interface to plot(3x)
 openpl	plot.3x	graphics interface
 pause	pause.3c	stop until signal
 pclose	popen.3	initiate I/O to/from a process
 perror	perror.3	system error messages
 perror	perror.3f	get system error messages
+point	plot.3f	f77 interface to plot(3x)
 point	plot.3x	graphics interface
 popen	popen.3	initiate I/O to/from a process
 pow	exp.3m	exponential, logarithm, power, square root
@@ -355,6 +367,7 @@ qsort	qsort.3f	quick sort
 rand	rand.3c	random number generator
 rand	rand.3f	return random values
 random	random.3	better random number generator
+random	random.3f	better random number generator
 rcmd	rcmd.3x	routines for returning a stream to a remote command
 re_comp	regex.3	regular expression handler
 re_exec	regex.3	regular expression handler
@@ -398,6 +411,7 @@ sin	sin.3m	trigonometric functions
 sinh	sinh.3m	hyperbolic functions
 sleep	sleep.3	suspend execution for interval
 sleep	sleep.3f	suspend execution for an interval
+space	plot.3f	f77 interface to plot(3x)
 space	plot.3x	graphics interface
 sprintf	printf.3s	formatted output conversion
 sqrt	exp.3m	exponential, logarithm, power, square root
