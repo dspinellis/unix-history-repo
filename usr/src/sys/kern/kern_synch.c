@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.11 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.12 (Berkeley) %G%
  */
 
 #include "machine/pte.h"
@@ -211,6 +211,17 @@ struct slpque {
 } slpque[SQSIZE];
 
 /*
+ * During autoconfiguration or after a panic, a sleep will simply
+ * lower the priority briefly to allow interrupts, then return.
+ * The priority to be used (safepri) is machine-dependent, thus this
+ * value is initialized and maintained in the machine-dependent layers.
+ * This priority will typically be 0, or the lowest priority
+ * that is safe for use on the interrupt stack; it can be made
+ * higher to block network software interrupts after panics.
+ */
+int safepri;
+
+/*
  * General sleep call.
  * Suspends current process until a wakeup is made on chan.
  * The process will then be made runnable with priority pri.
@@ -245,7 +256,7 @@ tsleep(chan, pri, wmesg, timo)
 		 * don't run any other procs or panic below,
 		 * in case this is the idle process and already asleep.
 		 */
-		(void) spl0();
+		splx(safepri);
 		splx(s);
 		return (0);
 	}
@@ -263,43 +274,44 @@ tsleep(chan, pri, wmesg, timo)
 	else
 		*qp->sq_tailp = rp;
 	*(qp->sq_tailp = &rp->p_link) = 0;
+	if (timo)
+		timeout(endtsleep, (caddr_t)rp, timo);
 	/*
-	 * If we stop in CURSIG/issig(), wakeup may already
-	 * have happened when we return.
-	 * rp->p_wchan will then be 0.
+	 * If we stop in CURSIG/issig(), a wakeup or a SIGCONT
+	 * (or both) could occur while we were stopped.
+	 * A SIGCONT would cause us to be marked as SSLEEP
+	 * without resuming us, thus we must be ready for sleep
+	 * when CURSIG is called.  If the wakeup happens while we're
+	 * stopped, rp->p_wchan will be 0 upon return from CURSIG.
 	 */
 	if (catch) {
+		rp->p_flag |= SSINTR;
 		if (sig = CURSIG(rp)) {
 			if (rp->p_wchan)
 				unsleep(rp);
 			rp->p_stat = SRUN;
-			splx(s);
-			if (u.u_sigintr & sigmask(sig))
-				return (EINTR);
-			return (ERESTART);
+			goto resume;
 		}
 		if (rp->p_wchan == 0) {
-			splx(s);
-			return (0);
+			catch = 0;
+			goto resume;
 		}
-		rp->p_flag |= SSINTR;
 	}
 	rp->p_stat = SSLEEP;
-	if (timo)
-		timeout(endtsleep, (caddr_t)rp, timo);
 	(void) spl0();
 	u.u_ru.ru_nvcsw++;
 	swtch();
+resume:
 	curpri = rp->p_usrpri;
 	splx(s);
 	rp->p_flag &= ~SSINTR;
 	if (rp->p_flag & STIMO) {
 		rp->p_flag &= ~STIMO;
-		return (EWOULDBLOCK);
-	}
-	if (timo)
+		if (catch == 0 || sig == 0)
+			return (EWOULDBLOCK);
+	} else if (timo)
 		untimeout(endtsleep, (caddr_t)rp);
-	if (catch && (sig = CURSIG(rp))) {
+	if (catch && (sig != 0 || (sig = CURSIG(rp)))) {
 		if (u.u_sigintr & sigmask(sig))
 			return (EINTR);
 		return (ERESTART);
@@ -356,7 +368,7 @@ sleep(chan, pri)
 		 * don't run any other procs or panic below,
 		 * in case this is the idle process and already asleep.
 		 */
-		(void) spl0();
+		splx(safepri);
 		splx(s);
 		return;
 	}
