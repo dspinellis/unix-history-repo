@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.9 83/08/26";
+static	char *sccsid = "@(#)cmd1.c	3.10 83/08/31";
 #endif
 
 #include "defs.h"
@@ -17,14 +17,13 @@ c_window()
 	row = 1;
 	wwadd(boxwin, framewin->ww_back);
 	for (;;) {
-		wwunbox(boxwin);
 		wwbox(boxwin, row - 1, col - 1, 3, 3);
 		wwsetcursor(row, col);
 		while (bpeekc() < 0)
 			bread();
-		switch (getpos(&row, &col, 1, 0)) {
+		wwunbox(boxwin);
+		switch (getpos(&row, &col, 1, 0, wwnrow - 1, wwncol - 1)) {
 		case -1:
-			wwunbox(boxwin);
 			wwdelete(boxwin);
 			if (!terse)
 				(void) wwputs("\r\nCancelled.  ", cmdwin);
@@ -41,16 +40,16 @@ c_window()
 	xcol = col;
 	xrow = row;
 	for (;;) {
-		wwunbox(boxwin);
 		wwbox(boxwin, row - 1, col - 1,
 			xrow - row + 3, xcol - col + 3);
 		wwsetcursor(xrow, xcol);
 		wwflush();
 		while (bpeekc() < 0)
 			bread();
-		switch (getpos(&xrow, &xcol, row, col)) {
+		wwunbox(boxwin);
+		switch (getpos(&xrow, &xcol, row, col, wwnrow - 1, wwncol - 1))
+		{
 		case -1:
-			wwunbox(boxwin);
 			wwdelete(boxwin);
 			if (!terse)
 				(void) wwputs("\r\nCancelled.  ", cmdwin);
@@ -62,7 +61,6 @@ c_window()
 		}
 		break;
 	}
-	wwunbox(boxwin);
 	wwdelete(boxwin);
 	if (!terse)
 		(void) wwputs("\r\n", cmdwin);
@@ -83,8 +81,10 @@ findid()
 	return i;
 }
 
-getpos(row, col, minrow, mincol)
-register int *row, *col, minrow, mincol;
+getpos(row, col, minrow, mincol, maxrow, maxcol)
+register int *row, *col;
+int minrow, mincol;
+int maxrow, maxcol;
 {
 	static int scount = 0;
 	int count;
@@ -108,18 +108,18 @@ register int *row, *col, minrow, mincol;
 			*col = mincol;
 			break;
 		case 'l':
-			if ((*col += count) >= wwncol)
-				*col = wwncol - 1;
+			if ((*col += count) > maxcol)
+				*col = maxcol;
 			break;
 		case 'L':
-			*col = wwncol - 1;
+			*col = maxcol;
 			break;
 		case 'j':
-			if ((*row += count) >= wwnrow)
-				*row = wwnrow - 1;
+			if ((*row += count) > maxrow)
+				*row = maxrow;
 			break;
 		case 'J':
-			*row = wwnrow - 1;
+			*row = maxrow;
 			break;
 		case 'k':
 			if ((*row -= count) < minrow)
