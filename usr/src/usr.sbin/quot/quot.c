@@ -12,11 +12,13 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/mount.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 
@@ -137,6 +139,10 @@ check(file, fsdir)
 	daddr_t iblk;
 	long dev_bsize;
 	int c, fd;
+	struct stat sb;
+	struct statfs sfs;
+#define FNBSZ	128
+	char filebuf[FNBSZ];
 
 	/*
 	 * Initialize tables between checks; because of the qsort done in
@@ -148,6 +154,51 @@ check(file, fsdir)
 	for (dp = duhash; dp < &duhash[DUHASH]; dp++)
 		*dp = 0;
 	ndu = 0;
+	/*
+	 * Make sure "file" refers to a char special file.
+	 * Convert if necessary.  Also make sure we have an fsdir.
+	 */
+	if (stat(file, &sb) < 0) {
+		fprintf(stderr, "quot: ");
+		perror(file);
+		return (-1);
+	}
+	/*
+	 * User specified "file".
+	 * Attempt to come up with the appropriate char special file
+	 * and a mount point.
+	 */
+	if (fsdir == NULL) {
+		register struct fstab *fs;
+		int len = strlen(_PATH_DEV);
+
+		strcpy(filebuf, _PATH_DEV);
+		if (S_ISCHR(sb.st_mode)) {
+			if (strncmp(_PATH_DEV, file, len) == 0 &&
+			    file[len] == 'r') {
+				strncpy(&filebuf[len], &file[len+1], FNBSZ-6);
+				fs = getfsspec(filebuf);
+				if (fs != NULL)
+					fsdir = fs->fs_file;
+			}
+		} else {
+			if (S_ISBLK(sb.st_mode)) {
+				fs = getfsspec(file);
+				if (fs != NULL)
+					fsdir = fs->fs_file;
+			} else {
+				if (statfs(file, &sfs) == 0) {
+					file = sfs.f_mntfromname;
+					fsdir = sfs.f_mntonname;
+				}
+			}
+			if (strncmp(_PATH_DEV, file, len) == 0) {
+				filebuf[len] = 'r';
+				strncpy(&filebuf[len+1], &file[len], FNBSZ-7);
+				file = filebuf;
+			}
+		}
+	}
 	fd = open(file, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "quot: ");
