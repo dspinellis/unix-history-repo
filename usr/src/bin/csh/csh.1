@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)csh.1	6.18 (Berkeley) %G%
+.\"     @(#)csh.1	6.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CSH 1
@@ -519,7 +519,11 @@ Remove all leading pathname components, leaving the tail.
 .It \&&
 Repeat the previous substitution.
 .It g
-Apply the change globally, prefixing the above, e.g. `g&'.
+Apply the change once on each word, prefixing the above, e.g. `g&'.
+.It a
+Apply the change as many times as possible on a single word, prefixing
+the above. It can be used together with `g' to apply a substitution 
+globally.
 .It p
 Print the new command line but do not execute it.
 .It q
@@ -746,6 +750,9 @@ Substitutes the string `1' if name is set, `0' if it is not.
 Substitutes `1' if the current input filename is known, `0' if it is not.
 .It $$
 Substitute the (decimal) process number of the (parent) shell.
+.It $!
+Substiture the (decimal) process number of the last background process
+started by this shell.
 .It $<
 Substitutes a line from the standard
 input, with no further interpretation thereafter.  It can be used
@@ -1418,6 +1425,10 @@ being ignored, all forms of
 .Ic onintr
 have no meaning and interrupts
 continue to be ignored by the shell and all invoked commands.
+Finally
+.Ic onintr 
+statemements are ignored in the system startup files where interrupts
+are disabled (/etc/csh.cshrc, /etc/csh.login).
 .Pp
 .It Ic popd
 .It Ic popd Ar +n
@@ -1665,6 +1676,8 @@ All background jobs are waited for.
 It the shell is interactive, then an interrupt can disrupt the wait,
 at which time the shell prints names and job numbers of all jobs
 known to be outstanding.
+.It Ic which (command)
+Displays the resolved command that will be executed by the shell.
 .Pp
 .It Ic while Ar (expr)
 .It \&...
@@ -2105,7 +2118,6 @@ to be combined with `\&|', and to be used with `&' and `;' metasyntax.
 .Pp
 It should be possible to use the `:' modifiers on the output of command
 substitutions.
-All and more than one `:' modifier should be allowed on `$' substitutions.
 .Pp
 The way the
 .Ic filec
