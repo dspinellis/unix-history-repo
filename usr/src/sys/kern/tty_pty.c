@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.28	82/10/17	*/
+/*	tty_pty.c	4.29	82/12/05	*/
 
 /*
  * Pseudo-teletype Driver
@@ -9,6 +9,7 @@
 #if NPTY > 0
 #include "../h/param.h"
 #include "../h/systm.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -430,8 +431,8 @@ ptyioctl(dev, cmd, data, flag)
 	error = ttioctl(tp, cmd, data, dev);
 	if (error < 0)
 		error = ENOTTY;
-	{ int stop = (tp->t_un.t_chr.t_stopc == ('s'&037) &&
-		      tp->t_un.t_chr.t_startc == ('q'&037));
+	{ int stop = (tp->t_stopc == ('s'&037) &&
+		      tp->t_startc == ('q'&037));
 	if (pti->pt_flags & PF_NOSTOP) {
 		if (stop) {
 			pti->pt_send &= TIOCPKT_NOSTOP;

@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.13	82/10/17	*/
+/*	tty_tty.c	4.14	82/12/05	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -10,6 +10,7 @@
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/ioctl.h"
 #include "../h/tty.h"
 #include "../h/proc.h"
 #include "../h/uio.h"
