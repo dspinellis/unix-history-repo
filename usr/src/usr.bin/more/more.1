@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.6 (Berkeley) %G%
+.\"	@(#)more.1	5.7 (Berkeley) %G%
 .\"
 .TH MORE 1
 .SH NAME
@@ -73,13 +73,15 @@ containing that tag.  For more information, see the
 .IR ctags (1)
 command.
 .IP -u
-If the -u option is given, backspaces are always printed as the two
-character sequence ``^H''; otherwise, backspaces which appear adjacent
-to an underscore character are treated specially: the underlined text
-is displayed using the terminal's hardware underlining capability.
-Also, backspaces which appear between two identical characters are
-treated specially: the overstruck text is printed using the terminal's
-hardware boldface capability.
+By default,
+.I more
+treats backspaces and CR-LF sequences specially.  Backspaces which appear
+adjacent to an underscore character are displayed as underlined text.
+Backspaces which appear between two identical characters are displayed
+as emboldened text.  CR-LF sequences are compressed to a single linefeed
+character.  The -u option causes backspaces to always be displayed as
+control characters, i.e. as the two character sequence ``^H'', and CR-LF
+to be left alone.
 .IP -x
 The -x option sets tab stops every
 .I N
