@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.37 92/12/20$
  *
- *	@(#)trap.c	8.6 (Berkeley) %G%
+ *	@(#)trap.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -928,24 +928,24 @@ syscall(code, frame)
 		callp += code;
 	else
 		callp += SYS_syscall;	/* => nosys */
-	argsize = callp->sy_narg * sizeof(int);
+	argsize = callp->sy_argsize;
 	if (argsize && (error = copyin(params, (caddr_t)&args, argsize))) {
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
+			ktrsyscall(p->p_tracep, code, argsize, args.i);
 #endif
 		goto bad;
 	}
 #ifdef KTRACE
 	if (KTRPOINT(p, KTR_SYSCALL))
-		ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
+		ktrsyscall(p->p_tracep, code, argsize, args.i);
 #endif
 	rval[0] = 0;
 	rval[1] = frame.f_regs[D1];
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
-		error = notimp(p, args.i, rval, code, callp->sy_narg);
+		error = notimp(p, args.i, rval, code, argsize);
 	else
 #endif
 		error = (*callp->sy_call)(p, &args, rval);
