@@ -1,8 +1,9 @@
-static char *sccsid = "@(#)spline.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)spline.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
+#include <math.h>
 
 #define NP 1000
-#define INF 1.e37
+#define INF HUGE
 
 struct proj { int lbf,ubf; float a,b,lb,ub,quant,mult,val[NP]; } x,y;
 float *diag, *r;
