@@ -1,0 +1,29 @@
+
+		UNIX f77 System Interface Library
+			February, 1981
+
+
+This library includes all generally useful system functions that are not
+required by the ANSI standard.  Some of the original libF77 routines are
+here (getarg, getenv, iargc). Some Unix functions are not provided because
+they would be very awkward to use from f77 (eg. pipe, popen *).
+
+The user interface to these functions is different in some cases from the
+C equivalent. This is primarily to make them easier to use from FORTRAN.
+This library is still expanding, but additions should be judicious.
+
+Install the sources here in parallel with the libI77 sources. Then:
+
+	make libI77.a
+	make install
+	cd man
+	make install
+
+
+
+* These will be added to libI77/f_open in the near future.
+
+Please send bug reports, fixes, etc. to one of
+	dlw@g.cc.berkeley	(new uucp mailer)
+	ucbvax!g.dlw		(old uucp mailer)
+	g.dlw@berkeley		(arpanet)
