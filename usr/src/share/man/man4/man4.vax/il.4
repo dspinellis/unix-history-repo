@@ -1,0 +1,41 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)il.4	5.1 (Berkeley) %G%
+.\"
+.TH IL 4 "27 July 1983"
+.UC 5
+.SH NAME
+il \- Interlan 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device il0 at uba0 csr 161000 vector ilrint ilcint"
+.SH DESCRIPTION
+The
+.I il
+interface provides access to a 10 Mb/s Ethernet network through
+an Interlan controller.
+.PP
+The host's Internet address is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.I il
+interface employs the address resolution protocol described in
+.IR arp (4P)
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.  This may be
+disabled, on a per-interface basis, by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.SH DIAGNOSTICS
+\fBil%d: input error\fP.  The hardware indicated an error
+in reading a packet off the cable or an illegally sized packet.
+.PP
+\fBil%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+intro(4N), inet(4F), arp(4P)
+.SH BUGS
+The PUP protocol family should be added.
