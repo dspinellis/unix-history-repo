@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -68,7 +68,7 @@ deliver(firstto, editfcn)
 	char buf[MAXNAME];
 	char tfrombuf[MAXNAME];		/* translated from person */
 	char rpathbuf[MAXNAME];		/* translated return path */
-	extern bool checkcompat();
+	extern int checkcompat();
 	extern ADDRESS *getctladdr();
 	extern char *remotename();
 	extern MCI *openmailer();
@@ -258,9 +258,11 @@ deliver(firstto, editfcn)
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
 		}
-		if (!checkcompat(to, e))
+		rcode = checkcompat(to, e);
+		if (r <= 0)
 		{
-			giveresponse(EX_UNAVAILABLE, m, e);
+			giveresponse(rcode == 0 ? EX_UNAVAILABLE : EX_TEMPFAIL,
+				     m, e);
 			continue;
 		}
 
