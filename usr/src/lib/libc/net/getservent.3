@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getservent.3	8.3 (Berkeley) %G%
+.\"     @(#)getservent.3	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSERVENT 3
@@ -53,7 +53,7 @@ The members of this structure are:
 .It Fa s_name
 The official name of the service.
 .It Fa s_aliases
-A zero terminated list of alternate names for the service.
+A NULL-terminated list of alternate names for the service.
 .It Fa s_port
 The port number at which the service resides.
 Port numbers are returned in network byte order.
@@ -95,7 +95,7 @@ port number is found,
 or until
 .Dv EOF
 is encountered.
-If a protocol name is also supplied (non-
+If a protocol name is also supplied (non-\c
 .Dv NULL ) , 
 searches must also match the protocol.
 .ne 1i
