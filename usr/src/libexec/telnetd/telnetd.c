@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.12 82/11/17";
+static char sccsid[] = "@(#)telnetd.c	4.13 82/12/25";
 #endif
 
 /*
@@ -65,8 +65,8 @@ main(argc, argv)
 			fprintf(stderr, "telnetd: %s: bad port #\n", *argv);
 			exit(1);
 		}
+		sin.sin_port = htons((u_short)sin.sin_port);
 	}
-	sin.sin_port = htons((u_short)sin.sin_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
