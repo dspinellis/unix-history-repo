@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,6 +27,7 @@ rip_input(from, size)
 	struct interface *if_ifwithdstaddr();
 	int newsize;
 	register struct afswitch *afp;
+	static struct sockaddr badfrom;
 
 	ifp = 0;
 	TRACE_INPUT(ifp, from, size);
@@ -94,7 +95,7 @@ rip_input(from, size)
 			return;
 		if (if_iflookup(from) == 0) {
 			syslog(LOG_ERR, "trace command from unknown router, %s",
-			   (*afswitch[from->sa_family].af_format)(from));
+			    (*afswitch[from->sa_family].af_format)(from));
 			return;
 		}
 		packet[size] = '\0';
@@ -130,8 +131,13 @@ rip_input(from, size)
 		else if (ifp = if_ifwithdstaddr(from))
 			addrouteforif(ifp);
 		else if (if_iflookup(from) == 0) {
-			syslog(LOG_ERR, "packet from unknown router, %s",
-			   (*afswitch[from->sa_family].af_format)(from));
+			if (bcmp((char *)from, (char *)&badfrom,
+			    sizeof(badfrom)) != 0) {
+				syslog(LOG_ERR,
+				  "packet from unknown router, %s",
+				  (*afswitch[from->sa_family].af_format)(from));
+				badfrom = *from;
+			}
 			return;
 		}
 		size -= 4 * sizeof (char);
@@ -181,10 +187,6 @@ rip_input(from, size)
 			 * shorter, or getting stale and equivalent.
 			 */
 			if (equal(from, &rt->rt_router)) {
-				if (n->rip_metric == HOPCNT_INFINITY) {
-					rtdelete(rt);
-					continue;
-				}
 				if (n->rip_metric != rt->rt_metric)
 					rtchange(rt, from, n->rip_metric);
 				rt->rt_timer = 0;
