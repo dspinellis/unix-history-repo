@@ -1,0 +1,264 @@
+
+
+
+GROFF(1)               BSD Reference Manual              GROFF(1)
+
+
+NNAAMMEE
+       groff - front end for the groff document formatting system
+
+SSYYNNOOPPSSIISS
+       ggrrooffff [ --ttppeesszzaaiivvhhbbllCCEENNRRVVXXZZ ] [ --ww_n_a_m_e  ]  [  --WW_n_a_m_e  ]  [
+       --mm_n_a_m_e  ] [ --FF_d_i_r ] [ --TT_d_e_v ] [ --ff_f_a_m ] [ --MM_d_i_r ] [ --dd_c_s ]
+       [ --rr_c_n ] [ --nn_n_u_m ] [ --oo_l_i_s_t ] [ --PP_a_r_g ] [ _f_i_l_e_s... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       ggrrooffff is a front-end to the groff document formatting sys-
+       tem.  Normally it runs the ttrrooffff program and a postproces-
+       sor  appropriate  for  the  selected  device.    Available
+       devices are:
+
+       ppss     For PostScript printers and previewers
+
+       ddvvii    For TeX dvi format
+
+       XX7755    For a 75 dpi X11 previewer
+
+       XX110000   For a 100dpi X11 previewer
+
+       aasscciiii  For typewriter-like devices
+
+       llaattiinn11 For  typewriter-like  devices using the ISO Latin-1
+              character set.
+
+       The postprocessor to be used for a device is specified  by
+       the  ppoossttpprroo command in the device description file.  This
+       can be overridden with the --XX option.
+
+       The default device is ppss.  It  can  optionally  preprocess
+       with any of ppiicc, eeqqnn, ttbbll, rreeffeerr, or ssooeelliimm..
+
+       Options without an argument can be grouped behind a single
+       --.  A filename of -- denotes the standard input.
+
+       The ggrroogg command can be used to guess  the  correct  groff
+       command to use to format a file.
+
+OOPPTTIIOONNSS
+       --hh     Print a help message.
+
+       --ee     Preprocess with eqn.
+
+       --tt     Preprocess with tbl.
+
+       --pp     Preprocess with pic.
+
+       --ss     Preprocess with soelim.
+
+
+
+
+Groff Version 1.08       29 October 1992                        1
+
+
+
+
+
+
+
+
+GROFF(1)               BSD Reference Manual              GROFF(1)
+
+
+       --RR     Preprocess  with  refer.   No mechanism is provided
+              for passing arguments to rreeffeerr because  most  refer
+              options  have  equivalent  commands  which  can  be
+              included  in  the  file.   See  rreeffeerr(1)  for  more
+              details.
+
+       --vv     Make  programs run by ggrrooffff print out their version
+              number.
+
+       --VV     Print the pipeline on stdout instead  of  executing
+              it.
+
+       --zz     Suppress  output  from  ttrrooffff.  Only error messages
+              will be printed.
+
+       --ZZ     Do not postprocess the output of  ttrrooffff.   Normally
+              ggrrooffff  will automatically run the appropriate post-
+              processor.
+
+       --PP_a_r_g  Pass  _a_r_g  to  the  postprocessor.   Each  argument
+              should  be  passed with a separate --PP option.  Note
+              that ggrrooffff does not prepend -- to _a_r_g before passing
+              it to the postprocessor.
+
+       --ll     Send the output to a printer.  The command used for
+              this is specified  by  the  pprriinntt  command  in  the
+              device description file.
+
+       --LL_a_r_g  Pass  _a_r_g  to the spooler.  Each argument should be
+              passed with a separate --LL option.  Note that  ggrrooffff
+              does  not prepend -- to _a_r_g before passing it to the
+              postprocessor.
+
+       --TT_d_e_v  Prepare output for device _d_e_v.  The default  device
+              is ppss.
+
+       --XX     Preview  with  ggxxddiittvviieeww instead of using the usual
+              postprocessor.  This is unlikely  to  produce  good
+              results except with --TTppss.
+
+       --NN     Don't  allow newlines with eqn delimiters.  This is
+              the same as the --NN option in eeqqnn.
+
+       --aa
+       --bb
+       --ii
+       --CC
+       --EE
+       --ww_n_a_m_e
+       --WW_n_a_m_e
+       --mm_n_a_m_e
+
+
+
+Groff Version 1.08       29 October 1992                        2
+
+
+
+
+
+
+
+
+GROFF(1)               BSD Reference Manual              GROFF(1)
+
+
+       --oo_l_i_s_t
+       --dd_c_s
+       --rr_c_n
+       --FF_d_i_r
+       --MM_d_i_r
+       --ff_f_a_m
+       --nn_n_u_m  These are as described in ttrrooffff(1)..
+
+EENNVVIIRROONNMMEENNTT
+       GGRROOFFFF__CCOOMMMMAANNDD__PPRREEFFIIXX
+              If this is  set  _X,  then  ggrrooffff  will  run  _Xttrrooffff
+              instead  of  ttrrooffff.  This also applies to ttbbll, ppiicc,
+              eeqqnn, rreeffeerr and ssooeelliimm.  It does not apply to ggrrooppss,
+              ggrrooddvvii, ggrroottttyy and ggxxddiittvviieeww.
+
+       GGRROOFFFF__TTMMAACC__PPAATTHH
+              A  colon  separated list of directories in which to
+              search for macro files.
+
+       GGRROOFFFF__TTYYPPEESSEETTTTEERR
+              Default device.
+
+       GGRROOFFFF__FFOONNTT__PPAATTHH
+              A colon separated list of directories in  which  to
+              search for the ddeevv_n_a_m_e directory.
+
+       PPAATTHH   The search path for commands executed by ggrrooffff.
+
+       GGRROOFFFF__TTMMPPDDIIRR
+              The directory in which temporary files will be cre-
+              ated.  If this is not set and TTMMPPDDIIRR is set, tempo-
+              rary files will be created in that directory.  Oth-
+              erwise temporary files will  be  created  in  //ttmmpp.
+              The  ggrrooppss(1) and rreeffeerr(1) commands can create tem-
+              porary files.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevv_n_a_m_e//DDEESSCC
+              Device description file for device _n_a_m_e.
+
+       //uussrr//sshhaarree//ggrrooffff__ffoonntt//ddeevv_n_a_m_e//_F
+              Font file for font _F of device _n_a_m_e.
+
+AAUUTTHHOORR
+       James Clark <jjc@jclark.com>
+
+BBUUGGSS
+       Report bugs to bug-groff@prep.ai.mit.edu.  Include a  com-
+       plete,  self-contained  example that will allow the bug to
+       be reproduced, and say which  version  of  groff  you  are
+       using.
+
+
+
+Groff Version 1.08       29 October 1992                        3
+
+
+
+
+
+
+
+
+GROFF(1)               BSD Reference Manual              GROFF(1)
+
+
+CCOOPPYYRRIIGGHHTT
+       Copyright (C) 1989, 1990, 1991, 1992 Free Software Founda-
+       tion, Inc.
+
+       groff is free software; you  can  redistribute  it  and/or
+       modify  it  under  the  terms  of  the  GNU General Public
+       License as published  by  the  Free  Software  Foundation;
+       either version 2, or (at your option) any later version.
+
+       groff  is  distributed in the hope that it will be useful,
+       but WITHOUT ANY WARRANTY; without even  the  implied  war-
+       ranty  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PUR-
+       POSE.   See  the  GNU  General  Public  License  for  more
+       details.
+
+       You  should have received a copy of the GNU General Public
+       License along with groff; see the file COPYING.   If  not,
+       write  to the Free Software Foundation, 675 Mass Ave, Cam-
+       bridge, MA 02139, USA.
+
+AAVVAAIILLAABBIILLIITTYY
+       The most recent released version of groff is always avail-
+       able  for  anonymous ftp from prep.ai.mit.edu (18.71.0.38)
+       in the directory pub/gnu.
+
+SSEEEE AALLSSOO
+       ggrroogg(1),  ttrrooffff(1),  ttbbll(1),  ppiicc(1),  eeqqnn(1),  ssooeelliimm(1),,
+       rreeffeerr(1),  ggrrooppss(1),  ggrrooddvvii(1),  ggrroottttyy(1), ggxxddiittvviieeww(1),
+       ggrrooffff__ffoonntt(5),  ggrrooffff__oouutt(5),  ggrrooffff__mmss(7),   ggrrooffff__mmee(7),
+       ggrrooffff__cchhaarr(7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08       29 October 1992                        4
+
+
+
+
+
