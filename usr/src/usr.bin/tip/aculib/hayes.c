@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)hayes.c	1.1 (Berkeley) 85/04/11 ";
-#endif
+static char sccsid[] = "@(#)hayes.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Routines for calling up on a Hayes Modem
