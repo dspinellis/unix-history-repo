@@ -1,0 +1,60 @@
+#	@(#)PIT	7.1 (Berkeley) %G%
+#
+
+machine		"luna68k"
+cpu		"luna1"
+cpu		"luna2"
+ident		PIT
+
+timezone	8 dst
+maxusers	16
+hz		60
+
+# Standard options
+options		QUOTA
+options		INET
+options		FIFO
+options		FFS
+options		MFS
+options		NFS
+options		DIAGNOSTIC
+options		"COMPAT_43"
+options		"TCP_COMPAT_42"
+
+options		SWAPPAGER
+options		VNODEPAGER
+options		DEVPAGER
+
+# Options for all HP machines
+## options		SYSVSHM
+## options		HPUXCOMPAT
+
+# Options specific to this host.
+## options		DEBUG,DIAGNOSTIC
+## options		PANICBUTTON
+## options		KTRACE
+## options		"NKMEMCLUSTERS=512"
+## options		"HILVID=1"
+## options		PROFTIMER,"PRF_INTERVAL=500"
+## options		KGDB,"KGDBDEV=15*256+2","KGDBRATE=19200"
+
+options		DEBUG
+options		DEBUGPRINT
+
+config		vmunix root on sd0 swap on sd0b and sd1b
+
+master		sc0	at scode?
+disk		sd0	at sc? slave 6
+disk		sd1	at sc? slave 5
+tape		st0	at sc? slave 4
+
+device		le0	at scode?
+device		sio0	at scode? flags 0x0
+device		bmc0	at scode? flags 0x0
+
+pseudo-device	sl	4
+pseudo-device	bpfilter 16
+pseudo-device	ite
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
