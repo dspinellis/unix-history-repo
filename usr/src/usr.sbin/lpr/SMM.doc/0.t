@@ -2,13 +2,19 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) %G%
+.\"	@(#)0.t	6.2 (Berkeley) %G%
 .\"
+.EH 'SMM:5-%''4.3BSD Line Printer Spooler Manual'
+.OH '4.3BSD Line Printer Spooler Manual''SMM:5-%'
 .if n .ND
 .TL
-4.2BSD Line Printer Spooler Manual
+4.3BSD Line Printer Spooler Manual
 .sp
-Revised 
+.de D?
+.ie \\n(.$>1 Revised \\$1 \\$2 \\$3
+.el DRAFT of \n(mo/\n(dy/\n(yr
+..
+.D? 
 .AU
 Ralph Campbell
 .AI
@@ -17,15 +23,13 @@ Computer Science Division
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
-
-(415) 642-7780
 .AB
 .FS
 * UNIX is a trademark of Bell Laboratories.
 .FE
 This document describes the structure and installation procedure
 for the line printer spooling system
-developed for the 4.2BSD version
+developed for the 4.3BSD version
 of the UNIX* operating system.
 .AE
 .de IR
