@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -346,7 +346,7 @@ gethdr:
 		volno = 0;
 		goto again;
 	}
-	if (spcl.c_volume != volno) {
+	if (tmpbuf.c_volume != volno) {
 		fprintf(stderr, "Wrong volume (%d)\n", tmpbuf.c_volume);
 		volno = 0;
 		goto again;
