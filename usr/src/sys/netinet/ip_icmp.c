@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.30	83/03/12	*/
+/*	ip_icmp.c	4.31	83/05/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -215,7 +215,7 @@ icmp_input(m)
 		icmpdst.sin_addr = ip->ip_dst;
 		raw_input(dtom(icp), &icmproto, (struct sockaddr *)&icmpsrc,
 		  (struct sockaddr *)&icmpdst);
-		goto free;
+		return;
 
 	default:
 		goto free;
