@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -137,7 +137,8 @@ find_execute(plan, paths)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
-			err("%s: %s", entry->fts_path, strerror(errno));
+			(void)fprintf(stderr, "find: %s: %s\n", 
+			    entry->fts_path, strerror(errno));
 			continue;
 		case FTS_SL:
 			if (entry->fts_level == FTS_ROOTLEVEL) {
