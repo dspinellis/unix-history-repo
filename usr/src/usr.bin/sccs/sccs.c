@@ -86,6 +86,8 @@
 **		Copyright 1980 Regents of the University of California
 */
 
+static char SccsId[] = "@(#)sccs.c	1.35 %G%";
+
 /*******************  Configuration Information  ********************/
 
 # ifdef CSVAX
@@ -93,15 +95,17 @@
 # define PROGPATH(name)	"/usr/local/name"
 # endif CSVAX
 
-# define SCCSPATH	"SCCS"
+# define SCCSPATH	"SCCS"	/* pathname in which to find s-files */
 /* put #define SCCSDIR here */
 
 char	MyName[] = "sccs";	/* name used in messages */
 
+# ifndef PROGPATH
+# define PROGPATH(name)	"/usr/sccs/name"	/* place to find binaries */
+# endif PROGPATH
+
 /****************  End of Configuration Information  ****************/
-
-static char SccsId[] = "@(#)sccs.c	1.34 %G%";
-
+
 # define bitset(bit, word)	((bit) & (word))
 
 typedef char	bool;
@@ -138,9 +142,14 @@ struct sccsprog
 # define INFOC		1	/* info command */
 # define CHECKC		2	/* check command */
 
-# ifndef PROGPATH
-# define PROGPATH(name)	"/usr/sccs/name"
-# endif PROGPATH
+/*
+**  Description of commands known to this program.
+**	First argument puts the command into a class.  Second arg is
+**	info regarding treatment of this command.  Third arg is a
+**	list of flags this command accepts from macros, etc.  Fourth
+**	arg is the pathname of the implementing program, or the
+**	macro definition, or the arg to a sub-algorithm.
+*/
 
 struct sccsprog SccsProg[] =
 {
@@ -165,6 +174,7 @@ struct sccsprog SccsProg[] =
 	NULL,		-1,	0,		"",		NULL
 };
 
+/* one line from a p-file */
 struct pfile
 {
 	char	*p_osid;	/* old SID */
@@ -184,7 +194,7 @@ bool	RealUser;		/* if set, running as real user */
 # ifdef DEBUG
 bool	Debug;			/* turn on tracing */
 # endif
-
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -245,7 +255,8 @@ main(argc, argv)
 	i = command(argv, FALSE, FALSE, "");
 	exit(i);
 }
-/*
+
+/*
 **  COMMAND -- look up and perform a command
 **
 **	This routine is the guts of this program.  Given an
@@ -418,7 +429,8 @@ command(argv, forkflag, editflag, arg0)
 # endif
 	return (rval);
 }
-/*
+
+/*
 **  LOOKUP -- look up an SCCS command name.
 **
 **	Parameters:
@@ -445,7 +457,8 @@ lookup(name)
 	}
 	return (NULL);
 }
-/*
+
+/*
 **  CALLPROG -- call a program
 **
 **	Used to call the SCCS programs.
@@ -526,7 +539,8 @@ callprog(progpath, flags, argv, forkflag)
 	syserr("cannot execute %s", progpath);
 	exit(EX_UNAVAILABLE);
 }
-/*
+
+/*
 **  MAKEFILE -- make filename of SCCS file
 **
 **	If the name passed is already the name of an SCCS file,
@@ -629,7 +643,8 @@ isdir(name)
 
 	return (stat(name, &stbuf) >= 0 && (stbuf.st_mode & S_IFMT) == S_IFDIR);
 }
-/*
+
+/*
 **  SAFEPATH -- determine whether a pathname is "safe"
 **
 **	"Safe" pathnames only allow you to get deeper into the
@@ -667,7 +682,8 @@ safepath(p)
 	printf("You may not use full pathnames or \"..\"\n");
 	return (FALSE);
 }
-/*
+
+/*
 **  CLEAN -- clean out recreatable files
 **
 **	Any file for which an "s." file exists but no "p." file
@@ -754,7 +770,8 @@ clean(mode)
 		exit(gotedit);
 	return (EX_OK);
 }
-/*
+
+/*
 **  UNEDIT -- unedit a file
 **
 **	Checks to see that the current user is actually editting
@@ -894,7 +911,8 @@ unedit(fn)
 		return (FALSE);
 	}
 }
-/*
+
+/*
 **  GETPFILE -- get an entry from the p-file
 **
 **	Parameters:
@@ -948,7 +966,8 @@ nextfield(p)
 	*p++ = '\0';
 	return (p);
 }
-/*
+
+/*
 **  USRERR -- issue user-level error
 **
 **	Parameters:
@@ -971,7 +990,8 @@ usrerr(f, p1, p2, p3)
 
 	return (-1);
 }
-/*
+
+/*
 **  SYSERR -- print system-generated error.
 **
 **	Parameters:
