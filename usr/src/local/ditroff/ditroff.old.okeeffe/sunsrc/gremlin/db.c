@@ -1,5 +1,5 @@
 /*
- * @(#)db.c	1.1	%G%
+ * @(#)db.c	1.2	%G%
  *
  * This file contains routines for database manipulation for the
  * SUN Gremlin picture editor.
@@ -39,19 +39,6 @@ extern TOOLINSTALLED;
 /* cset is a pointer to the current set available to the outside world. */
 
 ELT *cset;
-
-#ifdef oldway
-/*
- * This routine returns a pointer to an initialized database element
- * which would be the only element in an empty list.
- */
-ELT *
-DBInit()
-{
-    return((ELT *) NULL);
-}
-#endif
-
 
 /*
  * This routine creates a new element with the specified attributes and

@@ -1,5 +1,5 @@
 /*
- * @(#)graphics.c	1.1	%G%
+ * @(#)graphics.c	1.2	%G%
  *
  * Graphics routines for the SUN Gremlin picture editor.
  *
@@ -70,6 +70,12 @@ struct pixrect *stipple_prs[NSTIPPLES] = {
 
 /* ... and the corresponding images (32 x 32 bits) from the vfont file */
 char stipple_patterns[NSTIPPLES][128];
+
+/* data used in graphics2.c for drawing polygons */
+int rasterlength;		/* real # horizontal bits in scratch_pr */
+int bytesperline;		/* rasterlength / 8 */
+int nlines;			/* # horizontal bits defined by scratch_pr */
+char *fill;			/* pointer to scratch_pr image */
 
 /* 
  *  This matrix points to the DISPATCH data for each font/size pair
@@ -758,6 +764,13 @@ GRStippleInit()
 
     /* bit maps are all in core now */
     free(stipple_info);
+
+    /* set up parameters for drawing polygons */
+    mpr_data = (struct mpr_data *) scratch_pr->pr_data;
+    bytesperline = mpr_data->md_linebytes;
+    fill = (char *) mpr_data->md_image;
+    rasterlength = bytesperline << 3;
+    nlines = scratch_pr->pr_size.x;
 } /* end GRStippleInit */;
 
 
