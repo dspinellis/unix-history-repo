@@ -99,6 +99,9 @@ about excessive disc usage.
 This call causes the system to check its current disc usage
 information and print a message on the terminal of
 the caller for each file system on which the user is over quota.
+If the user is under quota, his warning count is reset to MAX_*_WARN
+(defined in
+.RI < sys/quota.h >).
 If the
 .I arg
 parameter is specified as NODEV, all file systems which have
