@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)selsub.c	4.6	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selsub.c	4.7	(Berkeley)	%G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -143,16 +143,13 @@ char *name;
 	}
 }
 
-#ifndef DIR
-#include <sys/dir.h>
-#endif
+#include <dirent.h>
 
 cntlessons(sname)	/* return number of entries in lesson directory; */
 char *sname;		/* approximate at best since I don't count L0, Init */
 {			/* and lessons skipped by good students */
-#if BSD4_2
-	struct direct dbuf;
-	register struct direct *ep = &dbuf;	/* directory entry pointer */
+	struct dirent dbuf;
+	register struct dirent *ep = &dbuf;	/* directory entry pointer */
 	int n = 0;
 	DIR *dp;
 
@@ -166,10 +163,4 @@ char *sname;		/* approximate at best since I don't count L0, Init */
 	}
 	closedir(dp);
 	return n - 2;				/* minus . and .. */
-#else
-	struct stat statbuf;
-
-	stat(sname, &statbuf);
-	return statbuf.st_size / 16 - 2;
-#endif
 }
