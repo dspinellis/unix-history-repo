@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.NEWS-OS.4.x	8.2 (Berkeley) %G%
+#	@(#)Makefile.NEWS-OS.4.x	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -107,3 +107,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

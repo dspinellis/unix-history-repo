@@ -3,7 +3,7 @@
 #
 #	Contributed by J.J. Bailey <jjb@jagware.bcc.com>
 #
-#	@(#)Makefile.ISC	8.5	(Berkeley)	%G%
+#	@(#)Makefile.ISC	8.6	(Berkeley)	%G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -105,3 +105,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

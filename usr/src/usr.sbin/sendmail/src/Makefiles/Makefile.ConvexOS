@@ -7,7 +7,7 @@
 #
 #  This has been tested on CxOS 11.0 beta 1 and 10.x.
 #
-#	@(#)Makefile.ConvexOS	8.7 (Berkeley) %G%
+#	@(#)Makefile.ConvexOS	8.8 (Berkeley) %G%
 #
 
 
@@ -105,3 +105,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

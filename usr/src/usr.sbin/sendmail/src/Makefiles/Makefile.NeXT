@@ -7,7 +7,7 @@
 #
 #  This has been tested on NeXT 2.1.
 #
-#	@(#)Makefile.NeXT	8.8 (Berkeley) %G%
+#	@(#)Makefile.NeXT	8.9 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -117,3 +117,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -7,7 +7,7 @@
 #
 #  Tested on IRIX 5.3 by Kari E. Hurtta <Kari.Hurtta@fmi.fi>.
 #
-#	@(#)Makefile.IRIX.5.x	8.3 (Berkeley) %G%
+#	@(#)Makefile.IRIX.5.x	8.4 (Berkeley) %G%
 #
 SHELL=	/bin/sh
 
@@ -107,3 +107,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

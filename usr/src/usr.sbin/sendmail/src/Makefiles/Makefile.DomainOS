@@ -7,7 +7,7 @@
 #
 #  This has been tested on DomainOS 10.3.5
 #
-#	@(#)Makefile.DomainOS	8.7 (Berkeley) %G%
+#	@(#)Makefile.DomainOS	8.8 (Berkeley) %G%
 #
 #
 
@@ -123,3 +123,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -8,7 +8,7 @@
 #	You may find you need to find versions of some routines
 #	such as strcasecmp in order to link this on SunOS 4.0.3.
 #
-#	@(#)Makefile.SunOS.4.0	8.7 (Berkeley) %G%
+#	@(#)Makefile.SunOS.4.0	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -113,3 +113,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -7,7 +7,7 @@
 #
 #	For Mips RISC/os 4.52.
 #
-#	@(#)Makefile.RISCos	8.7 (Berkeley) %G%
+#	@(#)Makefile.RISCos	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -117,3 +117,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

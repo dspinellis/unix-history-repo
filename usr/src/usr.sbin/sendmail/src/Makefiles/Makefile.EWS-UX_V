@@ -7,7 +7,7 @@
 #
 #  This has been tested on NEC EWS-UX/V 4.2
 #
-#	@(#)Makefile.EWS-UX_V	8.2 (Berkeley) %G%
+#	@(#)Makefile.EWS-UX_V	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -128,3 +128,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

@@ -7,7 +7,7 @@
 #
 #	This has been tested on Ultrix 4.2A and 4.3A.
 #
-#	@(#)Makefile.ULTRIX	8.9 (Berkeley) %G%
+#	@(#)Makefile.ULTRIX	8.10 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -112,3 +112,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:

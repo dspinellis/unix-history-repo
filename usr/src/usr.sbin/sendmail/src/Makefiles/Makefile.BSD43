@@ -11,7 +11,7 @@
 #	It should also work on UMIPS-BSD from MIPS, if you still have
 #	any lying around.
 #
-#	@(#)Makefile.BSD43	8.6 (Berkeley) %G%
+#	@(#)Makefile.BSD43	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -123,3 +123,5 @@ clean:
 # dependencies
 #   gross overkill, and yet still not quite enough....
 ${OBJS}: sendmail.h conf.h
+
+depend:
