@@ -1,4 +1,4 @@
-#	@(#)OMRON1	7.1 (Berkeley) %G%
+#	@(#)OMRON1	7.2 (Berkeley) %G%
 #
 
 machine		"luna68k"
@@ -30,7 +30,7 @@ tape		st0	at sc? slave 4
 
 device		le0	at scode?
 device		sio0	at scode? flags 0x0
-device		sio1	at scode? flags 0x0
+device		bmc0	at scode? flags 0x0
 
 pseudo-device	sl	4
 pseudo-device	bpfilter 16
