@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumprmt.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.5 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mtio.h>
@@ -22,7 +22,7 @@ rmthost(host)
 {
 
 	rmtpeer = host;
-	sigset(SIGPIPE, rmtconnaborted);
+	signal(SIGPIPE, rmtconnaborted);
 	rmtgetconn();
 	if (rmtape < 0)
 		exit(1);

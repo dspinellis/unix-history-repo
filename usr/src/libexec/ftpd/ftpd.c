@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.20 (Berkeley) %G%";
 #endif
 
 /*
@@ -12,6 +12,8 @@ static char sccsid[] = "@(#)ftpd.c	4.19 (Berkeley) %G%";
 
 #include <netinet/in.h>
 
+#include <arpa/ftp.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -19,8 +21,6 @@ static char sccsid[] = "@(#)ftpd.c	4.19 (Berkeley) %G%";
 #include <setjmp.h>
 #include <netdb.h>
 #include <errno.h>
-
-#include "ftp.h"
 
 /*
  * File containing login names
@@ -154,7 +154,7 @@ nextopt:
 		perror("ftpd: bind");
 		sleep(5);
 	}
-	sigset(SIGCHLD, reapchild);
+	signal(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		int hisaddrlen = sizeof (his_addr);
@@ -185,6 +185,15 @@ nextopt:
 			gethostname(hostname, sizeof (hostname));
 			reply(220, "%s FTP server (%s) ready.",
 				hostname, version);
+			/*
+			 * Anchor data source address to that
+			 * of the control port so hosts with
+			 * multiple address won't have data
+			 * connections bound to an address different
+			 * than the control port.
+			 */
+			if (getsockname(0, &ctrl_addr, sizeof (ctrl_addr)) >= 0)
+				data_source.sin_addr = ctrl_addr.sin_addr;
 			for (;;) {
 				setjmp(errcatch);
 				yyparse();
@@ -358,7 +367,7 @@ FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int s;
+	int s, linger;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
@@ -370,6 +379,8 @@ getdatasock(mode)
 		goto bad;
 	if (bind(s, &data_source, sizeof (data_source), 0) < 0)
 		goto bad;
+	linger = 60;			/* value ignored by system */
+	(void) setsockopt(s, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger));
 	seteuid(pw->pw_uid);
 	return (fdopen(s, mode));
 bad:
