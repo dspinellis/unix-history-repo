@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.12 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -67,6 +67,7 @@ static char *rcsid = "$Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $";
 int tp_attach(), tp_driver();
 int TNew;
 int TPNagle1, TPNagle2;
+struct tp_pcb *tp_listeners, *tp_intercepts;
 
 #ifdef ARGO_DEBUG
 /*
@@ -397,6 +398,25 @@ tp_usrreq(so, req, m, nam, controlp)
 
 	case PRU_DETACH: 	/* called from close() */
 		/* called only after disconnect was called */
+		if (tpcb->tp_state == TP_LISTENING) {
+			register struct tp_pcb **tt;
+			for (tt = &tp_listeners; *tt; tt = &((*tt)->tp_nextlisten))
+				if (*tt == tpcb)
+					break;
+			if (*tt)
+				*tt = tpcb->tp_nextlisten;
+			else {
+				for (tt = &tp_intercepts; *tt; tt = &((*tt)->tp_nextlisten))
+					if (*tt == tpcb)
+						break;
+				if (*tt)
+					*tt = tpcb->tp_nextlisten;
+				else
+					printf("tp_usrreq - detach: should panic\n");
+			}
+		}
+		if (tpcb->tp_next)
+			remque(tpcb);
 		error = DoEvent(T_DETACH);
 		if (tpcb->tp_state == TP_CLOSED) {
 			free((caddr_t)tpcb, M_PCB);
@@ -425,6 +445,11 @@ tp_usrreq(so, req, m, nam, controlp)
 				break;
 			(tpcb->tp_nlproto->nlp_getsufx)(so->so_pcb, &tpcb->tp_lsuffixlen,
 				tpcb->tp_lsuffix, TP_LOCAL);
+		}
+		if (tpcb->tp_next == 0) {
+			tpcb->tp_next = tpcb->tp_prev = tpcb;
+			tpcb->tp_nextlisten = tp_listeners;
+			tp_listeners = tpcb->tp_nextlisten;
 		}
 		IFDEBUG(D_TPISO)
 			if (tpcb->tp_state != TP_CLOSED)

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.6 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -230,6 +230,7 @@ struct tp_conn_param tp_conn_param[] = {
 #ifdef INET
 int		in_putnetaddr();
 int		in_getnetaddr();
+int		in_cmpnetaddr();
 int 	in_putsufx(); 
 int 	in_getsufx(); 
 int 	in_recycle_tsuffix(); 
@@ -246,6 +247,7 @@ struct inpcb	tp_inpcb;
 #ifdef ISO
 int		iso_putnetaddr();
 int		iso_getnetaddr();
+int		iso_cmpnetaddr();
 int 	iso_putsufx(); 
 int 	iso_getsufx(); 
 int 	iso_recycle_tsuffix(); 
@@ -263,6 +265,7 @@ struct isopcb	tp_isopcb;
 #if NARGOXTWENTYFIVE > 0
 int		iso_putnetaddr();
 int		iso_getnetaddr();
+int		iso_cmpnetaddr();
 int 	iso_putsufx(); 
 int 	iso_getsufx(); 
 int 	iso_recycle_tsuffix(); 
@@ -281,7 +284,7 @@ struct isopcb	tp_isopcb;
 struct nl_protosw nl_protosw[] = {
 	/* ISO_CLNS */
 #ifdef ISO
-	{ AF_ISO, iso_putnetaddr, iso_getnetaddr,
+	{ AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
 		iso_putsufx, iso_getsufx,
 		iso_recycle_tsuffix,
 		tpclnp_mtu, iso_pcbbind, iso_pcbconnect,
@@ -295,7 +298,7 @@ struct nl_protosw nl_protosw[] = {
 #endif ISO
 	/* IN_CLNS */
 #ifdef INET
-	{ AF_INET, in_putnetaddr, in_getnetaddr,
+	{ AF_INET, in_putnetaddr, in_getnetaddr, in_cmpnetaddr,
 		in_putsufx, in_getsufx,
 		in_recycle_tsuffix,
 		tpip_mtu, in_pcbbind, in_pcbconnect,
@@ -309,7 +312,7 @@ struct nl_protosw nl_protosw[] = {
 #endif INET
 	/* ISO_CONS */
 #if defined(ISO) && (NARGOXTWENTYFIVE > 0)
-	{ AF_ISO, iso_putnetaddr, iso_getnetaddr,
+	{ AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
 		iso_putsufx, iso_getsufx,
 		iso_recycle_tsuffix,
 		tpcons_mtu, iso_pcbbind, iso_pcbconnect,

@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.7 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.8 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -40,6 +40,7 @@ SOFTWARE.
  * 		iso_putsufx: put transport suffix into an isopcb structure.
  *		iso_putnetaddr: put a whole net addr into an isopcb.
  *		iso_getnetaddr: get a whole net addr from an isopcb.
+ *		iso_cmpnetaddr: compare a whole net addr from an isopcb.
  *		iso_recycle_suffix: clear suffix for reuse in isopcb
  * 		tpclnp_ctlinput: handle ER CNLPdu : icmp-like stuff
  * 		tpclnp_mtu: figure out what size tpdu to use
@@ -199,6 +200,9 @@ iso_putnetaddr(isop, name, which)
 	register struct sockaddr_iso *siso;
 
 	switch (which) {
+	default:
+		printf("iso_putnetaddr: should panic\n");
+		return;
 	case TP_LOCAL:
 		sisop = &isop->isop_laddr;
 		backup = &isop->isop_sladdr;
@@ -213,6 +217,47 @@ iso_putnetaddr(isop, name, which)
 		dump_isoaddr(isop->isop_faddr);
 	ENDDEBUG
 	siso->siso_addr = name->siso_addr;
+}
+
+/*
+ * CALLED FROM:
+ * 	tp_input() when a connection is being established by an
+ * 	incoming CR_TPDU, and considered for interception.
+ *
+ * FUNCTION and ARGUMENTS:
+ * 	compare a whole net addr from a struct sockaddr (name),
+ * 	with that implicitly stored in an isopcb (isop).
+ * 	The argument (which) takes values TP_LOCAL or TP_FOREIGN.
+ */ 
+iso_cmpnetaddr(isop, name, which)
+	register struct isopcb	*isop;
+	register struct sockaddr_iso	*name;
+	int which;
+{
+	struct sockaddr_iso **sisop, *backup;
+	register struct sockaddr_iso *siso;
+
+	switch (which) {
+	default:
+		printf("iso_cmpnetaddr: should panic\n");
+		return 0;
+	case TP_LOCAL:
+		sisop = &isop->isop_laddr;
+		backup = &isop->isop_sladdr;
+		break;
+	case TP_FOREIGN:
+		sisop = &isop->isop_faddr;
+		backup = &isop->isop_sfaddr;
+	}
+	siso = ((*sisop == 0) ? (*sisop = backup) : *sisop);
+	IFDEBUG(D_TPISO)
+		printf("ISO_CMPNETADDR\n");
+		dump_isoaddr(siso);
+	ENDDEBUG
+	if (name->siso_tlen && bcmp(TSEL(name), TSEL(siso), name->siso_tlen))
+		return (0);
+	return (bcmp((caddr_t)name->siso_data,
+			 (caddr_t)siso->siso_data, name->siso_nlen) == 0);
 }
 
 /*
