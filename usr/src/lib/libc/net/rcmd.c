@@ -5,13 +5,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
+#include <pwd.h>
 #include <sys/param.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include <netinet/in.h>
 
@@ -201,8 +203,22 @@ again:
 		(void) fclose(hostf);
 	}
 	if (first == 1) {
+		struct stat sbuf;
+		struct passwd *pwd;
+		char pbuf[MAXPATHLEN];
+
 		first = 0;
-		hostf = fopen(".rhosts", "r");
+		if ((pwd = getpwnam(luser)) == NULL)
+			return(-1);
+		(void)strcpy(pbuf, pwd->pw_dir);
+		(void)strcat(pbuf, "/.rhosts");
+		if ((hostf = fopen(pbuf, "r")) == NULL)
+			return(-1);
+		(void)fstat(fileno(hostf), &sbuf);
+		if (sbuf.st_uid && sbuf.st_uid != pwd->pw_uid) {
+			fclose(hostf);
+			return(-1);
+		}
 		goto again;
 	}
 	return (-1);
