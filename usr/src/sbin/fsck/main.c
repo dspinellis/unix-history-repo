@@ -1,4 +1,4 @@
-char version[] = "@(#)main.c	2.21	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.22	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -106,6 +106,7 @@ char	*pathp;			/* pointer to pathname position */
 char	*thisname;		/* ptr to current pathname component */
 char	*srchname;		/* name being searched for in dir */
 char	pathname[BUFSIZ];
+char	*endpathname = &pathname[BUFSIZ - 2];
 
 char	*lfname = "lost+found";
 
@@ -825,6 +826,10 @@ pass2check(dirp)
 	if ((inum = dirp->d_ino) == 0)
 		return (KEEPON);
 	thisname = pathp;
+	if (pathp + dirp->d_namlen >= endpathname) {
+		*pathp = '\0';
+		errexit("NAME TOO LONG %s%s\n", pathname, dirp->d_name);
+	}
 	for (p = dirp->d_name; p < &dirp->d_name[MAXNAMLEN]; )
 		if ((*pathp++ = *p++) == 0) {
 			--pathp;
