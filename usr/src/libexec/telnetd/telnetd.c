@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,6 +46,7 @@ static char sccsid[] = "@(#)telnetd.c	5.35 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #define	OPT_NO			0		/* won't do this option */
 #define	OPT_YES			1		/* will do this option */
@@ -353,10 +354,10 @@ gotpty:
 	 *			getuid() == 0.
 	 * -p : don't clobber the environment (so terminal type stays set).
 	 */
-	execl("/bin/login", "login", "-h", host,
+	execl(_PATH_LOGIN, "login", "-h", host,
 					terminaltype ? "-p" : 0, 0);
-	syslog(LOG_ERR, "/bin/login: %m\n");
-	fatalperror(2, "/bin/login");
+	syslog(LOG_ERR, "%s: %m\n", _PATH_LOGIN);
+	fatalperror(2, _PATH_LOGIN);
 	/*NOTREACHED*/
 }
 
