@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -122,22 +122,23 @@ cook_buf(fp)
 		if (prev == '\n') {
 			if (ch == '\n') {
 				if (sflag) {
-					if (gobble)
-						continue;
+					if (!gobble && putc(ch, stdout) == EOF)
+						break;
 					gobble = 1;
+					continue;
 				}
 				if (nflag && !bflag) {
 					(void)fprintf(stdout, "%6d\t", ++line);
 					if (ferror(stdout))
 						break;
 				}
-			}
-			else if (nflag) {
+			} else if (nflag) {
 				(void)fprintf(stdout, "%6d\t", ++line);
 				if (ferror(stdout))
 					break;
 			}
 		}
+		gobble = 0;
 		if (ch == '\n') {
 			if (eflag)
 				if (putc('$', stdout) == EOF)
