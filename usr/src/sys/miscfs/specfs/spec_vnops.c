@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.53 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.54 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -38,20 +38,20 @@ struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
 	{ &vop_lookup_desc, spec_lookup },		/* lookup */
 	{ &vop_create_desc, spec_create },		/* create */
 	{ &vop_mknod_desc, spec_mknod },		/* mknod */
-	{ &vop_open_desc, spec_open },		/* open */
+	{ &vop_open_desc, spec_open },			/* open */
 	{ &vop_close_desc, spec_close },		/* close */
 	{ &vop_access_desc, spec_access },		/* access */
 	{ &vop_getattr_desc, spec_getattr },		/* getattr */
 	{ &vop_setattr_desc, spec_setattr },		/* setattr */
-	{ &vop_read_desc, spec_read },		/* read */
+	{ &vop_read_desc, spec_read },			/* read */
 	{ &vop_write_desc, spec_write },		/* write */
 	{ &vop_ioctl_desc, spec_ioctl },		/* ioctl */
 	{ &vop_select_desc, spec_select },		/* select */
-	{ &vop_mmap_desc, spec_mmap },		/* mmap */
+	{ &vop_mmap_desc, spec_mmap },			/* mmap */
 	{ &vop_fsync_desc, spec_fsync },		/* fsync */
-	{ &vop_seek_desc, spec_seek },		/* seek */
+	{ &vop_seek_desc, spec_seek },			/* seek */
 	{ &vop_remove_desc, spec_remove },		/* remove */
-	{ &vop_link_desc, spec_link },		/* link */
+	{ &vop_link_desc, spec_link },			/* link */
 	{ &vop_rename_desc, spec_rename },		/* rename */
 	{ &vop_mkdir_desc, spec_mkdir },		/* mkdir */
 	{ &vop_rmdir_desc, spec_rmdir },		/* rmdir */
@@ -61,12 +61,13 @@ struct vnodeopv_entry_desc spec_vnodeop_entries[] = {
 	{ &vop_abortop_desc, spec_abortop },		/* abortop */
 	{ &vop_inactive_desc, spec_inactive },		/* inactive */
 	{ &vop_reclaim_desc, spec_reclaim },		/* reclaim */
-	{ &vop_lock_desc, spec_lock },		/* lock */
+	{ &vop_lock_desc, spec_lock },			/* lock */
 	{ &vop_unlock_desc, spec_unlock },		/* unlock */
-	{ &vop_bmap_desc, spec_bmap },		/* bmap */
+	{ &vop_bmap_desc, spec_bmap },			/* bmap */
 	{ &vop_strategy_desc, spec_strategy },		/* strategy */
 	{ &vop_print_desc, spec_print },		/* print */
 	{ &vop_islocked_desc, spec_islocked },		/* islocked */
+	{ &vop_pathconf_desc, spec_pathconf },		/* pathconf */
 	{ &vop_advlock_desc, spec_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, spec_blkatoff },		/* blkatoff */
 	{ &vop_valloc_desc, spec_valloc },		/* valloc */
@@ -572,6 +573,42 @@ spec_print(ap)
 
 	printf("tag VT_NON, dev %d, %d\n", major(ap->a_vp->v_rdev),
 		minor(ap->a_vp->v_rdev));
+}
+
+/*
+ * Return POSIX pathconf information applicable to special devices.
+ */
+spec_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_MAX_CANON:
+		*ap->a_retval = MAX_CANON;
+		return (0);
+	case _PC_MAX_INPUT:
+		*ap->a_retval = MAX_INPUT;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_VDISABLE:
+		*ap->a_retval = _POSIX_VDISABLE;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
 }
 
 /*
