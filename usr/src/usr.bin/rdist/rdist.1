@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rdist.1	6.4 (Berkeley) %G%
+.\"	@(#)rdist.1	6.5 (Berkeley) %G%
 .\"
 .TH RDIST 1 ""
 .UC 6
@@ -159,9 +159,9 @@ since some given date.
 The \fIsource list\fP specifies a
 list of files and/or directories on the local host which are to be used
 as the master copy for distribution.
-The \fIdestination list\fP is the list of hosts these files are to be
-copied to.  Each file in the source list is added to a list of changes
-if the file is out of date on the host being updated (second format) or
+The \fIdestination list\fP is the list of hosts to which these files are to be
+to.  Each file in the source list is added to a list of changes
+if the file is out of date on the host which is being updated (second format) or
 the file is newer than the time stamp file (third format).
 .PP
 Labels are optional. They are used to identify a command for partial updates.
