@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-syms	5.8 (Berkeley) %G%
+.\"     @(#)doc-syms	5.9 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .\" NS Ux macro - UNIX
@@ -175,22 +175,22 @@
 .       \}
 .       if "\\*(A\\n(aP"-ansiC" \{\
 .		ie \\n(sT==1 \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
-.			as b1 (``\\*(tNANSI C\\*(aa'')
+.			ds b1 \&\\*(tNANSI X\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI X\\*(aa'')
 .		\}
 .		el \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
-.			as b1 (``\\*(tNANSI C\\*(aa'')
+.			ds b1 \&\\*(tNANSI X\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI X\\*(aa'')
 .		\}
 .       \}
 .       if "\\*(A\\n(aP"-ansiC-89" \{\
 .		ie \\n(sT==1 \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
-.			as b1 (``\\*(tNANSI C\\*(aa'')
+.			ds b1 \&\\*(tNANSI X\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI X\\*(aa'')
 .		\}
 .		el \{\
-.			ds b1 \&\\*(tNANSI C\\*(aa3.159-1989\\*(sV
-.			as b1 (``\\*(tNANSI C\\*(aa'')
+.			ds b1 \&\\*(tNANSI X\\*(aa3.159-1989\\*(sV
+.			as b1 (``\\*(tNANSI X\\*(aa'')
 .		\}
 .       \}
 .       if "\\*(A\\n(aP"-iso8802-3" \{\
