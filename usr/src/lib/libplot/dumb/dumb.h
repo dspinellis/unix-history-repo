@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)dumb.h	8.1 (Berkeley) %G%
+ *	@(#)dumb.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,7 @@
  * to change, and is left as an exercise for the reader.
  */
 
+#include <stdlib.h>
 #include <math.h>
 
 #define scale(x,y) y = LINES-1-(LINES*y/rangeY +minY); x = COLS*x/rangeX + minX

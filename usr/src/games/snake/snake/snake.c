@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -513,7 +513,7 @@ struct point *sp, *np;
 	   snake would get too good */
 	struct point d;
 	int w, i, wt[8];
-	double sqrt(), v1, v2, vp, max;
+	double v1, v2, vp, max;
 	point(&d,you.col-sp->col,you.line-sp->line);
 	v1 = sqrt( (double) (d.col*d.col + d.line*d.line) );
 	w=0; 
