@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.h	8.1 (Berkeley) %G%
+ *	@(#)autoconf.h	8.2 (Berkeley) %G%
  *
- * from: $Header: autoconf.h,v 1.10 92/11/26 02:04:32 torek Exp $ (LBL)
+ * from: $Header: autoconf.h,v 1.11 93/09/28 05:26:41 leres Exp $ (LBL)
  */
 
 /*
@@ -111,3 +111,6 @@ struct bootpath {
 };
 
 struct device *bootdv;			/* found during autoconfiguration */
+
+/* Parse a disk string into a dev_t, return device struct pointer */
+struct	device *parsedisk __P((char *, int, int, dev_t *));
