@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -130,6 +130,7 @@ static Boolean VarTail __P((char *, Boolean, Buffer));
 static Boolean VarSuffix __P((char *, Boolean, Buffer));
 static Boolean VarRoot __P((char *, Boolean, Buffer));
 static Boolean VarMatch __P((char *, Boolean, Buffer, char *));
+static Boolean VarSYSVMatch __P((char *, Boolean, Buffer, VarPattern *));
 static Boolean VarNoMatch __P((char *, Boolean, Buffer, char *));
 static Boolean VarSubstitute __P((char *, Boolean, Buffer, VarPattern *));
 static char *VarModify __P((char *, Boolean (*modProc )(), ClientData));
@@ -710,6 +711,50 @@ VarMatch (word, addSpace, buf, pattern)
     }
     return(addSpace);
 }
+
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * VarSYSVMatch --
+ *	Place the word in the buffer if it matches the given pattern.
+ *	Callback function for VarModify to implement the System V %
+ *	modifiers.
+ *	
+ * Results:
+ *	TRUE if a space should be placed in the buffer before the next
+ *	word.
+ *
+ * Side Effects:
+ *	The word may be copied to the buffer.
+ *
+ *-----------------------------------------------------------------------
+ */
+static Boolean
+VarSYSVMatch (word, addSpace, buf, pat)
+    char    	  *word;    	/* Word to examine */
+    Boolean 	  addSpace; 	/* TRUE if need to add a space to the
+				 * buffer before adding the word, if it
+				 * matches */
+    Buffer  	  buf;	    	/* Buffer in which to store it */
+    VarPattern 	  *pat; 	/* Pattern the word must match */
+{
+    int len;
+    char *ptr;
+
+    if (addSpace)
+	Buf_AddByte(buf, (Byte)' ');
+
+    addSpace = TRUE;
+
+    if ((ptr = Str_SYSVMatch(word, pat->lhs, &len)) != NULL)
+	Str_SYSVSubst(buf, pat->rhs, ptr, len);
+    else
+	Buf_AddBytes(buf, strlen(word), (Byte *) word);
+
+    return(addSpace);
+}
+
 
 /*-
  *-----------------------------------------------------------------------
@@ -1579,9 +1624,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
 			 * SYSV modifications happen through the whole
 			 * string. Note the pattern is anchored at the end.
 			 */
-			pattern.flags |= VAR_SUB_GLOBAL|VAR_MATCH_END;
-
-			newStr = VarModify(str, VarSubstitute,
+			newStr = VarModify(str, VarSYSVMatch,
 					   (ClientData)&pattern);
 
 			/*

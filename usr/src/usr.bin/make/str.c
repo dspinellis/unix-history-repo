@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char     sccsid[] = "@(#)str.c	8.2 (Berkeley) %G%";
+static char     sccsid[] = "@(#)str.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "make.h"
@@ -312,4 +312,99 @@ Str_Match(string, pattern)
 thisCharOK:	++pattern;
 		++string;
 	}
+}
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * Str_SYSVMatch --
+ *	Check word against pattern for a match (% is wild), 
+ *	
+ * Results:
+ *	Returns the beginning position of a match or null. The number
+ *	of characters matched is returned in len.
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+char *
+Str_SYSVMatch(word, pattern, len)
+    char	*word;		/* Word to examine */
+    char	*pattern;	/* Pattern to examine against */
+    int		*len;		/* Number of characters to substitute */
+{
+    char *p = pattern;
+    char *w = word;
+    char *m;
+
+    if (*p == '\0')
+	return NULL;
+
+    if ((m = strchr(p, '%')) != NULL) {
+	/* check that the prefix matches */
+	for (; p != m && *w && *w == *p; w++, p++)
+	     continue;
+
+	if (p != m)
+	    return NULL;	/* No match */
+
+	if (*++p == '\0') {
+	    /* No more pattern, return the rest of the string */
+	    *len = strlen(w);
+	    return w;
+	}
+    }
+
+    m = w;
+
+    /* Find a matching tail */
+    do
+	if (strcmp(p, w) == 0) {
+	    *len = w - m;
+	    return m;
+	}
+    while (*w++ != '\0');
+	    
+    return NULL;
+}
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * Str_SYSVSubst --
+ *	Substitute '%' on the pattern with len characters from src.
+ *	If the pattern does not contain a '%' prepend len characters
+ *	from src.
+ *	
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	Places result on buf
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+Str_SYSVSubst(buf, pat, src, len)
+    Buffer buf;
+    char *pat;
+    char *src;
+    int   len;
+{
+    char *m;
+
+    if ((m = strchr(pat, '%')) != NULL) {
+	/* Copy the prefix */
+	Buf_AddBytes(buf, m - pat, (Byte *) pat);
+	/* skip the % */
+	pat = m + 1;
+    }
+
+    /* Copy the pattern */
+    Buf_AddBytes(buf, len, (Byte *) src);
+
+    /* append the rest */
+    Buf_AddBytes(buf, strlen(pat), (Byte *) pat);
 }
