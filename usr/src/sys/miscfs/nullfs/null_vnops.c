@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.5 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -66,13 +66,21 @@
  * in the arguments and, if a vnode is return by the operation,
  * stacks a null-node on top of the returned vnode.
  *
- * Although bypass handles most operations, 
- * vop_getattr, _inactive, _reclaim, and _print are not bypassed.
- * Vop_getattr must change the fsid being returned.
+ * Although bypass handles most operations, vop_getattr, vop_lock,
+ * vop_unlock, vop_inactive, vop_reclaim, and vop_print are not
+ * bypassed. Vop_getattr must change the fsid being returned.
+ * Vop_lock and vop_unlock must handle any locking for the
+ * current vnode as well as pass the lock request down.
  * Vop_inactive and vop_reclaim are not bypassed so that
- * they can handle freeing null-layer specific data.
- * Vop_print is not bypassed to avoid excessive debugging
- * information.
+ * they can handle freeing null-layer specific data. Vop_print
+ * is not bypassed to avoid excessive debugging information.
+ * Also, certain vnode operations change the locking state within
+ * the operation (create, mknod, remove, link, rename, mkdir, rmdir,
+ * and symlink). Ideally these operations should not change the
+ * lock state, but should be changed to let the caller of the
+ * function unlock them. Otherwise all intermediate vnode layers
+ * (such as union, umapfs, etc) must catch these functions to do
+ * the necessary locking at their layer.
  *
  *
  * INSTANTIATING VNODE STACKS
@@ -287,6 +295,51 @@ null_bypass(ap)
 }
 
 /*
+ * We have to carry on the locking protocol on the null layer vnodes
+ * as we progress through the tree.
+ */
+null_lookup(ap)
+	struct vop_lookup_args /* {
+		struct vnode * a_dvp;
+		struct vnode ** a_vpp;
+		struct componentname * a_cnp;
+	} */ *ap;
+{
+	struct proc *p = ap->a_cnp->cn_proc;
+	struct vop_lock_args lockargs;
+	struct vop_unlock_args unlockargs;
+	struct vnode *dvp, *vp;
+	int error;
+
+	error = null_bypass(ap);
+	/*
+	 * We must do the same locking and unlocking at this layer as 
+	 * is done in the layers below us. We could figure this out 
+	 * based on the error return and the LASTCN, LOCKPARENT, and
+	 * LOCKLEAF flags. However, it is more expidient to just find 
+	 * out the state of the lower level vnodes and set ours to the
+	 * same state.
+	 */
+	dvp = ap->a_dvp;
+	vp = *ap->a_vpp;
+	if (dvp == vp)
+		return (error);
+	if (!VOP_ISLOCKED(dvp)) {
+		unlockargs.a_vp = dvp;
+		unlockargs.a_flags = 0;
+		unlockargs.a_p = p;
+		vop_nounlock(&unlockargs);
+	}
+	if (vp != NULL && VOP_ISLOCKED(vp)) {
+		lockargs.a_vp = vp;
+		lockargs.a_flags = LK_SHARED;
+		lockargs.a_p = p;
+		vop_nolock(&lockargs);
+	}
+	return (error);
+}
+
+/*
  *  We handle getattr only to change the fsid.
  */
 int
@@ -299,6 +352,7 @@ null_getattr(ap)
 	} */ *ap;
 {
 	int error;
+
 	if (error = null_bypass(ap))
 		return (error);
 	/* Requires that arguments be restored. */
@@ -307,36 +361,51 @@ null_getattr(ap)
 }
 
 /*
- * We need to verify that we are not being vgoned and then clear
- * the interlock flag as it applies only to our vnode, not the
+ * We need to process our own vnode lock and then clear the
+ * interlock flag as it applies only to our vnode, not the
  * vnodes below us on the stack.
  */
 int
 null_lock(ap)
-	struct vop_lock_args *ap;
+	struct vop_lock_args /* {
+		struct vnode *a_vp;
+		int a_flags;
+		struct proc *a_p;
+	} */ *ap;
+{
+
+	vop_nolock(ap);
+	if ((ap->a_flags & LK_TYPE_MASK) == LK_DRAIN)
+		return (0);
+	ap->a_flags &= ~LK_INTERLOCK;
+	return (null_bypass(ap));
+}
+
+/*
+ * We need to process our own vnode unlock and then clear the
+ * interlock flag as it applies only to our vnode, not the
+ * vnodes below us on the stack.
+ */
+int
+null_unlock(ap)
+	struct vop_unlock_args /* {
+		struct vnode *a_vp;
+		int a_flags;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
-	int error;
 
-	if ((ap->a_flags & LK_INTERLOCK) == 0)
-		simple_lock(&vp->v_interlock);
-	if (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		simple_unlock(&vp->v_interlock);
-		tsleep((caddr_t)vp, PINOD, "unionlk1", 0);
-		return (ENOENT);
-	}
-	simple_unlock(&vp->v_interlock);
+	vop_nounlock(ap);
 	ap->a_flags &= ~LK_INTERLOCK;
-	if (error = null_bypass(ap))
-		return (error);
-	return (0);
+	return (null_bypass(ap));
 }
 
 int
 null_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
 	/*
@@ -351,6 +420,7 @@ null_inactive(ap)
 	 * like they do in the name lookup cache code.
 	 * That's too much work for now.
 	 */
+	VOP_UNLOCK(ap->a_vp, 0, ap->a_p);
 	return (0);
 }
 
@@ -446,8 +516,10 @@ int (**null_vnodeop_p)();
 struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_default_desc, null_bypass },
 
+	{ &vop_lookup_desc, null_lookup },
 	{ &vop_getattr_desc, null_getattr },
 	{ &vop_lock_desc, null_lock },
+	{ &vop_unlock_desc, null_unlock },
 	{ &vop_inactive_desc, null_inactive },
 	{ &vop_reclaim_desc, null_reclaim },
 	{ &vop_print_desc, null_print },
