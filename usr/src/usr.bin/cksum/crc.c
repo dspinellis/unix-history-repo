@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)crc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -71,13 +71,13 @@ static u_long crctab[] = {
 };
 
 /*
- * crc --
- *	Compute a POSIX.2 checksum.  This routine has been broken out since
- *	it is anticipated that other programs will use it.  It takes a file
- *	descriptor to read from and locations to store the crc and the number
- *	of bytes read.  It returns 0 on success and 1 on failure.  Errno is
- *	set on failure.
+ * Compute a POSIX 1003.2 checksum.  This routine has been broken out so that
+ * other programs can use it.  It takes a file descriptor to read from and
+ * locations to store the crc and the number of bytes read.  It returns 0 on
+ * success and 1 on failure.  Errno is set on failure.
  */
+u_long crc_total = ~0;			/* The crc over a number of files. */
+
 int
 crc(fd, cval, clen)
 	register int fd;
@@ -88,19 +88,27 @@ crc(fd, cval, clen)
 	register u_long crc, len;
 	u_char buf[16 * 1024];
 
+#define	COMPUTE(var, ch)	(var) = (var) << 8 ^ crctab[(var) >> 24 ^ (ch)]
+
 	crc = len = 0;
+	crc_total = ~crc_total;
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
-		for (len += nr, p = buf; nr--; ++p)
-			crc = crc << 8 ^ crctab[crc >> 24 ^ *p];
+		for (len += nr, p = buf; nr--; ++p) {
+			COMPUTE(crc, *p);
+			COMPUTE(crc_total, *p);
+		}
 	if (nr < 0)
-		return(1);
+		return (1);
 
 	*clen = len;
 
 	/* Include the length of the file. */
-	for (; len != 0; len >>= 8)
-		crc = crc << 8 ^ crctab[crc >> 24 ^ len & 0xff];
+	for (; len != 0; len >>= 8) {
+		COMPUTE(crc, len & 0xff);
+		COMPUTE(crc_total, len & 0xff);
+	}
 
 	*cval = ~crc;
-	return(0);
+	crc_total = ~crc_total;
+	return (0);
 }
