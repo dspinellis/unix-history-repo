@@ -3,13 +3,13 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Sean Eric Fagan
+ * Sean Eric Fagan.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)modf.s	5.4 (Berkeley) %G%";
+	.asciz "@(#)modf.s	5.5 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
