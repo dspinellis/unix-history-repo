@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wire.c	5.4 (Berkeley) %G%
+ *	@(#)wire.c	5.5 (Berkeley) %G%
  *
  * $Id: wire.c,v 5.2.2.1 1992/02/09 15:09:15 jsp beta $
  *
@@ -179,9 +179,11 @@ char *getwire()
 			 * would suggest, subnets must be in use.
 			 * Guess at the subnet mask, assuming reasonable
 			 * width subnet fields.
+			 * XXX: Or-in at least 1 byte's worth of 1s to make
+			 * sure the top bits remain set.
 			 */
 			while (subnet &~ mask)
-		  		mask = (long)mask >> subnetshift;
+				mask = (mask >> subnetshift) | 0xff000000;
 
 			net = subnet & mask;
 			while ((mask & 1) == 0)
