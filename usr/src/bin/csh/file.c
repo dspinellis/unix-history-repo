@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)file.c 1.1 (Berkeley from Hp Labs) %G%";
+static	char *sccsid = "@(#)file.c 1.2 (Berkeley from Hp Labs) %G%";
 
 /*
  * Tenex style file name recognition, .. and more.
@@ -57,11 +57,9 @@ setup_tty (on)
 	 * so this code below is, therefore, mandatory.
 	 */
 	ioctl (SHIN, TIOCGETP, &sgtty);
-	if ((sgtty.sg_flags & (RAW | CBREAK)) ||
-	   ((sgtty.sg_flags & ECHO) == 0))	/* not manditory, but nice */
+	if (sgtty.sg_flags & (RAW | CBREAK))
 	{
 	    sgtty.sg_flags &= ~(RAW | CBREAK);
-	    sgtty.sg_flags |= ECHO;
 	    ioctl (SHIN, TIOCSETP, &sgtty);
 	}
     }
