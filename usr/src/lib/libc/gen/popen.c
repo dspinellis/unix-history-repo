@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -27,7 +27,7 @@ static char sccsid[] = "@(#)popen.c	5.7 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <stdio.h>
 
-static uid_t *pids;
+static pid_t *pids;
 static int fds;
 
 FILE *
@@ -41,17 +41,16 @@ popen(program, type)
 	if (*type != 'r' && *type != 'w' || type[1])
 		return(NULL);
 
-	if (!pids) {
+	if (pids == NULL) {
 		if ((fds = getdtablesize()) <= 0)
 			return(NULL);
-		if (!(pids =
-		    (uid_t *)malloc((u_int)(fds * sizeof(uid_t)))))
+		if ((pids = (pid_t *)malloc((u_int)(fds * sizeof(int)))) == NULL)
 			return(NULL);
-		bzero(pids, fds * sizeof(uid_t));
+		bzero((char *)pids, fds * sizeof(pid_t));
 	}
 	if (pipe(pdes) < 0)
 		return(NULL);
-	switch(pid = vfork()) {
+	switch (pid = vfork()) {
 	case -1:			/* error */
 		(void)close(pdes[0]);
 		(void)close(pdes[1]);
@@ -91,7 +90,7 @@ pclose(iop)
 	FILE *iop;
 {
 	register int fdes;
-	long omask;
+	int omask;
 	int stat_loc;
 	pid_t waitpid();
 
@@ -99,7 +98,7 @@ pclose(iop)
 	 * pclose returns -1 if stream is not associated with a
 	 * `popened' command, or, if already `pclosed'.
 	 */
-	if (pids[fdes = fileno(iop)] == 0)
+	if (pids == NULL || pids[fdes = fileno(iop)] == 0)
 		return(-1);
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
