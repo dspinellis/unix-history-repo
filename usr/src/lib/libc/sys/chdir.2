@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chdir.2	6.5 (Berkeley) %G%
+.\"	@(#)chdir.2	6.6 (Berkeley) %G%
 .\"
 .TH CHDIR 2 ""
 .UC 4
@@ -78,11 +78,16 @@ An I/O error occurred while reading from or writing to the file system.
 will fail and the current working directory will be unchanged if
 one or more of the following are true:
 .TP 15
+[EACCES]
+Search permission is denied for the directory referenced by the
+file descriptor.
+.TP 15
 [ENOTDIR]
 The file descriptor does not reference a directory.
 .TP 15
 EBADF
+The argument
 .I fd
-is not a valid open file descriptor.
+is not a valid file descriptor.
 .SH "SEE ALSO"
 chroot(2)
