@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -374,7 +374,7 @@ p_sockaddr(sa, flags, width)
 
 	default:
 	    {
-		register u_char *s = ((u_char *)sa->sa_data, *slim;
+		register u_char *s = (u_char *)sa->sa_data, *slim;
 
 		slim =  sa->sa_len + (u_char *) sa;
 		cplim = cp + sizeof(workbuf) - 6;
