@@ -1,0 +1,1252 @@
+This is Info file ./gdb.info, produced by Makeinfo-1.47 from the input
+file gdb-all.texi.
+
+START-INFO-DIR-ENTRY
+* Gdb: (gdb).                   The GNU debugger.
+END-INFO-DIR-ENTRY
+   This file documents the GNU debugger GDB.
+
+   This is Edition 4.06, October 1992, of `Debugging with GDB: the GNU
+Source-Level Debugger' for GDB Version 4.7.
+
+   Copyright (C) 1988, 1989, 1990, 1991, 1992 Free Software Foundation,
+Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the Free Software
+Foundation instead of in the original English.
+
+
+File: gdb.info,  Node: Hitachi H8/300 Remote,  Prev: ST2000 Remote,  Up: Remote
+
+GDB and the Hitachi H8/300
+--------------------------
+
+   GDB needs to know these things to talk to your H8/300:
+
+  1. that you want to use `target hms', the remote debugging interface
+     for the H8/300 (this is the default when GDB is configured
+     specifically for the H8/300);
+
+  2. what serial device connects your host to your H8/300 (the first
+     serial device available on your host is the default);
+
+
+   GDB depends on an auxiliary terminate-and-stay-resident program
+called `asynctsr' to communicate with the H8/300 development board
+through a PC serial port.  You must also use the DOS `mode' command to
+set up the serial port on the DOS side.
+
+   The following sample session illustrates the steps needed to start a
+program under GDB control on your H8/300.  The example uses a sample
+H8/300 program called `t.x'.
+
+   First hook up your H8/300 development board.  In this example, we
+use a board attached to serial port `COM2'; if you use a different
+serial port, substitute its name in the argument of the `mode' command.
+When you call `asynctsr', the auxiliary comms program used by the
+degugger, you give it just the numeric part of the serial port's name;
+for example, `asyncstr 2' below runs `asyncstr' on `COM2'.
+
+     (eg-C:\H8300\TEST) mode com2:9600,n,8,1,p
+     
+     Resident portion of MODE loaded
+     
+     COM2: 9600, n, 8, 1, p
+     
+     (eg-C:\H8300\TEST) asynctsr 2
+
+     *Warning:* We have noticed a bug in PC-NFS that conflicts with
+     `asynctsr'.  If you also run PC-NFS on your DOS host, you may need
+     to disable it, or even boot without it, to use `asynctsr' to
+     control your H8/300 board.
+
+   Now that serial communications are set up, and the H8/300 is
+connected, you can start up GDB.  Call `gdb' with the name of your
+program as the argument.  `gdb' prompts you, as usual, with the prompt
+`(gdb)'.  Use two special commands to begin your debugging session:
+`target hms' to specify cross-debugging to the Hitachi board, and the
+`load' command to download your program to the board. `load' displays
+the names of the program's sections, and a `*' for each 2K of data
+downloaded.  (If you want to refresh GDB data on symbols or on the
+executable file without downloading, use the GDB commands `file' or
+`symbol-file'.  These commands, and `load' itself, are described in
+*Note Commands to Specify Files: Files.)
+
+     (eg-C:\H8300\TEST) gdb t.x
+     GDB is free software and you are welcome to distribute copies
+      of it under certain conditions; type "show copying" to see
+      the conditions.
+     There is absolutely no warranty for GDB; type "show warranty"
+     for details.
+     GDB 4.7, Copyright 1992 Free Software Foundation, Inc...
+     (gdb) target hms
+     Connected to remote H8/300 HMS system.
+     (gdb) load t.x
+     .text   : 0x8000 .. 0xabde ***********
+     .data   : 0xabde .. 0xad30 *
+     .stack  : 0xf000 .. 0xf014 *
+
+   At this point, you're ready to run or debug your program.  From here
+on, you can use all the usual GDB commands.  The `break' command sets
+breakpoints; the `run' command starts your program; `print' or `x'
+display data; the `continue' command resumes execution after stopping
+at a breakpoint.  You can use the `help' command at any time to find
+out more about GDB commands.
+
+   Remember, however, that *operating system* facilities aren't
+available on your H8/300; for example, if your program hangs, you can't
+send an interrupt--but you can press the RESET switch!
+
+   Use the RESET button on the H8/300 board
+   * to interrupt your program (don't use `ctl-C' on the DOS host--it
+     has no way to pass an interrupt signal to the H8/300); and
+
+   * to return to the GDB command prompt after your program finishes
+     normally.  The communications protocol provides no other way for
+     GDB to detect program completion.
+
+   In either case, GDB will see the effect of a RESET on the H8/300
+board as a "normal exit" of your program.
+
+
+File: gdb.info,  Node: Controlling GDB,  Next: Sequences,  Prev: Targets,  Up: Top
+
+Controlling GDB
+***************
+
+   You can alter many aspects of GDB's interaction with you by using
+the `set' command.  For commands controlling how GDB displays data,
+*note Print Settings: Print Settings.; other settings are described
+here.
+
+* Menu:
+
+* Prompt::                      Prompt
+* Editing::                     Command Editing
+* History::                     Command History
+* Screen Size::                 Screen Size
+* Numbers::                     Numbers
+* Messages/Warnings::           Optional Warnings and Messages
+
+
+File: gdb.info,  Node: Prompt,  Next: Editing,  Up: Controlling GDB
+
+Prompt
+======
+
+   GDB indicates its readiness to read a command by printing a string
+called the "prompt".  This string is normally `(gdb)'.  You can change
+the prompt string with the `set prompt' command.  For instance, when
+debugging GDB with GDB, it is useful to change the prompt in one of the
+GDBs so that you can always tell which one you are talking to.
+
+`set prompt NEWPROMPT'
+     Directs GDB to use NEWPROMPT as its prompt string henceforth.
+
+`show prompt'
+     Prints a line of the form: `Gdb's prompt is: YOUR-PROMPT'
+
+
+File: gdb.info,  Node: Editing,  Next: History,  Prev: Prompt,  Up: Controlling GDB
+
+Command Editing
+===============
+
+   GDB reads its input commands via the "readline" interface.  This GNU
+library provides consistent behavior for programs which provide a
+command line interface to the user.  Advantages are `emacs'-style or
+`vi'-style inline editing of commands, `csh'-like history substitution,
+and a storage and recall of command history across debugging sessions.
+
+   You may control the behavior of command line editing in GDB with the
+command `set'.
+
+`set editing'
+`set editing on'
+     Enable command line editing (enabled by default).
+
+`set editing off'
+     Disable command line editing.
+
+`show editing'
+     Show whether command line editing is enabled.
+
+
+File: gdb.info,  Node: History,  Next: Screen Size,  Prev: Editing,  Up: Controlling GDB
+
+Command History
+===============
+
+`set history filename FNAME'
+     Set the name of the GDB command history file to FNAME.  This is
+     the file from which GDB will read an initial command history list
+     or to which it will write this list when it exits.  This list is
+     accessed through history expansion or through the history command
+     editing characters listed below.  This file defaults to the value
+     of the environment variable `GDBHISTFILE', or to `./.gdb_history'
+     if this variable is not set.
+
+`set history save'
+`set history save on'
+     Record command history in a file, whose name may be specified with
+     the `set history filename' command.  By default, this option is
+     disabled.
+
+`set history save off'
+     Stop recording command history in a file.
+
+`set history size SIZE'
+     Set the number of commands which GDB will keep in its history list.
+     This defaults to the value of the environment variable `HISTSIZE',
+     or to 256 if this variable is not set.
+
+   History expansion assigns special meaning to the character `!'.
+Since `!' is also the logical not operator in C, history expansion is
+off by default. If you decide to enable history expansion with the `set
+history expansion on' command, you may sometimes need to follow `!'
+(when it is used as logical not, in an expression) with a space or a
+tab to prevent it from being expanded.  The readline history facilities
+will not attempt substitution on the strings `!=' and `!(', even when
+history expansion is enabled.
+
+   The commands to control history expansion are:
+
+`set history expansion on'
+`set history expansion'
+     Enable history expansion.  History expansion is off by default.
+
+`set history expansion off'
+     Disable history expansion.
+
+     The readline code comes with more complete documentation of
+     editing and history expansion features.  Users unfamiliar with
+     `emacs' or `vi' may wish to read it.
+
+`show history'
+`show history filename'
+`show history save'
+`show history size'
+`show history expansion'
+     These commands display the state of the GDB history parameters.
+     `show history' by itself displays all four states.
+
+`show commands'
+     Display the last ten commands in the command history.
+
+`show commands N'
+     Print ten commands centered on command number N.
+
+`show commands +'
+     Print ten commands just after the commands last printed.
+
+
+File: gdb.info,  Node: Screen Size,  Next: Numbers,  Prev: History,  Up: Controlling GDB
+
+Screen Size
+===========
+
+   Certain commands to GDB may produce large amounts of information
+output to the screen.  To help you read all of it, GDB pauses and asks
+you for input at the end of each page of output.  Type RET when you
+want to continue the output.  GDB also uses the screen width setting to
+determine when to wrap lines of output.  Depending on what is being
+printed, it tries to break the line at a readable place, rather than
+simply letting it overflow onto the following line.
+
+   Normally GDB knows the size of the screen from the termcap data base
+together with the value of the `TERM' environment variable and the
+`stty rows' and `stty cols' settings. If this is not correct, you can
+override it with the `set height' and `set width' commands:
+
+`set height LPP'
+`show height'
+`set width CPL'
+`show width'
+     These `set' commands specify a screen height of LPP lines and a
+     screen width of CPL characters.  The associated `show' commands
+     display the current settings.
+
+     If you specify a height of zero lines, GDB will not pause during
+     output no matter how long the output is.  This is useful if output
+     is to a file or to an editor buffer.
+
+
+File: gdb.info,  Node: Numbers,  Next: Messages/Warnings,  Prev: Screen Size,  Up: Controlling GDB
+
+Numbers
+=======
+
+   You can always enter numbers in octal, decimal, or hexadecimal in
+GDB by the usual conventions: octal numbers begin with `0', decimal
+numbers end with `.', and hexadecimal numbers begin with `0x'. Numbers
+that begin with none of these are, by default, entered in base 10;
+likewise, the default display for numbers--when no particular format is
+specified--is base 10.  You can change the default base for both input
+and output with the `set radix' command.
+
+`set radix BASE'
+     Set the default base for numeric input and display.  Supported
+     choices for BASE are decimal 2, 8, 10, 16.  BASE must itself be
+     specified either unambiguously or using the current default radix;
+     for example, any of
+
+          set radix 1010
+          set radix 012
+          set radix 10.
+          set radix 0xa
+
+     will set the base to decimal.  On the other hand, `set radix 10'
+     will leave the radix unchanged no matter what it was.
+
+`show radix'
+     Display the current default base for numeric input and display.
+
+
+File: gdb.info,  Node: Messages/Warnings,  Prev: Numbers,  Up: Controlling GDB
+
+Optional Warnings and Messages
+==============================
+
+   By default, GDB is silent about its inner workings.  If you are
+running on a slow machine, you may want to use the `set verbose'
+command. It will make GDB tell you when it does a lengthy internal
+operation, so you will not think it has crashed.
+
+   Currently, the messages controlled by `set verbose' are those which
+announce that the symbol table for a source file is being read; see
+`symbol-file' in *Note Commands to Specify Files: Files.
+
+`set verbose on'
+     Enables GDB's output of certain informational messages.
+
+`set verbose off'
+     Disables GDB's output of certain informational messages.
+
+`show verbose'
+     Displays whether `set verbose' is on or off.
+
+   By default, if GDB encounters bugs in the symbol table of an object
+file, it is silent; but if you are debugging a compiler, you may find
+this information useful (*note Errors Reading Symbol Files: Symbol
+Errors.).
+
+`set complaints LIMIT'
+     Permits GDB to output LIMIT complaints about each type of unusual
+     symbols before becoming silent about the problem.  Set LIMIT to
+     zero to suppress all complaints; set it to a large number to
+     prevent complaints from being suppressed.
+
+`show complaints'
+     Displays how many symbol complaints GDB is permitted to produce.
+
+   By default, GDB is cautious, and asks what sometimes seems to be a
+lot of stupid questions to confirm certain commands.  For example, if
+you try to run a program which is already running:
+
+     (gdb) run
+     The program being debugged has been started already.
+     Start it from the beginning? (y or n)
+
+   If you are willing to unflinchingly face the consequences of your own
+commands, you can disable this "feature":
+
+`set confirm off'
+     Disables confirmation requests.
+
+`set confirm on'
+     Enables confirmation requests (the default).
+
+`show confirm'
+     Displays state of confirmation requests.
+
+   Some systems allow individual object files that make up your program
+to be replaced without stopping and restarting your program. For
+example, in VxWorks you can simply recompile a defective object file
+and keep on running. If you are running on one of these systems, you
+can allow GDB to reload the symbols for automatically relinked modules:
+
+`set symbol-reloading on'
+     Replace symbol definitions for the corresponding source file when
+     an object file with a particular name is seen again.
+
+`set symbol-reloading off'
+     Do not replace symbol definitions when re-encountering object
+     files of the same name.  This is the default state; if you are not
+     running on a system that permits automatically relinking modules,
+     you should leave `symbol-reloading' off, since otherwise GDB may
+     discard symbols when linking large programs, that may contain
+     several modules (from different directories or libraries) with the
+     same name.
+
+`show symbol-reloading'
+     Show the current `on' or `off' setting.
+
+
+File: gdb.info,  Node: Sequences,  Next: Emacs,  Prev: Controlling GDB,  Up: Top
+
+Canned Sequences of Commands
+****************************
+
+   Aside from breakpoint commands (*note Breakpoint Command Lists:
+Break Commands.), GDB provides two ways to store sequences of commands
+for execution as a unit: user-defined commands and command files.
+
+* Menu:
+
+* Define::                      User-Defined Commands
+* Hooks::			User-Defined Command Hooks
+* Command Files::               Command Files
+* Output::                      Commands for Controlled Output
+
+
+File: gdb.info,  Node: Define,  Next: Hooks,  Up: Sequences
+
+User-Defined Commands
+=====================
+
+   A "user-defined command" is a sequence of GDB commands to which you
+assign a new name as a command.  This is done with the `define' command.
+
+`define COMMANDNAME'
+     Define a command named COMMANDNAME.  If there is already a command
+     by that name, you are asked to confirm that you want to redefine
+     it.
+
+     The definition of the command is made up of other GDB command
+     lines, which are given following the `define' command.  The end of
+     these commands is marked by a line containing `end'.
+
+`document COMMANDNAME'
+     Give documentation to the user-defined command COMMANDNAME.  The
+     command COMMANDNAME must already be defined.  This command reads
+     lines of documentation just as `define' reads the lines of the
+     command definition, ending with `end'.  After the `document'
+     command is finished, `help' on command COMMANDNAME will print the
+     documentation you have specified.
+
+     You may use the `document' command again to change the
+     documentation of a command.  Redefining the command with `define'
+     does not change the documentation.
+
+`help user-defined'
+     List all user-defined commands, with the first line of the
+     documentation (if any) for each.
+
+`show user'
+`show user COMMANDNAME'
+     Display the GDB commands used to define COMMANDNAME (but not its
+     documentation).  If no COMMANDNAME is given, display the
+     definitions for all user-defined commands.
+
+   User-defined commands do not take arguments.  When they are
+executed, the commands of the definition are not printed.  An error in
+any command stops execution of the user-defined command.
+
+   Commands that would ask for confirmation if used interactively
+proceed without asking when used inside a user-defined command.  Many
+GDB commands that normally print messages to say what they are doing
+omit the messages when used in a user-defined command.
+
+
+File: gdb.info,  Node: Hooks,  Next: Command Files,  Prev: Define,  Up: Sequences
+
+User-Defined Command Hooks
+==========================
+
+   You may define *hooks*, which are a special kind of user-defined
+command.  Whenever you run the command `foo', if the user-defined
+command `hook-foo' exists, it is executed (with no arguments) before
+that command.
+
+   In addition, a pseudo-command, `stop' exists.  Hooking this command
+will cause your hook to be executed every time execution stops in the
+inferior program, before breakpoint commands are run, displays are
+printed, or the stack frame is printed.
+
+   For example, to cause `SIGALRM' signals to be ignored while
+single-stepping, but cause them to be resumed during normal execution,
+you could do:
+
+     define hook-stop
+     handle SIGALRM nopass
+     end
+     
+     define hook-run
+     handle SIGALRM pass
+     end
+     
+     define hook-continue
+     handle SIGLARM pass
+     end
+
+   Any single-word command in GDB can be hooked.  Aliases for other
+commands cannot be hooked (you should hook the basic command name, e.g.
+`backtrace' rather than `bt').  If an error occurs during the execution
+of your hook, execution of GDB commands stops and you are returned to
+the GDB prompt (before the command that you actually typed had a chance
+to run).
+
+   If you try to define a hook which doesn't match any known command,
+you will get a warning from the `define' command.
+
+
+File: gdb.info,  Node: Command Files,  Next: Output,  Prev: Hooks,  Up: Sequences
+
+Command Files
+=============
+
+   A command file for GDB is a file of lines that are GDB commands. 
+Comments (lines starting with `#') may also be included.  An empty line
+in a command file does nothing; it does not mean to repeat the last
+command, as it would from the terminal.
+
+   When you start GDB, it automatically executes commands from its
+"init files".  These are files named `.gdbinit'.  GDB reads the init
+file (if any) in your home directory and then the init file (if any) in
+the current working directory.  (The init files are not executed if you
+use the `-nx' option; *note Choosing Modes: Mode Options..)  You can
+also request the execution of a command file with the `source' command:
+
+`source FILENAME'
+     Execute the command file FILENAME.
+
+   The lines in a command file are executed sequentially.  They are not
+printed as they are executed.  An error in any command terminates
+execution of the command file.
+
+   Commands that would ask for confirmation if used interactively
+proceed without asking when used in a command file.  Many GDB commands
+that normally print messages to say what they are doing omit the
+messages when called from command files.
+
+
+File: gdb.info,  Node: Output,  Prev: Command Files,  Up: Sequences
+
+Commands for Controlled Output
+==============================
+
+   During the execution of a command file or a user-defined command,
+normal GDB output is suppressed; the only output that appears is what is
+explicitly printed by the commands in the definition.  This section
+describes three commands useful for generating exactly the output you
+want.
+
+`echo TEXT'
+     Print TEXT.  Nonprinting characters can be included in TEXT using
+     C escape sequences, such as `\n' to print a newline.  *No newline
+     will be printed unless you specify one.* In addition to the
+     standard C escape sequences, a backslash followed by a space
+     stands for a space.  This is useful for outputting a string with
+     spaces at the beginning or the end, since leading and trailing
+     spaces are otherwise trimmed from all arguments. To print ` and
+     foo = ', use the command `echo \ and foo = \ '.
+
+     A backslash at the end of TEXT can be used, as in C, to continue
+     the command onto subsequent lines.  For example,
+
+          echo This is some text\n\
+          which is continued\n\
+          onto several lines.\n
+
+     produces the same output as
+
+          echo This is some text\n
+          echo which is continued\n
+          echo onto several lines.\n
+
+`output EXPRESSION'
+     Print the value of EXPRESSION and nothing but that value: no
+     newlines, no `$NN = '.  The value is not entered in the value
+     history either.  *Note Expressions: Expressions, for more
+     information on expressions.
+
+`output/FMT EXPRESSION'
+     Print the value of EXPRESSION in format FMT.  You can use the same
+     formats as for `print'; *note Output formats::., for more
+     information.
+
+`printf STRING, EXPRESSIONS...'
+     Print the values of the EXPRESSIONS under the control of STRING. 
+     The EXPRESSIONS are separated by commas and may be either numbers
+     or pointers.  Their values are printed as specified by STRING,
+     exactly as if your program were to execute
+
+          printf (STRING, EXPRESSIONS...);
+
+     For example, you can print two values in hex like this:
+
+          printf "foo, bar-foo = 0x%x, 0x%x\n", foo, bar-foo
+
+     The only backslash-escape sequences that you can use in the format
+     string are the simple ones that consist of backslash followed by a
+     letter.
+
+
+File: gdb.info,  Node: Emacs,  Next: GDB Bugs,  Prev: Sequences,  Up: Top
+
+Using GDB under GNU Emacs
+*************************
+
+   A special interface allows you to use GNU Emacs to view (and edit)
+the source files for the program you are debugging with GDB.
+
+   To use this interface, use the command `M-x gdb' in Emacs.  Give the
+executable file you want to debug as an argument.  This command starts
+GDB as a subprocess of Emacs, with input and output through a newly
+created Emacs buffer.
+
+   Using GDB under Emacs is just like using GDB normally except for two
+things:
+
+   * All "terminal" input and output goes through the Emacs buffer.
+
+   This applies both to GDB commands and their output, and to the input
+and output done by the program you are debugging.
+
+   This is useful because it means that you can copy the text of
+previous commands and input them again; you can even use parts of the
+output in this way.
+
+   All the facilities of Emacs' Shell mode are available for interacting
+with your program.  In particular, you can send signals the usual
+way--for example, `C-c C-c' for an interrupt, `C-c C-z' for a stop.
+
+   * GDB displays source code through Emacs.
+
+   Each time GDB displays a stack frame, Emacs automatically finds the
+source file for that frame and puts an arrow (`=>') at the left margin
+of the current line.  Emacs uses a separate buffer for source display,
+and splits the window to show both your GDB session and the source.
+
+   Explicit GDB `list' or search commands still produce output as
+usual, but you probably will have no reason to use them.
+
+     *Warning:* If the directory where your program resides is not your
+     current directory, it can be easy to confuse Emacs about the
+     location of the source files, in which case the auxiliary display
+     buffer will not appear to show your source.  GDB can find programs
+     by searching your environment's `PATH' variable, so the GDB input
+     and output session will proceed normally; but Emacs does not get
+     enough information back from GDB to locate the source files in
+     this situation.  To avoid this problem, either start GDB mode from
+     the directory where your program resides, or specify a full path
+     name when prompted for the `M-x gdb' argument.
+
+     A similar confusion can result if you use the GDB `file' command to
+     switch to debugging a program in some other location, from an
+     existing GDB buffer in Emacs.
+
+   By default, `M-x gdb' calls the program called `gdb'.  If you need
+to call GDB by a different name (for example, if you keep several
+configurations around, with different names) you can set the Emacs
+variable `gdb-command-name'; for example,
+
+     (setq gdb-command-name "mygdb")
+
+(preceded by `ESC ESC', or typed in the `*scratch*' buffer, or in your
+`.emacs' file) will make Emacs call the program named "`mygdb'" instead.
+
+   In the GDB I/O buffer, you can use these special Emacs commands in
+addition to the standard Shell mode commands:
+
+`C-h m'
+     Describe the features of Emacs' GDB Mode.
+
+`M-s'
+     Execute to another source line, like the GDB `step' command; also
+     update the display window to show the current file and location.
+
+`M-n'
+     Execute to next source line in this function, skipping all function
+     calls, like the GDB `next' command.  Then update the display window
+     to show the current file and location.
+
+`M-i'
+     Execute one instruction, like the GDB `stepi' command; update
+     display window accordingly.
+
+`M-x gdb-nexti'
+     Execute to next instruction, using the GDB `nexti' command; update
+     display window accordingly.
+
+`C-c C-f'
+     Execute until exit from the selected stack frame, like the GDB
+     `finish' command.
+
+`M-c'
+     Continue execution of your program, like the GDB `continue'
+     command.
+
+     *Warning:* In Emacs v19, this command is `C-c C-p'.
+
+`M-u'
+     Go up the number of frames indicated by the numeric argument
+     (*note Numeric Arguments: (emacs)Arguments.), like the GDB `up'
+     command.
+
+     *Warning:* In Emacs v19, this command is `C-c C-u'.
+
+`M-d'
+     Go down the number of frames indicated by the numeric argument,
+     like the GDB `down' command.
+
+     *Warning:* In Emacs v19, this command is `C-c C-d'.
+
+`C-x &'
+     Read the number where the cursor is positioned, and insert it at
+     the end of the GDB I/O buffer.  For example, if you wish to
+     disassemble code around an address that was displayed earlier,
+     type `disassemble'; then move the cursor to the address display,
+     and pick up the argument for `disassemble' by typing `C-x &'.
+
+     You can customize this further on the fly by defining elements of
+     the list `gdb-print-command'; once it is defined, you can format or
+     otherwise process numbers picked up by `C-x &' before they are
+     inserted.  A numeric argument to `C-x &' will both indicate that
+     you wish special formatting, and act as an index to pick an
+     element of the list.  If the list element is a string, the number
+     to be inserted is formatted using the Emacs function `format';
+     otherwise the number is passed as an argument to the corresponding
+     list element.
+
+   In any source file, the Emacs command `C-x SPC' (`gdb-break') tells
+GDB to set a breakpoint on the source line point is on.
+
+   If you accidentally delete the source-display buffer, an easy way to
+get it back is to type the command `f' in the GDB buffer, to request a
+frame display; when you run under Emacs, this will recreate the source
+buffer if necessary to show you the context of the current frame.
+
+   The source files displayed in Emacs are in ordinary Emacs buffers
+which are visiting the source files in the usual way.  You can edit the
+files with these buffers if you wish; but keep in mind that GDB
+communicates with Emacs in terms of line numbers.  If you add or delete
+lines from the text, the line numbers that GDB knows will cease to
+correspond properly to the code.
+
+
+File: gdb.info,  Node: GDB Bugs,  Next: Renamed Commands,  Prev: Emacs,  Up: Top
+
+Reporting Bugs in GDB
+*********************
+
+   Your bug reports play an essential role in making GDB reliable.
+
+   Reporting a bug may help you by bringing a solution to your problem,
+or it may not.  But in any case the principal function of a bug report
+is to help the entire community by making the next version of GDB work
+better.  Bug reports are your contribution to the maintenance of GDB.
+
+   In order for a bug report to serve its purpose, you must include the
+information that enables us to fix the bug.
+
+* Menu:
+
+* Bug Criteria::                Have You Found a Bug?
+* Bug Reporting::               How to Report Bugs
+
+
+File: gdb.info,  Node: Bug Criteria,  Next: Bug Reporting,  Up: GDB Bugs
+
+Have You Found a Bug?
+=====================
+
+   If you are not sure whether you have found a bug, here are some
+guidelines:
+
+   * If the debugger gets a fatal signal, for any input whatever, that
+     is a GDB bug.  Reliable debuggers never crash.
+
+   * If GDB produces an error message for valid input, that is a bug.
+
+   * If GDB does not produce an error message for invalid input, that
+     is a bug.  However, you should note that your idea of "invalid
+     input" might be our idea of "an extension" or "support for
+     traditional practice".
+
+   * If you are an experienced user of debugging tools, your suggestions
+     for improvement of GDB are welcome in any case.
+
+
+File: gdb.info,  Node: Bug Reporting,  Prev: Bug Criteria,  Up: GDB Bugs
+
+How to Report Bugs
+==================
+
+   A number of companies and individuals offer support for GNU products.
+If you obtained GDB from a support organization, we recommend you
+contact that organization first.
+
+   Contact information for many support companies and individuals is
+available in the file `etc/SERVICE' in the GNU Emacs distribution.
+
+   In any event, we also recommend that you send bug reports for GDB to
+one of these addresses:
+
+     bug-gdb@prep.ai.mit.edu
+     {ucbvax|mit-eddie|uunet}!prep.ai.mit.edu!bug-gdb
+
+   *Do not send bug reports to `info-gdb', or to `help-gdb', or to any
+newsgroups.* Most users of GDB do not want to receive bug reports. 
+Those that do, have arranged to receive `bug-gdb'.
+
+   The mailing list `bug-gdb' has a newsgroup `gnu.gdb.bug' which
+serves as a repeater.  The mailing list and the newsgroup carry exactly
+the same messages.  Often people think of posting bug reports to the
+newsgroup instead of mailing them.  This appears to work, but it has one
+problem which can be crucial: a newsgroup posting often lacks a mail
+path back to the sender.  Thus, if we need to ask for more information,
+we may be unable to reach you.  For this reason, it is better to send
+bug reports to the mailing list.
+
+   As a last resort, send bug reports on paper to:
+
+     GNU Debugger Bugs
+     Free Software Foundation
+     545 Tech Square
+     Cambridge, MA 02139
+
+   The fundamental principle of reporting bugs usefully is this:
+*report all the facts*.  If you are not sure whether to state a fact or
+leave it out, state it!
+
+   Often people omit facts because they think they know what causes the
+problem and assume that some details do not matter.  Thus, you might
+assume that the name of the variable you use in an example does not
+matter. Well, probably it does not, but one cannot be sure.  Perhaps
+the bug is a stray memory reference which happens to fetch from the
+location where that name is stored in memory; perhaps, if the name were
+different, the contents of that location would fool the debugger into
+doing the right thing despite the bug.  Play it safe and give a
+specific, complete example.  That is the easiest thing for you to do,
+and the most helpful.
+
+   Keep in mind that the purpose of a bug report is to enable us to fix
+the bug if it is new to us.  It is not as important as what happens if
+the bug is already known.  Therefore, always write your bug reports on
+the assumption that the bug has not been reported previously.
+
+   Sometimes people give a few sketchy facts and ask, "Does this ring a
+bell?"  Those bug reports are useless, and we urge everyone to *refuse
+to respond to them* except to chide the sender to report bugs properly.
+
+   To enable us to fix the bug, you should include all these things:
+
+   * The version of GDB.  GDB announces it if you start with no
+     arguments; you can also print it at any time using `show version'.
+
+     Without this, we will not know whether there is any point in
+     looking for the bug in the current version of GDB.
+
+   * The type of machine you are using, and the operating system name
+     and version number.
+
+   * What compiler (and its version) was used to compile GDB--e.g.
+     "gcc-2.0".
+
+   * What compiler (and its version) was used to compile the program you
+     are debugging--e.g.  "gcc-2.0".
+
+   * The command arguments you gave the compiler to compile your
+     example and observe the bug.  For example, did you use `-O'?  To
+     guarantee you will not omit something important, list them all.  A
+     copy of the Makefile (or the output from make) is sufficient.
+
+     If we were to try to guess the arguments, we would probably guess
+     wrong and then we might not encounter the bug.
+
+   * A complete input script, and all necessary source files, that will
+     reproduce the bug.
+
+   * A description of what behavior you observe that you believe is
+     incorrect.  For example, "It gets a fatal signal."
+
+     Of course, if the bug is that GDB gets a fatal signal, then we will
+     certainly notice it.  But if the bug is incorrect output, we might
+     not notice unless it is glaringly wrong.  We are human, after all.
+      You might as well not give us a chance to make a mistake.
+
+     Even if the problem you experience is a fatal signal, you should
+     still say so explicitly.  Suppose something strange is going on,
+     such as, your copy of GDB is out of synch, or you have encountered
+     a bug in the C library on your system.  (This has happened!)  Your
+     copy might crash and ours would not.  If you told us to expect a
+     crash, then when ours fails to crash, we would know that the bug
+     was not happening for us.  If you had not told us to expect a
+     crash, then we would not be able to draw any conclusion from our
+     observations.
+
+   * If you wish to suggest changes to the GDB source, send us context
+     diffs.  If you even discuss something in the GDB source, refer to
+     it by context, not by line number.
+
+     The line numbers in our development sources will not match those
+     in your sources.  Your line numbers would convey no useful
+     information to us.
+
+   Here are some things that are not necessary:
+
+   * A description of the envelope of the bug.
+
+     Often people who encounter a bug spend a lot of time investigating
+     which changes to the input file will make the bug go away and which
+     changes will not affect it.
+
+     This is often time consuming and not very useful, because the way
+     we will find the bug is by running a single example under the
+     debugger with breakpoints, not by pure deduction from a series of
+     examples. We recommend that you save your time for something else.
+
+     Of course, if you can find a simpler example to report *instead*
+     of the original one, that is a convenience for us.  Errors in the
+     output will be easier to spot, running under the debugger will take
+     less time, etc.
+
+     However, simplification is not vital; if you do not want to do
+     this, report the bug anyway and send us the entire test case you
+     used.
+
+   * A patch for the bug.
+
+     A patch for the bug does help us if it is a good one.  But do not
+     omit the necessary information, such as the test case, on the
+     assumption that a patch is all we need.  We might see problems
+     with your patch and decide to fix the problem another way, or we
+     might not understand it at all.
+
+     Sometimes with a program as complicated as GDB it is very hard to
+     construct an example that will make the program follow a certain
+     path through the code.  If you do not send us the example, we will
+     not be able to construct one, so we will not be able to verify
+     that the bug is fixed.
+
+     And if we cannot understand what bug you are trying to fix, or why
+     your patch should be an improvement, we will not install it.  A
+     test case will help us to understand.
+
+   * A guess about what the bug is or what it depends on.
+
+     Such guesses are usually wrong.  Even we cannot guess right about
+     such things without first using the debugger to find the facts.
+
+
+File: gdb.info,  Node: Renamed Commands,  Next: Formatting Documentation,  Prev: GDB Bugs,  Up: Top
+
+Renamed Commands
+****************
+
+   The following commands were renamed in GDB 4, in order to make the
+command set as a whole more consistent and easier to use and remember:
+
+     OLD COMMAND               NEW COMMAND
+     ---------------           -------------------------------
+     add-syms                  add-symbol-file
+     delete environment        unset environment
+     info convenience          show convenience
+     info copying              show copying
+     info directories          show directories
+     info editing              show commands
+     info history              show values
+     info targets              help target
+     info values               show values
+     info version              show version
+     info warranty             show warranty
+     set/show addressprint     set/show print address
+     set/show array-max        set/show print elements
+     set/show arrayprint       set/show print array
+     set/show asm-demangle     set/show print asm-demangle
+     set/show caution          set/show confirm
+     set/show demangle         set/show print demangle
+     set/show history write    set/show history save
+     set/show prettyprint      set/show print pretty
+     set/show screen-height    set/show height
+     set/show screen-width     set/show width
+     set/show sevenbit-strings set/show print sevenbit-strings
+     set/show unionprint       set/show print union
+     set/show vtblprint        set/show print vtbl
+     
+     unset                     [No longer an alias for delete]
+
+
+File: gdb.info,  Node: Formatting Documentation,  Next: Installing GDB,  Prev: Renamed Commands,  Up: Top
+
+Formatting the Documentation
+****************************
+
+   The GDB 4 release includes an already-formatted reference card, ready
+for printing with PostScript or GhostScript, in the `gdb' subdirectory
+of the main source directory--in `gdb-4.7/gdb/refcard.ps' of the
+version 4.7 release. If you can use PostScript or GhostScript with your
+printer, you can print the reference card immediately with `refcard.ps'.
+
+   The release also includes the source for the reference card.  You
+can format it, using TeX, by typing:
+
+     make refcard.dvi
+
+   The GDB reference card is designed to print in landscape mode on US
+"letter" size paper; that is, on a sheet 11 inches wide by 8.5 inches
+high.  You will need to specify this form of printing as an option to
+your DVI output program.
+
+   All the documentation for GDB comes as part of the machine-readable
+distribution.  The documentation is written in Texinfo format, which is
+a documentation system that uses a single source file to produce both
+on-line information and a printed manual.  You can use one of the Info
+formatting commands to create the on-line version of the documentation
+and TeX (or `texi2roff') to typeset the printed version.
+
+   GDB includes an already formatted copy of the on-line Info version of
+this manual in the `gdb' subdirectory.  The main Info file is
+`gdb-VERSION-NUMBER/gdb/gdb.info', and it refers to subordinate files
+matching `gdb.info*' in the same directory.  If necessary, you can
+print out these files, or read them with any editor; but they are
+easier to read using the `info' subsystem in GNU Emacs or the
+standalone `info' program, available as part of the GNU Texinfo
+distribution.
+
+   If you want to format these Info files yourself, you need one of the
+Info formatting programs, such as `texinfo-format-buffer' or `makeinfo'.
+
+   If you have `makeinfo' installed, and are in the top level GDB
+source directory (`gdb-4.7', in the case of version 4.7), you can make
+the Info file by typing:
+
+     cd gdb
+     make gdb.info
+
+   If you want to typeset and print copies of this manual, you need
+TeX, a printing program such as `lpr', and `texinfo.tex', the Texinfo
+definitions file.
+
+   TeX is typesetting program; it does not print files directly, but
+produces output files called DVI files.  To print a typeset document,
+you need a program to print DVI files.  If your system has TeX
+installed, chances are it has such a program.  The precise command to
+use depends on your system; `lpr -d' is common; another is `dvips'. 
+The DVI print command may require a file name without any extension or
+a `.dvi' extension.
+
+   TeX also requires a macro definitions file called `texinfo.tex'. 
+This file tells TeX how to typeset a document written in Texinfo
+format.  On its own, TeX cannot read, much less typeset a Texinfo file.
+ `texinfo.tex' is distributed with GDB and is located in the
+`gdb-VERSION-NUMBER/texinfo' directory.
+
+   If you have TeX and a DVI printer program installed, you can typeset
+and print this manual.  First switch to the the `gdb' subdirectory of
+the main source directory (for example, to `gdb-4.7/gdb') and then type:
+
+     make gdb.dvi
+
+
+File: gdb.info,  Node: Installing GDB,  Next: Copying,  Prev: Formatting Documentation,  Up: Top
+
+Installing GDB
+**************
+
+   GDB comes with a `configure' script that automates the process of
+preparing GDB for installation; you can then use `make' to build the
+program.
+
+   The GDB distribution includes all the source code you need for GDB in
+a single directory, whose name is usually composed by appending the
+version number to `gdb'.
+
+   For example, the GDB version 4.7 distribution is in the `gdb-4.7'
+directory.  That directory contains:
+
+`gdb-4.7/configure (and supporting files)'
+     script for configuring GDB and all its supporting libraries.
+
+`gdb-4.7/gdb'
+     the source specific to GDB itself
+
+`gdb-4.7/bfd'
+     source for the Binary File Descriptor library
+
+`gdb-4.7/include'
+     GNU include files
+
+`gdb-4.7/libiberty'
+     source for the `-liberty' free software library
+
+`gdb-4.7/opcodes'
+     source for the library of opcode tables and disassemblers
+
+`gdb-4.7/readline'
+     source for the GNU command-line interface
+
+`gdb-4.7/glob'
+     source for the GNU filename pattern-matching subroutine
+
+`gdb-4.7/mmalloc'
+     source for the GNU memory-mapped malloc package
+
+   The simplest way to configure and build GDB is to run `configure'
+from the `gdb-VERSION-NUMBER' source directory, which in this example
+is the `gdb-4.7' directory.
+
+   First switch to the `gdb-VERSION-NUMBER' source directory if you are
+not already in it; then run `configure'.  Pass the identifier for the
+platform on which GDB will run as an argument.
+
+   For example:
+
+     cd gdb-4.7
+     ./configure HOST
+     make
+
+where HOST is an identifier such as `sun4' or `decstation', that
+identifies the platform where GDB will run.
+
+   Running `configure HOST' followed by `make' builds the `bfd',
+`readline', `mmalloc', and `libiberty' libraries, then `gdb' itself. 
+The configured source files, and the binaries, are left in the
+corresponding source directories.
+
+   `configure' is a Bourne-shell (`/bin/sh') script; if your system
+does not recognize this automatically when you run a different shell,
+you may need to run `sh' on it explicitly:
+
+     sh configure HOST
+
+   If you run `configure' from a directory that contains source
+directories for multiple libraries or programs, such as the `gdb-4.7'
+source directory for version 4.7, `configure' creates configuration
+files for every directory level underneath (unless you tell it not to,
+with the `--norecursion' option).
+
+   You can run the `configure' script from any of the subordinate
+directories in the GDB distribution, if you only want to configure that
+subdirectory; but be sure to specify a path to it.
+
+   For example, with version 4.7, type the following to configure only
+the `bfd' subdirectory:
+
+     cd gdb-4.7/bfd
+     ../configure HOST
+
+   You can install `gdb' anywhere; it has no hardwired paths. However,
+you should make sure that the shell on your path (named by the `SHELL'
+environment variable) is publicly readable.  Remember that GDB uses the
+shell to start your program--some systems refuse to let GDB debug child
+processes whose programs are not readable.
+
+* Menu:
+
+* Separate Objdir::             Compiling GDB in another directory
+* Config Names::                Specifying names for hosts and targets
+* configure Options::           Summary of options for configure
+
+
+File: gdb.info,  Node: Separate Objdir,  Next: Config Names,  Up: Installing GDB
+
+Compiling GDB in Another Directory
+==================================
+
+   If you want to run GDB versions for several host or target machines,
+you'll need a different `gdb' compiled for each combination of host and
+target.  `configure' is designed to make this easy by allowing you to
+generate each configuration in a separate subdirectory, rather than in
+the source directory.  If your `make' program handles the `VPATH'
+feature (GNU `make' does), running `make' in each of these directories
+then builds the `gdb' program specified there.
+
+   To build `gdb' in a separate directory, run `configure' with the
+`--srcdir' option to specify where to find the source. (You'll also
+need to specify a path to find `configure' itself from your working
+directory.  If the path to `configure' would be the same as the
+argument to `--srcdir', you can leave out the `--srcdir' option; it
+will be assumed.)
+
+   For example, with version 4.7, you can build GDB in a separate
+directory for a Sun 4 like this:
+
+     cd gdb-4.7
+     mkdir ../gdb-sun4
+     cd ../gdb-sun4
+     ../gdb-4.7/configure sun4
+     make
+
+   When `configure' builds a configuration using a remote source
+directory, it creates a tree for the binaries with the same structure
+(and using the same names) as the tree under the source directory.  In
+the example, you'd find the Sun 4 library `libiberty.a' in the
+directory `gdb-sun4/libiberty', and GDB itself in `gdb-sun4/gdb'.
+
+   One popular reason to build several GDB configurations in separate
+directories is to configure GDB for cross-compiling (where GDB runs on
+one machine--the host--while debugging programs that run on another
+machine--the target).  You specify a cross-debugging target by giving
+the `--target=TARGET' option to `configure'.
+
+   When you run `make' to build a program or library, you must run it
+in a configured directory--whatever directory you were in when you
+called `configure' (or one of its subdirectories).
+
+   The `Makefile' generated by `configure' for each source directory
+also runs recursively.  If you type `make' in a source directory such
+as `gdb-4.7' (or in a separate configured directory configured with
+`--srcdir=PATH/gdb-4.7'), you will build all the required libraries,
+then build GDB.
+
+   When you have multiple hosts or targets configured in separate
+directories, you can run `make' on them in parallel (for example, if
+they are NFS-mounted on each of the hosts); they will not interfere
+with each other.
+
+
+File: gdb.info,  Node: Config Names,  Next: configure Options,  Prev: Separate Objdir,  Up: Installing GDB
+
+Specifying Names for Hosts and Targets
+======================================
+
+   The specifications used for hosts and targets in the `configure'
+script are based on a three-part naming scheme, but some short
+predefined aliases are also supported.  The full naming scheme encodes
+three pieces of information in the following pattern:
+
+     ARCHITECTURE-VENDOR-OS
+
+   For example, you can use the alias `sun4' as a HOST argument or in a
+`--target=TARGET' option, but the equivalent full name is
+`sparc-sun-sunos4'.
+
+   The `configure' script accompanying GDB does not provide any query
+facility to list all supported host and target names or aliases. 
+`configure' calls the Bourne shell script `config.sub' to map
+abbreviations to full names; you can read the script, if you wish, or
+you can use it to test your guesses on abbreviations--for example:
+
+     % sh config.sub sun4
+     sparc-sun-sunos411
+     % sh config.sub sun3
+     m68k-sun-sunos411
+     % sh config.sub decstation
+     mips-dec-ultrix42
+     % sh config.sub hp300bsd
+     m68k-hp-bsd
+     % sh config.sub i386v
+     i386-unknown-sysv
+     % sh config.sub i786v
+     Invalid configuration `i786v': machine `i786v' not recognized
+
+`config.sub' is also distributed in the GDB source directory
+(`gdb-4.7', for version 4.7).
+
+
