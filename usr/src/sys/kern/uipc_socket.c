@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.14	81/11/22	*/
+/*	uipc_socket.c	4.15	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,8 +13,8 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/stat.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 
 /*
  * Socket support routines.
@@ -302,13 +302,13 @@ again:
 			m_freem(top);
 			goto release;
 		}
-		if (u.u_count >= PGSIZE && space >= NMBPG) {
+		if (u.u_count >= CLBYTES && space >= CLBYTES) {
 			register struct mbuf *p;
-			MPGET(p, 1);
+			MCLGET(p, 1);
 			if (p == 0)
 				goto nopages;
 			m->m_off = (int)p - (int)m;
-			len = PGSIZE;
+			len = CLBYTES;
 		} else {
 nopages:
 			m->m_off = MMINOFF;
