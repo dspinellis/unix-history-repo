@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)intersect.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)intersect.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* ti.c: classify line intersections */
+/*
+ * classify line intersections
+ */
 
 #include "defs.h"
 #include "ext.h"

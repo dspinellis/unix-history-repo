@@ -1,9 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)main.c	1.2 (CWI) 85/10/02";
 #endif lint
-
-
- /* t1.c: main control and input switching */
 
 /*
  * tbl troff preprocessor.
@@ -70,6 +67,12 @@ swapin()
 			sargv++;
 			break;
 		}
+		if(strcmp("-d", *sargv) == 0){
+			dbg++;
+			sargc--;
+			sargv++;
+			break;
+		}
 			sargc--;
 			sargv++;
 	}
@@ -100,51 +103,50 @@ badsig()
 	exit(0);
 }
 
- /* t2.c:  subroutine sequencing for one table */
 tableput(){
 
 	switch(device){
 	case CAT:
-		printf(".\\\" -- device CAT\n");
+		dprint(".\\\" -- device CAT\n");
 		break;
 	case HARRIS:
-		printf(".\\\" -- device HARRIS\n");
+		dprint(".\\\" -- device HARRIS\n");
 		break;
 	case DEVVER:
-		printf(".\\\" -- device VERSATEC\n");
+		dprint(".\\\" -- device VERSATEC\n");
 		break;
 	}
-printf(".\\\" -- saveline\n");
+	dprint(".\\\" -- saveline\n");
 	saveline();
-printf(".\\\" -- savefill\n");
+	dprint(".\\\" -- savefill\n");
 	savefill();
-printf(".\\\" -- ifdivert\n");
+	dprint(".\\\" -- ifdivert\n");
 	ifdivert();
-printf(".\\\" -- cleanfc\n");
+	dprint(".\\\" -- cleanfc\n");
 	cleanfc();
-printf(".\\\" -- getcomm\n");
+	dprint(".\\\" -- getcomm\n");
 	getcomm();
-printf(".\\\" -- getspec\n");
+	dprint(".\\\" -- getspec\n");
 	getspec();
-printf(".\\\" -- gettbl\n");
+	dprint(".\\\" -- gettbl\n");
 	gettbl();
-printf(".\\\" -- getstop\n");
+	dprint(".\\\" -- getstop\n");
 	getstop();
-printf(".\\\" -- checkuse\n");
+	dprint(".\\\" -- checkuse\n");
 	checkuse();
-printf(".\\\" -- choochar\n");
+	dprint(".\\\" -- choochar\n");
 	choochar();
-printf(".\\\" -- maktab\n");
+	dprint(".\\\" -- maktab\n");
 	maktab();
-printf(".\\\" -- runout\n");
+	dprint(".\\\" -- runout\n");
 	runout();
-printf(".\\\" -- release\n");
+	dprint(".\\\" -- release\n");
 	release();
-printf(".\\\" -- rstofill\n");
+	dprint(".\\\" -- rstofill\n");
 	rstofill();
-printf(".\\\" -- endoff\n");
+	dprint(".\\\" -- endoff\n");
 	endoff();
-printf(".\\\" -- restline\n");
+	dprint(".\\\" -- restline\n");
 	restline();
-printf(".\\\" -- end off tableput\n");
+	dprint(".\\\" -- end off tableput\n");
 }

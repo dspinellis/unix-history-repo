@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)horlines.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)horlines.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* tu.c: draws horizontal lines */
+/*
+ * draw horizontal lines
+ */
 
 #include "defs.h"
 #include "ext.h"

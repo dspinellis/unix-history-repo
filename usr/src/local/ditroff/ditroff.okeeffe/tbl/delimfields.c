@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)delimfields.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)delimfields.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* tc.c: find character not in table to delimit fields */
+/* 
+ * find character not in table to delimit fields
+ */
 
 #include "defs.h"
 #include "ext.h"

@@ -1,4 +1,4 @@
-/*	@(#)defs.h	1.1 (CWI) 85/10/01	*/
+/*	@(#)defs.h	1.2 (CWI) 85/10/02	*/
 #define max(a,b)	((a) > (b) ? (a) : (b))
 #define min(a,b)	((a) < (b) ? (a) : (b))
 #define MAXLIN 200
@@ -61,3 +61,5 @@
 struct colstr {
 	char *col, *rcol;
 	};
+
+#define dprint	if(dbg)printf

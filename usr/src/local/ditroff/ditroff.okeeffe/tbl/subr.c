@@ -1,9 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)subr.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* tt.c: subroutines for drawing horizontal lines */
+/*
+ * variuos subroutines for f.i drawing horizontal lines
+ *
+ * We could stuff more routines in this file which are used in various modules
+ * of tbl, like reg in misc.c etc. We leave this for later.
+ */
 
 #include "defs.h"
 #include "ext.h"
@@ -28,7 +33,7 @@ fspan(i, c)
 
 lspan(i, c)
 {
-	int k;
+	register int k;
 
 	if(ctype(i, c) != 's')
 		return(0);
@@ -42,7 +47,7 @@ lspan(i, c)
 
 ctspan(i, c)
 {
-	int k;
+	register int k;
 
 	c++;
 	for(k = 1; c < ncol && ctype(i, c) == 's'; k++)
@@ -65,7 +70,7 @@ tohcol(ic)
  */
 allh(i)
 {
-	int c, one, k;
+	register int c, one, k;
 
 	if(fullbot[i])
 		return(1);
@@ -82,9 +87,9 @@ allh(i)
 
 thish(i, c)
 {
-	int t;
-	char *s;
-	struct colstr *pc;
+	register int t;
+	register char *s;
+	register struct colstr *pc;
 
 	if(c < 0)
 		return(0);

@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)specs.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)specs.c	1.2 (CWI) 85/10/02";
 #endif lint
 
-
- /* t4.c: read table specification */
+/*
+ * read table specification
+ */
 
 #include "defs.h"
 #include "ext.h"
@@ -87,11 +88,6 @@ readspec(){
 				nclin++;
 			if(nclin >= MAXHEAD)
 				error("too many lines in specification");
-/*
-printf("qcol: %d, icol: %d\n", qcol, icol);
-			if(icol != qcol -1)
-				error("Unequal amount of columns specified\n");
-*/
 			icol = 0;
 			if(ncol == 0 || nclin == 0)
 				error("no specification");
@@ -344,7 +340,7 @@ printf("qcol: %d, icol: %d\n", qcol, icol);
 #define FLNLIM 200
 
 /*
- * This counts the number of columns and then puts the line back
+ * findcol counts the number of columns and then puts the line back
  */
 static
 findcol()

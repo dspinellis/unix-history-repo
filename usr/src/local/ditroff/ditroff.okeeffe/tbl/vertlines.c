@@ -1,9 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)vertlines.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)vertlines.c	1.2 (CWI) 85/10/02";
 #endif lint
 
-
- /* tv.c: draw vertical lines */
+/*
+ * draw vertical lines
+ */
 
 #include "defs.h"
 #include "ext.h"

@@ -1,9 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)over200.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)over200.c	1.2 (CWI) 85/10/02";
 #endif lint
 
-
- /* t9.c: write lines for tables over 200 lines */
+ /*
+  * write lines for tables over 200 lines (actually MAXLIN lines)
+  *
+  * Note that there is aserious bug here:
+  *	The T{ ... T} doesn't work after MAXLIN entries.
+  */
 #include "defs.h"
 #include "ext.h"
 
@@ -13,7 +17,7 @@ extern char *maknew();
 
 yetmore()
 {
-printf(".\\\" -- yetmore\n");
+	dprint(".\\\" -- yetmore\n");
 	for(useln = 0; useln < MAXLIN && table[useln] == 0; useln++)
 		;
 	if(useln >= MAXLIN)
@@ -36,7 +40,7 @@ char *dataln;
 {
 	register int icol, ch;
 
-printf(".\\\" -- domore\n");
+	dprint(".\\\" -- domore\n");
 
 	if(prefix(".TE", dataln))
 		return(0);

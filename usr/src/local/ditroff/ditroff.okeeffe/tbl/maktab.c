@@ -1,9 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)maktab.c	1.1 (CWI) 85/10/01";
+static char sccsid[] = "@(#)maktab.c	1.2 (CWI) 85/10/02";
 #endif lint
 
 
- /* t6.c: compute tab stops */
+/*
+ * compute tab stops
+ */
 
 #define tx(a)		(a>0 && a<128)
 
@@ -26,42 +28,27 @@ maktab()
 		doubled[icol] = acase[icol] = 0;
 		printf(".nr %2s 0\n", reg(icol, CRIGHT));
 		for(text = 0; text < 2; text++){
-/*
-printf(".\\\" text is %d\n", text);
-*/
 			if(text)
 				printf(".%2s\n.rm %2s\n", reg(icol, CRIGHT),
 							reg(icol, CRIGHT));
 			for(ilin = 0; ilin < nlin; ilin++){
 				if(instead[ilin] || fullbot[ilin]){
-/*
-printf(".\\\" instead continue\n");
-*/
 					continue;
-}
+				}
 				vforml = ilin;
 				for(il = prev(ilin);
 				    il >= 0 && vspen(table[il][icol].col);
 				    il = prev(il))
 					vforml = il;
 				if(fspan(vforml, icol)){
-/*
-printf(".\\\" fspan continue\n");
-*/
 					continue;
-}
+				}
 				if(filler(table[ilin][icol].col)){
-/*
-printf(".\\\" filler continue\n");
-*/
 					continue;
-}
+				}
 				if((ctop[stynum[ilin]][icol] & ZEROW) != 0){
-/*
-printf(".\\\" stynum continue\n");
-*/
 					continue;
-}
+				}
 				switch(ctype(vforml, icol)){
 
 				case 'a': 
@@ -113,16 +100,10 @@ printf(".\\\" stynum continue\n");
 				case 'r': 
 				case 'c': 
 				case 'l': 
-/*
-printf(".\\\" maktab: table[%d][%d].col is %s\n", ilin, icol, table[ilin][icol].col);
-*/
 					if(real(s = table[ilin][icol].col)
 					   && !vspen(s)){
 						if(tx((int)s) != text)
 							continue;
-/*
-printf(".\\\" maktab: wide entry %s\n", s);
-*/
 						printf(".nr %d ", TMP);
 						wide(s,
 							FN(vforml, icol),
