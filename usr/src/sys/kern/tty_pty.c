@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.14 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.15 (Berkeley) %G%
  */
 
 /*
@@ -109,9 +109,6 @@ again:
 		while (tp == u.u_ttyp && u.u_procp->p_pgrp != tp->t_pgrp) {
 			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
 			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-	/*
-			    (u.u_procp->p_flag&SDETACH) ||
-	*/
 			    u.u_procp->p_flag&SVFORK)
 				return (EIO);
 			gsignal(u.u_procp->p_pgrp, SIGTTIN);
@@ -211,8 +208,7 @@ ptcopen(dev, flag)
 	if (tp->t_oproc)
 		return (EIO);
 	tp->t_oproc = ptsstart;
-	if (tp->t_state & TS_WOPEN)
-		wakeup((caddr_t)&tp->t_rawq);
+	(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 	tp->t_state |= TS_CARR_ON;
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
@@ -227,12 +223,7 @@ ptcclose(dev)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	if (tp->t_line)
-		(*linesw[tp->t_line].l_close)(tp);
-	if (tp->t_state & TS_ISOPEN)
-		gsignal(tp->t_pgrp, SIGHUP);
-	tp->t_state &= ~TS_CARR_ON;	/* virtual carrier gone */
-	ttyflush(tp, FREAD|FWRITE);
+	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 	tp->t_oproc = 0;		/* mark closed */
 }
 
@@ -469,8 +460,12 @@ ptyioctl(dev, cmd, data, flag)
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	int stop, error;
+	extern ttyinput();
 
-	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
+	/*
+	 * IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG.
+	 * ttywflush(tp) will hang if there are characters in the outq.
+	 */
 	if (cdevsw[major(dev)].d_open == ptcopen)
 		switch (cmd) {
 
@@ -508,11 +503,25 @@ ptyioctl(dev, cmd, data, flag)
 			return (0);
 
 		case TIOCSETP:
+		case TIOCSETN:
+		case TIOCSETD:
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
 		}
 	error = ttioctl(tp, cmd, data, flag);
+	/*
+	 * Since we use the tty queues internally,
+	 * pty's can't be switched to disciplines which overwrite
+	 * the queues.  We can't tell anything about the discipline
+	 * from here...
+	 */
+	if (linesw[tp->t_line].l_rint != ttyinput) {
+		(*linesw[tp->t_line].l_close)(tp);
+		tp->t_line = 0;
+		(void)(*linesw[tp->t_line].l_open)(dev, tp);
+		error = ENOTTY;
+	}
 	if (error < 0) {
 		if (pti->pt_flags & PF_UCNTL &&
 		    (cmd & ~0xff) == _IO(u,0)) {
