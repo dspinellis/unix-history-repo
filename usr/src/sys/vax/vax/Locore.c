@@ -1,4 +1,4 @@
-/*	Locore.c	4.20	82/10/17	*/
+/*	Locore.c	4.21	82/10/17	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -146,10 +146,10 @@ copyin(udaddr, kaddr, n) caddr_t udaddr, kaddr; unsigned n; { return (0); }
 copyout(kaddr, udaddr, n) caddr_t kaddr, udaddr; unsigned n; { return (0); }
 
 /*ARGSUSED*/
-setjmp(lp) label_t lp; { return (0); }
+setjmp(lp) label_t *lp; { return (0); }
 
 /*ARGSUSED*/
-longjmp(lp) label_t lp; { /*NOTREACHED*/ }
+longjmp(lp) label_t *lp; { /*NOTREACHED*/ }
 
 /*ARGSUSED*/
 setrq(p) struct proc *p; { }
@@ -219,3 +219,7 @@ bcopy(from, to, count) caddr_t from, to; unsigned count; { ; }
 
 /*ARGSUSED*/
 ffs(i) { return (0); }
+
+ntohs(s) u_short s; { return ((int)s); }
+
+htons(s) u_short s; { return ((int)s); }

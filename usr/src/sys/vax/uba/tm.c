@@ -1,4 +1,4 @@
-/*	tm.c	4.57	82/10/17	*/
+/*	tm.c	4.58	82/10/17	*/
 
 #include "te.h"
 #include "ts.h"
@@ -880,8 +880,7 @@ tmioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || sc->sc_erreg&TMER_BOT)
 				break;
 		}
-		geterror(bp);		/* XXX */
-		return (u.u_error);	/* XXX */
+		return (geterror(bp));
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;

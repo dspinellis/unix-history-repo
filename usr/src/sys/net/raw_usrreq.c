@@ -1,11 +1,11 @@
-/*	raw_usrreq.c	4.19	82/10/09	*/
+/*	raw_usrreq.c	4.20	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/raw_cb.h"
@@ -134,6 +134,7 @@ drop:
 	goto next;
 }
 
+/*ARGSUSED*/
 raw_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
@@ -141,6 +142,7 @@ raw_ctlinput(cmd, arg)
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
+	/* INCOMPLETE */
 }
 
 /*ARGSUSED*/

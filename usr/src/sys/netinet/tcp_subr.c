@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.31	82/10/17	*/
+/*	tcp_subr.c	4.32	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -190,7 +190,8 @@ tcp_drop(tp, errno)
 tcp_abort(inp)
 	struct inpcb *inp;
 {
-	tcp_close(inp->inp_ppcb);
+
+	tcp_close((struct tcpcb *)inp->inp_ppcb);
 }
 
 /*
@@ -251,6 +252,6 @@ tcp_ctlinput(cmd, arg)
 
 	default:
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&tcb, sin, inetctlerrmap[cmd], tcp_abort);
+		in_pcbnotify(&tcb, sin, (int)inetctlerrmap[cmd], tcp_abort);
 	}
 }

@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.8	82/10/10	*/
+/*	kern_sig.c	5.9	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -707,17 +707,17 @@ core()
 	}
 	itrunc(ip, 0);
 	u.u_acflag |= ACORE;
-	u.u_error =rdwri(UIO_WRITE, ip,
+	u.u_error = rdwri(UIO_WRITE, ip,
 	    (caddr_t)&u, ctob(UPAGES),
 	    0, 1, (int *)0);
 	if (u.u_error == 0)
-	rdwri(UIO_WRITE, ip,
-	    (caddr_t)ctob(u.u_tsize), ctob(u.u_dsize),
-	    ctob(UPAGES), 0, (int *)0);
+		u.u_error = rdwri(UIO_WRITE, ip,
+		    (caddr_t)ctob(u.u_tsize), ctob(u.u_dsize),
+		    ctob(UPAGES), 0, (int *)0);
 	if (u.u_error == 0)
-	rdwri(UIO_WRITE, ip,
-	    (caddr_t)(USRSTACK-ctob(u.u_ssize)), ctob(u.u_ssize),
-	    ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
+		u.u_error = rdwri(UIO_WRITE, ip,
+		    (caddr_t)(USRSTACK-ctob(u.u_ssize)), ctob(u.u_ssize),
+		    ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
 out:
 	iput(ip);
 	return (u.u_error == 0);

@@ -1,4 +1,4 @@
-/*	ip_input.c	1.52	82/10/17	*/
+/*	ip_input.c	1.53	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -579,8 +579,10 @@ ip_ctlinput(cmd, arg)
 	else
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
 /* THIS IS VERY QUESTIONABLE, SHOULD HIT ALL PROTOCOLS */
-	in_pcbnotify(&tcb, sin, inetctlerrmap[cmd], tcp_abort);
-	in_pcbnotify(&udb, sin, inetctlerrmap[cmd], udp_abort);
+	in_pcbnotify(&tcb, (struct sockaddr *)sin,
+	    inetctlerrmap[cmd], tcp_abort);
+	in_pcbnotify(&udb, (struct sockaddr *)sin,
+	    inetctlerrmap[cmd], udp_abort);
 }
 
 int	ipprintfs = 0;
@@ -624,7 +626,7 @@ ip_forward(ip)
 	ip_stripoptions(ip, mopt);
 
 	/* last 0 here means no directed broadcast */
-	if ((error = ip_output(dtom(ip), mopt, 0, 0)) == 0) {
+	if ((error = ip_output(dtom(ip), mopt, (struct route *)0, 0)) == 0) {
 		if (mcopy)
 			m_freem(mcopy);
 		return;

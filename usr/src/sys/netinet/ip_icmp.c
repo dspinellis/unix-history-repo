@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.20	82/10/17	*/
+/*	ip_icmp.c	4.21	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -144,7 +144,7 @@ icmp_input(m)
 		 * higher level routines.
 		 */
 #if vax || pdp11 || ns16032
-		icp->icmp_ip.ip_len = ntohs(icp->icmp_ip.ip_len);
+		icp->icmp_ip.ip_len = ntohs((u_short)icp->icmp_ip.ip_len);
 #endif
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
 			goto free;
@@ -227,7 +227,7 @@ icmp_send(ip)
 	m->m_len += hlen;
 	if (icmpprintfs)
 		printf("icmp_send dst %x src %x\n", ip->ip_dst, ip->ip_src);
-	(void) ip_output(m, 0, 0, 0);
+	(void) ip_output(m, (struct mbuf *)0, (struct route *)0, 0);
 }
 
 n_time

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.35	82/10/17	*/
+/*	udp_usrreq.c	4.36	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -151,7 +151,7 @@ udp_ctlinput(cmd, arg)
 
 	default:
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&udb, sin, inetctlerrmap[cmd], udp_abort);
+		in_pcbnotify(&udb, sin, (int)inetctlerrmap[cmd], udp_abort);
 	}
 }
 
