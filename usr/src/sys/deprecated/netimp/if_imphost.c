@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.10	82/04/25	*/
+/*	if_imphost.c	4.11	82/05/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -95,6 +95,7 @@ COUNT(HOSTENTER);
 	hp = hp0;
 	hp->h_addr = addr;
 	hp->h_timer = 0;
+	hp->h_flags = 0;
 
 foundhost:
 	hp->h_flags |= HF_INUSE;
@@ -169,6 +170,7 @@ COUNT(HOSTRELEASE);
 		} while (m != hp->h_q);
 		hp->h_q = 0;
 	}
+	hp->h_flags = 0;
 	if (--mtod(mh, struct hmbuf *)->hm_count)
 		return;
 	mprev = &hosts;
