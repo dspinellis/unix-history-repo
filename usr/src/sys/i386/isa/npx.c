@@ -5,9 +5,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)npx.c	7.1 (Berkeley) %G%
+ *	@(#)npx.c	7.2 (Berkeley) %G%
  */
-
 #include "npx.h"
 #if NNPX > 0
 
@@ -16,8 +15,9 @@
 #include "conf.h"
 #include "file.h"
 #include "proc.h"
+#include "machine/cpu.h"
 #include "machine/pcb.h"
-#include "machine/pte.h"
+#include "machine/trap.h"
 #include "ioctl.h"
 #include "machine/specialreg.h"
 #include "i386/isa/isa_device.h"
@@ -31,9 +31,8 @@ struct	isa_driver npxdriver = {
 	npxprobe, npxattach, "npx",
 };
 
-static struct proc *npxproc;	/* process who owns device, otherwise zero */
-extern struct user npxutl;	/* owners user structure */
-extern struct pte Npxmap[];	/* kernel ptes mapping owner's user structure */
+struct proc *npxproc;	/* process who owns device, otherwise zero */
+struct pcb *npxpcb;	/* owners context structure */
 static npxexists;
 extern long npx0mask;
 
@@ -98,18 +97,15 @@ npxinit(control) {
 #ifdef INTEL_COMPAT
 	asm ("	finit");
 	asm("	fldcw %0" : : "g" (control));
-	asm("	fnsave %0 " : : "g"
-		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
+	asm("	fnsave %0 " : : "g" (curpcb->pcb_savefpu) );
 #else
 	asm("fninit");
-	asm("fnsave %0" : : "g"
-		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
+	asm("	fnsave %0 " : : "g" (curpcb->pcb_savefpu) );
 #endif
 	load_cr0(rcr0() | CR0_EM);	/* start emulating */
 
 }
 
-#ifdef notyet
 /*
  * Load floating point context and record ownership to suite
  */
@@ -117,9 +113,8 @@ npxload() {
 
 	if (npxproc) panic ("npxload");
 	npxproc = curproc;
-	uaccess(npxproc, Npxmap, &npxutl);
-	asm("	frstor %0 " : : "g"
-		(((struct pcb *)curproc->p_addr)->pcb_savefpu) );
+	npxpcb = curpcb;
+	asm("	frstor %0 " : : "g" (curpcb->pcb_savefpu) );
 }
 
 /*
@@ -128,31 +123,37 @@ npxload() {
 npxunload() {
 
 	if (npxproc == 0) panic ("npxunload");
-	asm("	fsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
+	asm("	fsave %0 " : : "g" (npxpcb->pcb_savefpu) );
 	npxproc = 0 ;
 }
 
-#endif
 /*
  * Record information needed in processing an exception and clear status word
  */
-npxintr() {
+npxintr(frame) struct intrframe frame; {
+	struct trapframe tf;
 
 	outb(0xf0,0);		/* reset processor */
 
-	/* save state in appropriate user structure */
+	/* sync state in process context structure, in advance of debugger/process looking for it */
 	if (npxproc == 0 || npxexists == 0) panic ("npxintr");
-#ifdef notyet
-	asm ("	fnsave %0 " : : "g" (npxutl.u_pcb.pcb_savefpu) );
-#endif
+	asm ("	fnsave %0 " : : "g" (npxpcb->pcb_savefpu) );
 
 	/*
-	 * encode the appropriate u_code for detailed information
-         * on this exception
+	 * Prepair a trap frame for our generic exception processing routine, trap()
 	 */
+	bcopy(&frame.if_es, &tf, sizeof(tf));
+	tf.tf_trapno = T_ARITHTRAP;
+#ifdef notyet
+	/* encode the appropriate code for detailed information on this exception */
+	tf.tf_err = ???;
+#endif
+	trap(tf);
 
-	/* signal appropriate process */
-	psignal (npxproc, SIGFPE);
+	/*
+	 * Restore with any changes to superior frame
+	 */
+	bcopy(&tf, &frame.if_es, sizeof(tf));
 
 	/* clear the exception so we can catch others like it */
 	asm ("	fnclex");
@@ -164,13 +165,14 @@ npxintr() {
 npxdna() {
 
 	if (npxexists == 0) return(0);
-	if (!(((struct pcb *) curproc->p_addr)->pcb_flags & FP_WASUSED)
-	    ||(((struct pcb *) curproc->p_addr)->pcb_flags & FP_NEEDSRESTORE)) {
+	if (!(curpcb->pcb_flags & FP_WASUSED)
+	    ||(curpcb->pcb_flags & FP_NEEDSRESTORE)) {
 		load_cr0(rcr0() & ~CR0_EM);	/* stop emulating */
-		asm("	frstor %0 " : : "g" (((struct pcb *) curproc->p_addr)->pcb_savefpu) );
-		((struct pcb *) curproc->p_addr)->pcb_flags |= FP_WASUSED | FP_NEEDSSAVE;
-		((struct pcb *) curproc->p_addr)->pcb_flags &= ~FP_NEEDSRESTORE;
+		asm("	frstor %0 " : : "g" (curpcb->pcb_savefpu));
+		curpcb->pcb_flags |= FP_WASUSED | FP_NEEDSSAVE;
+		curpcb->pcb_flags &= ~FP_NEEDSRESTORE;
 		npxproc = curproc;
+		npxpcb = curpcb;
 		
 		return(1);
 	}
