@@ -84,7 +84,6 @@ echo '.'
 # /var/crash should be a directory or a symbolic link
 # to the crash directory if core dumps are to be saved.
 if [ -d /var/crash ]; then
-				echo 'checking for core dump... '
 	savecore /var/crash
 fi
 
