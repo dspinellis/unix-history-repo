@@ -15,18 +15,21 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#include <sys/stdc.h>
+#include <string.h>
+
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcasecmp.c	5.7 (Berkeley) %G%";
+static const char sccsid[] = "@(#)strcasecmp.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+typedef unsigned char u_char;
 
 /*
  * This array is designed for mapping upper and lower case letter
  * together for a case independent comparison.  The mappings are
  * based upon ascii character sequences.
  */
-static u_char charmap[] = {
+static const u_char charmap[] = {
 	'\000', '\001', '\002', '\003', '\004', '\005', '\006', '\007',
 	'\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',
 	'\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',
@@ -61,29 +64,36 @@ static u_char charmap[] = {
 	'\370', '\371', '\372', '\373', '\374', '\375', '\376', '\377',
 };
 
+int
 strcasecmp(s1, s2)
-	char *s1, *s2;
+	const char *s1, *s2;
 {
-	register u_char	*cm = charmap,
-			*us1 = (u_char *)s1,
-			*us2 = (u_char *)s2;
+	register const u_char *cm = charmap,
+			*us1 = (const u_char *)s1,
+			*us2 = (const u_char *)s2;
 
 	while (cm[*us1] == cm[*us2++])
 		if (*us1++ == '\0')
-			return(0);
-	return(cm[*us1] - cm[*--us2]);
+			return (0);
+	return (cm[*us1] - cm[*--us2]);
 }
 
+int
 strncasecmp(s1, s2, n)
-	char *s1, *s2;
-	register int n;
+	const char *s1, *s2;
+	register size_t n;
 {
-	register u_char	*cm = charmap,
-			*us1 = (u_char *)s1,
-			*us2 = (u_char *)s2;
+	if (n != 0) {
+		register const u_char *cm = charmap,
+				*us1 = (const u_char *)s1,
+				*us2 = (const u_char *)s2;
 
-	while (--n >= 0 && cm[*us1] == cm[*us2++])
-		if (*us1++ == '\0')
-			return(0);
-	return(n < 0 ? 0 : cm[*us1] - cm[*--us2]);
+		do {
+			if (cm[*us1] != cm[*us2++])
+				return (cm[*us1] - cm[*--us2]);
+			if (*us1++ == '\0')
+				break;
+		} while (--n != 0);
+	}
+	return (0);
 }
