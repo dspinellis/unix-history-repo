@@ -1,0 +1,30 @@
+.pa 1
+.he 'PASSWD (I)'9/1/72'PASSWD (I)'
+.ti 0
+NAME		passwd -- set login password
+.sp
+.ti 0
+SYNOPSIS	passwd______ name password
+.sp
+.ti 0
+DESCRIPTION	The
+password is placed on the given login name.
+This can only be done by the user ID
+corresponding to the login name or by the super-user.
+An explicit null argument ("") for the password
+argument will remove
+any password from the login name.
+.sp
+.ti 0
+FILES		/etc/passwd
+.sp
+.ti 0
+SEE ALSO	login(I), passwd(V), crypt(III)
+.sp
+.ti 0
+DIAGNOSTICS	Diagnostics
+are given for a non-match of the login name,
+lack of permission and for password file format errors.
+.sp
+.ti 0
+BUGS		--

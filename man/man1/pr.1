@@ -1,0 +1,49 @@
+.pa 1
+.he 'PR (I)'1/15/73'PR (I)'
+.ti 0
+NAME		pr  --  print file
+.sp
+.ti 0
+SYNOPSIS	pr__ [-cm___] [-h__ name] [-_n] [+_n] [file918 ...]
+.sp
+.ti 0
+DESCRIPTION	pr__
+produces a printed listing of one or more files.
+The output is separated into pages headed by a date,
+the name of the file or a header (if any), and the page number.
+If there are no file arguments, pr__ prints the standard
+input file, and is thus usable as a filter.
+
+Options apply to all following files but may be reset
+between files:
+
+   -c__ print current date
+   -m__ print date file last modified (default)
+.sp
+   -_n produce n-column output
+.sp
+   +_n begin printing with page n
+.sp
+   -h__ treats the next argument as a header
+.sp
+If there is a header in force, it is printed in place of
+the file name.
+.sp
+Interconsole messages via write_____(I) are
+forbidden during a pr__.
+.sp
+.sp
+.ti 0
+FILES		/dev/tty?
+to suspend messages.
+.sp
+.ti 0
+SEE ALSO	cat(I), cp(I)
+.sp
+.ti 0
+DIAGNOSTICS	none (files not found are ignored)
+.sp
+.ti 0
+BUGS		In multi-column
+output, non-printing characters other than new-line
+cause misalignment.

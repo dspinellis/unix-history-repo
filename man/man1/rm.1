@@ -1,0 +1,48 @@
+.pa 1
+.he 'RM (I)'1/20/73'RM (I)'
+.ti 0
+NAME		rm  -- remove (unlink) files
+.sp
+.ti 0
+SYNOPSIS	rm__ [ -f__ ] [ -r__ ] name\d1\u ...
+.sp
+.ti 0
+DESCRIPTION	rm__
+removes the entries for one or more files from a directory.
+If an entry was the last link to the file, the file
+is destroyed.
+Removal of a file requires write permission in its directory,
+but neither read nor write permission on the file itself.
+
+If there is no write permission to a
+file designated to be removed,
+rm__ will print the file name, its mode and then
+read a line from the standard input.
+If the line begins with 'y', the file is removed,
+otherwise it is not.
+The optional argument -f__ prevents the above interaction.
+
+If a designated file is a directory,
+an error comment is printed unless the optional
+argument -r__ has been used.
+In that case, rm__ recursively deletes the
+entire contents of the specified directory.
+To remove directories per se see rmdir(I).
+.sp
+.ti 0
+FILES		/etc/glob to implement -r__ flag
+.sp
+.ti 0
+SEE ALSO	rmdir(I)
+.sp
+.ti 0
+DIAGNOSTICS	"name: non existent"
+.br
+"name: not removed" if cannot remove
+.br
+"name: try again" error from fork
+.sp
+.ti 0
+BUGS		When
+rm__ removes the contents of a directory under the
+-r__ flag, full pathnames are not printed in diagnostics.
