@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vplotf.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vplotf.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -151,7 +151,7 @@ account(who, from, acctfile)
 	 * Varian accounting is done by 8.5 inch pages;
 	 * Versatec accounting is by the (12 inch) foot.
 	 */
-	fprintf(a, "t%6.2f\t", (lines / 200.0) / PAGE_LINES);
+	fprintf(a, "t%6.2f\t", (double)lines / (double)PAGE_LINES);
 	if (from != NULL)
 		fprintf(a, "%s:", from);
 	fprintf(a, "%s\n", who);
