@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.2 83/11/01";
+static	char *sccsid = "@(#)dr_1.c	2.3 83/11/02";
 #endif
 
 #include "driver.h"
@@ -16,6 +16,7 @@ char **argv;
 		exit(1);
 	(void) signal(SIGINT, SIG_IGN);
 	(void) signal(SIGQUIT, SIG_IGN);
+	(void) signal(SIGTSTP, SIG_IGN);
 	(void) srand(getpid());
 	/* ;;; add code here to check the game number. */
 	game = atoi(argv[1]);
