@@ -1,0 +1,7 @@
+gcc -o gs gs.o ialloc.o idebug.o idict.o iinit.o iname.o interp.o isave.o iscan.o iutil.o sfilter.o stream.o zarith.o zarray.o zcontrol.o zdict.o zfile.o zfileio.o zfilter.o zgeneric.o zmath.o zmisc.o zpacked.o zprops.o zrelbit.o zstack.o zstring.o ztype.o zvmem.o zchar.o zcolor.o zfont.o zfont1.o zfont2.o zdevice.o zgstate.o zht.o zmatrix.o zpaint.o zpath.o zpath2.o gsmain.o gschar.o gscolor.o gscoord.o gsdevice.o gsfile.o gsfont.o gsimage.o gsim2out.o gsline.o gsmatrix.o gsmisc.o gspaint.o gspath.o gspath2.o gsstate.o gstdev.o gstype1.o gsutil.o gxcache.o gxclist.o gxcolor.o gxcpath.o gxdither.o gxdraw.o gxfill.o gxht.o gxpath.o gxpath2.o gxstroke.o gdevmem1.o gdevmem2.o gdevmem3.o gconfig.o \
+gdevepsn.o \
+gdevpcl.o \
+gdevpjet.o \
+gdevprn.o \
+gp_unix.o \
+-lm
