@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -52,8 +52,8 @@ install: ${MAN}
 	-mkdir ${DESTDIR}/var/spool/mqueue
 	chown root.wheel ${DESTDIR}/var/spool/mqueue
 	chmod 775 ${DESTDIR}/var/spool/mqueue
-	rm -f ${DESTDIR}/usr/bin/newaliases
-	ln -s ${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/newaliases
+	rm -f ${DESTDIR}/usr/sbin/newaliases
+	ln -s ${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/sbin/newaliases
 	rm -f ${DESTDIR}/usr/bin/mailq
 	ln -s ${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/mailq
 
