@@ -1,4 +1,4 @@
-\"	@(#)gathering.me	1.3 %G%
+\"	@(#)gathering.me	1.4 %G%
 .sh 1 "Gathering Profile Data"
 .pp
 Routine calls or statement executions can be measured by having a
@@ -114,7 +114,7 @@ occurred only for call sites that called to multiple
 destinations (e.g. functional parameters and variables).
 A one level hash function using both call site and callee would
 result in an unreasonably large hash table.
-Further, the number of call sites and callees is not known during
+Further, the number of dynamic call sites and callees is not known during
 execution of the profiled program.
 .pp
 Not all callers and callees can be identified by the monitoring
@@ -141,7 +141,7 @@ One method measures the execution time of a routine by measuring
 the elapsed time from routine entry to routine exit.
 Unfortunately, time measurement is complicated on time-sharing
 systems by the time-slicing of the program.
-A second method records the value of the program counter at some
+A second method samples the value of the program counter at some
 interval, and infers execution time from the distribution of the
 samples within the program.
 This technique is particularly suited to time-sharing systems,
