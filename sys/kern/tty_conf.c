@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty_conf.c	7.6 (Berkeley) 5/9/91
- *	$Id: tty_conf.c,v 1.4 1993/11/13 00:19:20 ache Exp $
+ *	$Id: tty_conf.c,v 1.5 1993/11/25 01:33:28 wollman Exp $
  */
 
 #include "param.h"
@@ -77,7 +77,7 @@ struct	linesw linesw[] =
 	ttyinput, enodev, nullop, ttstart, ttymodem,    /* 2- NTTYDISC */
 
 #if NTB > 0
-	tbopen, tbclose, tbread, enodev, tbioctl,
+	tbopen, tbclose, tbread, IE(enodev), tbioctl,
 	tbinput, enodev, nullop, ttstart, nullmodem,	/* 3- TABLDISC */
 #else
 	IE(enodev), VE(enodev), IE(enodev), IE(enodev), IE(enodev),
@@ -87,15 +87,15 @@ struct	linesw linesw[] =
 	slopen, VE(slclose), IE(enodev), IE(enodev), sltioctl,
 	VE(slinput), enodev, nullop, VE(slstart), nullmodem, /* 4- SLIPDISC */
 #else
-	enodev, VE(enodev), enodev, enodev, enodev,
-	VE(enodev), enodev, enodev, VE(enodev), enodev,
+	IE(enodev), VE(enodev), IE(enodev), IE(enodev), IE(enodev),
+	VE(enodev), IE(enodev), IE(enodev), VE(enodev), IE(enodev),
 #endif
 #if NPPP > 0
 	pppopen, VE(pppclose), pppread, pppwrite, ppptioctl,
 	VE(pppinput), enodev, nullop, VE(pppstart), ttymodem, /* 5- PPPDISC */
 #else
-	enodev, VE(enodev), enodev, enodev, enodev,
-	VE(enodev), enodev, enodev, VE(enodev), enodev,
+	IE(enodev), VE(enodev), IE(enodev), IE(enodev), IE(enodev),
+	VE(enodev), IE(enodev), IE(enodev), VE(enodev), IE(enodev),
 #endif
 };
 
