@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.4 %G%";
+static char sccsid[] = "@(#)eval.c 1.5 %G%";
 
 /*
  * Parse tree evaluation.
@@ -40,7 +40,7 @@ register NODE *p;
 	    if (isreal(p->op)) {
 		fr1 = pop(double);
 	    } else if (isint(p->op)) {
-		r1 = pop(long);
+		r1 = popsmall(p->right->nodetype);
 	    }
 	    /* fall through */
 	case UNARY:
@@ -48,7 +48,7 @@ register NODE *p;
 	    if (isreal(p->op)) {
 		fr0 = pop(double);
 	    } else if (isint(p->op)) {
-		r0 = pop(long);
+		r0 = popsmall(p->left->nodetype);
 	    }
 	    break;
 
@@ -128,7 +128,7 @@ register NODE *p;
 
 	/*
 	 * Get the value of the expression addressed by the top of the stack.
-	 * Push the result back on the stack.  Never push less than a long.
+	 * Push the result back on the stack.
 	 */
 
 	case O_RVAL: {
