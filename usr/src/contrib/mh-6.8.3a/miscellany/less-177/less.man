@@ -1,0 +1,1188 @@
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+NNAAMMEE
+       less - opposite of more
+
+SSYYNNOOPPSSIISS
+       lleessss --??
+       lleessss [[--[[++]]aaBBccCCddeeEEffHHiimmMMnnNNqqQQrrssSSuuUUww]]
+            [[--bb _b_u_f_s]] [[--hh _l_i_n_e_s]] [[--jj _l_i_n_e]] [[--kk _k_e_y_f_i_l_e]]
+            [[--{{ooOO}} _l_o_g_f_i_l_e]] [[--pp _p_a_t_t_e_r_n]] [[--PP _p_r_o_m_p_t]] [[--tt _t_a_g]]
+            [[--TT _t_a_g_f_i_l_e]] [[--xx _t_a_b]] [[--yy _l_i_n_e_s]] [[--[[zz]] _l_i_n_e_s]]
+            [[++[[++]]_c_m_d]] [[_f_i_l_e_n_a_m_e]]......
+
+
+DDEESSCCRRIIPPTTIIOONN
+       _L_e_s_s  is  a  program similar to _m_o_r_e (1), but which allows
+       backward movement in the file as well as forward movement.
+       Also,  _l_e_s_s  does  not  have to read the entire input file
+       before starting, so with large input files  it  starts  up
+       faster  than  text editors like _v_i (1).  _L_e_s_s uses termcap
+       (or terminfo on some systems), so it can run on a  variety
+       of  terminals.  There is even limited support for hardcopy
+       terminals.  (On a hardcopy terminal, lines which should be
+       printed  at the top of the screen are prefixed with an up-
+       arrow.)
+
+       Commands are based on both _m_o_r_e and _v_i_.  Commands  may  be
+       preceded by a decimal number, called N in the descriptions
+       below.  The number is used by some commands, as indicated.
+
+
+CCOOMMMMAANNDDSS
+       In  the  following  descriptions, ^X means control-X.  ESC
+       stands for the ESCAPE key; for example ESC-v means the two
+       character sequence "ESCAPE", then "v".
+
+       h or H Help:  display a summary of these commands.  If you
+              forget all the other commands, remember this one.
+
+
+       SPACE or ^V or f or ^F
+              Scroll forward N lines,  default  one  window  (see
+              option  -z  below).   If  N is more than the screen
+              size, only the final screenful is displayed.  Warn-
+              ing:  some  systems use ^V as a special literaliza-
+              tion character.
+
+
+       z      Like SPACE, but if N is specified, it  becomes  the
+              new window size.
+
+
+       RETURN or ^N or e or ^E or j or ^J
+              Scroll  forward  N  lines, default 1.  The entire N
+              lines are displayed, even if N  is  more  than  the
+              screen size.
+
+
+
+                                                                1
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       d or ^D
+              Scroll  forward  N  lines,  default one half of the
+              screen size.  If N is specified, it becomes the new
+              default for subsequent d and u commands.
+
+
+       b or ^B or ESC-v
+              Scroll  backward  N  lines, default one window (see
+              option -z below).  If N is  more  than  the  screen
+              size, only the final screenful is displayed.
+
+
+       w      Like  ESC-v,  but if N is specified, it becomes the
+              new window size.
+
+
+       y or ^Y or ^P or k or ^K
+              Scroll backward N lines, default 1.  The  entire  N
+              lines  are  displayed,  even  if N is more than the
+              screen size.  Warning: some systems  use  ^Y  as  a
+              special job control character.
+
+
+       u or ^U
+              Scroll  backward  N  lines, default one half of the
+              screen size.  If N is specified, it becomes the new
+              default for subsequent d and u commands.
+
+
+       r or ^R or ^L
+              Repaint the screen.
+
+
+       R      Repaint  the screen, discarding any buffered input.
+              Useful if the file is changing while  it  is  being
+              viewed.
+
+
+       F      Scroll  forward,  and  keep trying to read when the
+              end of file  is  reached.   Normally  this  command
+              would  be used when already at the end of the file.
+              It is a way to monitor the tail of a file which  is
+              growing while it is being viewed.  (The behavior is
+              similar to the "tail -f" command.)
+
+
+       g or < or ESC-<
+              Go to line N in the file, default 1  (beginning  of
+              file).   (Warning: this may be slow if N is large.)
+
+
+       G or > or ESC->
+              Go to line N in the file, default the  end  of  the
+              file.  (Warning: this may be slow if N is large, or
+
+
+
+                                                                2
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              if N is not specified and  standard  input,  rather
+              than a file, is being read.)
+
+
+       p or % Go to a position N percent into the file.  N should
+              be between 0 and  100.   (This  works  if  standard
+              input  is  being read, but only if _l_e_s_s has already
+              read to the end of the file.  It  is  always  fast,
+              but not always useful.)
+
+
+       {      If  a  left  curly  bracket appears in the top line
+              displayed on the screen, the { command will  go  to
+              the  matching  right  curly  bracket.  The matching
+              right curly bracket is  positioned  on  the  bottom
+              line of the screen.  If there is more than one left
+              curly bracket on the top line, a number  N  may  be
+              used to specify the N-th bracket on the line.
+
+
+       }      If a right curly bracket appears in the bottom line
+              displayed on the screen, the } command will  go  to
+              the matching left curly bracket.  The matching left
+              curly bracket is positioned on the top line of  the
+              screen.   If  there  is  more  than one right curly
+              bracket on the top line, a number N may be used  to
+              specify the N-th bracket on the line.
+
+
+       (      Like  {,  but  applies  to  parentheses rather than
+              curly brackets.
+
+
+       )      Like }, but  applies  to  parentheses  rather  than
+              curly brackets.
+
+
+       [      Like  {, but applies to square brackets rather than
+              curly brackets.
+
+
+       ]      Like }, but applies to square brackets rather  than
+              curly brackets.
+
+
+       ESC-^F Followed  by  two characters, acts like {, but uses
+              the two characters  as  open  and  close  brackets,
+              respectively.   For  example, "ESC ^F < >" could be
+              used to go forward to the > which matches the <  in
+              the top displayed line.
+
+       ESC-^B Followed  by  two characters, acts like }, but uses
+              the two characters  as  open  and  close  brackets,
+              respectively.   For  example, "ESC ^B < >" could be
+
+
+
+                                                                3
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              used to go backward to the < which matches the > in
+              the bottom displayed line.
+
+       m      Followed by any lowercase letter, marks the current
+              position with that letter.
+
+
+       '      (Single quote.)  Followed by any lowercase  letter,
+              returns to the position which was previously marked
+              with  that  letter.   Followed  by  another  single
+              quote,  returns  to  the position at which the last
+              "large" movement command was executed.  Followed by
+              a ^ or $, jumps to the beginning or end of the file
+              respectively.  Marks are preserved when a new  file
+              is examined, so the ' command can be used to switch
+              between input files.
+
+
+       ^X^X   Same as single quote.
+
+
+       /pattern
+              Search forward in the file for the N-th  line  con-
+              taining the pattern.  N defaults to 1.  The pattern
+              is a regular expression, as recognized by _e_d_.   The
+              search starts at the second line displayed (but see
+              the -a and -j options, which change this).
+
+              Certain characters are special if  entered  at  the
+              beginning  of  the pattern; they modify the type of
+              search rather than become part of the pattern:
+
+              !      Search for lines which do NOT match the pat-
+                     tern.
+
+              *      Search  multiple  files.   That  is,  if the
+                     search reaches the end of the  current  file
+                     without  finding a match, the search contin-
+                     ues in the next file  in  the  command  line
+                     list.
+
+              @      Begin  the  search  at the first line of the
+                     first file in the command line list, regard-
+                     less  of  what is currently displayed on the
+                     screen or the  settings  of  the  -a  or  -j
+                     options.
+
+
+       ?pattern
+              Search  backward in the file for the N-th line con-
+              taining the pattern.  The search starts at the line
+              immediately before the top line displayed.
+
+              Certain characters are special as in the / command:
+
+
+
+                                                                4
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              !      Search for lines which do NOT match the pat-
+                     tern.
+
+              *      Search  multiple  files.   That  is,  if the
+                     search reaches the beginning of the  current
+                     file  without  finding  a  match, the search
+                     continues in the previous file in  the  com-
+                     mand line list.
+
+              @      Begin  the  search  at  the last line of the
+                     last file in the command line list,  regard-
+                     less  of  what is currently displayed on the
+                     screen or the  settings  of  the  -a  or  -j
+                     options.
+
+
+       ESC-/pattern
+              Same as "/*".
+
+
+       ESC-?pattern
+              Same as "?*".
+
+
+       n      Repeat  previous  search,  for N-th line containing
+              the last pattern.  If the previous search was modi-
+              fied by !, the search is made for the N-th line NOT
+              containing the pattern.  If the previous search was
+              modified by *, the search continues in the next (or
+              previous) file if  not  satisfied  in  the  current
+              file.   There  is  no effect if the previous search
+              was modified by @.
+
+
+       N      Repeat previous search, but in the  reverse  direc-
+              tion.
+
+
+       ESC-n  Repeat  previous  search,  but crossing file bound-
+              aries.  The effect is as  if  the  previous  search
+              were modified by *.
+
+
+       ESC-N  Repeat  previous  search, but in the reverse direc-
+              tion and crossing file boundaries.
+
+
+       :e [filename]
+              Examine a new file.  If the  filename  is  missing,
+              the  "current"  file  (see  the  :n and :p commands
+              below) from the list of files in the  command  line
+              is re-examined.  A percent sign (%) in the filename
+              is replaced by the name of  the  current  file.   A
+              pound  sign  (#)  is  replaced  by  the name of the
+
+
+
+                                                                5
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              previously examined file.  The filename is inserted
+              into  the command line list of files so that it can
+              be seen by subsequent :n and :p commands.   If  the
+              filename  consists  of  several files, they are all
+              inserted into the list of files and the  first  one
+              is examined.
+
+
+       ^X^V or E
+              Same as :e.  Warning: some systems use ^V as a spe-
+              cial literalization character.
+
+
+       :n     Examine the next file (from the list of files given
+              in  the command line).  If a number N is specified,
+              the N-th next file is examined.
+
+
+       :p     Examine the previous file in the command line list.
+              If  a number N is specified, the N-th previous file
+              is examined.
+
+
+       :x     Examine the first file in the  command  line  list.
+              If  a  number  N is specified, the N-th file in the
+              list is examined.
+
+
+       = or ^G or :f
+              Prints  some  information  about  the  file   being
+              viewed,  including its name and the line number and
+              byte offset of the bottom line being displayed.  If
+              possible,  it  also  prints the length of the file,
+              the number of lines in the file and the percent  of
+              the file above the last displayed line.
+
+
+       -      Followed  by one of the command line option letters
+              (see below), this will change the setting  of  that
+              option  and print a message describing the new set-
+              ting.  If the option letter  has  a  numeric  value
+              (such  as  -b or -h), or a string value (such as -P
+              or -t), a new value may be entered after the option
+              letter.   If  no  new  value  is entered, a message
+              describing the current setting is printed and noth-
+              ing is changed.
+
+
+       -+     Followed  by one of the command line option letters
+              (see below), this will  reset  the  option  to  its
+              default  setting and print a message describing the
+              new setting.  (The  "-+_X"  command  does  the  same
+              thing as "-+_X" on the command line.)  This does not
+              work for string-valued options.
+
+
+
+                                                                6
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       --     Followed by one of the command line option  letters
+              (see  below),  this  will  reset  the option to the
+              "opposite" of its default setting and print a  mes-
+              sage  describing  the new setting.  (The "--_X" com-
+              mand does the same thing as  "-_X"  on  the  command
+              line.)   This  does not work for numeric or string-
+              valued options.
+
+
+       _      (Underscore.)  Followed by one of the command  line
+              option  letters (see below), this will print a mes-
+              sage describing the current setting of that option.
+              The setting of the option is not changed.
+
+
+       +cmd   Causes the specified cmd to be executed each time a
+              new file is examined.  For example, +G causes  _l_e_s_s
+              to  initially display each file starting at the end
+              rather than the beginning.
+
+
+       V      Prints the version number of _l_e_s_s being run.
+
+
+       q or :q or :Q or ZZ or ESC ESC
+              Exits _l_e_s_s_.
+
+       The following three commands may  or  may  not  be  valid,
+       depending on your particular installation.
+
+
+       v      Invokes  an  editor  to edit the current file being
+              viewed.  The editor is taken from  the  environment
+              variable EDITOR, or defaults to "vi".  See also the
+              discussion of LESSEDIT under the section on PROMPTS
+              below.
+
+
+       ! shell-command
+              Invokes  a shell to run the shell-command given.  A
+              percent sign (%) in the command is replaced by  the
+              name  of  the  current  file.   A pound sign (#) is
+              replaced by the name  of  the  previously  examined
+              file.   "!!"  repeats  the last shell command.  "!"
+              with no shell command simply invokes a  shell.   In
+              all  cases, the shell is taken from the environment
+              variable SHELL, or defaults to "sh".
+
+
+       | <m> shell-command
+              <m> represents any mark letter.  Pipes a section of
+              the  input  file  to  the given shell command.  The
+              section of the file to  be  piped  is  between  the
+              first  line  on the current screen and the position
+
+
+
+                                                                7
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              marked by the letter.  <m> may also be ^  or  $  to
+              indicate beginning or end of file respectively.  If
+              <m> is . or newline, the current screen is piped.
+
+
+OOPPTTIIOONNSS
+       Command line options are described  below.   Most  options
+       may be changed while _l_e_s_s is running, via the "-" command.
+
+       Options are  also  taken  from  the  environment  variable
+       "LESS".   For example, to avoid typing "less -options ..."
+       each time _l_e_s_s is invoked, you might tell _c_s_h_:
+
+       setenv LESS "-options"
+
+       or if you use _s_h_:
+
+       LESS="-options"; export LESS
+
+       The environment variable  is  parsed  before  the  command
+       line,  so  command line options override the LESS environ-
+       ment variable.  If an option appears in the LESS variable,
+       it  can  be  reset  to  its default on the command line by
+       beginning the command line option with "-+".
+
+       A dollar sign ($) may be used to  signal  the  end  of  an
+       option string.  This is important only for options like -P
+       which take a following string.
+
+       -?     This option displays  a  summary  of  the  commands
+              accepted  by  _l_e_s_s (the same as the h command).  If
+              this  option  is  given,  all  other  options   are
+              ignored,  and  _l_e_s_s  exits after the help screen is
+              viewed.  (Depending on how  your  shell  interprets
+              the question mark, it may be necessary to quote the
+              question mark, thus: "-\?".)
+
+       -a     Causes searches to start after the last  line  dis-
+              played  on the screen, thus skipping all lines dis-
+              played on the screen.  By default,  searches  start
+              at the second line on the screen (or after the last
+              found line; see the -j option).
+
+       -b_n    Causes  _l_e_s_s  to  use  a  non-standard  number   of
+              buffers.  Buffers are 1K, and by default 10 buffers
+              are used (except if data in  coming  from  standard
+              input;  see the -B option).  The number _n specifies
+              a different number of buffers to use.
+
+       -B     Disables automatic allocation of buffers,  so  that
+              only  the  default  number of buffers are used.  If
+              more data is read than will fit in the buffers, the
+              oldest data is discarded.  By default, when data is
+              coming from standard input, buffers  are  allocated
+
+
+
+                                                                8
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              automatically as needed to avoid loss of data.
+
+       -c     Causes  full screen repaints to be painted from the
+              top line down.  By default,  full  screen  repaints
+              are  done  by  scrolling  from  the  bottom  of the
+              screen.
+
+       -C     The -C option is like -c, but the screen is cleared
+              before it is repainted.
+
+       -d     The -d option suppresses the error message normally
+              displayed if the terminal is dumb; that  is,  lacks
+              some  important  capability, such as the ability to
+              clear the screen or scroll backward.  The -d option
+              does not otherwise change the behavior of _l_e_s_s on a
+              dumb terminal).
+
+       -e     Causes _l_e_s_s to automatically exit the  second  time
+              it  reaches  end-of-file.  By default, the only way
+              to exit _l_e_s_s is via the "q" command.
+
+       -E     Causes _l_e_s_s to automatically exit the first time it
+              reaches end-of-file.
+
+       -f     Forces  non-regular  files  to  be opened.  (A non-
+              regular file is a directory  or  a  device  special
+              file.)   Also suppresses the warning message when a
+              binary file  is  opened.   By  default,  _l_e_s_s  will
+              refuse to open non-regular files.
+
+       -h_n    Specifies a maximum number of lines to scroll back-
+              ward.  If it is necessary to scroll  backward  more
+              than  _n lines, the screen is repainted in a forward
+              direction instead.  (If the terminal does not  have
+              the ability to scroll backward, -h0 is implied.)
+
+       -i     Causes  searches to ignore case; that is, uppercase
+              and lowercase are considered identical.  Also, text
+              which  is  overstruck or underlined can be searched
+              for.  This option is ignored if any uppercase  let-
+              ters appear in the search pattern.
+
+       -j_n    Specifies a line on the screen where "target" lines
+              are to be positioned.  Target lines are the  object
+              of  text  searches,  tag  searches, jumps to a line
+              number, jumps to a file percentage, and jumps to  a
+              marked position.  The screen line is specified by a
+              number: the top line on the screen is 1,  the  next
+              is  2,  and  so  on.  The number may be negative to
+              specify a  line  relative  to  the  bottom  of  the
+              screen:  the  bottom  line on the screen is -1, the
+              second to the bottom is -2, and so on.  If  the  -j
+              option  is used, searches begin at the line immedi-
+              ately after the target line.  For example, if "-j4"
+
+
+
+                                                                9
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              is  used, the target line is the fourth line on the
+              screen, so searches begin at the fifth line on  the
+              screen.
+
+       -k_f_i_l_e_n_a_m_e
+              Causes _l_e_s_s to open and interpret the named file as
+              a _l_e_s_s_k_e_y (1) file.  Multiple  -k  options  may  be
+              specified.   If  a  file called .less exists in the
+              user's home directory, this file is also used as  a
+              _l_e_s_s_k_e_y file.
+
+       -m     Causes  _l_e_s_s  to prompt verbosely (like _m_o_r_e), with
+              the  percent  into  the  file.   By  default,  _l_e_s_s
+              prompts with a colon.
+
+       -M     Causes  _l_e_s_s  to  prompt  even  more verbosely than
+              _m_o_r_e_.
+
+       -n     Suppresses line numbers.  The default (to use  line
+              numbers)  may cause _l_e_s_s to run more slowly in some
+              cases, especially with a  very  large  input  file.
+              Suppressing  line  numbers  with  the  -n flag will
+              avoid this problem.  Using line numbers means:  the
+              line number will be displayed in the verbose prompt
+              and in the = command, and the v command  will  pass
+              the current line number to the editor (see also the
+              discussion of LESSEDIT in PROMPTS below).
+
+       -N     Causes a line number to be displayed at the  begin-
+              ning of each line in the display.
+
+       -o_f_i_l_e_n_a_m_e
+              Causes  _l_e_s_s to copy its input to the named file as
+              it is being viewed.  This  applies  only  when  the
+              input file is a pipe, not an ordinary file.  If the
+              file already exists, _l_e_s_s will ask for confirmation
+              before overwriting it.
+
+       -O_f_i_l_e_n_a_m_e
+              The  -O option is like -o, but it will overwrite an
+              existing file without asking for confirmation.
+
+              If no log file has been specified, the  -o  and  -O
+              options  can  be used from within _l_e_s_s to specify a
+              log file.  Without a file name,  they  will  simply
+              report  the  name of the log file.  The "s" command
+              is equivalent to specifying -o from within _l_e_s_s_.
+
+       -p_p_a_t_t_e_r_n
+              The -p option on the command line is equivalent  to
+              specifying  +/_p_a_t_t_e_r_n;  that  is,  it tells _l_e_s_s to
+              start at the first  occurence  of  _p_a_t_t_e_r_n  in  the
+              file.
+
+
+
+
+                                                               10
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       -P_p_r_o_m_p_t
+              Provides a way to tailor the three prompt styles to
+              your own preference.  This option would normally be
+              put  in  the LESS environment variable, rather than
+              being typed in with each  _l_e_s_s  command.   Such  an
+              option  must  either be the last option in the LESS
+              variable, or be terminated by a  dollar  sign.   -P
+              followed  by  a  string changes the default (short)
+              prompt to that string.  -Pm changes the medium (-m)
+              prompt to the string, and -PM changes the long (-M)
+              prompt.  Also, -P= changes the message  printed  by
+              the  =  command  to  the  given string.  All prompt
+              strings consist of a sequence of letters  and  spe-
+              cial  escape sequences.  See the section on PROMPTS
+              for more details.
+
+       -q     Causes moderately "quiet" operation:  the  terminal
+              bell  is  not  rung if an attempt is made to scroll
+              past the end of the file or before the beginning of
+              the  file.  If the terminal has a "visual bell", it
+              is used instead.  The bell will be rung on  certain
+              other  errors, such as typing an invalid character.
+              The default is to ring the  terminal  bell  in  all
+              such cases.
+
+       -Q     Causes totally "quiet" operation: the terminal bell
+              is never rung.
+
+       -r     Causes "raw" control characters  to  be  displayed.
+              The  default is to display control characters using
+              the caret notation; for example, a control-A (octal
+              001)  is  displayed  as "^A".  Warning: when the -r
+              flag is used, _l_e_s_s cannot keep track of the  actual
+              appearance of the screen (since this depends on how
+              the screen responds to each type of control charac-
+              ter).   Thus,  various display problems may result,
+              such as long lines being split in the wrong  place.
+
+       -s     Causes  consecutive blank lines to be squeezed into
+              a single blank line.  This is useful  when  viewing
+              _n_r_o_f_f output.
+
+       -S     Causes  lines  longer  than  the screen width to be
+              chopped rather than folded.  That is, the remainder
+              of a long line is simply discarded.  The default is
+              to fold long lines; that is, display the  remainder
+              on the next line.
+
+       -t_t_a_g  The  -t option, followed immediately by a TAG, will
+              edit the file containing that  tag.   For  this  to
+              work,  there  must  be  a file called "tags" in the
+              current directory, which was  previously  built  by
+              the  _c_t_a_g_s  (1)  command.   This option may also be
+              specified from within _l_e_s_s (using the - command) as
+
+
+
+                                                               11
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              a way of examining a new file.  The command ":t" is
+              equivalent to specifying -t from within _l_e_s_s_.
+
+       -T_t_a_g_s_f_i_l_e
+              Specifies a tags file to be used instead of "tags".
+
+       -u     Causes   backspaces  and  carriage  returns  to  be
+              treated as printable characters; that is, they  are
+              sent to the terminal when they appear in the input.
+
+       -U     Causes  backspaces  and  carriage  returns  to   be
+              treated  as  control  characters; that is, they are
+              handled as specified by the -r option.
+
+              By  default,  if  neither  -u  nor  -U  is   given,
+              backspaces  which  appear adjacent to an underscore
+              character are  treated  specially:  the  underlined
+              text  is  displayed  using  the terminal's hardware
+              underlining  capability.   Also,  backspaces  which
+              appear between two identical characters are treated
+              specially: the overstruck text is printed using the
+              terminal's  hardware  boldface  capability.   Other
+              backspaces are deleted, along  with  the  preceding
+              character.   Carriage  returns immediately followed
+              by a newline are deleted.  Other  carriage  returns
+              are handled as specified by the -r option.
+
+       -w     Causes  blank  lines  to be used to represent lines
+              past the end of the  file.   By  default,  a  tilde
+              character is used.
+
+       -x_n    Sets  tab stops every _n positions.  The default for
+              _n is 8.
+
+       -y_n    Specifies a maximum number of lines to scroll  for-
+              ward.   If  it  is necessary to scroll forward more
+              than _n lines, the screen is repainted instead.  The
+              -c or -C option may be used to repaint from the top
+              of the screen if desired.  By default, any  forward
+              movement causes scrolling.
+
+       -[z]_n  Changes  the  default  scrolling  window  size to _n
+              lines.  The default is one screenful.  The z and  w
+              commands  can  also  be  used  to change the window
+              size.  The "z" may be omitted, as in "-_n" for  com-
+              patibility with _m_o_r_e_.
+
+       +      If a command line option begins with ++, the remain-
+              der of that option is taken to be an  initial  com-
+              mand  to _l_e_s_s_.  For example, +G tells _l_e_s_s to start
+              at the end of the file rather than  the  beginning,
+              and +/xyz tells it to start at the first occurrence
+              of "xyz" in the file.  As a special case, +<number>
+              acts  like  +<number>g;  that  is,  it  starts  the
+
+
+
+                                                               12
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              display at the specified line number (however,  see
+              the  caveat  under  the "g" command above).  If the
+              option starts with ++, the initial command  applies
+              to every file being viewed, not just the first one.
+              The + command described previously may also be used
+              to  set  (or  change)  an initial command for every
+              file.
+
+
+KKEEYY BBIINNDDIINNGGSS
+       You may define your own _l_e_s_s commands by using the program
+       _l_e_s_s_k_e_y  (1)  to create a file called ".less" in your home
+       directory.  This file specifies a set of command keys  and
+       an  action associated with each key.  See the _l_e_s_s_k_e_y man-
+       ual page for more details.
+
+
+NNAATTIIOONNAALL CCHHAARRAACCTTEERR SSEETTSS
+       There are three types of characters in the input file:
+
+       normal characters
+              can be displayed directly to the screen.
+
+       control characters
+              should not be displayed directly, but are  expected
+              to  be  found  in  ordinary  text  files  (such  as
+              backspace and tab).
+
+       binary characters
+              cannot be displayed directly and are  not  expected
+              to be found in text files.
+
+       By  default,  _l_e_s_s  uses  the ASCII character set.  In the
+       ASCII character set, characters with  values  between  128
+       and  255  are treated as binary.  The LESSCHARSET environ-
+       ment variable may be used to select another character set.
+       If it is set to the value "latin1", the ISO 8859/1 charac-
+       ter set is assumed.  Latin-1 is the same as ASCII,  except
+       characters between 128 and 255 are treated as normal char-
+       acters.  The only valid values for  LESSCHARSET  currently
+       are "ascii" and "latin1".
+
+       In  special cases, it may be desired to tailor _l_e_s_s to use
+       a character set other than the  ones  definable  by  LESS-
+       CHARSET.   In  this  case,  the environment variable LESS-
+       CHARDEF can be used to define a character set.  It  should
+       be set to a string where each character in the string rep-
+       resents one character in the character set.  The character
+       "."  is  used for a normal character, "c" for control, and
+       "b" for binary.  A decimal number may be used for  repeti-
+       tion.   For  example,  "bccc4b." would mean character 0 is
+       binary, 1, 2 and 3 are control, 4, 5, 6 and 7 are  binary,
+       and  8 is normal.  All characters after the last are taken
+       to be the same as the last, so characters  9  through  255
+
+
+
+                                                               13
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       would be normal.  (This is an example, and does not neces-
+       sarily represent any real character set.)
+
+       Setting LESSCHARDEF to "8bcccbcc18b95.b" is  the  same  as
+       setting  LESSCHARSET  to  "ascii".  Setting LESSCHARDEF to
+       "8bcccbcc18b95.33b." is the same as setting LESSCHARSET to
+       "latin1".
+
+       Control  and  binary  characters are displayed in blinking
+       mode.  Each such character is displayed in caret  notation
+       if  possible  (e.g.  ^A for control-A).  Caret notation is
+       used only if inverting the 0100 bit results  in  a  normal
+       printable  character.   Otherwise,  the  character is dis-
+       played as an octal number preceded by a  backslash.   This
+       octal  format  can  be  changed  by setting the LESSBINFMT
+       environment variable to a printf-style format string;  the
+       default  is  '\%o'.   The blinking mode display of control
+       and binary characters can be changed or disabled  by  pre-
+       ceding  the  LESSBINFMT  format  string with a "*" and one
+       character to select the mode: "*k" is  blinking,  "*d"  is
+       bold,  "*u"  is underlined, and "*n" is normal (no special
+       display  attribute).   For  example,  if   LESSBINFMT   is
+       "*u[%x]",  binary  characters  are displayed in underlined
+       hexadecimal surrounded by brackets.
+
+
+PPRROOMMPPTTSS
+       The -P option allows you to  tailor  the  prompt  to  your
+       preference.   The  string  given to the -P option replaces
+       the specified prompt string.  Certain  characters  in  the
+       string are interpreted specially.  The prompt mechanism is
+       rather complicated to provide flexibility, but  the  ordi-
+       nary  user need not understand the details of constructing
+       personalized prompt strings.
+
+       A percent sign followed by a single character is  expanded
+       according to what the following character is:
+
+       %b_X    Replaced  by the byte offset into the current input
+              file.  The b is  followed  by  a  single  character
+              (shown  as  _X above) which specifies the line whose
+              byte offset is to be used.  If the character  is  a
+              "t", the byte offset of the top line in the display
+              is used, an "m" means use the middle  line,  a  "b"
+              means use the bottom line, a "B" means use the line
+              just after the bottom line, and a "j" means use the
+              "target" line, as specified by the -j option.
+
+       %B     Replaced by the size of the current input file.
+
+       %E     Replaced by the name of the editor (from the EDITOR
+              environment variable).  See the discussion  of  the
+              LESSEDIT feature below.
+
+
+
+
+                                                               14
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       %f     Replaced by the name of the current input file.
+
+       %i     Replaced  by  the  index of the current file in the
+              list of input files.
+
+       %l_X    Replaced by the line number of a line in the  input
+              file.   The line to be used is determined by the _X,
+              as with the %b option.
+
+       %L     Replaced by the line number of the last line in the
+              input file.
+
+       %m     Replaced by the total number of input files.
+
+       %p_X    Replaced  by  the  percent  into  the current input
+              file.  The line used is determined by the _X as with
+              the %b option.
+
+       %s     Same as %B.
+
+       %t     Causes  any trailing spaces to be removed.  Usually
+              used at the end of the string, but may appear  any-
+              where.
+
+       %x     Replaced  by the name of the next input file in the
+              list.
+
+       If any item is unknown (for  example,  the  file  size  if
+       input is a pipe), a question mark is printed instead.
+
+       The  format  of the prompt string can be changed depending
+       on certain conditions.  A question mark followed by a sin-
+       gle  character acts like an "IF": depending on the follow-
+       ing character, a condition is evaluated.  If the condition
+       is  true,  any  characters following the question mark and
+       condition character, up to a period, are included  in  the
+       prompt.   If  the  condition is false, such characters are
+       not included.  A colon appearing between the question mark
+       and  the  period  can  be used to establish an "ELSE": any
+       characters between the colon and the period  are  included
+       in  the  string  if and only if the IF condition is false.
+       Condition characters (which follow a  question  mark)  may
+       be:
+
+       ?a     True  if  any  characters have been included in the
+              prompt so far.
+
+       ?b_X    True if the byte offset of the  specified  line  is
+              known.
+
+       ?B     True if the size of current input file is known.
+
+       ?e     True if at end-of-file.
+
+
+
+
+                                                               15
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       ?f     True  if  there  is  an input filename (that is, if
+              input is not a pipe).
+
+       ?l_X    True if the line number of the  specified  line  is
+              known.
+
+       ?L     True  if  the  line  number of the last line in the
+              file is known.
+
+       ?m     True if there is more than one input file.
+
+       ?n     True if this is the first prompt  in  a  new  input
+              file.
+
+       ?p_X    True  if the percent into the current input file of
+              the specified line is known.
+
+       ?s     Same as "?B".
+
+       ?x     True if there is a next input file (that is, if the
+              current input file is not the last one).
+
+       Any characters other than the special ones (question mark,
+       colon, period, percent, and  backslash)  become  literally
+       part  of the prompt.  Any of the special characters may be
+       included in the prompt literally by preceding  it  with  a
+       backslash.
+
+       Some examples:
+
+       ?f%f:Standard input.
+
+       This  prompt  prints the filename, if known; otherwise the
+       string "Standard input".
+
+       ?f%f .?ltLine %lt:?pt%pt\%:?btByte %bt:-...
+
+       This prompt would print the filename, if known.  The file-
+       name  is  followed by the line number, if known, otherwise
+       the percent if known, otherwise the byte offset if  known.
+       Otherwise,  a  dash  is printed.  Notice how each question
+       mark has a matching period, and how the % after the %pt is
+       included literally by escaping it with a backslash.
+
+       ?n?f%f .?m(file %i of %m) ..?e(END) ?x- Next\: %x..%t
+
+       This  prints the filename if this is the first prompt in a
+       file, followed by the "file N of N" message  if  there  is
+       more than one input file.  Then, if we are at end-of-file,
+       the string "(END)" is printed followed by the name of  the
+       next  file, if there is one.  Finally, any trailing spaces
+       are truncated.  This is the default  prompt.   For  refer-
+       ence,  here are the defaults for the other two prompts (-m
+       and -M respectively).  Each is broken into two lines  here
+
+
+
+                                                               16
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+       for readability only.
+
+       ?n?f%f .?m(file %i of %m) ..?e(END) ?x- Next\: %x.:
+            ?pB%pB\%:byte %bB?s/%s...%t
+
+       ?f%f .?n?m(file %i of %m) ..?ltline %lt?L/%L. :byte %bB?s/%s. .
+            ?e(END) ?x- Next\: %x.:?pB%pB\%..%t
+
+       And here is the default message produced by the = command:
+
+       ?f%f .?m(file %i of %m) .?ltline %lt?L/%L. .
+            byte %bB?s/%s. ?e(END) :?pB%pB\%..%t
+
+       The prompt expansion features are also  used  for  another
+       purpose:  if  an environment variable LESSEDIT is defined,
+       it is used as the command to be executed when the  v  com-
+       mand  is  invoked.  The LESSEDIT string is expanded in the
+       same way as the prompt strings.   The  default  value  for
+       LESSEDIT is:
+
+            %E ?lm+%lm. %f
+
+       Note that this expands to the editor name, followed by a +
+       and the line number, followed by the file name.   If  your
+       editor  does  not  accept the "+linenumber" syntax, or has
+       other differences in invocation syntax, the LESSEDIT vari-
+       able can be changed to modify this default.
+
+
+EENNVVIIRROONNMMEENNTT VVAARRIIAABBLLEESS
+       COLUMNS
+              Sets  the  number  of columns on the screen.  Takes
+              precedence over the number of columns specified  by
+              the TERM variable.
+
+       EDITOR The name of the editor (used for the v command).
+
+       HOME   Name  of  the user's home directory (used to find a
+              .less file).
+
+       LESS   Flags which are passed to _l_e_s_s automatically.
+
+       LESSBINFMT
+              Format for  displaying  non-printable,  non-control
+              characters.
+
+       LESSCHARDEF
+              Defines a character set.
+
+       LESSCHARSET
+              Selects a predefined character set.
+
+       LESSEDIT
+              Editor  prototype  string (used for the v command).
+
+
+
+                                                               17
+
+
+
+
+
+LESS(1)                                                   LESS(1)
+
+
+              See discussion under PROMPTS.
+
+       LESSHELP
+              Name of the help file.
+
+       LINES  Sets the number of  lines  on  the  screen.   Takes
+              precedence  over  the  number of lines specified by
+              the TERM variable.
+
+       SHELL  The shell used to execute the ! command, as well as
+              to expand filenames.
+
+       TERM   The type of terminal on which _l_e_s_s is being run.
+
+
+SSEEEE AALLSSOO
+       lesskey(1)
+
+
+WWAARRNNIINNGGSS
+       The  =  command  and prompts (unless changed by -P) report
+       the line number of the line at the top of the screen,  but
+       the  byte  and  percent  of  the line at the bottom of the
+       screen.
+
+       If the :e command is used to name more than one file,  and
+       one of the named files has been viewed previously, the new
+       files may be entered into the list in an unexpected order.
+
+       The  handling of national character sets is nonstandard as
+       well as insufficient for multibyte  characters.   It  will
+       probably change in a later release.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                               18
+
+

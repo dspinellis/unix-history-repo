@@ -1,0 +1,45 @@
+% run this through PhD-TeX
+
+\input dcustom
+\articlestyle
+\draftfalse
+\input version
+
+\input sfwmac
+
+\header
+    The Rand MH Message Handling System:\\\\
+	The UCI BBoards Facility\title
+    Marshall T.~Rose$^\dagger$\author
+    \versiondate/\info
+\footnote{}{\hskip -\parindent $^\dagger$
+Computer Mail: {\tx MRose@NRTC.NORTHROP.COM}.}
+
+\centerline{\sc Abstract}
+{\rightskip=0pt\narrower\narrower
+\noindent
+This document discusses how to process BBoards using the Rand \MH/ system.
+In particular,
+this guide discusses:
+checking the status of a BBoard,
+viewing new messages,
+archive handling,
+composing mail destined for a BBoard,
+and replying to a message posted to a BBoard.
+
+Although this document is based on the standard \MH/ user manual\cite{MH},
+this document is meant to supplement, not supersede,
+that lengthier work.
+
+Comments concerning this documentation should be addressed to the Internet
+mailbox {\tx Bug-MH@ICS.UCI.EDU}.
+\par}
+
+\input text
+\input refs
+\printcontents
+\unskip\footnote{}{\hskip -\parskip This document (version \versiontag/)
+was \TeX set \today\ with DISS.STY v\version.}
+\showsummary
+
+\bye

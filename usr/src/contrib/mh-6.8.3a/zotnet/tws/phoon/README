@@ -1,0 +1,74 @@
+First distribution of phoon, deltime, and libtws - 15nov86.
+
+
+This package contains two programs and a library:
+
+    phoon - program to display the PHase of the mOON.  Unlike other
+    such programs, which just tell you how long since first quarter
+    or something like that, phoon *shows* you the phase with a little
+    picture.  I've put an example at the end of this file.
+
+    deltime - program to subtract date/times.  Tells you the difference
+    between two date/times, or between now and a specified date/time.
+    I once used this to help a friend quit smoking - every time she
+    logged in, the computer told her how many days since her last
+    cigarette.  I also use it in my .login, to tell me how old I am.
+
+    libtws - date/time library.  Unlike the standard Unix(R)
+    date/time routines, libtws lets you parse a date/time string
+    into internal form.  Most of this library came from version
+    6.5 of the MH message handling system, courtesy of Marshall Rose.
+
+
+Files in this distribution:
+
+    README		this
+    Makefile		guess
+    deltime.c		source for time subtraction tool
+    deltime.man		manual for time subtraction tool
+    dtime.c		source for most of the time routines
+    dtimep.lex		source for time-parsing routine
+    lexedit.sed		script to modify output of lex
+    lexstring.c		front end for time-parsing routine
+    libtws.man		manual for time library
+    parsetime.c		source for test program
+    phoon.c		source for phase of moon program
+    phoon.man		manual for phase of moon program
+    tws.h		include file for time library
+
+
+Unpack the files, edit Makefile and change the options to suit,
+make, and enjoy!  I've tested this stuff under 4.2 BSD, 4.3 BSD,
+and System V rel 2.  Nevertheless, I'm sure bugs remain.  Feedback
+is welcome - send bug reports, enhancements, checks, money orders,
+etc. to the addresses below.
+
+
+     Jef Poskanzer, UniSoft Systems, Berkeley
+	 unisoft!jef@ucbvax.Berkeley.Edu
+	      ...ucbvax!unisoft!jef
+		  (415)644-1230
+
+                  ------------.
+             .--'  o     . .   `--.
+          .-'   .    O   .       . `-.
+        -'@   @@@@@@@   .  @@@@@      `-.
+       @@@  @@@@@@@@@@@   @@@@@@@   .    \
+     /    o @@@@@@@@@@@   @@@@@@@       . \.
+    @@  o   @@@@@@@@@@@.   @@@@@@@   O      \
+   @@@@   .   @@@@@@@o    @@@@@@@@@@     @@@ \
+   @@@@@               . @@@@@@@@@@@@@ o @@@@|
+  @@@@@  O  `.-./  .      @@@@@@@@@@@@    @@  \		First Quarter +
+   @@@@    --`-'       o     @@@@@@@@ @@@@    |		5 22:33:24
+  @ @@@        `    o      .  @@   . @@@@@@@  |		Full Moon -    
+         @@            .-.     @@@   @@@@@@@  |		1 10:37:39
+    . o        @@@     `-'   . @@@@   @@@@  o /
+         @@   @@@@@ .           @@   .       |
+        @@@@  @\@@    /  .  O    .     o   . /
+      o  @@     \ \  /         .    .       /
+     \     .    .\.-.___   .      .   .-. /'
+                  `-'                `-' /
+        -.   o   / |     o    O   .   .-'
+          `-.   /     .       .    .-'
+             `--.       .      .--'
+                  ------------'

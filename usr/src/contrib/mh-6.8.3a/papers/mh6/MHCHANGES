@@ -1,0 +1,1773 @@
+		      MHCHANGES from mh.5 to mh.6
+
+
+Tue Jan  8 13:54:13 1985  /mtr (agent: Marshall Rose) <uci@udel-dewey>
+
+	MH.5 is finished, finally.
+
+
+Sat Jan 26 09:05:52 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+		  -- Fixes for MHMTS configuration --
+	conf/makefiles/uip: shouldn't build rcvdist on an MHMTS system
+	conf/doc/mhook.rf: ditto
+	conf/config/mts.c, mhmts/netmail.c, mts/mts.h, uip/rmail.c:
+	    some typos in the declarations of global MTS variables that
+	    are MHMTS specific
+	mf/mmuu.c: addr_convert() conflicted with routine of same name
+	    in uumm.c
+	uip/news.c: looking in the wrong place for <sys/dir.h> on 4.2BSD
+	    systems
+
+
+Sat Jan 26 09:08:43 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	uip/{inc,post}.c: changes for #ifdef TMA; this stuff is still
+	    under non-disclosure (not the MH code, just the -ltma library
+	    which doesn't come with MH)
+
+
+Sat Jan 26 09:38:08 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	tws/dtime.c: #define dysize(), since could be a macro in ctime.c
+	    (thanks, Fred)
+
+
+Sat Jan 26 09:12:27 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	MH #5.310[UCI] (uci-750a) released to MH-Workers
+
+
+Sun Jan 27 17:41:03 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	sendmts/smail.c, uip/post.c: with -DSMTP, keep one SMTP connection
+	    open, instead of starting a new one for each transaction
+	othersupport/pop/{Makefile,{popd,popser,inc,popsbr}.c}: support
+	    "rpop" under #ifdef RPOP
+	othersupport/pop/client.c: remove
+	conf/{config/mts.c,tailor/READ-ME,makefiles/sendmts}, mts/mts.h,
+	    sendmts/{smail,client}.c: support new server search list
+	    facility used by both -DSMTP and -DPOP
+
+
+Sun Jan 27 18:42:49 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	conf/makefiles/mts: dependency screw-up on mts.o
+
+
+Tue Feb 12 19:33:14 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	uip/mhlsbr.c: clear_screen() logic between messages botched
+
+
+Mon Feb 18 12:53:50 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	conf/doc/send.rf, uip/send.c: de-implement ~/.signature support
+
+
+Wed Feb 20 20:40:14 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	uip/inc.c: fix suggested by John Dilley at Purdue, inc now ignore
+	    signals if it's going to zero the maildrop.
+
+
+Wed Feb 20 20:48:12 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	sbr/adios.c: save errno prior to doing fancy perror stuff
+
+
+Fri Mar  1 19:48:53 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/config/config.c: if MORE is defined, used that instead of
+	    /usr/ucb/more.  The #ifdef ALTOS dependency is removed.
+	   ALTOS users should use options MORE='"/usr/bin/more"',
+	   just like users of the Dual.
+	conf/examples/READ-ME: document same
+
+
+Fri Mar  1 19:56:43 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/config/mts.c: for the DUAL, you can't link to a file that you
+	    can't read, unbelievable, eh?, so change the creat (foo, 0000)
+	    to creat (foo, 0400).  Also, fix up some botched args to a
+	    sprintf() call.
+
+
+Fri Mar  1 19:59:32 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/trmsbr.c: forgot to make a termcap buffer TXTSIZ'd instead
+	    of BUFSIZ'd.
+
+
+Sat Mar 1 20:21:17 1985  /mtr (agent: Marshall Rose) <mh@uci-750a>
+
+	MH #5.321[UCI] (uci-750a) released to MH-Workers
+
+
+Wed Mar  6 18:08:11 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/{dropsbr,packf,post,slocal}.c: fix to maildrop mapping bug
+	    with MHMTS and local delivery in post, and SENDMTS and local
+	    delivery in slocal
+
+Wed Mar  6 18:19:46 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	TODO, config/addrsbr.h, sendmts/smail.c, mf/mf.{c,h},
+	    uip/{addrsbr,ap,post,rcvdist,sbboards}.c: handle 822-style
+	    routing
+
+
+Wed Mar  6 18:59:22 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	       -- Fixes from Robert Elz <kre@ucb-vax> --
+	sbr/makedir.c: use mkdir() under #ifdef BSD42
+	uip/rmf.c: use rmdir() under #ifdef BSD42
+
+
+Sat Mar  9 15:36:13 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	bboards/mmdf/mmdf.{1,2}/bboards/bb_wtmail.c, uip/sbboards.c:
+	    fix minor bug requiring nearly major re-write!!!
+
+
+Sat Mar  9 15:54:40 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/dropsbr.c: fix bug when fixing stomped maildrop.
+
+
+Tue Mar 12 18:07:44 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	othersupport/pop/pop.txt: a few minor corrections to typos.
+
+
+Wed Mar 13 22:01:37 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+       -- Fixes suggested by Phyllis Kantar <phyl@rand-unix> --
+	uip/{comp,dist,forw,repl}.c: fix quit -delete logic
+	conf/doc/{comp,mh-chart}.rf: document "-file file" switch
+	uip/send.c: "send -help" should done (1) for comp, et. al.
+	uip/send.c: typo "tempoary"
+	conf/doc/{send,whom}.rf: Profile Components forgot Draft-Folder
+	uip/ali.c: always load system aliases
+	conf/doc/{MH,comp,dist,forw,mhook,repl,send,show,mh-alias,mh-mail,
+	    mh-profile,mhl,post}.rf: typo fixes
+	conf/doc/send.rf, uip/send.c: -forward now the default, also
+	    don't gripe about "show -draft file"
+
+
+Wed Mar 13 22:24:07 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/send.c: fix "use xxx logic"
+	uip/msh.c: a NULL vs. "" typo
+
+
+Thu Mar 14 22:41:37 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	   -- Fixes suggested by John Dilley <jad@Purdue> --
+	conf/{config/mts.c,tailor/READ-ME}: add new mtstailor variables
+	    localname, systemname, and uucpchan
+	mts/mts.h, conf/{mh-gen.8,config/{mts.c,mtstailor},tailor/READ-ME}:
+	    add new mtstailor variable lockstyle to control style of locking
+	sbr/m_getfld.c: catch the UNIX "from user" line
+	uip/scansbr.c: make use of the UNIX "from user" line
+	uip/addrsbr.c: more #ifdef DUMB support
+	uip/inc.c: minor bug in inc w.r.t. closing locked file
+	uip/post.c: more #ifdef DUMB support
+	uip/replsbr.c: support Return-Path: for defaulting host names
+	    as a last resort
+
+
+Fri Mar 15 11:45:00 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	othersupport/emh/READ-ME: new file
+
+
+Fri Mar 15 23:05:43 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	bbsupport/bbexp.c: fix string botch for command to popen.
+	    also allow extra arguments to indicate aging period.
+
+
+Fri Mar 15 23:21:29 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	sbr/printsw.c: compress output of printed switches
+	sbr/m_getdefs.c: let $MHCONTEXT override context variable
+	sbr/m_{getdefs,gmsg,sync}.c, conf/doc/mh-profile.rf: let the profile
+	    entry "mh-sequences" override .mh_sequences
+	sbr/m_seq.c: optimization
+
+
+Sat Mar 16 00:28:01 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/{inc,msh,rcvtty,scan,scansbr}.c: clean up handling of
+	    inc -silent
+	sbr/{llib-lmh,m_send.c}, uip/{annosbr,comp,dist,forw,repl}.c: move
+	    annotations into send
+	conf/makefiles/uip, uip/{send,post}.c: ditto
+	conf/doc/{dist,forw,repl}.rf: ditto
+	uip/anno.c: forgot to check (mp -> msgstats[msgnum] & SELECTED)
+
+
+Sat Mar 16 01:38:06 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/config/mts.c: add a few calls to mts_init ("mts") at
+	    strategic places
+
+
+Sat Mar 16 12:23:37 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/{mark,msh}.c: don't set previous-sequence to make debugging
+	    easier
+
+
+Sat Mar 16 12:49:48 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	Makefile: simply Makefile using sh, also make DESTDIR work
+	conf/makefiles/othersupport: simplify Makefile
+
+
+Tue Mar 19 14:17:30 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	othersupport/mtrenv/bin/{distf,mpick,packit}: updates
+
+
+Tue Mar 19 17:31:14 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/doc/{ap,mh-chart}.rf, uip/ap.c: accept -help switch
+
+
+Tue Mar 19 18:16:33 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/doc/msgchk.rf: new file
+	conf/{doc/{mh,mh-chart,MH}.rf,makefiles/doc}: update for msgchk
+
+
+Thu Mar 21 08:45:11 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	sendmts/smail.c: fix logic error in sm_end(); MMDF-I has this
+	    problem, MMDF-II might!
+
+
+Sat Mar 23 12:48:30 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+		    -- Support the WhatNow shell --
+	conf/makefiles/{sbr,uip}: updates for all of this
+	uip/{comp,dist,forw,repl}.c: remove What now? code,
+	    add -whatnow program, -nowhatnow
+	sbr/m_whatnow.c: new module
+	conf/config/config.c,config/mh.h,sbr/m_getdefs.c: new variable
+	    whatnowproc
+	sbr/llib-lmh: update
+	uip/whatnow.c: new program, the first WhatNow shell
+	conf/doc/{mh-chart,whom}.rf, uip/whom.c: upgrade to take draftfolder
+	    arguments
+	sbr/putenv.c: update for above
+	sbr/m_send.c: undo previous edits, m_whatnow() takes care of it
+	uip/distsbr.c: new module for dist-style support
+	uip/{send,whom}.c: call distout() in distsbr.c
+	conf/doc/whatnow.rf: new file
+	conf/doc/{MH,comp,dist,forw,mh,mh-{chart,profile},repl}.rf: updates
+	conf/doc/template: fix
+
+
+Sun Mar 24 18:32:47 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	sbr/m_draft.c,
+	    uip/{comp,dist,forw,refile,repl,send,show,whatnow,whom}.c: have
+	    -nodraftfolder override "Draft-Folder:" profile entry
+
+
+Mon Mar 25 18:06:48 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	mf/mf.c: avoid (incorrectly) recognizing " at " for "@" by using a
+	    heuristic suggested by JSol.
+
+
+Tue Mar 26 18:02:52 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/doc/repl.rf: document bug in replcomps
+
+
+Tue Mar 26 18:32:49 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/{config/mts.c,tailor/READ-ME}, config/aliasbr.h, mts/mts.h, 
+	    uip/aliasbr.c: make "*" logic mts-tailorable (ugh), you get
+	    to choose highest non-user uid and non-user shell
+
+
+Wed Apr  3 23:52:13 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	sendmts/smail.c: comment out an extra RSET for UCI's losing
+	    MMDF-I SMTP server
+
+
+Wed Apr  3 23:53:12 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	ohtersupport/mtrenv/bin/whatnow: new file
+
+
+Sat Apr  6 16:17:23 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	MH #5.348[UCI] (uci-750a) released to MH-Workers
+
+
+Fri Apr 19 18:27:16 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/{config/mts.c,tailor/READ-ME}, mts/mts.h, uip/inc.c:
+	    support the new MTS variable "pophost"
+
+
+Fri Apr 19 18:28:44 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	bboards/bboards.h, uip/bbc.c: support BB_INVIS for "hidden"
+	    BBoards in -topic
+	uip/bbc.c: catch a long name that got past us
+	uip/bbc.c: fix -topics logic when BBoards given
+
+
+Fri Apr 19 18:32:13 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/doc/MH.rf, sbr/m_send.c: de-implement "push" in whatnow
+	    having send look for profile-entry of "push" rather than "send"
+	    to confusing to the user "community"
+
+
+Fri Apr 19 19:13:44 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/post.c: more #ifdef DUMB madness, for local addresses,
+	    if no host portion given, then don't give it to sm_wadr()
+	uip/post.c: back #ifdef DUMB off a bit in From: for MMDFMTS
+
+
+Fri Apr 19 19:23:39 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/whatnow.c: if edit fails, it's time to go away
+	sbr/m_edit.c: minor cosmetic change
+
+
+Fri Apr 19 19:44:25 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/send.c: on annotations, if push'd avoid getting upset
+	    if message to annotate isn't there
+	uip/send.c: fix "typo" for r1bindex ()
+	uip/send.c: put ~/.signature support back in under #ifdef UCI
+	uip/send.c: use mktemp() instead of bogus makename!
+	uip/send.c: fix screwy interaction between msh, dist, whatnow,
+	    and send (oh no!)
+
+
+Sat Apr 20 14:46:10 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	sbr/m_send.c, uip/whatnow.c: on "push", let send do push() instead
+	    of whatnow
+
+
+Wed Apr 24 22:44:30 1985  /mtr (agent: Marshall Rose) <uci@nrtc>
+
+	sbr/m_whatnow.c, uip/{dist,forw,repl}.c: fix obscure "@" bug.
+
+
+Wed Apr 24 22:45:39 1985  /mtr (agent: Marshall Rose) <uci@nrtc>
+
+	conf/doc/MH.rf: just a few more fixes...
+
+
+Thu May  2 21:13:03 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/sbboards.c: fdopen() called with wrong arg!
+
+
+Thu May  2 21:13:32 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	uip/post.c: a few more back-offs with #ifdef DUMB...
+
+
+Thu May  2 21:13:32 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	conf/makefiles/uip: make whatnow chmod +t'd
+
+
+Thu May  2 21:14:56 1985  /mtr (agent: Marshall Rose) <mh@uci-icsa>
+
+	MH #5.360[UCI] (uci-750a) released to MH-Workers
+
+
+Tue May 21 21:29:18 1985  /mtr <mrose@nrtc-isc>
+
+	Begin work on research-version of MH (#5.380[NRTC]).  This version
+	won't be sent out to the MH-Workers list, so I can do some power
+	coding for a change.
+
+			      -- WHATNOW changes --
+
+	uip/{refile,send,show,whom}.c: #ifdef WHATNOW experimental code
+	sbr/m_whatnow.c, uip/{whatnow,whatnowsbr}.c: default whatnow is
+	    a built-in for comp, et. al.
+	sbr/{m_{edit,send},showhom}.c: removed since whatnowsbr has 'em
+	sbr/showfile.c: likewise, showhead function removed
+
+
+				-- POP changes --
+
+	conf/doc/inc.rf, uip/inc.c: pop now lives in inc
+	uip/spop.c: link to sbboards.c, the POP mailer for SendMail
+	popsupport/: new directory from the ashes of
+	    othersupport/popsupport/, containing many new programs, files,
+	    and documentation
+	bboards/{bboards.h,getbbent.c}: new functions to support
+        popsupport/mmdfII/: the POP channel for MMDF-II, linked to the
+	    BBoards channel, as appropriate
+	conf/doc/msgchk.rf, mts/msgchk.c: support POP
+
+
+				 -- Bug Fixes --
+
+	uip/post.c: for path code, fixed a couple of dumb typos.
+	uip/replsbr.c: if -noformat, don't worry about no addresses
+	uip/bbc.c: another couple of nasty bugs fixed
+	sendmts/smail.c: don't send HELO if talking to SendMail on the
+	    local host
+	conf/doc/{MH,repl,forw,comp,dist,show,mh,mh-chart,whom}.rf: bug
+	    fixes
+
+			-- Configuration and Clean-up --
+
+	conf/mhconfig.c: support new options: pop, chown, remove
+	conf/makefiles/*: more chmods where appropriate
+	config/config.c, sbr/help.c: include compile-time options in help
+	    listing.
+	sbr/m_backup.c,uip/forw.c: remove makename in favor of mktemp
+	sbr/pr_array.c: removed, since no one was using it
+	config/mh.h, sbr/llib-lmh: update for all this
+	othersupport/patch/: the latest version
+
+
+Tue May 21 22:33:58 1985  /mtr <mrose@nrtc-isc>
+
+	uip/scansbr.c: when copying characters to the scan listing,
+	    know about underlining conventions
+
+
+Wed May 22 10:16:17 1985  /mtr <mrose@nrtc-isc>
+
+	sbr/m_getfld.c: Eom() was botching gathering the UNIX from line
+	    (fix from Matt Crawford <oddjob!matt@lbl-csam>)
+	sendmts/smail.c: sm_end(NOTOK) was clobbering sm_reply
+
+
+Wed May 22 15:29:25 1985  /mtr <mrose@nrtc-isc>
+
+	popsupport/popser.c: if maildrop doesn't exist, note it and
+	    continue
+	conf/doc/bbc.rf, uip/bbc.c: add -user switch to help POP debugging
+	bboards/getbbent.c: have getbberr() return useful info for
+	    setbbfile (), setbbinfo (), and setbbent ()
+	popsupport/{popaka,popser,popwrd}.c, uip/{bbc,spop}.c: take advantage
+	    of getbberr()
+
+
+Wed May 22 19:49:43 1985  /mtr <mrose@nrtc-isc>
+
+	Makefile, config/mh.h, conf/makefiles/*, bboards/getbbent.c,
+	    */llib-l*, tws/{dtime,dtimep}.c: start the linting process,
+	    lint everything except the uip/ directory
+	sendmts/smail.c, uip/trmsbr.c: move discard to sbr/ library
+	mf/mf.c: lint fixes
+	sbr/{getans,m_{gmsg,setcur},refile,showfile}.c: lint fixes
+	sbr/{putenv,sprintb}.c: #include mh.h
+	sbr/*: VOID -> (void)
+	bbsupport/bb{aka,exp,tar}.c: lint fixes
+
+
+Thu May 23 09:06:32 1985  /mtr <mrose@nrtc-isc>
+
+	conf/makefiles/{mts,uip}, uip/msgchk.c: moved from mts/
+
+Thu May 23 22:06:25 1985  /mtr <mrose@nrtc-isc>
+
+	conf/makfiles/uip,uip/*.c: next step in the lint process
+	config/mh.h, sbr/llib-lmh, uip/rmf.c: move remdir() to sbr/makedir.c
+
+
+Mon May 27 11:33:32 1985  /mtr <mrose@nrtc-isc>
+
+	config/mh.h, sbr/{closefds,m_getdefs}.c: #ifdef OVERHEAD experimental
+	    code
+
+
+Mon May 27 17:05:18 1985  /mtr <mrose@nrtc-isc>
+
+	tws/dp.c: move to uip/
+	uip/formatsbr.c: new module
+	config/scansbr.h: define stuff for formatsbr
+
+
+Mon May 27 21:45:23 1985  /mtr <mrose@nrtc-isc>
+
+	uip/{ap,addrsbr}.c: upgrade ap to use formatsbr; required a new
+	    param to getm(), so modules which call getm() got changed
+	    as well
+	othersupport/rcvtrip/rcvtrip: upgrade
+
+
+Tue May 28 19:45:36 1985  /mtr <mrose@nrtc-isc>
+
+	config/scansbr.h,uip/{inc,msh,rcvtty,scan,scansbr}.c: bite the
+	    bullet and have scansbr use a format string
+	uip/{inc,scan}.c: no more -[no]numdate, -[no]size, -[no]time
+	    and use -format string and -width columns instead
+
+
+Wed May 29 14:53:33 1985  /mtr <mrose@nrtc-isc>
+
+	othersupport/mtrenv/*: update
+
+
+Wed May 29 16:38:49 1985  /mtr <mrose@nrtc-isc>
+
+	Makefile, conf/makefiles/*: support depend.  N.B.: This is for
+	    DEVELOPMENT WORK ONLY. "make depend" runs unifdef because some
+	    #include files are configuration specific.  Sadly, unifdef
+	    isn't on all systems (it originated at Rand and migrated to
+	    4.2BSD).  As a result, unless you have unifdef, don't run make
+	    depend.  The dependencies listed in the conf/makefiles/* files
+	    are "generic".
+
+
+Fri May 31 22:19:15 1985  /mtr <mrose@nrtc-isc>
+
+	uip/replsbr.c: bite the bullet and have repl use the format string
+	    routines as well
+
+
+Fri May 31 23:33:59 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/*.rf: more doc fixes; document WHATNOW, OVERHEAD
+	sbr/m_getdefs.c: more OVERHEAD code to optimize MH subforks
+
+
+Sat Jun  1 01:35:06 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/mhook.rf, uip/rcv*.c: account for MMDF-II change regarding
+	    rcvmail hooks and maildelivery(5)
+
+
+Sat Jun  1 11:18:06 1985  /mtr <mrose@nrtc-isc>
+
+	mf/mf.c, uip/*sbr.c: more register declarations
+
+
+Sat Jun  1 14:45:25 1985  /mtr <mrose@nrtc-isc>
+
+	uip/{pick,picksbr,msh}.c: bite the bullet and have pick allow
+	    complex booleans
+	conf/doc/{mh-chart,pick}.rf: ditto
+
+Sun Jun  2 14:07:46 1985  /mtr <mrose@nrtc-isc>
+
+	uip/whatnowsbr.c: don't say the draft's left around if it isn't
+	    (suggested by Mike O'Brien)
+	uip/whatnowsbr.c: return value from non-initial calls to m_edit()
+	    not handled right (pointed out by Richard Johnson)
+	sbr/m_getfld.c: be a bit smarter when recognizing that idiotic
+	    "From " line from silly UNIX-style maildrops
+
+
+Sun Jun  2 18:36:19 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/*.rf: more clean-up
+	uip/ali.c: change help messages a bit, and add -[no]normalize
+	    switches
+	conf/doc/mh-tailor.rf: new file
+	config/mh.h,uip/{post,repl}.c: move definition of OUTPUTLINELEN
+	    to mh.h so sbr/help.c can use it
+	sbr/help.c: smarter output routine for options
+
+
+Mon Jun  3 11:28:46 1985  /mtr <mrose@nrtc-isc>
+
+	TODO: remove since there's nothing worth left doing in it!
+
+
+Mon Jun  3 14:54:30 1985  /mtr <mrose@nrtc-isc>
+
+	othersupport/usenix: new directory containing the MH paper
+	    presented at the 1985 Summer Usenix Conference
+
+
+Mon Jun  3 22:15:18 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/packd.rf, uip/packd.c: de-implement, essentially useless
+	    under 4.2BSD
+
+
+Tue Jun  4 13:30:27 1985  /mtr <mrose@nrtc-isc>
+
+	uip/trmsbr.c: optimize a bit, the ontty test in clear_screen ()
+	    isn't needed
+
+
+Tue Jun  4 20:00:32 1985  /mtr <mrose@nrtc-isc>
+
+			  -- Suggested by Dave Yost --
+	conf/doc/tmac.h: use ".nf" after ".SH" inside various macros
+	    (since ".SH" tends to set ".fi")
+	sbr/m_{gmsg,sync}.c: some .mh_sequences optimizations for hm
+	conf/config/config.c: support #ifdef NOMHSEQ
+
+
+Thu Jun  6 23:03:09 1985  /mtr <mrose@nrtc-isc>
+
+	uip/{format,mhl}sbr.c: add some definitions for sprintb()
+	bboards/bboards.h: define BBITS there instead of uip/bbc.c
+
+
+Sun Jun  9 14:44:36 1985  /mtr <mrose@nrtc-isc>
+
+	conf/makefiles/uip,uip/show.c: make show/next/prev one program
+	uip/{show,next,prev}hdr.c: remove as a result of above
+	conf/doc/{next,prev}.rf: update
+
+
+Sun Jun  9 16:37:40 1985  /mtr <mrose@nrtc-isc>
+
+	uip/dropsbr.c, uip/sbboards.c: .cnt mechanism broken,
+	    introduce new routine mbx_openX() in dropsbr.c and use that
+	    instead of mbx_open when opening an .cnt file
+
+
+
+Sun Jun 16 10:21:33 1985  /mtr <mrose@nrtc-isc>
+
+	uip/{ap,dp,{repl,scan}sbr}.c: the old echo controversy raises it's
+	    ugly head: suppose we have a line in a replcomps file which is
+	    entirely in a %<...%> conditional and the conditional is false.
+	    In that case, we still get a blank line.  This is very BAD if it
+	    occurs in the headers.  Two solutions possible:
+		1. If a call to FSprintf() returns a empty string, don't
+		   put out a \n.
+		2. In new_fs, put the \n's in and just return one big
+		   string instead of an array of strings.
+	    Option [2] was implemented initially because it lets conditionals
+	    span multiple lines in the file.  In order to keep the format files
+	    from looking too complicated, EOL was ignored in format files,
+	    \n's should be embedded where appropriate.  A single format
+	    string argument is considered to have an implicit \n.  This is
+	    inconsistent, but it keeps the format files readable.  Option [2]
+	    was discarded though since it required a \n at the end of each
+	    line in the format file if there was no conditional stuff
+	    there.  So, option [1] got implemented even though it doesn't
+	    allow conditionals to be multi-line (which is okay, since you
+	    can use \n in a line).
+
+
+Thu Jun 20 19:55:23 1985  /mtr <mrose@nrtc-isc>
+
+     -- Performance Enhancements from the 4.3BSD folks (by Van Jacobson) --
+	config/mh.h: define vfork for systems without it
+	sbr/{refile,showfile}.c,uip/{replsbr,send,whatnowsbr}.c:  replace
+	    fork() with vfork()
+	config/mh.h: move Van's getfld.h definitions into here
+	sbr/m_getfld.c: major performance tuning!  (use -DRPATHS to get
+	    Return-Path: info from UNIX from: line)
+	uip/{inc,msh}.c: m_unknown parameter added
+	uip/trmsbr.c: support for TIOCGWINSZ in 4.3BSD(!!)
+	uip/scan.c: -[no]reverse under #ifdef BERK (I really HATE this)
+	    also, update context prior to scan, again under #ifdef BERK
+	uip/scansbr.c: performance enhancements plus inline copy of message
+	    body to output file for inc
+	uip/mhlsbr.c: under #ifdef BERK pipe output to /usr/ucb/more if
+	    stdoutput is a terminal.
+	uip/post.c: #ifdef DUMB a bit dumber for Berkeley addrsbr (actually
+	    these changes were made earlier for other reasons)
+	uip/addrsbr.c: use prescan-like routine in SendMail under #ifdef
+	    BERK, also enable wild-carding.  The former probably breaks
+	    the stuff in ap, et. al.
+
+
+Fri Jun 21 13:09:29 1985  /mtr <mrose@nrtc-isc>
+
+	uip/addrsbr.c: liked the wild-carding, so even for #ifndef BERK you
+	    get it.  Of course in this case, you can wildcard on both the
+	    mbox and the host.  It turns out that this is really useful for
+	    people who have many mailboxes and get a lot of munged mail.
+
+
+Mon Jun 24 14:58:25 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/*.rf: Numerous documentation fixes suggested by Jerry
+	    Sweet.
+	conf/doc/ADMIN.rf: New document: Administrator's Guide
+
+
+Mon Jun 24 23:31:42 1985  /mtr <mrose@nrtc-isc>
+
+	uip/send.c: try to prevent confused annotations.  The algorithm
+	    works for dist and repl, but not forw
+
+
+Wed Jun 26 12:36:38 1985  /mtr <mrose@nrtc-isc>
+
+	MH #5.457 becomes MH #6.1 in beta
+
+
+Mon Jul  1 06:26:38 1985  /mtr <mrose@nrtc-isc>
+
+		       -- Suggestions from Bob Desinger --
+	config/mh.h, sbr/m_backup.c: locate SBACKUP definition in mh.h
+	sbr/m_gmsg.c, uip/rmf.c: handle SBACKUP prefix files appropriately,
+	    also, slight optimizations
+
+
+Mon Jul  1 09:18:42 1985  /mtr <mrose@nrtc-isc>
+
+	sbr/m_{file,gmsg}.c, uip/{msh,refile,rmm,send}.c: #ifdef notdef the
+	    stuff marking messages as DELETED, since it's not used
+
+
+Mon Jul  1 22:22:49 1985  /mtr <mrose@nrtc-isc>
+
+	conf/doc/mhl.rf, uip/mhlsbr.c: remove the #ifdef BERK stuff and
+	    generalize it.  If the MH profile entry mhlproc is defined, then
+	    you get the BERK behavior using the mhlproc as the output filter.
+	    Otherwise, you get the old behavior.  If this works nice, I'll
+	    make "more" the default mhlproc and set-up config.c, mh.h, and
+	    m_getdefs.c as appropriate (with the documentation mh-profile.rf)
+	    For the moment, I'm using "less" as my mhlproc and it works
+	    fine.
+
+
+Thu Jul  4 08:29:11 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/ADMIN.rf: put in a word or two about running conflict
+	conf/makefiles/dist: add rules for .imp files
+
+
+Thu Jul  4 08:38:01 1985  /mtr <mrose@nrtc-gremlin>
+
+	tws/{dtime,dtimep}.c: know about J{D,S}T, also under #ifdef HUJI
+	    generate it if appropriate.  (from Danny Braniss)
+
+
+Thu Jul  4 16:00:38 1985  /mtr <mrose@nrtc-gremlin>
+
+	othersupport/mtrenv/mhbox/dp.debug: new file
+
+
+Thu Jul  4 17:36:34 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: "pack" should be called "packf".
+
+
+Sun Jul  7 13:26:28 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{addsbr,post,rcvdist,replsbr,sbboards}.c: support #ifdef BANG
+	conf/examples/READ-ME: ditto
+
+
+Sun Jul  7 13:31:01 1985  /mtr <mrose@nrtc-gremlin>
+
+	othersupport/scripts/: new directory for scripts.  First is Bob
+	    Designer's modifications to JLR's append script.
+	othersupport/mtrenv/bin/append: remove
+
+
+Tue Jul  9 18:59:21 1985  /mtr <mrose@nrtc-gremlin>
+
+	 -- Suggested by Thomas Scott Christiansen <tom@wisc-ai.ARPA> --
+	uip/msh.c: move big Msgs[] structure from auto to static
+	othersupport/netnews/{.,mhbox}/: new directories
+	othersupport/netnews/{mh_profile,mhbox/flupcomps} new files
+
+
+Wed Jul 10 09:04:04 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: typo defining LISTDSW
+
+
+Wed Jul 10 12:07:42 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: another de-reference of NULL fixed
+
+
+Wed Jul 10 14:08:39 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/popsupport,popsupport/popd.{c,8c}: a bit of clean-up
+
+
+Wed Jul 10 14:48:05 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: don't SIG_DFL signals on start-up; if run from msh,
+	    this loses big, if not run from msh, then signals are SIG_DFL
+	    anyway...
+
+
+Wed Jul 10 20:40:53 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/config.c,config/mh.h,sbr/m_getdefs.c,uip/mhlsbr.c:
+	    mhl's choice of mhlproc was confusing to forw.  Add new variable
+	    moreproc to fix the problem.  Note as a result, the old BERK
+	    behavior is the default, you have to turn off moreproc in your
+	    .mh_profile if you don't want mhl to use it
+
+
+Thu Jul 11 12:34:15 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/uip: oops, forgot a @END: SENDMTS inside an @BEGIN: POP
+
+
+Fri Jul 12 10:32:40 1985  /mtr <mrose@nrtc-gremlin>
+
+	config/mh.h,sbr/uleq.c: change strindex() -> stringdex () to avoid
+	    MMDF name conflict
+	uip/{addrsbr,dropsbr,msh,rcvpack,sbboards}.c: ditto
+
+
+Sun Jul 14 12:54:55 1985  /mtr <mrose@nrtc-gremlin>
+
+		     -- Enhancements from John L. Romine --
+	uip/mhlsbr.c: minor cleanup
+
+
+Sun Jul 14 13:23:49 1985  /mtr <mrose@nrtc-gremlin>
+
+	tws/dtimep.c: have "BST" mean British Summer Time not
+	    Bering Standard Time
+
+
+Sun Jul 14 13:44:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	othersupport/bboards: version #2.1 as suggested by Jerry Sweet
+	conf/doc/{ADMIN,mf,mh-{mts,tailor},bb{exp,oards5,tar},pop8}.rf: fixes
+	    suggested by Jerry Sweet
+
+
+Sun Jul 14 18:51:22 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/formatsbr.c: handle the blank line bug by hacking it (see the
+	    "echo controversy" discussed above).  The solution is to insert
+	    a space in truly blank lines...
+
+
+Tue Jul 16 12:41:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/ali.c: forgot to call mts_init() to get "everyone", and "noshell"
+
+
+Wed Jul 17 09:47:19 1985  /mtr <mrose@nrtc-gremlin>
+
+	bboards/mmdf/mmdf.2/bboards/bb_wtmail: change dist_address to
+	    ds_address, dist_log to ds_log
+
+
+Thu Jul 18 15:59:19 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh-gen.8: typo
+
+
+Sun Jul 21 15:36:24 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{send,whom,mh-alias}.rf:  aliasing hints
+	conf/doc/{{MH,tmac}.h,template}: support hints section
+	conf/doc/mh-mts.rf: minor fix
+
+
+Mon Jul 22 16:50:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/picksbr.c: logic for handling "--header value" botched
+
+
+Tue Jul 23 20:30:39 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/whom.c: pass more switches to post.  Since they're ALL secret,
+	    no documentation needed!
+
+
+
+Wed Jul 24 14:07:31 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh.h, sbr/m_getfld.c, uip/{msh,{mhl,scan}sbr}.c: fix broken
+	    msh message delimiting behavior and broken mhl behavior under
+	    msh
+
+
+Wed Jul 24 21:01:15 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/forw.c: -build logic botched
+
+
+Wed Jul 24 23:42:41 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: bug with #ifdef BERK, mp -> m_nohost not getting
+	    set so no aliasing done!
+	conf/config/mts.c: lockfile name building botched!
+
+
+Thu Jul 25 00:00:00 1985  /mtr <mrose@nrtc-gremlin>
+
+	MH #6.24 enters beta
+
+
+Thu Jul 25 17:00:17 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/ADMIN.rf, uip/{inc,msgchk}.c: minor re-work POP debug
+	    features
+
+
+Thu Jul 25 21:31:00 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/pick.rf: finally get documentation right
+	conf/makefiles/dist: a few more things
+
+
+Fri Jul 26 11:09:35 1985  /mtr <mrose@nrtc-gremlin>
+
+	sendmts/smail.c: slight fix for major bug with #ifdef BERK
+
+
+Sat Jul 27 00:33:39 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{mhl,show}.rf: upgrade a bit
+	conf/makefiles/uip, uip/{mhl,mhlsbr,show}.c: add address/date parsing
+	    on demand
+	conf/doc/{dp,scan}.rf, uip/formatsbr.c: slight upgrade
+	support/mhl.{format,forward}: update a bit
+
+
+Sat Jul 27 12:46:12 1985  /mtr <mrose@nrtc-gremlin>
+
+		   -- Documentation Fixes from Bob Designer --
+	conf/doc/{post,mh-profile,show,send,repl,next,folder}.rf: typos
+	uip/whatnowsbr.c: back to the old prompt
+
+
+Sat Jul 27 12:55:27 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_sync: slight adjustment
+	uip/{addr,format,pick}sbr.c: a bit more debug info
+
+
+Tue Jul 30 21:44:00 1985  /mtr <mrose@nrtc-gremlin>
+
+			-- Suggested by Phyllis Kanter --
+	uip/folder.c: fix -fast and -recurse mis-interaction
+	uip/burst.c: fix non-existant message handling when expanding the
+	    folder
+	conf/config/config.c: fix comment re: whatnowproc
+	config/mh.h, sendmts/smail.c: declare a couple of things that
+	    should be in <strings.h>
+	sbr/m_getdefs.c: don't complain if "context: file" isn't there.
+	sbr/m_{convert,file,gmsg,name}.c: fix boundary handling of MAXFOLDER
+	conf/mh-gen.8: say a few words about chown, remove in MH config
+	    file
+	conf/{config/config.c,examples/READ-ME}: two new options,
+	    FOLDPROT, MSGPROT
+	conf/{config/config.c,doc/mh-profile.rf}, config/mh.h: add the
+	    "unseen-sequence"
+	sbr/{m_setcur.c,llib-lmh}, uip/{inc,show}.c: do the UNSEEN business
+
+
+Wed Jul 31 10:44:22 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{tmac.h,{ADMIN,MH,bbl,folder,mh-profile,msh,scan,whatnow}.rf}:
+	    documentation fixes
+	conf/doc/{mhpath,show}.rf: ditto
+	uip/msh.c: slight typo
+
+
+Thu Aug  1 21:30:36 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: fix conflict between -ms and POP
+
+
+Sun Aug  4 14:23:58 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{ADMIN,mh-mts,bboards8}.rf: doc fixes
+
+
+Sun Aug  4 14:23:35 1985  /mtr <mrose@nrtc-gremlin>
+
+			-- Suggested by Phyllis Kanter --
+
+	conf/doc/*.rf: doc fixes
+
+
+Mon Aug  5 12:29:56 1985  /mtr <mrose@nrtc-gremlin>
+
+			     -- From John Romine --
+	conf/config/mts.c: do lock structure allocation dynamically
+	    and free up 25K of static data space (which may never even
+	    be referenced!)
+
+
+Mon Aug  5 20:27:12 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/rcvstore.c, conf/doc/rcvstore.rf: new program from Julian
+	    Onions
+	conf/{makefiles/uip,doc/{MH,mh,mh-chart,mhook}.rf}: upgrade
+
+
+Mon Aug  5 20:57:47 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_gmsg.c, uip/{bbl,mhlsbr,post,refile}.c: minor notdef touch-up
+	conf/doc/inc.rf: slight touch-up
+	conf/mhconfig.c: support some invocation arguments
+	uip/sortm.c: alloc structure dynamically
+
+
+Tue Aug  6 17:22:59 1985  /mtr <mrose@nrtc-gremlin>
+
+			     -- From John Romine --
+	conf/makefiles/mmdf: slight typo
+	mmdf/LN: better version
+	conf/{mh-gen.8,mhconfig.c,makefiles/doc}: support two new options
+	    for manual pages: "none" and "gen"
+
+
+Wed Aug  7 21:14:19 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: m_popen_pid -> m_pid for 7limit
+
+
+Thu Aug  8 00:00:00 1985  /mtr <mrose@nrtc-gremlin>
+
+	MH #6.59 enters beta
+
+
+Mon Aug 12 19:42:28 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/mhlsbr.c: slight clarification for ontty == NOTTY and -clear
+	    at termination; also, try to get signals right again
+
+
+Wed Aug 14 17:27:41 1985  /mtr <mrose@nrtc-gremlin>
+
+	config/aliasbr.h: optimize structures for ALTOS
+	uip/aliasbr.c: optimize for ALTOS and UNIX in general
+
+
+Wed Aug 14 21:54:20 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/mts.c, config/aliasbr.h, sbr/{m_getdefs,path}.c,
+	popsupport/popd.c, uip/{ali,aliasbr,msh,picksbr,post}.c: a couple
+	    more touch-ups
+
+
+Thu Aug 15 11:19:26 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: forgot an #ifdef for POP
+
+
+Thu Aug 15 16:42:26 1985  /mtr <mrose@nrtc-gremlin>
+
+	CMP: shell script to aid Bug-MH in figuring out what's changed
+
+
+Thu Aug 15 16:58:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{bbleader,bboards,mh-profile,prompter,show}.rf: minor touch-up
+
+
+Fri Aug 16 03:55:21 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getfld.c, uip/msh.c: fix trailing newline bug with mhl+no
+	    moreproc
+	uip/addrsbr.c: slight touch-up
+
+
+Fri Aug 16 04:48:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/{mhconfig.c,mh-gen.8,makefiles/uip}: fix long standing bug
+	    about sbboards, slocal, and spop being installed even for MMDF
+	    configurations
+
+
+Fri Aug 16 05:48:51 1985  /mtr <mrose@nrtc-gremlin>
+
+	mf/{mf.h,{mf,mmuu,umhook,uumm}.c}: change vfgets() to mfgets(),
+	    and slight bug fix in the process
+	conf/makefiles/sbr, config/mh.h, sbr/llib-lmh: new vfgets()
+	sbr/vfgets.c: new routine to support virtual-fgets
+	uip/{alias,format,mhl}sbr.c: call vfgets to handle continuation lines
+	conf/doc/{ap,dp,mh-alias,mhl,repl,scan}.rf: continuation lines now
+	    supported
+	support/replcomps
+	conf/config/mts.c, sbr/m_{draft,getdefs,whatnow}.c,
+	sendmts/smail.c, tws/dtime.c,
+	uip/{comp,inc,mark,mhpath,msh,post,rcvstore,refile,send}.c: notdef
+	    cleanup
+	sendmts/hosts.c, uip/{aliasbr,dropsbr,rcvdist,send}.c: minor cleanup
+	sbr/{add,m_replace}.c: ditto
+	uip/mhlsbr.c: minor parenthization for ALTOS
+
+
+Sun Aug 18 20:22:17 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{burst,msh,picksbr}.c: augment botch message a bit
+
+
+Mon Aug 19 20:07:50 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/{mhconfig.c,mh-gen.8}: new config option "bbhome"
+	conf/config/bboards.{daily,weekly}: moved from bbsupport/
+	conf/{config/crontab,doc/{ADMIN,bbc}.rf,makefiles/{bbsupport,uip}}:
+	    support bbhome
+	conf/examples/nrtc-isc: renamed to nrtc-gremlin
+	conf/MAKE: modified accordingly
+
+
+Tue Aug 20 11:27:22 1985  /mtr <mrose@nrtc-gremlin>
+
+	othersupport/Mail: new directory, unsupported
+
+
+Tue Aug 20 15:59:46 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{ADMIN,pop8,rcvstore}.rf: minor clean-up
+
+
+Tue Aug 20 22:19:18 1985  /mtr <mrose@nrtc-gremlin>
+
+	Makefile,conf/makefiles/{sbr,zotnet}: clean-up make clean a bit
+
+
+Wed Aug 21 11:12:33 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/{config/config.c,makefiles/{support,uip}}, config/mh.h,
+	conf/doc/{MH,forw,mh-profile}.rf,uip/forw.c: use formatsbr to do
+	    digestifying
+	uip/formatsbr.c: fix minor typo
+	tws/{tws.h,dtime.c}: new routine, twsnow()
+	mf/uumm.c, tws/dtime.c, uip/{msh,picksbr,scansbr,sortm}.c: use twsnow()
+
+
+Thu Aug 22 20:12:05 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{forw,mhlsbr}.c: let mhl know about digest handling so forw
+	    becomes less complicated (mhl already knows about forwarding)!
+
+
+Thu Aug 29 10:52:41 1985  /mtr <mrose@nrtc-gremlin>
+
+			 -- Merge in changes for SYS5 --
+	conf/examples/READ-ME: all non-sprintf changes under #ifdef SYS5
+	conf/{mhconfig.c,config/{config,mts}.c}, sbr/*.c, tws/dtime*.c,
+	uip/*.c: sprintf() returns an int, so always (void) it
+	tws/dtime*.c: no ftime()
+	conf/mhdoc: echo works differently, ridiculous!
+	config/mh.h: dup2() doesn't exist, so define it
+	conf/mhconfig.c, uip/post.c: enums might not exist
+	sbr/discard.c, uip/{prompter,trmsbr}.c: ioctl()'s different
+
+
+Thu Aug 29 15:09:25 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{ali,post}.c: load system aliases file last instead of first.
+	    This lets users override system aliases AND rely on
+	    host-specific alias for final resolution!
+
+
+Thu Aug 29 20:13:47 1985  /mtr <mrose@nrtc-gremlin>
+
+	bboards/getbbent.c, tws/dtimep.c: normalize
+
+
+Sun Sep  1 17:12:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/MH.rf: minor typo and change the names of a few chapters
+
+
+Sat Sep  7 16:42:06 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/mts.c, config/mh.h, mf/mf.h: remove dup2() define for
+	    SYS5 and add it as a real routine
+	conf/doc/{MH,bbleader,burst,forw,mf,mh-profile,scan}.rf: doc fixes
+
+
+Sat Sep  7 17:43:24 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: advise of gap when BBoard reading
+
+
+Sat Sep  7 17:43:53 1985  /mtr <mrose@nrtc-gremlin>
+
+		   -- Major Directory Tree Re-Organization --
+	papers/: new directory, move TeX stuff from othersupport/ there
+	conf/{mhconfig.c,makefiles/{othersupport,papers}}: support this
+	config/*.h, */*.c: move .h files to new directory h/, update .c
+	    files accordingly
+	h/strings.h: new .h file to define all those string functions once
+	    and for all!
+	{bboards,mts,mf,tws}/: move under zotnet/
+	mts/: new directory
+	{mhmts,sendmts,mmdf}/: move under mts/
+	{support,popsupport,newsupport,bbsupport}: move under support/
+
+
+Mon Sep  9 19:42:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/doc/{MH,comp,dist,forw,mh-mail,mhl,repl}.rf: better verbatim
+	    mode in roff
+	zotnet/tws/dtime*.c: more SYS5 cleanup
+	conf/doc/{ADMIN,MH,mh-mts,popd}.rf: more doc hackery
+	uip/post.c: remove tmpfil/bccfil when dying()
+
+
+Mon Sep  9 22:12:59 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/bboards/{bboards.h,getbbent.c}: flags for setbbent()
+	uip/bbc.c, support/{bboards/*,pop/*}.c: use 'em
+
+
+Tue Sep 10 16:23:23 1985  /mtr <mrose@nrtc-gremlin>
+
+	Makefile, conf/Makefile, conf/makefiles/*: implement "make squeaky"
+	    and "make tar"
+
+
+Tue Sep 10 17:47:35 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/{mhconfig.c,mh-gen.8}: change "uucp" option to "mf" option
+	conf/{examples,tailor}/READ-ME: remove since mh-gen.8 contains
+	    this information now
+
+
+Wed Sep 11 10:10:33 1985  /mtr <mrose@nrtc-gremlin>
+
+		    -- More doc fixes from Phyllis Kantar --
+	conf/doc/{comp,dist,mh,mhl,repl,whatnow}.rf: doc fixes
+
+
+Wed Sep 11 11:03:29 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/*, conf/makefiles/*/*: unifdef stuff wasn't working
+	    out, remove it
+
+
+Wed Sep 11 22:02:17 1985  /mtr <mrose@nrtc-gremlin>
+
+			    -- Suggested by John A. Dilly --
+	mts/sendmail/smail.c: fix bug with intermittant dot being added
+	    during sm_wtxt(); thanks, John!
+	conf/config/config.c: support ~/.mhrc by allowing libpath()
+	    recognize the CShell ~-construct.  This is under #ifdef MHRC
+
+
+Mon Sep 16 20:50:32 1985  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/less: sources to Mark Nudelman's "less" program included
+	    Thanks, Mark!
+	zotnet/tws/dtime.c: support illegal GreyBook timezone strings
+
+
+Mon Sep 16 20:53:18 1985  /mtr <mrose@nrtc-gremlin>
+
+		      -- Fixes from Hokey (mostly SYS5) --
+	uip/version.sh: generate version.rf not version.me so it stays
+	    around
+	conf/doc/{ADMIN,MH}.rf: use same
+	conf/mhconfig.c: new option "ranlib" for BSD or SYS5
+	conf/makefiles/*: use same
+
+
+Mon Sep 16 21:50:01 1985  /mtr <mrose@nrtc-gremlin>
+
+		       -- Suggestion from John Shepherd --
+	uip/slocal.c: handle idiotic multiple "From " lines
+
+
+Tue Sep 17 09:47:55 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: slight tuning to #ifdef BERK
+
+
+Wed Sep 18 07:49:27 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/discard.c: oops, logic was botched for all versions of UNIX!
+
+
+Wed Sep 18 23:23:28 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mhconfig.c: oops, toss (void)'s
+
+
+Fri Sep 20 09:48:06 1985  /mtr <mrose@nrtc-gremlin>
+
+	miscellany/mh-e: GNU Emacs front-end to MH from James Larus
+
+
+Fri Sep 20 20:59:19 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: split into h/mshsbr.h, uip/{msh,mshcmds}.c
+	uip/mshcmds.c: on refile, without -link, mark messages as deleted
+
+
+Fri Sep 20 21:22:55 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mhconfig.c: add mandir entry to overrid /usr/man
+	zotnet/mf/uumm.c: simplify a conditional for the ALTOS
+
+
+Fri Sep 20 22:35:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: have "quit" command update msgbox after confirmation if
+	    changed
+	uip/{mhlsbr,repl}.c: on forwardings/replies force -noclear (HACK)
+	uip/prompter.c: fold in SYS5 terminal handling better
+
+
+Sat Sep 21 00:12:47 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/vmhsbr.h, uip/{vmh,vmhsbr,vmhtest}.c: experimental new visual
+	    front-end to msh
+	sbr/*.c: break many aggregate files into smaller ones
+
+
+Sun Sep 22 21:06:21 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{msh,mshcmds}.c: interface to vmh
+
+
+Mon Sep 23 04:25:33 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/show.c: normalize showproc handling; remove -[no]format and
+	    -[no]pr, add -show program and -noshow
+
+
+Mon Sep 23 10:42:18 1985  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/mmdf*/bboards/bb_wtmail.c: remove bogus ch_host
+	    hackery; use the BBoard file instead!
+	uip/bbc.c: add -[no]protocol to tell bbc if mshproc knows about
+	    bbc protocol
+
+
+Tue Sep 24 19:18:49 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/burst.c: make static structure an alloc'd structure
+	uip/{burst,mshcmd}.c: trim extra trailing newline if present
+
+
+Thu Sep 26 11:42:18 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: change Alternate-Mailboxes: defaulting
+
+
+Tue Oct  1 10:15:24 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_getdefs.c: set[ug]id() to real [ug]ids prior to exec of
+	    install-mh
+	uip/install-mh.c: don't need set[ug]ids, also if -auto, don't
+	    ask questions, say what you're going to do and do it!
+	zotnet/mts/mts.h: remove reference to "../h/strings.h"
+	conf/config/mts.c,support/bboards/bbaka.c: ask for "../h/strings.h"
+	mts/{mh/{hosts,netmail},sendmail/{client,hosts,smail},mmdf/hosts}.c:
+	    ditto
+	zotnet/mf/mf.h: ditto
+
+
+Tue Oct  1 14:31:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/makefiles/doc: oops, version.me -> version.rf
+	uip/msh.c: oops, zero'd name of BBoard prior to putenv of mhfolder
+	conf/mhconfig.c: support ldflags for options to ld at beginning
+	    of command
+
+
+Tue Oct  1 22:08:32 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/mh.h, sbr/m_gmsg.c: slight XYZ tuning
+
+
+Wed Oct  2 02:48:02 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: add less-like interface to command handling
+
+
+Wed Oct  2 10:03:12 1985  /mtr <mrose@nrtc-gremlin>
+
+			-- Pointed out by Bob Designer --
+	uip/slocal.c: oops, typo!
+
+
+Wed Oct  2 11:12:52 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{burst,mshcmds}.c: oops, another "slight" typo
+
+
+Wed Oct  2 11:31:49 1985  /mtr <mrose@nrtc-gremlin>
+
+			  -- Suggested by Dave Yost --
+	sbr/m_getdefs.c: avoid a cast (and structure dependencies) by using
+	    a popular C idiom (taught to Dave by Bakul Shah).  [This also
+	    makes MH work on the Gould...]
+	h/mh.h,sbr/m_delete.c: take the opportunity to clean things up a bit
+
+
+Wed Oct  2 21:34:44 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: a bit more tuning
+
+
+Thu Oct  3 23:43:35 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: change "-ms ms-file" to "-file name" to be more
+	    consistent
+	uip/inc.c: also, if -notruncate, don't zero POP maildrop!
+
+
+Fri Oct  4 19:36:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/mh.h, conf/config/config.c, sbr/m_getdefs.c: make vmhproc a
+	    built-in
+	uip/vmh.c: ditto, also better help message
+
+
+Fri Oct  4 21:08:26 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{comp,dist,forw,repl}.c: -[no]whatnow changed to
+	    -[no]whatnowproc
+	uip/{next,prev,show}.c: -[no]show changed to -[no]showproc
+	uip/vmh.c: -[no]visual changed to -[no]vmhproc
+	uip/rmm.c: Delete-Prog: changed to rmmproc
+
+
+Sat Oct  5 14:20:02 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{post,rcvdist}.c: add call to mmdf_init() under #ifdef MMDFII
+	h/mh.h, *: XYZ becomes the "real thing"
+
+
+Sat Oct  5 17:22:56 1985  /mtr <mrose@nrtc-gremlin>
+
+			  -- Suggested by Dave Yost --
+	h/mh.h, conf/config/config.c: define globals in config.c, extern
+	    'em in mh.h
+	conf/mhconfig.c: rm files prior to creating 'em for CTM
+	uip/version.sh: ditto
+
+
+Sat Oct  5 23:17:39 1985  /mtr <mrose@nrtc-gremlin>
+
+	Makefile, conf/makefiles/*: fix "make tar"
+	uip/mshcmds.c: finally track down that mhl pipe problem
+	Makefile, conf/makefiles/*: clean->unclean,squeaky->clean
+
+
+Sun Oct  6 11:46:11 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{folder,scan}.c: context changes ASAP
+	sbr/remdir.c: clean-up
+	h/mh.h, uip/{mhlsbr,mhmail,msh,post,prompter}.c: fix up signal
+	    handling when in background
+
+
+Sun Oct  6 20:38:29 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: fseek() too tricky for our own good...
+	uip/{burst,mshcmds}.c: try to recover from errors more gracefully
+	    (ha!)
+
+
+Wed Oct  9 19:49:04 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: fix bogus annotation handling, e.g., 
+	    send -push; rmm; folder -pack
+	uip/{forw,mhlsbr}.c: add extra blank line after final EB so
+	    user can add suffix text with an editor (e.g., prompter)
+	    and not screw-up
+	conf/doc/burst.rf: warn about text after final EB being lost
+	    with -inplace
+
+
+Sun Oct 13 14:17:10 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/mshsbr.h, uip/{msh,mshcmds,vmh}.c: fix signal handling for
+	    forks under vmh
+	support/bboards/mmdf*/bboards/ch_bboards.c: remove some logging
+	    info
+
+
+Sun Oct 13 18:17:10 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/vfgets.c: oops, minor typo
+	sbr/m_gmsg.c: re-think alloc strategy a bit
+	sbr/m_gmsg.c: use #ifdef XYZ experimental code for no limits to
+	    #-messages in a folder!
+	sbr/m_file.c: move into uip/refile.c
+	h/folder.h: remove
+
+
+Mon Oct 14 12:03:39 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: still more work on annotation logic...
+
+
+Tue Oct 15 17:14:11 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/mh.h, sbr/m_{convert,gmsg,remsg}.c,
+	uip/{burst,inc,rcvstore,refile}.c: final XYZ check-out, remove
+	    #ifdefs
+
+
+Tue Oct 15 18:52:49 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/prompter.c: add hidden -[no]body switch
+	sbr/vfgets.c: slight logic botch
+
+
+Thu Oct 17 16:02:25 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: move pgmwait out of msh and into it's own sbr/ file
+	h/mh.h, {sbr,uip}/*.c: normalize pidwait stuff
+	sbr/m_foil.c, uip/{post,send,whom}.c: fix bug in alias mechanism
+	    when following included files
+	uip/{inc,post,send,whom}.c: normalize switch handling a bit
+
+
+Thu Oct 17 19:41:18 1985  /mtr <mrose@nrtc-gremlin>
+
+			  -- Suggested by Dave Yost --
+	uip/install-mh.c: new variable, mh_defaults, to default user's
+	    profile
+
+
+Sun Oct 20 13:02:59 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/rmf.c: add -[no]interactive switch
+
+
+Sun Oct 20 13:03:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/bboards.*: fix to work under sh or csh
+
+
+Sun Oct 20 22:11:58 1985  /mtr <mrose@nrtc-gremlin>
+
+			-- Suggested by Hokey for SYS5 --
+	conf/mh-gen.8: mention -lndir for SYS5
+	sbr/m_gmsg.c: fix stand-alone continue
+	makefiles: add SHELL=/bin/sh
+
+
+Mon Oct 21 12:26:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/{msh,vmh}.c: some tuning
+	uip/bbc.c: know about SIGTSTP
+
+
+Mon Oct 21 18:45:29 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mh-gen.8: mention gould stuff
+	conf/doc/*.rf: talk about quoting of arguments
+
+
+Tue Oct 22 21:47:01 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/bbc.c: don't have -help imply -topics
+
+
+Wed Oct 23 01:34:54 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/mhconfig.c: change default bbhome to /usr/spool/bboards
+	support/pop/popser.c: support maildrop mapping
+	uip/dropsbr.c: some optimizations
+	support/pop/popsbr.c: link into uip/ directory to simplify
+	    top-level Makefile
+
+
+Wed Oct 23 12:34:04 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/mts.c: two new variables: popbbhost and popbbuser,
+	    under #ifdef BPOP
+	uip/bbc.c: use same
+	support/pop/pop.txt: revise remove HEAD in favor of more general
+	    TOP
+
+
+Wed Oct 23 20:46:17 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/prompter.c: -prepend is the default now
+	uip/burst.c: -noinplace is the default now
+
+
+Thu Oct 24 21:07:37 1985  /mtr <mrose@nrtc-gremlin>
+
+	conf/config/mts.c: new variable popbblist which, if present,
+	    lists only thoses hosts that can use BBoards over POP
+
+
+Fri Oct 25 08:38:35 1985  /mtr <mrose@nrtc-gremlin>
+
+	support/pop/popser.c, uip/bbc.c: don't recognize bb_aka's in
+	    name lookups
+
+
+Sun Oct 27 17:40:20 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/bboards/{bboards.h,getbbent.c}: make make_lower() integral
+	uip/vmh.c: avoid ~'s when possible (actually forever owing to pWIN
+	    logic!)
+	uip/vmh.c: make STATUS window be reverse-video, make prompt
+	    not be reverse-video
+	uip/vmh.c: have EOT work as expected under bbc
+	uip/vmh.c: if CE set, then don't scroll on exit
+	uip/msh.c: make readids() logic smarter in the degenerate case
+	h/mshsbr.h, uip/{msh,mshcmds}.c: keep scan line cached
+	uip/{msh,mshcmds}.c: clean-up handling under vmh a bit
+	uip/{bbc,inc,msgchk}.c: improve defaulting for nullifying host
+	conf/config/mts.c: with flock() retry 5 times at 5 second intervals
+
+
+Sun Oct 27 22:13:23 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/dropsbr.h, uip/dropsbr.c: add new field, m_size, to maildrop
+	    structure (and bump version number).  This keeps track of
+	    the number of ARPA Internet octets in the message
+	support/bboards/mmdf*/bboards/bb_wtmail.c, support/pop/popser.c,
+	uip/dropsbr.c, uip/mshcmds.c, uip/rcvpack.c, uip/sbboards.c: all
+	    affected...
+
+
+Mon Oct 28 19:31:13 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: don't read tty modes unless in foreground
+
+
+Tue Oct 29 01:25:36 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/addrsbr.c: freeing a couple of things twice!
+	uip/msh.c: a malloc() bug!
+
+
+Tue Oct 29 22:33:45 1985  /mtr <mrose@nrtc-gremlin>
+
+	h/dropsbr.h: new routine map_read()
+	uip/dropsbr.c: performance improvement in map_read()
+	uip/msh.c: -[no]topcur for vmh usage
+
+
+Wed Oct 30 16:39:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	Makefile: add "make checkout" for MH maintainers only!
+	uip/version.sh: extend
+
+
+Wed Oct 30 18:19:49 1985  /mtr <mrose@nrtc-gremlin>
+
+		     -- Suggested by Douglas P. Kingston --
+	mts/mmdf/hosts.c: remove bogus gethostname() logic, let
+	   the mtstailor file handle it.
+
+
+Wed Oct 30 18:20:11 1985  /mtr <mrose@nrtc-gremlin>
+
+		       -- Suggested by James M. Galvin --
+	uip/bbl.c: invoke inc with -file not -ms
+
+
+Thu Oct 31 21:40:50 1985  /mtr <mrose@nrtc-gremlin>
+
+	Makefile, conf/makefiles/*: rm core in unclean
+	sbr/m_atoi.c: renamed from mu_atoi()
+	uip/bbc.c: minor add_bb() logic fix
+	uip/new.c, support/news/: de-supported!
+	uip/msh.c: re-direction under vmh was losing
+
+
+Sun Nov  3 13:12:51 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/version.sh: smarter wrt finding hostname
+	uip/msh.c: finally got re-direction under vmh right!
+	uip/mhlsbr.c: for moreproc, get signal handling right
+
+
+Sun Nov  3 22:06:58 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: work-around standout bug in curses, under #ifdef XYZ
+	uip/vmh.c: try slight work-around for double-scroll'ing effect
+
+
+Mon Nov  4 09:16:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: oops, bug in dist handling
+	conf/{mhconfig.c,mh-gen.8}: warn about mhconfig requiring make
+	    clean later
+
+
+Mon Nov  4 16:00:56 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/vmh.c: Wgetstr() now minibuffer-exit's right
+
+
+Tue Nov  5 16:15:52 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/bboards/getbbent.c: optimize a bit
+	zotnet/bboards/{bboards.h,getbbent.c}: new routine setpwinfo()
+	support/{bboards/mmdfII/bboards/bb_wtmail,pop/pop{ser,wrd}}.c,
+	uip/sbboards.c: use setpwinfo ()
+	uip/mshcmds.c: slight typo in msh$pick
+
+
+Tue Nov  5 22:29:29 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_replace.c: fix logic glitch: not using getcpy() on update!
+
+
+Tue Nov  5 22:43:50 1985  /mtr <mrose@nrtc-gremlin>
+
+	zotnet/bboards/{bboards.h,getbbent.c}: new routine getbbtime()
+	support/pop/{popd,popser}.c: use getbbtime() to speed start-up
+	    time, a major win!
+	conf/makefiles/uip: oops, sbboards installed in wrong area!
+
+
+Wed Nov  6 01:55:16 1985  /mtr <mrose@nrtc-gremlin>
+
+	support/bboards/mmdfII/bb_wtmail.c, uip/sbboards.c: use
+	    encapsulation format when returning failed mail
+
+
+Wed Nov  6 14:08:08 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/mshcmds.c: burst wasn't resetting scan listing cache
+	mts/sendmail/client.c: don't use servers defaulting if name of
+	    service host is explicitly given
+
+
+Wed Nov  6 20:47:55 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/msh.c: more msh-using-POP-to-read-BBoards speed improvements
+
+
+Wed Nov  6 23:05:00 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/inc.c: add -[pa]ck file switches to packf(1) with the POP
+	uip/bbc.c: add $MHBBRC support
+
+
+Thu Nov  7 00:31:45 1985  /mtr <mrose@nrtc-gremlin>
+
+	sbr/m_tmpfil.c: new routine
+	uip/*.c: use it if necessary
+
+
+Sun Nov 10 11:52:50 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/send.c: oops, annotations botched for forw!
+
+
+Sun Nov 10 16:30:46 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/refile.c: set previous sequence on destination folders
+	uip/rcvsbr.c: new file
+	uip/rcvpack.c: change Cron-Date: to Delivery-Date:
+
+
+Mon Nov 11 07:47:05 1985  /mtr <mrose@nrtc-gremlin>
+
+	uip/slocal.c: implemenet MailDelivery, ala MMDF-II
+	uip/rcv*.c: take advantage of it
+	uip/rcvs{br,elect}.c: no longer needed
+	uip/{folder,inc,refile}.c: done(1) if user doesn't want to create
+	    folders

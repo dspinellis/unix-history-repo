@@ -1,0 +1,38 @@
+# aix31.rpi.edu	- MH 6.8, RS6000 AIX 3.1 with AFS Kerberos
+# Thu, 03 Dec 1992 13:45:09
+# James Ault <aultj@rpi.EDU>
+#
+bin	/campus/other/mh/6.7.1k/@sys/bin
+debug	off
+etc	/campus/other/mh/6.7.1k/@sys/lib
+mail	/usr/spool/mail
+mailgroup	off
+mandir	/campus/other/mh/6.7.1k/@sys/man
+manuals	standard
+chown	/bin/chown
+editor	prompter
+remove	mv -f
+mts	sendmail
+bboards	off
+bbdelivery	off
+mf	off
+pop	on 
+kpop	on
+hesiod	off
+options	ATHENA ATZ BIND DBM DUMB FOLDPROT='"0711"' FLOCK 
+options	MHE MHRC MORE='"/usr/bin/more"' MSGPROT='"0600"' 
+options	NOMHSEQ OVERHEAD POP2 POPSERVICE='"kpop"' RPATHS 
+options	RPOP SBACKUP='"\\043"' SOCKETS SYS5 SYS5DIR 
+options	TZNAME VSPRINTF YP_LOOKUP
+options	AIX AIX3_1 ISI WP NETWORK KPOP TRANSARC_KAS
+ccoptions	-O -D_NO_PROTO -D_NONSTD_TYPES -D_MBI=void -U__STR__ 
+ccoptions	-I/campus/athena/kerberos/V4/@sys/include 
+curses	-lcurses
+ldoptlibs	-ldbm 
+ldoptlibs	-L/campus/athena/kerberos/V4/@sys/lib -ldes -lkrb
+ldoptlibs	-lbsd 
+ranlib	on
+sprintf	int
+signal	void
+sharedlib	off
+

@@ -1,0 +1,17 @@
+mhn-charset-iso-8859-1: xterm -fn '-*-*-medium-r-normal-*-*-120-*-*-c-*-iso8859-*' -e %s
+mhn-compose-audio/basic: /usr/openwin/bin/audiotool %f && /usr/demo/SOUND/raw2audio -F < %f
+mhn-compose-audio/x-next: /usr/openwin/bin/audiotool %f && /usr/openwin/bin/adpcm_enc < %f
+mhn-show-application/PostScript: %plpr -Pps
+mhn-show-application/x-ivs: %pivs_replay -o '%F'
+mhn-show-audio/basic: %p/usr/demo/SOUND/raw2audio 2>/dev/null | /usr/demo/SOUND/play
+mhn-show-audio/x-next: %p/usr/openwin/bin/adpcm_dec | /usr/demo/SOUND/play
+mhn-show-image: %pxv -geometry =-0+0 '%f'
+mhn-show-text/richtext: %p/usr/local/lib/mh/richtext -p '%F'
+mhn-show-text/x-richtext: %pwish -file /usr/local/lib/mh/richtext.tcl < '%f'
+mhn-show-video/mpeg: %pmpeg_play '%f'
+mhn-store-application/PostScript: %m%P.ps
+mhn-store-audio/basic: | /usr/demo/SOUND/raw2audio -e ulaw -s 8000 -c 1 > %m%P.au
+mhn-store-audio/x-next: %m%P.au
+mhn-store-text: %m%P.txt
+mhn-store-text/richtext: %m%P.rt
+mhn-store-video/mpeg: %m%P.mpg

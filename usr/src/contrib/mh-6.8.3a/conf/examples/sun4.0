@@ -1,0 +1,37 @@
+# sun4.0	- For Sun OS 4.* with SendMail, Yellow Pages and /etc/named.
+# MH will post mail through an SMTP connection to the localhost's
+# SendMail daemon.  Be sure to set "servers" in your mtstailor file.
+#
+bin	/usr/new/mh
+etc	/usr/new/lib/mh
+mail	/usr/spool/mail
+manuals	new
+editor	prompter
+mts	sendmail/smtp
+options	BSD42 BSD43 SUN40 
+options	DBMPWD
+options BIND
+signal	void
+curses	-lcurses -ltermcap
+ranlib	on
+ldoptions -s -O
+#
+# include "bbc" support to read NetNews via the NNTP.
+#
+bboards	nntp
+bbdelivery off
+pop	on
+#
+# These are optional: 
+#
+# DUMB	  restricts some address defaulting
+# RPATHS  don't throw away UNIX "From " lines
+# MHE	  for Emacs/MH interface
+# SBACKUP change to "#" instead of ","
+# MSGPROT default messages to 0600 protection mode
+#
+options	DUMB 
+options	RPATHS
+options	MHE 
+options	SBACKUP='"\\043"'
+options	MSGPROT='"0600"'

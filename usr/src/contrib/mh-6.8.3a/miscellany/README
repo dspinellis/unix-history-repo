@@ -1,0 +1,29 @@
+$Id: README,v 1.8 1992/11/20 17:05:30 jromine Exp $
+
+The "miscellany/" directory contains some useful things for MH
+users and installers.
+
+These three tools are probably out of date, but should be of help.
+
+compress-4.0	MH Patches are sent out compressed.
+less-177	"less is more" - a more/pg-like pager (ver. 177)
+patch-2.0.12u8	The famous patch program.  MH updates are sent as patches.
+
+Other interesting stuff:
+
+audit		A perl package to parse and process messages 
+convert		Utilities for converting to/from other mailbox formats.
+libndir		The new directory routines for sites that don't have them.
+mem		A reminder system using an appointment folder.
+mh-e		GNU Emacs interface to MH (probably not the newest version)
+mhe		Brian Reid's MHE system
+mtrenv		Some of Marshall T. Rose's MH environment
+multi-media	Multi-media mail as specified by RFC 1341 (MIME)
+netnews		Making netnews directories MH folders under 4BSD
+rcvtrip		A script mhook which will annoy all posters of
+		mailing lists the user might be on.
+scripts		Some useful scripts
+sendmail	A replacement local mailer which uses the MMDF
+		maildrop format
+sortf		Sort a folder by arbitrary fields (for MH6.6)
+tools		MH maintenance tools.

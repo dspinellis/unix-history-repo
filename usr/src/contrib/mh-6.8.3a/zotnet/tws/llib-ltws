@@ -1,0 +1,17 @@
+/* LINTLIBRARY */
+
+#include "../tws/tws.h"
+
+char   *dasctime (t,f) struct tws *t; { return dasctime (t,f); }
+char   *dctime (t) struct tws *t; { return dctime (t); }
+struct tws *dgmtime(c) long *c; { return dgmtime(c); }
+struct tws *dlocaltime (c) long *c; { return dlocaltime (c); }
+struct tws *dparsetime (c) char *c; { return dparsetime (c); }
+char   *dtimenow () { return dtimenow (); }
+char   *dtimezone (o,f) { return dtimezone (o,f); }
+struct tws *dtwstime () { return dtwstime (); }
+long	twclock (t) struct tws *t; { return twclock (t); }
+void    twscopy (b,w) struct tws *b,*w; { twscopy (b,w); }
+int	twsort (b,w) struct tws *b,*w; { return twsort (b,w); }
+
+extern char   *tw_dotw[], *tw_ldotw[], *tw_moty[];

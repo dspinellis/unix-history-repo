@@ -1,0 +1,60 @@
+# sys5r3.2	- SVr3.2 configuration file for MH 6.7.1:
+
+#
+#   conf/MH configuration file for MH-6.7 to be used on:
+#       AT&T Unix System V.3.2 with BSD4.3-compatible sockets
+#
+#   the items are listed in the order they appear in mh-gen(8)
+#
+
+bin             /usr/local/bin
+debug           off
+etc             /usr/local/lib/mh
+mail            /usr/mail
+mailgroup       mail
+mandir          /usr/man
+manuals         gen
+chown           /bin/chown
+editor          prompter
+remove          /bin/mv -f
+# if no TCP/IP sendmail is available: change mts entry to sendmail
+mts             sendmail/smtp
+bboards         off
+bbdelivery      off
+bbhome          /usr/spool/bboards
+mf              off
+pop             off
+# options       SEE BELOW
+cc              cc
+ccoptions       -O
+curses          -lcurses
+ldoptions       -s
+ldoptlibs
+lex             lex
+sprintf         int
+sharedlib       off
+slibdir         /usr/local/lib
+oldload         off
+ranlib          off
+tma             off
+
+#
+#   complete list of possible macros for use with 'options':
+#       ALTOS ATHENA ATZ BANG BERK BIND BSD41A BSD42 BSD43 COMPAT
+#       DBMPWD DPOP DUMB FOLDPROT='"0711"' ISI LINK='"@"' locname
+#       MHE MHRC MORE='"/usr/ucb/more"' MSGPROT='"0644"' NDIR NFS
+#       NOIOCTLH NOMHSEQ NTOHLSWAP OVERHEAD POPSERVICE='"pop"'
+#       RPATHS RPOP SBACKUP='","' SENDMAILBUG SHADOW SOCKETS
+#       SUN40 SYS5 SYS5DIR TTYD TYPESIG='int' TZNAME UCI UK V7 WP
+#       WHATNOW ZONEINFO
+#
+
+# define BIND only of the BSD4.3 named (TCP/IP) is used
+# define SOCKETS only if the system has BSD4.3 sockets (TCP/IP)
+options         ATZ BIND DUMB MHE MHRC MORE='"/usr/bin/pg"'
+options         OVERHEAD SHADOW SOCKETS SYS5 SYS5DIR
+options         TYPESIG='void' TZNAME WHATNOW
+
+#
+#   end of conf/MH configuration file
+#

@@ -1,0 +1,140 @@
+#!/usr/bin/perl
+
+$program = $0;
+$program =~ s|.*/||;
+$| = 1;
+
+unshift(@INC, $ENV{'DELIVERPATH'});
+require 'audit.pl' || die "$program: cannot include audit.pl: $@";
+require 'mh.pl' || die "$program: cannot include mh.pl: $@";
+
+@SW = (
+	'-debug',
+	'-draft',
+        '-file file',
+	'-help',
+	'-link',
+	'-log +folder',		# defaults to +log
+	'-nolink',
+	'-nopreserve',
+	'-preserve',
+  	'-rmmproc program',
+	'-src +folder',		# defaults to current folder
+	'-verbose',
+      );
+
+
+&mh_profile();
+&mh_parse();
+
+
+defined($SW{'help'}) && do {
+    print "syntax: $program [msgs] [switches]\n";
+    &print_switches();
+    exit;
+};
+
+
+@args = (defined(@MSGS) ? @MSGS : @ARGV);
+
+
+$logdir = $SW{'log'} || $MH{'logdir'} || "+log";
+($logdir = '+' . $logdir) if ($logdir !~ /\+/);
+$folder = `mhpath cur`; chop $folder; $folder =~ s|/\d+$||;
+$folder = $SW{'src'} if defined($SW{'src'});
+($folder = '+' . $folder) if ($folder !~ /\+/);
+
+
+$SW{'file'} = "$MH{'path'}/draft" if defined($SW{'draft'});
+if (defined($SW{'file'})) {
+    @paths = ($file);
+} else {
+    @paths = `mhpath $folder @args`; chop @paths;
+};
+
+
+@refileargs = ( );
+for ('link', 'nolink', 'preserve', 'nopreserve') {
+    push(@refileargs, "-$_") if defined($SW{$_});
+};
+push(@refileargs, "-rmmproc", $SW{'rmmproc'}) if defined($SW{'rmmproc'});
+
+
+foreach $msg (@paths) {
+    open(MESSAGE, "< $msg") || next;
+
+    &local_parse_message(MESSAGE);
+
+    # -----
+    # if -from was specified use the From line; if -to is specified use
+    # the To line. 
+    #
+    $header = $headers{'from'} if ($program eq "refilefrom");
+    $header = $headers{'to'} if ($program eq "refileto");
+    $header = $header . ',' . $headers{'cc'} if 
+	(($program eq "refileto") && defined($headers{'cc'}));
+
+    @nfolders = ( ); 
+    foreach $addr (split(',', $header)) {
+       ($friendly, $address, $name, $org) = &parse_email_address($addr);
+       $org = "local" if ($org eq "unknown");
+       push(@nfolders, "$logdir/$org/$name");
+    };
+
+    @mfolders = ( );
+    foreach $folder (@nfolders) {
+       $fpath = `mhpath $folder`; chop $fpath;
+       if (-d $fpath || ! &make_mhpath($fpath)) {
+           push(@mfolders, $folder);
+       } else {
+	   warn "cannot make directory $fpath: $!\n";
+       };
+    };
+
+    print "refile @refileargs -file $msg @mfolders\n" if 
+	(@mfolders && defined($SW{'verbose'}));
+    system "refile -file $msg @mfolders" if 
+	(@mfolders && !defined($SW{'debug'}));
+
+    close(MESSAGE);
+};
+
+
+# =====
+# Subroutine local_parse_message
+#	A simplified version of parse_message that does
+#	not care about the body of the message
+#
+sub local_parse_message {
+    local(*INFILE) = @_;
+    local($header, $body, $mheader);
+
+    $/ = '';		# read input in paragraph mode
+    %headers = ( );
+    @received = ( );
+
+    $header = <INFILE>;
+    $/ = "\n";		
+    $* = 0;
+
+    # -----
+    # fill out the headers associative array with fields from the mail
+    # header.
+    #
+    $_ = $header;
+    s/\n\s+//g;
+    @lines = split('\n');
+    for ( @lines ) {
+	/^(\w*):\s*(.*)/ && do {
+	    $mheader = $1;
+	    $mheader =~ tr/A-Z/a-z/;
+	    if (($mheader eq "cc" || $mheader eq "to") && $headers{$mheader}) {
+		$headers{$mheader} .= ", $2";
+	    } else {
+		$headers{$mheader} = $2;
+	    };
+	};
+    }
+
+    return;
+}
