@@ -5,13 +5,21 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disks.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)disks.c	5.11 (Berkeley) %G%";
 #endif not lint
 
-#include "systat.h"
+#include <sys/types.h>
 #include <sys/buf.h>
+#include <nlist.h>
 #include <ctype.h>
 #include <paths.h>
+#include <string.h>
+#include <stdlib.h>
+#include "systat.h"
+#include "extern.h"
+
+static void dkselect __P((char *, int, int []));
+static int read_names __P((void));
 
 static struct nlist nlst[] = {
 #define	X_DK_NDRIVE	0
@@ -35,6 +43,12 @@ static struct nlist nlst[] = {
 	{ "" },
 };
 
+int dk_ndrive;
+int *dk_select;
+float *dk_mspw;
+char **dr_name;
+
+int
 dkinit()
 {
 	register int i;
@@ -44,7 +58,11 @@ dkinit()
 
 	if (once)
 		return(1);
-	kvm_nlist(nlst);
+
+	if (kvm_nlist(kd, nlst)) {
+		nlisterr(nlst);
+		return(0);
+	}
 	if (nlst[X_DK_NDRIVE].n_value == 0) {
 		error("dk_ndrive undefined in kernel");
 		return(0);
@@ -82,6 +100,7 @@ dkinit()
 	return(1);
 }
 
+int
 dkcmd(cmd, args)
 	char *cmd, *args;
 {
@@ -112,6 +131,7 @@ dkcmd(cmd, args)
 #include <vax/uba/ubavar.h>
 #include <vax/mba/mbavar.h>
 
+static int
 read_names()
 {
 	struct mba_device mdev;
@@ -158,6 +178,7 @@ read_names()
 #ifdef sun
 #include <sundev/mbvar.h>
 
+static int
 read_names()
 {
 	static int once = 0;
@@ -193,6 +214,7 @@ read_names()
 /*
  * Read the drive names out of kmem.
  */
+static int
 read_names()
 {
 	struct vba_device udev, *up;
@@ -202,8 +224,8 @@ read_names()
 
 	up = (struct vba_device *) nlst[X_VBDINIT].n_value;
 	if (up == 0) {
-		fprintf(stderr, "vmstat: Disk init info not in namelist\n");
-		exit(1);
+		error("vmstat: Disk init info not in namelist\n");
+		return (0);
 	}
 	for (;;) {
 		steal(up++, udev);
@@ -216,13 +238,20 @@ read_names()
 		sprintf(dr_name[udev.ui_dk], "%c%c%d",
 		     cp[0], cp[1], udev.ui_unit);
 	}
+	return (1);
 }
 #endif
 
 #ifdef hp300
-read_names() {}
+static int
+read_names()
+{
+	/* XXX */
+	return (1);
+}
 #endif
 
+static void
 dkselect(args, truefalse, selections)
 	char *args;
 	int truefalse, selections[];
