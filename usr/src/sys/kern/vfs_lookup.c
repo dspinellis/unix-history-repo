@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.17	85/01/10	*/
+/*	vfs_lookup.c	6.18	85/02/20	*/
 
 #include "param.h"
 #include "systm.h"
@@ -141,6 +141,7 @@ namei(ndp)
 	union nchash *nhp;		/* cache chain head for entry */
 	int isdotdot;			/* != 0 if current name is ".." */
 	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
+	off_t enduseful;		/* pointer past last used dir slot */
 
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
@@ -182,6 +183,7 @@ namei(ndp)
 	ILOCK(dp);
 	dp->i_count++;
 	ndp->ni_pdir = (struct inode *)0xc0000000;		/* illegal */
+	ndp->ni_endoff = 0;
 
 	/*
 	 * We come to dirloop to search a new directory.
@@ -401,6 +403,7 @@ dirloop2:
 		nchstats.ncs_2passes++;
 	}
 	endsearch = roundup(dp->i_size, DIRBLKSIZ);
+	enduseful = 0;
 
 searchloop:
 	while (ndp->ni_offset < endsearch) {
@@ -486,6 +489,8 @@ searchloop:
 		prevoff = ndp->ni_offset;
 		ndp->ni_offset += ep->d_reclen;
 		entryoffsetinblock += ep->d_reclen;
+		if (ep->d_ino)
+			enduseful = ndp->ni_offset;
 	}
 /* notfound: */
 	/*
@@ -521,10 +526,14 @@ searchloop:
 		if (slotstatus == NONE) {
 			ndp->ni_offset = roundup(dp->i_size, DIRBLKSIZ);
 			ndp->ni_count = 0;
+			enduseful = ndp->ni_offset;
 		} else {
 			ndp->ni_offset = slotoffset;
 			ndp->ni_count = slotsize;
+			if (enduseful < slotoffset + slotsize)
+				enduseful = slotoffset + slotsize;
 		}
+		ndp->ni_endoff = roundup(enduseful, DIRBLKSIZ);
 		dp->i_flag |= IUPD|ICHG;
 		if (bp)
 			brelse(bp);
@@ -879,6 +888,7 @@ direnter(ip, ndp)
 	register struct nameidata *ndp;
 {
 	register struct direct *ep, *nep;
+	register struct inode *dp = ndp->ni_pdir;
 	struct buf *bp;
 	int loc, spacefree, error = 0;
 	u_int dsize;
@@ -897,9 +907,9 @@ direnter(ip, ndp)
 		if (ndp->ni_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		ndp->ni_dent.d_reclen = DIRBLKSIZ;
-		error = rdwri(UIO_WRITE, ndp->ni_pdir, (caddr_t)&ndp->ni_dent,
+		error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
 		    newentrysize, ndp->ni_offset, 1, (int *)0);
-		iput(ndp->ni_pdir);
+		iput(dp);
 		return (error);
 	}
 
@@ -917,16 +927,16 @@ direnter(ip, ndp)
 	 * This should never push the size past a new multiple of
 	 * DIRBLKSIZE.
 	 */
-	if (ndp->ni_offset + ndp->ni_count > ndp->ni_pdir->i_size)
-		ndp->ni_pdir->i_size = ndp->ni_offset + ndp->ni_count;
+	if (ndp->ni_offset + ndp->ni_count > dp->i_size)
+		dp->i_size = ndp->ni_offset + ndp->ni_count;
 
 	/*
 	 * Get the block containing the space for the new directory
 	 * entry.  Should return error by result instead of u.u_error.
 	 */
-	bp = blkatoff(ndp->ni_pdir, ndp->ni_offset, (char **)&dirbuf);
+	bp = blkatoff(dp, ndp->ni_offset, (char **)&dirbuf);
 	if (bp == 0) {
-		iput(ndp->ni_pdir);
+		iput(dp);
 		return (u.u_error);
 	}
 
@@ -971,8 +981,10 @@ direnter(ip, ndp)
 	}
 	bcopy((caddr_t)&ndp->ni_dent, (caddr_t)ep, (u_int)newentrysize);
 	bwrite(bp);
-	ndp->ni_pdir->i_flag |= IUPD|ICHG;
-	iput(ndp->ni_pdir);
+	dp->i_flag |= IUPD|ICHG;
+	if (ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
+		itrunc(dp, ndp->ni_endoff);
+	iput(dp);
 	return (error);
 }
 
