@@ -1,0 +1,18 @@
+#print
+Note that the substitute command changes the first
+instance of something that matches.  Consider the
+line
+  now is the time for all good men
+and the substitute command
+   s/tim/TIM/
+applied to it.
+Which word in the line will be altered by that command?
+Type "answer WORD" where WORD is the word that will
+be changed.
+#copyin
+#user
+#uncopyin
+#match time
+#log
+#next
+32.1c 10
