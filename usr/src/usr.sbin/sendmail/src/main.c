@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.62.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -104,6 +104,8 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 
 #define MAXCONFIGLEVEL	3	/* highest config version level known */
 
+static void obsolete();
+
 main(argc, argv, envp)
 	int argc;
 	char **argv;
@@ -115,7 +117,7 @@ main(argc, argv, envp)
 	char *locname;
 	extern int finis();
 	extern char Version[];
-	char *from;
+	char *ep, *from;
 	typedef int (*fnptr)();
 	STAB *st;
 	register int i;
@@ -125,8 +127,8 @@ main(argc, argv, envp)
 	bool nothaw;
 	bool safecf = TRUE;
 	static bool reenter = FALSE;
-	char jbuf[60];			/* holds MyHostName */
-	extern int DtableSize;
+	char jbuf[MAXHOSTNAMELEN];	/* holds MyHostName */
+	extern int DtableSize, optind;
 	extern bool safefile();
 	extern time_t convtime();
 	extern putheader(), putbody();
@@ -196,6 +198,9 @@ main(argc, argv, envp)
 	STRUCTCOPY(BlankEnvelope, MainEnvelope);
 	CurEnv = &MainEnvelope;
 
+	/* Handle any non-getoptable constructions. */
+	obsolete(argv);
+
 	/*
 	**  Do a quick prescan of the argument list.
 	**	We do this to find out if we can potentially thaw the
@@ -203,32 +208,46 @@ main(argc, argv, envp)
 	**	the argument processing applies to this run rather than
 	**	to the run that froze the configuration.
 	*/
-
-	argv[argc] = NULL;
-	av = argv;
+#ifdef DBM
+#define	GETOPTSTR	"b:C:c:d:e:F:f:h:I:i:m:no:p:q:R:r:s:T:tv:"
+#else
+#define	GETOPTSTR	"b:C:c:d:e:F:f:h:i:m:no:p:q:R:r:s:T:tv:"
+#endif
 	nothaw = FALSE;
-	while ((p = *++av) != NULL)
-	{
-		if (strncmp(p, "-C", 2) == 0)
+	while ((j = getopt(argc, argv, GETOPTSTR)) != EOF)
+		switch(j)
 		{
-			ConfFile = &p[2];
-			if (ConfFile[0] == '\0')
-				ConfFile = "sendmail.cf";
+		  case 'b':
+			if (optarg[0] == 'z' && optarg[1] == '\0')
+				nothaw = TRUE;
+			break;
+
+		  case 'C':
+			ConfFile = optarg;
 			(void) setgid(getrgid());
 			(void) setuid(getruid());
 			safecf = FALSE;
 			nothaw = TRUE;
-		}
-		else if (strncmp(p, "-bz", 3) == 0)
-			nothaw = TRUE;
-		else if (strncmp(p, "-d", 2) == 0)
-		{
+			break;
+
+		  case 'd':
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
-			tTflag(&p[2]);
+			tTflag(optarg);
 			setbuf(stdout, (char *) NULL);
 			printf("Version %s\n", Version);
+			break;
+		  case 'c': case 'e': case 'F': case 'f': case 'h': case 'i': 
+		  case 'm': case 'n': case 'o': case 'p': case 'q': case 'R': 
+		  case 'r': case 's': case 'T': case 't': case 'v': 
+#ifdef DBM
+		  case 'I': 
+#endif
+			break;
+		  default:
+			ExitStat = EX_USAGE;
+			finis();
+			break;
 		}
-	}
 
 	InChannel = stdin;
 	OutChannel = stdout;
@@ -237,16 +256,18 @@ main(argc, argv, envp)
 		readconfig = !thaw(FreezeFile);
 
 	/* reset the environment after the thaw */
-	i = j = 0;
-	while (j < MAXUSERENVIRON && (p = envp[i++]) != NULL)
+	
+	/* strip out "dangerous" environment variables */
+	(void) unsetenv("FS");
+	for (i = 1; (p = envp[i++]) != NULL;)
 	{
-		/* strip out "dangerous" envariables */
-		if (strncmp(p, "FS=", 3) == 0 || strncmp(p, "LD_", 3) == 0)
+		if (strncmp(p, "LD_", 3) == 0)
+		{
+			p[0] = '\1';
 			continue;
-		UserEnviron[j++] = newstr(p);
+		}
 	}
-	UserEnviron[j] = NULL;
-	environ = UserEnviron;
+	environ = envp;
 
 # ifdef SETPROCTITLE
 	/*
@@ -327,12 +348,13 @@ main(argc, argv, envp)
 		OpMode = MD_PRINT;
 	else if (strcmp(p, "smtpd") == 0)
 		OpMode = MD_DAEMON;
-	while ((p = *++av) != NULL && p[0] == '-')
-	{
-		switch (p[1])
+
+	optind = 1;
+	while ((j = getopt(argc, argv, GETOPTSTR)) != EOF)
+		switch(j)
 		{
 		  case 'b':	/* operations mode */
-			switch (p[2])
+			switch(j = *optarg)
 			{
 			  case MD_DAEMON:
 # ifdef DAEMON
@@ -358,11 +380,11 @@ main(argc, argv, envp)
 			  case MD_INITALIAS:
 			  case MD_PRINT:
 			  case MD_FREEZE:
-				OpMode = p[2];
+				OpMode = j;
 				break;
 
 			  default:
-				usrerr("Invalid operation mode %c", p[2]);
+				usrerr("Invalid operation mode %c", j);
 				ExitStat = EX_USAGE;
 				break;
 			}
@@ -373,55 +395,33 @@ main(argc, argv, envp)
 
 		  case 'd':	/* debugging -- redo in case frozen */
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
-			tTflag(&p[2]);
+			tTflag(optarg);
 			setbuf(stdout, (char *) NULL);
 			break;
 
 		  case 'f':	/* from address */
 		  case 'r':	/* obsolete -f flag */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
-			{
-				p = *++av;
-				if (p == NULL || *p == '-')
-				{
-					usrerr("No \"from\" person");
-					ExitStat = EX_USAGE;
-					av--;
-					break;
-				}
-			}
 			if (from != NULL)
 			{
 				usrerr("More than one \"from\" person");
 				ExitStat = EX_USAGE;
 				break;
 			}
-			from = newstr(p);
+			from = newstr(optarg);
 			break;
 
 		  case 'F':	/* set full name */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
-			{
-				usrerr("Bad -F flag");
-				ExitStat = EX_USAGE;
-				av--;
-				break;
-			}
-			FullName = newstr(p);
+			FullName = newstr(optarg);
 			break;
 
 		  case 'h':	/* hop count */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || !isdigit(*p)))
+			CurEnv->e_hopcount = strtol(optarg, &ep, 10);
+			if (*ep)
 			{
-				usrerr("Bad hop count (%s)", p);
+				usrerr("Bad hop count (%s)", optarg);
 				ExitStat = EX_USAGE;
-				av--;
 				break;
 			}
-			CurEnv->e_hopcount = atoi(p);
 			break;
 		
 		  case 'n':	/* don't alias */
@@ -429,23 +429,15 @@ main(argc, argv, envp)
 			break;
 
 		  case 'o':	/* set option */
-			setoption(p[2], &p[3], FALSE, TRUE);
+			setoption(*optarg, optarg + 1, FALSE, TRUE);
 			break;
 
 		  case 'p':	/* set protocol */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || !isdigit(*p)))
-			{
-				usrerr("Bad -p (protocol) flag");
-				ExitStat = EX_USAGE;
-				av--;
-				break;
-			}
-			q = strchr(p, ':');
+			q = strchr(optarg, ':');
 			if (q != NULL)
 				*q++ = '\0';
-			if (*p != '\0')
-				define('r', newstr(p), CurEnv);
+			if (*optarg != '\0')
+				define('r', newstr(optarg), CurEnv);
 			if (*q != '\0')
 				define('s', newstr(q), CurEnv);
 			break;
@@ -469,7 +461,7 @@ main(argc, argv, envp)
 			(void) unsetenv("HOSTALIASES");
 			FullName = NULL;
 			queuemode = TRUE;
-			QueueIntvl = convtime(&p[2]);
+			QueueIntvl = convtime(optarg);
 # else /* QUEUE */
 			usrerr("I don't know about queues");
 			ExitStat = EX_USAGE;
@@ -487,11 +479,11 @@ main(argc, argv, envp)
 		  case 'm':	/* send to me too */
 		  case 'T':	/* set timeout interval */
 		  case 'v':	/* give blow-by-blow description */
-			setoption(p[1], &p[2], FALSE, TRUE);
+			setoption(j, optarg, FALSE, TRUE);
 			break;
 
 		  case 's':	/* save From lines in headers */
-			setoption('f', &p[2], FALSE, TRUE);
+			setoption('f', optarg, FALSE, TRUE);
 			break;
 
 # ifdef DBM
@@ -501,18 +493,15 @@ main(argc, argv, envp)
 # endif /* DBM */
 
 		  case 'R':	/* log raw recipient info */
-			p += 2;
-			if (*p == '\0' && ((p = *++av) == NULL || *p == '-'))
-			{
-				usrerr("Bad -R flag");
-				ExitStat = EX_USAGE;
-				av--;
-				break;
-			}
-			RcptLogFile = newstr(p);
+			RcptLogFile = newstr(optarg);
+			break;
+
+		  default:
+			ExitStat = EX_USAGE;
+			finis();
 			break;
 		}
-	}
+	av += optind;
 
 #ifdef NAMED_BIND
 	if (tTd(8, 1))
@@ -1215,4 +1204,38 @@ disconnect(fulldrop)
 # endif /* LOG */
 
 	errno = 0;
+}
+
+static void
+obsolete(argv)
+	char *argv[];
+{
+	char *ap;
+
+	while (ap = *++argv)
+	{
+		/* Return if "--" or not an option of any form. */
+		if (ap[0] != '-' || ap[1] == '-')
+			return;
+
+		/* If -C doesn't have an argument, use sendmail.cf. */
+#define	__DEFPATH	"sendmail.cf"
+		if (ap[1] == 'C' &&
+		    !ap[2] && (argv[0] == NULL || argv[0][0] == '-'))
+		{
+			*argv = xalloc(sizeof(__DEFPATH) + 2);
+			argv[0][0] = '-';
+			argv[0][1] = 'C';
+			(void)strcpy(&argv[0][2], __DEFPATH);
+		}
+		if (ap[1] == 'q' &&
+		    !ap[2] && (argv[0] == NULL || argv[0][0] == '-'))
+		{
+			*argv = xalloc(4);
+			argv[0][0] = '-';
+			argv[0][1] = 'C';
+			argv[0][2] = '1';
+			argv[0][3] = '\0';
+		}
+	}
 }
