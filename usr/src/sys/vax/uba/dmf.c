@@ -1,4 +1,4 @@
-/*	dmf.c	4.1	82/05/26	*/
+/*	dmf.c	4.2	82/05/27	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -29,7 +29,6 @@
 #include "../h/ubavar.h"
 #include "../h/bk.h"
 #include "../h/clist.h"
-#include "../h/mx.h"
 #include "../h/file.h"
 
 /*
@@ -617,10 +616,7 @@ dmfstart(tp)
 	 */
 	if ((tp->t_state&ASLEEP) && tp->t_outq.c_cc<=TTLOWAT(tp)) {
 		tp->t_state &= ~ASLEEP;
-		if (tp->t_chan)
-			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
-		else
-			wakeup((caddr_t)&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq);
 	}
 	/*
 	 * Now restart transmission unless the output queue is
