@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.6 (Berkeley) %G%
+**	@(#)conf.h	5.7 (Berkeley) %G%
 */
 
 /*
@@ -50,3 +50,4 @@
 # define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
 # define FLOCK		1	/* use flock file locking */
 # define SETPROCTITLE	1	/* munge argv to display current status */
+/* # define WIZ		1	/* allow wizard mode */

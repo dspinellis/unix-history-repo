@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.12 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -669,4 +669,35 @@ setproctitle(fmt, a, b, c)
 	while (p < LastArgv)
 		*p++ = ' ';
 # endif SETPROCTITLE
+}
+/*
+**  REAPCHILD -- pick up the body of my child, lest it become a zombie
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Picks up extant zombies.
+*/
+
+# ifdef VMUNIX
+# include <sys/wait.h>
+# endif VMUNIX
+
+reapchild()
+{
+# ifdef WNOHANG
+	union wait status;
+
+	while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0)
+		continue;
+# else WNOHANG
+	auto int status;
+
+	while (wait(&status) > 0)
+		continue;
+# endif WNOHANG
 }

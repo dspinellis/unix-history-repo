@@ -15,7 +15,7 @@
 
 # ifndef DAEMON
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G%	(w/o daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.17 (Berkeley) %G%	(w/o daemon mode)";
 # endif not lint
 # else
 
@@ -26,7 +26,7 @@ static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G%	(w/o daemon mode)";
 # include <sys/resource.h>
 
 # ifndef lint
-static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G% (with daemon mode)";
+static char	SccsId[] = "@(#)daemon.c	5.17 (Berkeley) %G% (with daemon mode)";
 # endif not lint
 
 /*
@@ -55,8 +55,9 @@ static char	SccsId[] = "@(#)daemon.c	5.16 (Berkeley) %G% (with daemon mode)";
 **		appropriate for communication.  Returns zero on
 **		success, else an exit status describing the
 **		error.
-**
-**	The semantics of both of these should be clean.
+**	maphostname(hbuf, hbufsize)
+**		Convert the entry in hbuf into a canonical form.  It
+**		may not be larger than hbufsize.
 */
 
 static FILE	*MailPort;	/* port that mail comes in on */
@@ -484,6 +485,5 @@ maphostname(hbuf, hbsize)
 {
 	return;
 }
-
 
 #endif DAEMON
