@@ -1,4 +1,4 @@
-/*	if_uba.c	4.13	82/10/09	*/
+/*	if_uba.c	4.14	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,14 +6,16 @@
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
 #include "../h/cmap.h"
-#include "../h/mtpr.h"
 #include "../h/vmmac.h"
 #include "../h/socket.h"
+
 #include "../net/if.h"
+
+#include "../vax/mtpr.h"
 #include "../vaxif/if_uba.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * Routines supporting UNIBUS network interfaces.
