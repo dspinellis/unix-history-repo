@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_conf.c	6.5 (Berkeley) %G%
+ *	@(#)tty_conf.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -16,8 +16,8 @@
 int	nodev();
 int	nulldev();
 
-int	ttyopen(),ttyclose(),ttread(),ttwrite(),nullioctl(),ttstart();
-int	ttyinput();
+int	ttyopen(),ttylclose(),ttread(),ttwrite(),nullioctl(),ttstart();
+int	ttymodem(), nullmodem(), ttyinput();
 
 #include "bk.h"
 #if NBK > 0
@@ -31,27 +31,27 @@ int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 
 struct	linesw linesw[] =
 {
-	ttyopen, nulldev, ttread, ttwrite, nullioctl,
-	ttyinput, nodev, nulldev, ttstart, nulldev,
+	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
+	ttyinput, nodev, nulldev, ttstart, ttymodem,
 #if NBK > 0
 	bkopen, bkclose, bkread, ttwrite, bkioctl,
-	bkinput, nodev, nulldev, ttstart, nulldev,
+	bkinput, nodev, nulldev, ttstart, nullmodem,
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
 #endif
-	ttyopen, ttyclose, ttread, ttwrite, nullioctl,
-	ttyinput, nodev, nulldev, ttstart, nulldev,
+	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
+	ttyinput, nodev, nulldev, ttstart, ttymodem,
 #if NTB > 0
 	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nulldev,		/* 3 */
+	tbinput, nodev, nulldev, ttstart, nullmodem,		/* 3 */
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
 #endif
 #if NTB > 0
 	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nulldev,		/* 4 */
+	tbinput, nodev, nulldev, ttstart, nullmodem,		/* 4 */
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
@@ -75,4 +75,15 @@ nullioctl(tp, cmd, data, flags)
 	tp = tp; data = data; flags = flags;
 #endif
 	return (-1);
+}
+
+/*
+ * Default modem control routine.
+ * Return argument flag, to turn off device on carrier drop.
+ */
+nullmodem(flag)
+	int flag;
+{
+	
+	return (flag);
 }
