@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ether.c	7.9 (Berkeley) %G%
+ *	@(#)if_ether.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@
 #include "../net/if.h"
 #include "in.h"
 #include "in_systm.h"
+#include "in_var.h"
 #include "ip.h"
 #include "if_ether.h"
 
@@ -165,6 +166,7 @@ arpresolve(ac, m, destip, desten, usetrailers)
 {
 	register struct arptab *at;
 	struct sockaddr_in sin;
+	register struct in_ifaddr *ia;
 	u_long lna;
 	int s;
 
@@ -176,7 +178,9 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	}
 	lna = in_lnaof(*destip);
 	/* if for us, use software loopback driver if up */
-	if (destip->s_addr == ac->ac_ipaddr.s_addr) {
+	for (ia = in_ifaddr; ia; ia = ia->ia_next)
+	    if ((ia->ia_ifp == &ac->ac_if) &&
+		(destip->s_addr == ia->ia_addr.sin_addr.s_addr)) {
 		/*
 		 * This test used to be
 		 *	if (loif.if_flags & IFF_UP)
@@ -300,18 +304,29 @@ in_arpinput(ac, m)
 	register struct ether_arp *ea;
 	struct ether_header *eh;
 	register struct arptab *at;  /* same as "merge" flag */
+	register struct in_ifaddr *ia;
+	struct in_ifaddr *maybe_ia = 0;
 	struct mbuf *mcopy = 0;
 	struct sockaddr_in sin;
 	struct sockaddr sa;
 	struct in_addr isaddr, itaddr, myaddr;
 	int proto, op, s, completed = 0;
 
-	myaddr = ac->ac_ipaddr;
 	ea = mtod(m, struct ether_arp *);
 	proto = ntohs(ea->arp_pro);
 	op = ntohs(ea->arp_op);
 	bcopy((caddr_t)ea->arp_spa, (caddr_t)&isaddr, sizeof (isaddr));
 	bcopy((caddr_t)ea->arp_tpa, (caddr_t)&itaddr, sizeof (itaddr));
+	for (ia = in_ifaddr; ia; ia = ia->ia_next)
+		if (ia->ia_ifp == &ac->ac_if) {
+			maybe_ia = ia;
+			if ((itaddr.s_addr == ia->ia_addr.sin_addr.s_addr) ||
+			     (isaddr.s_addr == ia->ia_addr.sin_addr.s_addr))
+				break;
+		}
+	if (maybe_ia == 0)
+		goto out;
+	myaddr = ia ? ia->ia_addr.sin_addr : maybe_ia->ia_addr.sin_addr;
 	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
 	    sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */

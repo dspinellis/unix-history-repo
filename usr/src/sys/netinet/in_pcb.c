@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_pcb.c	7.8 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -168,6 +168,7 @@ in_pcbconnect(inp, nam)
 		    ro->ro_rt->rt_ifp == (struct ifnet *)0)) {
 			/* No route yet, so try to acquire one */
 			ro->ro_dst.sa_family = AF_INET;
+			ro->ro_dst.sa_len = sizeof(struct sockaddr_in);
 			((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
 				sin->sin_addr;
 			rtalloc(ro);
@@ -251,6 +252,7 @@ in_setsockaddr(inp, nam)
 	sin = mtod(nam, struct sockaddr_in *);
 	bzero((caddr_t)sin, sizeof (*sin));
 	sin->sin_family = AF_INET;
+	sin->sin_len = sizeof(*sin);
 	sin->sin_port = inp->inp_lport;
 	sin->sin_addr = inp->inp_laddr;
 }
@@ -265,6 +267,7 @@ in_setpeeraddr(inp, nam)
 	sin = mtod(nam, struct sockaddr_in *);
 	bzero((caddr_t)sin, sizeof (*sin));
 	sin->sin_family = AF_INET;
+	sin->sin_len = sizeof(*sin);
 	sin->sin_port = inp->inp_fport;
 	sin->sin_addr = inp->inp_faddr;
 }
@@ -310,10 +313,15 @@ in_losing(inp)
 	register struct rtentry *rt;
 
 	if ((rt = inp->inp_route.ro_rt)) {
+		rt_missmsg(RTM_LOSING, &inp->inp_route.ro_dst,
+			    rt->rt_gateway, (struct sockaddr *)rt_mask(rt),
+			    (struct sockaddr *)0, rt->rt_flags, 0);
 		if (rt->rt_flags & RTF_DYNAMIC)
-			(void) rtrequest((int)SIOCDELRT, rt);
-		rtfree(rt);
+			(void) rtrequest(RTM_DELETE, rt_key(rt),
+				rt->rt_gateway, rt_mask(rt), rt->rt_flags, 
+				(struct rtentry **)0);
 		inp->inp_route.ro_rt = 0;
+		rtfree(rt);
 		/*
 		 * A new route can be allocated
 		 * the next time output is attempted.

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_pcb.h	7.3 (Berkeley) %G%
+ *	@(#)in_pcb.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -39,10 +39,28 @@ struct inpcb {
 	struct	mbuf *inp_options;	/* IP options */
 };
 
+#ifdef sotorawcb
+/*
+ * Common structure pcb for raw internet protocol access.
+ * Here are internet specific extensions to the raw control block,
+ * and space is allocated to the necessary sockaddrs.
+ */
+struct raw_inpcb {
+	struct	rawcb rinp_rcb;	/* common control block prefix */
+	struct	mbuf *rinp_options;	/* IP options */
+	int	rinp_flags;		/* flags, e.g. raw sockopts */
+#define	RINPF_HDRINCL	0x1		/* user supplies entire IP header */
+	struct	sockaddr_in rinp_faddr;	/* foreign address */
+	struct	sockaddr_in rinp_laddr;	/* local address */
+	struct	route rinp_route;	/* placeholder for routing entry */
+};
+#endif
+
 #define	INPLOOKUP_WILDCARD	1
 #define	INPLOOKUP_SETLOCAL	2
 
 #define	sotoinpcb(so)	((struct inpcb *)(so)->so_pcb)
+#define	sotorawinpcb(so)	((struct raw_inpcb *)(so)->so_pcb)
 
 #ifdef KERNEL
 struct	inpcb *in_pcblookup();

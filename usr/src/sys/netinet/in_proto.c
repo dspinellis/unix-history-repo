@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_proto.c	7.3 (Berkeley) %G%
+ *	@(#)in_proto.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,8 +38,7 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq(),tcp_ctloutput();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output(),rip_ctloutput();
-extern	int raw_usrreq();
+int	rip_input(),rip_output(),rip_ctloutput(), rip_usrreq();
 /*
  * IMP protocol family: raw interface.
  * Using the raw interface entry to get the timer routine
@@ -53,6 +52,15 @@ int	rimp_output(), hostslowtimo();
 #ifdef NSIP
 int	idpip_input(), nsip_ctlinput();
 #endif
+
+#ifdef TPIP
+int	tpip_input(), tpip_ctlinput(), tp_ctloutput(), tp_usrreq();
+int	tp_init(), tp_slowtimo(), tp_drain();
+#endif
+
+#ifdef EON
+int	eoninput(), eonctlinput(), eonprotoinit();
+#endif EON
 
 extern	struct domain inetdomain;
 
@@ -74,25 +82,40 @@ struct protosw inetsw[] = {
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		0,		0,
 },
 { SOCK_RAW,	&inetdomain,	IPPROTO_ICMP,	PR_ATOMIC|PR_ADDR,
   icmp_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		0,		0,
 },
+#ifdef TPIP
+{ SOCK_SEQPACKET,&inetdomain,	IPPROTO_TP,	PR_CONNREQUIRED|PR_WANTRCVD,
+  tpip_input,	0,		tpip_ctlinput,		tp_ctloutput,
+  tp_usrreq,
+  tp_init,	0,		tp_slowtimo,	tp_drain,
+},
+#endif
+/* EON (ISO CLNL over IP) */
+#ifdef EON
+{ SOCK_RAW,	&inetdomain,	IPPROTO_EON,	0,
+  eoninput,	0,		eonctlinput,		0,
+  0,
+  eonprotoinit,	0,		0,		0,
+},
+#endif
 #ifdef NSIP
 { SOCK_RAW,	&inetdomain,	IPPROTO_IDP,	PR_ATOMIC|PR_ADDR,
   idpip_input,	rip_output,	nsip_ctlinput,	0,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		0,		0,
 },
 #endif
 	/* raw wildcard */
 { SOCK_RAW,	&inetdomain,	0,		PR_ATOMIC|PR_ADDR,
   rip_input,	rip_output,	0,		rip_ctloutput,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		0,		0,
 },
 };
@@ -107,7 +130,7 @@ extern	struct domain impdomain;
 struct protosw impsw[] = {
 { SOCK_RAW,	&impdomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		rimp_output,	0,		0,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		hostslowtimo,	0,
 },
 };
@@ -128,7 +151,7 @@ extern	struct domain hydomain;
 struct protosw hysw[] = {
 { SOCK_RAW,	&hydomain,	0,		PR_ATOMIC|PR_ADDR,
   0,		rhy_output,	0,		0,
-  raw_usrreq,
+  rip_usrreq,
   0,		0,		0,		0,
 },
 };

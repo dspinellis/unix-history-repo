@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.8.1.2 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -73,13 +73,13 @@ icmp_error(n, type, code, dest)
 	 * error message, only known informational types.
 	 */
 	if (oip->ip_off &~ (IP_MF|IP_DF))
-		goto free;
+		goto freeit;
 	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT &&
 	  dtom(oip)->m_len >= oiplen + ICMP_MINLEN &&
 	  n->m_len >= oiplen + ICMP_MINLEN &&
 	  !ICMP_INFOTYPE(((struct icmp *)((caddr_t)oip + oiplen))->icmp_type)) {
 		icmpstat.icps_oldicmp++;
-		goto free;
+		goto freeit;
 	}
 
 	/*
@@ -87,7 +87,7 @@ icmp_error(n, type, code, dest)
 	 */
 	m = m_gethdr(M_DONTWAIT, MT_HEADER);
 	if (m == NULL)
-		goto free;
+		goto freeit;
 	icmplen = oiplen + min(8, oip->ip_len);
 	m->m_len = icmplen + ICMP_MINLEN;
 	MH_ALIGN(m, m->m_len);
@@ -127,7 +127,7 @@ icmp_error(n, type, code, dest)
 	nip->ip_p = IPPROTO_ICMP;
 	icmp_reflect(m);
 
-free:
+freeit:
 	m_freem(n);
 }
 
@@ -164,7 +164,7 @@ icmp_input(m, hlen)
 #endif
 	if (icmplen < ICMP_MINLEN) {
 		icmpstat.icps_tooshort++;
-		goto free;
+		goto freeit;
 	}
 	i = hlen + MIN(icmplen, ICMP_ADVLENMIN);
  	if (m->m_len < i && (m = m_pullup(m, i)) == 0)  {
@@ -177,7 +177,7 @@ icmp_input(m, hlen)
 	icp = mtod(m, struct icmp *);
 	if (in_cksum(m, icmplen)) {
 		icmpstat.icps_checksum++;
-		goto free;
+		goto freeit;
 	}
 	m->m_len += hlen;
 	m->m_data -= hlen;
@@ -225,7 +225,7 @@ icmp_input(m, hlen)
 		icp->icmp_ip.ip_len = ntohs((u_short)icp->icmp_ip.ip_len);
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
-			goto free;
+			goto freeit;
 		}
 #ifdef ICMPPRINTFS
 		if (icmpprintfs)
@@ -309,7 +309,7 @@ reflect:
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst,
 			  (struct sockaddr *)&icmpmask, RTF_GATEWAY,
-			  (struct sockaddr *)&icmpgw);
+			  (struct sockaddr *)&icmpgw, (struct rtentry **)0);
 			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 			pfctlinput(PRC_REDIRECT_NET,
 			  (struct sockaddr *)&icmpsrc);
@@ -318,7 +318,7 @@ reflect:
 			rtredirect((struct sockaddr *)&icmpsrc,
 			  (struct sockaddr *)&icmpdst,
 			  (struct sockaddr *)0, RTF_GATEWAY | RTF_HOST,
-			  (struct sockaddr *)&icmpgw);
+			  (struct sockaddr *)&icmpgw, (struct rtentry **)0);
 			pfctlinput(PRC_REDIRECT_HOST,
 			  (struct sockaddr *)&icmpsrc);
 		}
@@ -343,7 +343,7 @@ raw:
 	    (struct sockaddr *)&icmpdst);
 	return;
 
-free:
+freeit:
 	m_freem(m);
 }
 
@@ -388,7 +388,7 @@ icmp_reflect(m)
 		u_int len;
 
 		register u_char *cp;
-		int opt, cnt, off;
+		int opt, cnt;
 		u_int len;
 
 		/*
@@ -447,7 +447,7 @@ icmp_reflect(m)
 			m->m_pkthdr.len -= optlen;
 		optlen += sizeof(struct ip);
 		bcopy((caddr_t)ip + optlen, (caddr_t)(ip + 1),
-		    m->m_len - sizeof(struct ip));
+			 (unsigned)(m->m_len - sizeof(struct ip)));
 	}
 
 	icmp_send(m, opts);
