@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -374,7 +374,7 @@ linkup(orphan, pdir)
 	}
 	lncntp[orphan]--;
 	*pathp++ = '/';
-	bcopy(idesc.id_name, pathp, len + 1);
+	bcopy(tempname, pathp, len + 1);
 	pathp += len;
 	if (lostdir) {
 		dp = ginode(orphan);
