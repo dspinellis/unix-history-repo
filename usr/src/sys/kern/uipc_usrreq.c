@@ -1,10 +1,11 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.31 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "filedesc.h"
 #include "domain.h"
