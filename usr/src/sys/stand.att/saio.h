@@ -22,7 +22,6 @@ struct	iob {
 	int	i_error;
 	int	i_errcnt;
 	int	i_errblk;
-	int	i_active;
 	char	i_buf[MAXBSIZE];
 	union {
 		struct fs ui_fs;
@@ -68,7 +67,6 @@ struct st {
 	short	nspc;	/* number of sectors per cylinder */
 	short	ncyl;	/* number of cylinders */
 	short	*off;
-	short	sflg;	/* skip sector flag */
 };
 
 /*
