@@ -5,34 +5,44 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	5.7 (Berkeley) %G%
+ *	@(#)machdep.c	5.8 (Berkeley) %G%
  */
+
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "signalvar.h"
 #include "kernel.h"
 #include "map.h"
-#include "vm.h"
 #include "proc.h"
+#include "user.h"
 #include "buf.h"
 #include "reboot.h"
 #include "conf.h"
 #include "file.h"
-#include "text.h"
 #include "clist.h"
 #include "callout.h"
-#include "cmap.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "msgbuf.h"
 #include "net/netisr.h"
 
-#include "machine/frame.h"
+#define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
+#include "vm/vm.h"
+#include "vm/vm_kern.h"
+#include "vm/vm_page.h"
+/*#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+#include "vm/vm_object.h"
+#include "vm/pmap.h"*/
+
+vm_map_t buffer_map;
+extern vm_offset_t avail_end;
+
+#include "machine/cpu.h"
 #include "machine/reg.h"
-#include "machine/segments.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 #include "machine/specialreg.h"
 #include "i386/isa/rtc.h"
@@ -56,7 +66,7 @@ int	msgbufmapped;		/* set when safe to use msgbuf */
 /*
  * Machine-dependent startup code
  */
-extern	char	Sysbase[];
+#define	SYSTEM	0xfe000000
 /* extern struct pte	EMCmap[];
 extern char		EMCbase[]; */
 int boothowto = 0, Maxmem = 0;
@@ -68,13 +78,6 @@ int biosmem;
 
 extern cyloffset;
 
-caddr_t bypasshole(b,t) caddr_t b,t; {
-
-	if (b <= Sysbase + 0xa0000 && t > Sysbase + 0xa0000)
-		return(Sysbase + 0x100000);
-	return(b);
-}
-
 startup(firstaddr)
 	int firstaddr;
 {
@@ -84,7 +87,13 @@ startup(firstaddr)
 	int mapaddr, j;
 	register caddr_t v;
 	int maxbufs, base, residual;
-	extern struct map *useriomap;
+	extern long Usrptsize;
+	vm_offset_t minaddr, maxaddr;
+	vm_size_t size;
+#ifdef DEBUG
+	extern int pmapdebug;
+	int opmapdebug = pmapdebug;
+#endif
 
 	/*
 	 * Initialize the console before we print anything out.
@@ -101,9 +110,8 @@ printf("Maxmem %x howto %x bootdev %x cyloff %x firstaddr %x bios %d %d\n",
 biosmem, 
 rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 );
-	maxmem = Maxmem-1;
+	/*maxmem = Maxmem-1;
 
-/*
 	if(biosmem != 640)
 		panic("does not have 640K of base memory");
 
@@ -111,50 +119,27 @@ rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8)
 	biosmem += rtcin(RTC_EXTLO) + (rtcin(RTC_EXTHI)<<8);
 	biosmem = biosmem/4 - 1 ;
 	if (biosmem < maxmem) maxmem=biosmem;
-*/
 
 #ifdef SMALL
 if(forcemaxmem && maxmem > forcemaxmem)
 	maxmem = forcemaxmem-1;
-#endif
-/*
-maxmem = 0xA00;*/
+#endif*/
 
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
-/* Problem to resolve. AT's have memory that is not contigous, as
-I/O address space for video adapters and network cards fall into
-a range of 0xa0000 - 0x100000 . Note that the cmap really expects
-contigous memory. For the moment, use the bottom of memory for
-kernel and run-time configured storage (e.g. valloc), using memory
-above 0x100000 for the cmap, and wasting the stuff left over after
-valloc-end up to 0xa0000 (640K). Will have to fix this before beta,
-and will have to somehow move this out into per bus adapter directory
-(e.g. configurable). For now, punt
 
-How about starting cmap normally following valloc space, and then
-write a routine than allocs only phys pages in the 0xa0000-0x100000
-hole?
-
-Temporary fix for beta, if we only have 640K, then cmap follows valloc
-up to 640K.
-*/
-	maxmem -= btoc(sizeof (struct msgbuf));
-	pte = msgbufmap;
+	/* avail_end was pre-decremented in pmap_bootstrap to compensate */
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
-		*(int *)pte++ = PG_V | PG_KW | ctob(maxmem + i);
-
+		pmap_enter(pmap_kernel(), msgbufp, avail_end + i * NBPG,
+			   VM_PROT_ALL, TRUE);
+	msgbufmapped = 1;
 #ifdef notdef
 	/* XXX EMC */
 	pte = EMCmap;
 	*(int *)pte = PG_V | PG_UW | 0xc0000000;
 	printf("EMC at %x\n", EMCbase);
 #endif
-
-	freemem = physmem = maxmem;
-
-	load_cr3(_cr3());
 
 #ifdef KDB
 	kdb_init();			/* startup kernel debugger */
@@ -175,26 +160,24 @@ up to 640K.
 	 * An index into the kernel page table corresponding to the
 	 * virtual memory address maintained in "v" is kept in "mapaddr".
 	 */
-	v = (caddr_t)(Sysbase + (firstaddr * NBPG));
-	/*v = sbase + (firstaddr * NBPG);*/
+
+	/*
+	 * Make two passes.  The first pass calculates how much memory is
+	 * needed and allocates it.  The second pass assigns virtual
+	 * addresses to the various data structures.
+	 */
+	firstaddr = 0;
+again:
+	v = (caddr_t)firstaddr;
+
 #define	valloc(name, type, num) \
-		v = bypasshole (v, v + (int) ((name)+(num))) ; \
 	    (name) = (type *)v; v = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
-		v = bypasshole (v, v + (int) ((name)+(num))) ; \
 	    (name) = (type *)v; v = (caddr_t)((lim) = ((name)+(num)))
 	valloclim(file, struct file, nfile, fileNFILE);
-	valloclim(proc, struct proc, nproc, procNPROC);
-	valloclim(text, struct text, ntext, textNTEXT);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
-	valloc(swapmap, struct map, nswapmap = nproc * 2);
-	valloc(argmap, struct map, ARGMAPSIZE);
-	valloc(kernelmap, struct map, nproc);
-	valloc(mbmap, struct map, nmbclusters/4);
-	valloc(kmemmap, struct map, ekmempt - kmempt);
-	valloc(kmemusage, struct kmemusage, ekmempt - kmempt);
-	valloc(useriomap, struct map, nproc);
+	valloc(swapmap, struct map, nswapmap = maxproc * 2);
 #ifdef SYSVSHM
 	valloc(shmsegs, struct shmid_ds, shminfo.shmmni);
 #endif
@@ -220,83 +203,73 @@ up to 640K.
 			nswbuf = 256;		/* sanity */
 	}
 	valloc(swbuf, struct buf, nswbuf);
-
-	/*
-	 * Now the amount of virtual memory remaining for buffers
-	 * can be calculated, estimating needs for the cmap.
-	 */
-	ncmap = (maxmem*NBPG  - ((int)(v - Sysbase))) /
-		(CLBYTES + sizeof(struct cmap)) + 2;
-	maxbufs = ((SYSPTSIZE * NBPG) -
-		((int)(v - Sysbase + ncmap * sizeof(struct cmap)))) /
-		(MAXBSIZE + sizeof(struct buf));
-	if (maxbufs < 16)
-		panic("sys pt too small");
-	if (nbuf > maxbufs) {
-		printf("SYSPTSIZE limits number of buffers to %d\n", maxbufs);
-		nbuf = maxbufs;
-	}
-	if (bufpages > nbuf * (MAXBSIZE / CLBYTES))
-		bufpages = nbuf * (MAXBSIZE / CLBYTES);
 	valloc(buf, struct buf, nbuf);
 
 	/*
-	 * Allocate space for core map.
-	 * Allow space for all of physical memory minus the amount 
-	 * dedicated to the system. The amount of physical memory
-	 * dedicated to the system is the total virtual memory of
-	 * the system thus far, plus core map, buffer pages,
-	 * and buffer headers not yet allocated.
-	 * Add 2: 1 because the 0th entry is unused, 1 for rounding.
+	 * End of first pass, size has been calculated so allocate memory
 	 */
-	/*ncmap = (maxmem*NBPG - ((int)((v - sbase) + bufpages*CLBYTES))) /*/
-	ncmap = (maxmem*NBPG - ((int)((v - Sysbase) + bufpages*CLBYTES))) /
-		(CLBYTES + sizeof(struct cmap)) + 2;
-	valloclim(cmap, struct cmap, ncmap, ecmap);
-
-	/*
-	 * Clear space allocated thus far, and make r/w entries
-	 * for the space in the kernel map.
-	 */
-	unixsize = btoc((int)(v - Sysbase));
-	while (firstaddr < unixsize) {
-		*(int *)(&Sysmap[firstaddr]) = PG_V | PG_KW | ctob(firstaddr);
-		clearseg((unsigned)firstaddr);
-		firstaddr++;
+	if (firstaddr == 0) {
+		size = (vm_size_t)(v - firstaddr);
+		firstaddr = (int)kmem_alloc(kernel_map, round_page(size));
+		if (firstaddr == 0)
+			panic("startup: no room for tables");
+		goto again;
 	}
-
+	/*
+	 * End of second pass, addresses have been assigned
+	 */
+	if ((vm_size_t)(v - firstaddr) != size)
+		panic("startup: table size inconsistency");
 	/*
 	 * Now allocate buffers proper.  They are different than the above
 	 * in that they usually occupy more virtual memory than physical.
 	 */
-	v = bypasshole (v, (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET +
-		MAXBSIZE*nbuf));
-	v = (caddr_t) ((int)(v + PGOFSET) &~ PGOFSET);
-	valloc(buffers, char, MAXBSIZE * nbuf);
+	size = MAXBSIZE * nbuf;
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t)&buffers,
+				   &maxaddr, size, FALSE);
+	minaddr = (vm_offset_t)buffers;
+	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t)0,
+			&minaddr, size, FALSE) != KERN_SUCCESS)
+		panic("startup: cannot allocate buffers");
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
-	mapaddr = firstaddr = btoc((unsigned) buffers - (unsigned)Sysbase);
-	for (i = 0; i < residual; i++) {
-		for (j = 0; j < (base + 1) * CLSIZE; j++) {
-			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | ctob(firstaddr);
-			clearseg((unsigned)firstaddr);
-			firstaddr++;
-		}
-		mapaddr += MAXBSIZE / NBPG;
-	}
-	for (i = residual; i < nbuf; i++) {
-		for (j = 0; j < base * CLSIZE; j++) {
-			*(int *)(&Sysmap[mapaddr+j]) = PG_V | PG_KW | ctob(firstaddr);
-			clearseg((unsigned)firstaddr);
-			firstaddr++;
-		}
-		mapaddr += MAXBSIZE / NBPG;
-	}
+	for (i = 0; i < nbuf; i++) {
+		vm_size_t curbufsize;
+		vm_offset_t curbuf;
 
-	unixsize = btoc((int)(v - Sysbase));
-	if (firstaddr >= physmem - 8*UPAGES)
-		panic("no memory");
+		/*
+		 * First <residual> buffers get (base+1) physical pages
+		 * allocated for them.  The rest get (base) physical pages.
+		 *
+		 * The rest of each buffer occupies virtual space,
+		 * but has no physical memory allocated for it.
+		 */
+		curbuf = (vm_offset_t)buffers + i * MAXBSIZE;
+		curbufsize = CLBYTES * (i < residual ? base+1 : base);
+		vm_map_pageable(buffer_map, curbuf, curbuf+curbufsize, FALSE);
+		vm_map_simplify(buffer_map, curbuf);
+	}
+	/*
+	 * Allocate a submap for exec arguments.  This map effectively
+	 * limits the number of processes exec'ing at any time.
+	 */
+	exec_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr,
+				 16*NCARGS, TRUE);
+	/*
+	 * Allocate a submap for physio
+	 */
+	phys_map = kmem_suballoc(kernel_map, &minaddr, &maxaddr,
+				 VM_PHYS_SIZE, TRUE);
 
+	/*
+	 * Finally, allocate mbuf pool.  Since mclrefcnt is an off-size
+	 * we use the more space efficient malloc in place of kmem_alloc.
+	 */
+	mclrefcnt = (char *)malloc(NMBCLUSTERS+CLBYTES/MCLBYTES,
+				   M_MBUF, M_NOWAIT);
+	bzero(mclrefcnt, NMBCLUSTERS+CLBYTES/MCLBYTES);
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t)&mbutl, &maxaddr,
+			       VM_MBUF_SIZE, FALSE);
 	/*
 	 * Initialize callouts
 	 */
@@ -304,14 +277,14 @@ up to 640K.
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
 
-	/*
-	 * Initialize memory allocator and swap
-	 * and user page table maps.
-	 *
-	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
-	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
-	 */
+#ifdef DEBUG
+	pmapdebug = opmapdebug;
+#endif
+	printf("avail mem = %d\n", ptoa(vm_page_free_count));
+	printf("using %d buffers containing %d bytes of memory\n",
+		nbuf, bufpages * CLBYTES);
 
+#ifdef somewhere
 	/*
 	 *  cmap must not allocate the hole, so toss memory
 	 */
@@ -322,23 +295,7 @@ up to 640K.
 	if(maxmem < 2048/4-10)
 	  printf("WARNING: NOT ENOUGH RAM MEMORY - RUNNING IN DEGRADED MODE\n");
 
-	meminit(firstaddr, maxmem);
-	maxmem = freemem;
-	printf("avail mem = %d\n", ctob(maxmem));
-	printf("using %d buffers containing %d bytes of memory\n",
-		nbuf, bufpages * CLBYTES);
-	rminit(kernelmap, (long)USRPTSIZE, (long)1,
-	    "usrpt", nproc);
-/*
- * PTEs for mapping user space into kernel for phyio operations.
- * One page is enough to handle 4Mb of simultaneous raw IO operations.
- */
-	rminit(useriomap, (long)USRIOSIZE, (long)1, "usrio", nproc);
-	rminit(mbmap, (long)(nmbclusters * CLSIZE), (long)CLSIZE,
-	    "mbclusters", nmbclusters/4);
-	kmeminit();	/* now safe to do malloc/free */
-	/*intenable = 1;		/* Enable interrupts from now on */
-
+#endif
 	/*
 	 * Set up CPU-specific registers, cache, etc.
 	 */
@@ -347,8 +304,7 @@ up to 640K.
 	/*
 	 * Set up buffers, so they can be used to read disk labels.
 	 */
-	bhinit();
-	binit();
+	bufinit();
 
 	/*
 	 * Configure the system.
@@ -395,16 +351,20 @@ struct sigframe {
  * frame pointer, it returns to the user
  * specified pc, psl.
  */
-sendsig(catcher, sig, mask, code, frm)
+void
+sendsig(catcher, sig, mask, code)
 	sig_t catcher;
 	int sig, mask;
 	unsigned code;
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 	register int *regs;
 	register struct sigframe *fp;
+	struct sigacts *ps = p->p_sigacts;
+	int oonstack;
 
-	regs = u.u_ar0;
+	regs = p->p_regs;
+        oonstack = ps->ps_onstack;
 /*#include "dbg.h"
 dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	/*
@@ -414,12 +374,14 @@ dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	 * will fail if the process has not already allocated
 	 * the space with a `brk'.
 	 */
-	if (!u.u_onstack && (u.u_sigonstack & sigmask(sig))) {
+        if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
+
 printf("onstack?");
-		fp = (struct sigframe *)(u.u_sigsp - sizeof(struct sigframe));
-		u.u_onstack = 1;
+		fp = (struct sigframe *)(ps->ps_sigsp
+				- sizeof(struct sigframe));
+                ps->ps_onstack = 1;
 	} else {
-		if (frm)
+		if (code&0x100)
 			fp = (struct sigframe *)(regs[tESP]
 				- sizeof(struct sigframe));
 		else
@@ -427,11 +389,11 @@ printf("onstack?");
 				- sizeof(struct sigframe));
 	}
 
-	if ((unsigned)fp <= USRSTACK - ctob(u.u_ssize)) 
+	if ((unsigned)fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize)) 
 		(void)grow((unsigned)fp);
 
 	if (useracc((caddr_t)fp, sizeof (struct sigframe), B_WRITE) == 0) {
-printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
+printf("fail %x %x\n", fp, regs[code&0x100?tESP:sESP]);
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -451,11 +413,7 @@ printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
 	 */
 	fp->sf_signum = sig;
 	fp->sf_code = code;
-	/*if (sig == SIGILL || sig == SIGFPE) {
-		fp->sf_code = u.u_code;
-		u.u_code = 0;
-	} else
-		fp->sf_code = 0; */
+
 	/* indicate trap occured from system call */
 	/*if(!(code&FRMTRAP)) fp->sf_code |= 0x80;*/
 
@@ -463,7 +421,7 @@ printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
 	fp->sf_handler = catcher;
 
 	/* save scratch registers */
-	if(frm) {
+	if(code&0x100) {
 		fp->sf_eax = regs[tEAX];
 		fp->sf_edx = regs[tEDX];
 		fp->sf_ecx = regs[tECX];
@@ -475,15 +433,15 @@ printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
 	/*
 	 * Build the signal context to be used by sigreturn.
 	 */
-	fp->sf_sc.sc_onstack = u.u_onstack;
+	fp->sf_sc.sc_onstack = oonstack;
 	fp->sf_sc.sc_mask = mask;
-	if(frm) {
+	if(code&0x100) {
 		fp->sf_sc.sc_sp = regs[tESP];
 		fp->sf_sc.sc_fp = regs[tEBP];
 		fp->sf_sc.sc_pc = regs[tEIP];
 		fp->sf_sc.sc_ps = regs[tEFLAGS];
 		regs[tESP] = (int)fp;
-		regs[tEIP] = (int)u.u_pcb.pcb_sigc;
+		regs[tEIP] = (int)p->p_addr->u_pcb.pcb_sigc;
 /*dprintf(DALLTRAPS|DPAGIN,"E ");*/
 	} else {
 		fp->sf_sc.sc_sp = regs[sESP];
@@ -491,7 +449,7 @@ printf("fail %x %x\n", fp, regs[frm?tESP:sESP]);
 		fp->sf_sc.sc_pc = regs[sEIP];
 		fp->sf_sc.sc_ps = regs[sEFLAGS];
 		regs[sESP] = (int)fp;
-		regs[sEIP] = (int)u.u_pcb.pcb_sigc;
+		regs[sEIP] = (int)p->p_addr->u_pcb.pcb_sigc;
 /*dprintf(DALLTRAPS|DPAGIN,"e "); */
 	}
 }
@@ -515,7 +473,8 @@ sigreturn(p, uap, retval)
 {
 	register struct sigcontext *scp;
 	register struct sigframe *fp;
-	register int *regs = u.u_ar0;
+	register int *regs = p->p_regs;
+
 
 	fp = (struct sigframe *) regs[sESP] ;
 
@@ -535,7 +494,7 @@ sigreturn(p, uap, retval)
 		return(EINVAL);
 	}
 #endif
-	u.u_onstack = scp->sc_onstack & 01;
+        p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
 	p->p_sigmask = scp->sc_mask &~
 	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
 	regs[sEBP] = scp->sc_fp;
@@ -556,6 +515,7 @@ boot(arghowto)
 	extern char *panicstr;
 
 	howto = arghowto;
+pg("reboot?" );
 	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
 		register struct buf *bp;
 		int iter, nbusy;
@@ -567,7 +527,7 @@ boot(arghowto)
 		 * Release inodes held by texts before update.
 		 */
 		if (panicstr == 0)
-			xumount(NODEV);
+			vnode_pager_umount(NULL);
 		sync((struct sigcontext *)0);
 
 		for (iter = 0; iter < 20; iter++) {
@@ -590,11 +550,11 @@ boot(arghowto)
 	devtype = major(rootdev);
 	if (howto&RB_HALT) {
 		printf("halting (in tight loop); hit reset\n\n");
-		reset_cpu();
+		splx(0xfffd);	/* all but keyboard XXX */
 		for (;;) ;
 	} else {
 		if (howto & RB_DUMP) {
-			doadump();		/* CPBOOT's itsself */
+			dumpsys();	
 			/*NOTREACHED*/
 		}
 	}
@@ -619,10 +579,8 @@ dumpsys()
 
 	if (dumpdev == NODEV)
 		return;
-#ifdef notdef
 	if ((minor(dumpdev)&07) != 1)
 		return;
-#endif
 	dumpsize = physmem;
 	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
 	printf("dump ");
@@ -697,27 +655,20 @@ physstrat(bp, strat, prio)
 
 initcpu()
 {
-	register struct proc *p;
-
-	p = &proc[0];
 }
 
 /*
  * Clear registers on exec
  */
-setregs(entry)
+setregs(p, entry)
+	struct proc *p;
 	u_long entry;
 {
 
-#ifdef notdef
-	/* should pass args to init on the stack */
-	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
-		*rp++ = 0;
-#endif
-	u.u_ar0[sEBP] = 0;	/* bottom of the fp chain */
-	u.u_ar0[sEIP] = entry;
+	p->p_regs[sEBP] = 0;	/* bottom of the fp chain */
+	p->p_regs[sEIP] = entry;
 
-	u.u_pcb.pcb_flags = 0;	/* no fp at all */
+	p->p_addr->u_pcb.pcb_flags = 0;	/* no fp at all */
 	load_cr0(rcr0() | CR0_EM);	/* start emulating */
 #ifdef	NPX
 	npxinit(0x262);
@@ -740,8 +691,9 @@ setregs(entry)
 #define	GTGATE_SEL	4	/* Process task switch gate */
 #define	GPANIC_SEL	5	/* Task state to consider panic from */
 #define	GPROC0_SEL	6	/* Task state process slot zero and up */
+#define NGDT 	GPROC0_SEL+1
 
-union descriptor gdt[GPROC0_SEL];
+union descriptor gdt[GPROC0_SEL+1];
 
 /* interrupt descriptor table */
 struct gate_descriptor idt[32+16];
@@ -757,7 +709,10 @@ union descriptor ldt[5];
 /* seperate stack, es,fs,gs sels ? */
 /* #define	LPOSIXCALLS_SEL	5	/* notyet */
 
-struct	i386tss	tss;
+struct	i386tss	tss, panic_tss;
+
+extern int kstack[];
+extern  struct user *proc0paddr;
 
 /* software prototypes -- in more palitable form */
 struct soft_segment_descriptor gdt_segs[] = {
@@ -807,7 +762,16 @@ struct soft_segment_descriptor gdt_segs[] = {
 	0,			/* default 32 vs 16 bit size */
 	0  			/* limit granularity (byte/page units)*/ },
 	/* Panic Tss Descriptor */
-{	(int) &u,			/* segment base address  */
+{	(int) &panic_tss,		/* segment base address  */
+	sizeof(tss)-1,		/* length - all address space */
+	SDT_SYS386TSS,		/* segment type */
+	0,			/* segment descriptor priority level */
+	1,			/* segment descriptor present */
+	0,0,
+	0,			/* unused - default 32 vs 16 bit size */
+	0  			/* limit granularity (byte/page units)*/ },
+	/* Proc 0 Tss Descriptor */
+{	(int) kstack,			/* segment base address  */
 	sizeof(tss)-1,		/* length - all address space */
 	SDT_SYS386TSS,		/* segment type */
 	0,			/* segment descriptor priority level */
@@ -885,7 +849,7 @@ setidt(idx, func, typ, dpl) char *func; {
 	ip->gd_hioffset = ((int)func)>>16 ;
 }
 
-#define	IDTVEC(name)	X/**/name
+#define	IDTVEC(name)	__CONCAT(X, name)
 extern	IDTVEC(div), IDTVEC(dbg), IDTVEC(nmi), IDTVEC(bpt), IDTVEC(ofl),
 	IDTVEC(bnd), IDTVEC(ill), IDTVEC(dna), IDTVEC(dble), IDTVEC(fpusegm),
 	IDTVEC(tss), IDTVEC(missing), IDTVEC(stk), IDTVEC(prot),
@@ -900,15 +864,21 @@ int _udatasel, _ucodesel, _gsel_tss;
 
 init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext; 
 	int x, *pi;
+	unsigned biosbasemem, biosextmem;
 	struct gate_descriptor *gdp;
+	extern int sigcode,szsigcode;
+
+	proc0.p_addr = proc0paddr;
+	/*cninit (SYSTEM+0xa0000);*/
+/*pg("init386 first %x &x %x Maxmem %x", first, &x, Maxmem);
+pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 
 	/* make gdt memory segments */
 	gdt_segs[GCODE_SEL].ssd_limit = btoc((int) &etext + NBPG);
-	for (x=0; x < 6; x++) ssdtosd(gdt_segs+x, gdt+x);
+	for (x=0; x < NGDT; x++) ssdtosd(gdt_segs+x, gdt+x);
 	/* make ldt memory segments */
-	ldt_segs[LUCODE_SEL].ssd_limit = btoc((int) Sysbase);
-	/*ldt_segs[LUDATA_SEL].ssd_limit = btoc((int) Sysbase); */
-	ldt_segs[LUDATA_SEL].ssd_limit = btoc(0xfffff000);
+	ldt_segs[LUCODE_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
+	ldt_segs[LUDATA_SEL].ssd_limit = btoc(UPT_MIN_ADDRESS);
 /* Note. eventually want private ldts per process */
 	for (x=0; x < 5; x++) ssdtosd(ldt_segs+x, ldt+x);
 
@@ -946,20 +916,61 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	setidt(30, &IDTVEC(rsvd13),  SDT_SYS386TGT, SEL_KPL);
 	setidt(31, &IDTVEC(rsvd14),  SDT_SYS386TGT, SEL_KPL);
 
+/*pg("isa");*/
 #include	"isa.h"
 #if	NISA >0
 	isa_defaultirq();
 #endif
 
+/*pg("gdt");*/
 	lgdt(gdt, sizeof(gdt)-1);
+/*pg("idt");*/
 	lidt(idt, sizeof(idt)-1);
+/*pg("ldt");*/
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
+/*pg("after ldt");*/
 
+#ifdef notyet
+	/* determine amount of memory present so we can scale kernel PT */
+	for (i= RAM_BEGIN; i < IOM_BEGIN; i += NBPG)
+		if (probemem(i) == 0) break;
+	if (i == IOM_BEGIN) {
+		if (maxphysmem == 0) maxphysmem = RAM_END;
+		for (i= IOM_END; i < maxphysmem; i += NBPG)
+			if (probemem(i) == 0) break;
+	}
+	maxmem = i / NBPG;
+#else
+Maxmem = 8192 *1024 /NBPG;
+	maxmem = Maxmem;
+#endif
+
+	/* reconcile against BIOS's recorded values in RTC
+	 * we trust neither of them, as both can lie!
+	 */
+	biosbasemem = rtcin(RTC_BASELO)+ (rtcin(RTC_BASEHI)<<8);
+	biosextmem = rtcin(RTC_EXTLO)+ (rtcin(RTC_EXTHI)<<8);
+	if (biosbasemem == 0xffff || biosextmem == 0xffff) {
+		if (maxmem > 0xffc)
+			maxmem = 640/4;
+	} else if (biosextmem > 0 && biosbasemem == 640) {
+		int totbios = (biosbasemem + 0x60000 + biosextmem)/4;
+		if (totbios < maxmem) maxmem = totbios;
+	} else	maxmem = 640/4;
+	maxmem = maxmem-1;
+	physmem = maxmem - (0x100 -0xa0);
+pg("maxmem %dk", 4*maxmem);
+
+	/* call pmap initialization to make new kernel address space */
+/*pg("pmap_bootstrap");*/
+	pmap_bootstrap (first, 0);
+	/* now running on new page tables, configured,and u/iom is accessible */
 
 	/* make a initial tss so microp can get interrupt stack on syscall! */
-	u.u_pcb.pcbtss.tss_esp0 = (int) &u + UPAGES*NBPG;
-	u.u_pcb.pcbtss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
-	_gsel_tss = GSEL(GPANIC_SEL, SEL_KPL);
+	proc0.p_addr->u_pcb.pcbtss.tss_esp0 = (int) kstack + UPAGES*NBPG;
+	proc0.p_addr->u_pcb.pcbtss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
+	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
+/*pg("ltr");*/
 	ltr(_gsel_tss);
 
 	/* make a call gate to reenter kernel with */
@@ -978,18 +989,38 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 
 	_ucodesel = LSEL(LUCODE_SEL, SEL_UPL);
 	_udatasel = LSEL(LUDATA_SEL, SEL_UPL);
+
+	/* setup proc 0's pcb */
+	bcopy(&sigcode, proc0.p_addr->u_pcb.pcb_sigc, szicode);
+	proc0.p_addr->u_pcb.pcb_flags = 0;
+	proc0.p_addr->u_pcb.pcb_ptd = IdlePTD;
 }
 
+/*probemem(i) {
+	int val;
+
+	val = *(int *) i;
+	*(int *) i = PAT;
+	asm("inb $0x84,%al" ::: "ax");
+}*/
+
+extern struct pte	*CMAP1, *CMAP2;
+extern caddr_t		CADDR1, CADDR2;
 /*
  * zero out physical memory
  * specified in relocation units (NBPG bytes)
  */
 clearseg(n) {
-	extern CMAP1, CADDR1;
 
-	CMAP1 = PG_V | PG_KW | ctob(n);
-	load_cr3(u.u_pcb.pcb_cr3);
-	bzero(&CADDR1,NBPG);
+	*(int *)CMAP2 = PG_V | PG_KW | ctob(n);
+/*printf( " CMAP2 %x * %x CADDR2 %x\n", (int) CMAP2, *(int *) CMAP2, (int)CADDR2);
+*/
+	load_cr3(rcr3());
+/*printf("*CADDR2 %x", * (int *) CADDR2);*/
+	bzero(CADDR2,NBPG);
+/*printf("*CADDR2 %x", * (int *) CADDR2);
+	*(int *) CADDR2 = 0;
+printf("*CADDR2 %x", * (int *) CADDR2);*/
 }
 
 /*
@@ -997,16 +1028,27 @@ clearseg(n) {
  * specified in relocation units (NBPG bytes)
  */
 copyseg(frm, n) {
-	extern CMAP2, CADDR2;
 
-	CMAP2 = PG_V | PG_KW | ctob(n);
-	load_cr3(u.u_pcb.pcb_cr3);
-	bcopy(frm, &CADDR2,NBPG);
+	*(int *)CMAP2 = PG_V | PG_KW | ctob(n);
+	load_cr3(rcr3());
+	bcopy((void *)frm, (void *)CADDR2, NBPG);
 }
 
-aston() {
+/*
+ * copy a page of physical memory
+ * specified in relocation units (NBPG bytes)
+ */
+physcopyseg(frm, to) {
+
+	*(int *)CMAP1 = PG_V | PG_KW | ctob(frm);
+	*(int *)CMAP2 = PG_V | PG_KW | ctob(to);
+	load_cr3(rcr3());
+	bcopy(CADDR1, CADDR2, NBPG);
+}
+
+/*aston() {
 	schednetisr(NETISR_AST);
-}
+}*/
 
 setsoftclock() {
 	schednetisr(NETISR_SCLK);
@@ -1042,9 +1084,9 @@ vmunaccess() {}
 /*
  * Below written in C to allow access to debugging code
  */
-copyinstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
-	char *toaddr; {
-	int c,tally;
+copyinstr(fromaddr, toaddr, maxlength, lencopied) u_int *lencopied, maxlength;
+	void *toaddr, *fromaddr; {
+	u_int c,tally;
 
 	tally = 0;
 	while (maxlength--) {
@@ -1054,7 +1096,7 @@ copyinstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 			return(EFAULT);
 		}
 		tally++;
-		*toaddr++ = (char) c;
+		*(char *)toaddr++ = (char) c;
 		if (c == 0){
 			if(lencopied) *lencopied = tally;
 			return(0);
@@ -1064,17 +1106,17 @@ copyinstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 	return(ENAMETOOLONG);
 }
 
-copyoutstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
-	u_char *fromaddr; {
+copyoutstr(fromaddr, toaddr, maxlength, lencopied) u_int *lencopied, maxlength;
+	void *fromaddr, *toaddr; {
 	int c;
 	int tally;
 
 	tally = 0;
 	while (maxlength--) {
-		c = subyte(toaddr++,*fromaddr);
+		c = subyte(toaddr++, *(char *)fromaddr);
 		if (c == -1) return(EFAULT);
 		tally++;
-		if (*fromaddr++ == 0){
+		if (*(char *)fromaddr++ == 0){
 			if(lencopied) *lencopied = tally;
 			return(0);
 		}
@@ -1083,15 +1125,15 @@ copyoutstr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
 	return(ENAMETOOLONG);
 }
 
-copystr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
-	u_char *fromaddr, *toaddr; {
-	int tally;
+copystr(fromaddr, toaddr, maxlength, lencopied) u_int *lencopied, maxlength;
+	void *fromaddr, *toaddr; {
+	u_int tally;
 
 	tally = 0;
 	while (maxlength--) {
-		*toaddr = *fromaddr++;
+		*(u_char *)toaddr = *(u_char *)fromaddr++;
 		tally++;
-		if (*toaddr++ == 0) {
+		if (*(u_char *)toaddr++ == 0) {
 			if(lencopied) *lencopied = tally;
 			return(0);
 		}
@@ -1104,9 +1146,10 @@ copystr(fromaddr, toaddr, maxlength, lencopied) int *lencopied;
  * ovbcopy - like bcopy, but recognizes overlapping ranges and handles 
  *           them correctly.
  */
+void
 ovbcopy(from, to, bytes)
-	char *from, *to;
-	int bytes;			/* num bytes to copy */
+	void *from, *to;
+	u_int bytes;			/* num bytes to copy */
 {
 	/* Assume that bcopy copies left-to-right (low addr first). */
 	if (from + bytes <= to || to + bytes <= from || to == from)
@@ -1118,6 +1161,6 @@ ovbcopy(from, to, bytes)
 		from += bytes - 1;
 		to += bytes - 1;
 		while (bytes-- > 0)
-			*to-- = *from--;
+			*(u_char *)to-- = *(u_char *)from--;
 	}
 }
