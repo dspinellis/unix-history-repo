@@ -4,9 +4,9 @@
 # This code is derived from software contributed to Berkeley by
 # Kenneth Almquist.
 # 
-# %sccs.include.redist.c%
+# %sccs.include.redist.sh%
 #
-#      @(#)mkops	1.2 (Berkeley) %G%
+#      @(#)mkops	1.3 (Berkeley) %G%
 #
 
 
