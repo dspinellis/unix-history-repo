@@ -1,8 +1,6 @@
 /*
- *	@(#)tdef.h	4.2 %G%
+ *	@(#)tdef.h	4.3 %G%
  */
-#include <sys/param.h>
-#define	BUFSIZ	MAXBSIZE
 #define MAXPTR 0x7fffffff	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
 #define EM t.Em
@@ -46,24 +44,38 @@
 #define FT 0	/*default font position*/
 #define LL 65*INCH/10	/*line length; 39picas=6.5in*/
 #define VS INCH/6	/*vert space; 12points*/
-/* #define NN 132	/*number registers*/
-#define NN 528
+#ifdef VMUNIX
+#define NN 528	/*number registers*/
+#else
+#define NN 132	/*number registers*/
+#endif
+/* #define NN 200	*/
 #define NNAMES 14 /*predefined reg names*/
 #define NIF 15	/*if-else nesting*/
 #define NS 64	/*name buffer*/
 #define NTM 256	/*tm buffer*/
 #define NEV 3	/*environments*/
 #define EVLSZ 10	/*size of ev stack*/
-#define EVS 3*256	/*environment size in words*/
 /* #define EVS 4*256	*/
+#ifdef VMUNIX
+#define NM 600
+#define EVS 6*256	/*environment size in words*/
+#else
 #define NM 300	/*requests + macros*/
+#define EVS 3*256	/*environment size in words*/
+#endif
 #define DELTA 512	/*delta core bytes*/
 #define NHYP 10	/*max hyphens per word*/
 #define NHEX 128	/*byte size of exception word list*/
 #define NTAB 35	/*tab stops*/
 #define NSO 5	/*"so" depth*/
+#ifdef VMUNIX
+#define WDSIZE 340	/*word buffer size*/
+#define LNSIZE 960	/*line buffer size*/
+#else
 #define WDSIZE 170	/*word buffer size*/
 #define LNSIZE 480	/*line buffer size*/
+#endif
 /* #define LNSIZE 680	*/
 #define NDI 5	/*number of diversions*/
 #define DBL 0100000	/*double size indicator*/
@@ -72,7 +84,6 @@
 #define VMOT 0040000	/*vert motion bit*/
 #define NMOT 0020000	/* negative motion indicator*/
 #define MMASK 0100000	/*macro mask indicator*/
-#undef	CMASK
 #define CMASK 0100377
 #define ZBIT 0400	/*zero width char*/
 #define BMASK 0377
@@ -96,9 +107,13 @@
 #define T_IESC 16 /*initial offset*/
 #define T_STOP 0111
 #define NPP 10	/*pads per field*/
+#ifdef VMUNIX
+#define FBUFSZ 1024
+#else
 #define FBUFSZ 256	/*field buf size words*/
-#define OBUFSZ BUFSIZ	/*bytes*/
-#define IBUFSZ BUFSIZ	/*bytes*/
+#endif
+#define OBUFSZ 512	/*bytes*/
+#define IBUFSZ 512	/*bytes*/
 #define NC 256	/*cbuf size words*/
 #define NOV 10	/*number of overstrike chars*/
 #define ZONE 5	/*5hrs for EST*/
