@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.5	84/03/13	*/
+/*	kern_clock.c	6.6	84/03/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
