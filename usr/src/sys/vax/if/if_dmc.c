@@ -31,6 +31,7 @@
 #include "tty.h"
 #include "protosw.h"
 #include "socket.h"
+#include "syslog.h"
 #include "vmmac.h"
 #include "errno.h"
 
@@ -587,8 +588,6 @@ dmcxint(unit)
 			if (m == 0)
 				goto setup;
 			if (off) {
-				struct ifnet *ifp;
-
 				ifp = *(mtod(m, struct ifnet **));
 				m->m_off += 2 * sizeof (u_short);
 				m->m_len -= 2 * sizeof (u_short);
@@ -656,7 +655,7 @@ dmcxint(unit)
 		case DMC_CNTLO:
 			arg &= DMC_CNTMASK;
 			if (arg & DMC_FATAL) {
-				printd("dmc%d: fatal error, flags=%b\n",
+				log(LOG_ERR, "dmc%d: fatal error, flags=%b\n",
 				    unit, arg, CNTLO_BITS);
 				dmcrestart(unit);
 				break;
@@ -855,10 +854,8 @@ dmcrestart(unit)
 	register struct dmcdevice *addr;
 	register struct ifxmt *ifxp;
 	register int i;
-	struct ifubinfo *ifu;
 	
 	addr = (struct dmcdevice *)ui->ui_addr;
-	ifu = &sc->sc_ifuba;
 #ifdef DEBUG
 	/* dump base table */
 	printf("dmc%d base table:\n", unit);
@@ -874,7 +871,7 @@ dmcrestart(unit)
 		;
 	/* Did the timer expire or did the DMR finish? */
 	if ((addr->bsel1 & DMC_RUN) == 0) {
-		printf("dmc%d: M820 Test Failed\n", unit);
+		log(LOG_ERR, "dmc%d: M820 Test Failed\n", unit);
 		return;
 	}
 
@@ -913,8 +910,8 @@ dmcwatch()
 			if (sc->sc_nticks > dmc_timeout) {
 				sc->sc_nticks = 0;
 				addr = (struct dmcdevice *)ui->ui_addr;
-				printd("dmc%d hung: bsel0=%b bsel2=%b\n", i,
-				    addr->bsel0 & 0xff, DMC0BITS,
+				log(LOG_ERR, "dmc%d hung: bsel0=%b bsel2=%b\n",
+				    i, addr->bsel0 & 0xff, DMC0BITS,
 				    addr->bsel2 & 0xff, DMC2BITS);
 				dmcrestart(i);
 			}
