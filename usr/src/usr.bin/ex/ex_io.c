@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.1	%G%";
+static char *sccsid = "@(#)ex_io.c	7.2	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -374,7 +374,13 @@ rop(c)
 			error(" Archive");
 
 		default:
+#ifdef mbb
+			/* C/70 has a 10 bit byte */
+			if (magic & 03401600)
+#else
+			/* Everybody else has an 8 bit byte */
 			if (magic & 0100200)
+#endif
 				error(" Non-ascii file");
 			break;
 		}
