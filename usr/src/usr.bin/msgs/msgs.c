@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.1 %G%";
+static char sccsid[] = "@(#)msgs.c	4.2 %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)msgs.c	4.1 %G%";
 /* #define UNBUFFERED	/* use unbuffered output */
 
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <signal.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
@@ -204,12 +204,13 @@ int argc; char *argv[];
 		keep = t - (rcback? rcback : NDAYS) DAYS;
 
 	if (clean || bounds == NULL) {	/* relocate message bounds */
-		struct direct dirent;
+		struct direct *dp;
 		struct stat stbuf;
 		bool seenany = NO;
+		DIR	*dirp;
 
-		FILE *d = fopen(USRMSGS, "r");
-		if (d == NULL) {
+		dirp = opendir(USRMSGS);
+		if (dirp == NULL) {
 			perror(USRMSGS);
 			exit(errno);
 		}
@@ -217,11 +218,13 @@ int argc; char *argv[];
 		firstmsg = 32767;
 		lastmsg = 0;
 
-		while (fread(&dirent, sizeof dirent, 1, d) == 1) {
-			register char *cp = dirent.d_name;
+		for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp)){
+			register char *cp = dp->d_name;
 			register int i = 0;
 
-			if (dirent.d_ino == 0)
+			if (dp->d_ino == 0)
+				continue;
+			if (dp->d_namlen == 0)
 				continue;
 
 			if (clean)
@@ -248,7 +251,7 @@ int argc; char *argv[];
 				firstmsg = i;
 			seenany = YES;
 		}
-		fclose(d);
+		closedir(dirp);
 
 		if (!seenany) {
 			if (blast != 0)	/* never lower the upper bound! */
