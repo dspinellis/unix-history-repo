@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.10 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,10 +26,6 @@
 int
 lfs_blkatoff (ap)
 	struct vop_blkatoff_args *ap;
-#define vp (ap->a_vp)
-#define offset (ap->a_offset)
-#define res (ap->a_res)
-#define bpp (ap->a_bpp)
 {
 	register struct lfs *fs;
 	struct inode *ip;
@@ -37,22 +33,18 @@ lfs_blkatoff (ap)
 	daddr_t lbn;
 	int bsize, error;
 
-	ip = VTOI(vp);
+	ip = VTOI(ap->a_vp);
 	fs = ip->i_lfs;
-	lbn = lblkno(fs, offset);
+	lbn = lblkno(fs, ap->a_offset);
 	bsize = blksize(fs);
 
-	*bpp = NULL;
-	if (error = bread(vp, lbn, bsize, NOCRED, &bp)) {
+	*ap->a_bpp = NULL;
+	if (error = bread(ap->a_vp, lbn, bsize, NOCRED, &bp)) {
 		brelse(bp);
 		return (error);
 	}
-	if (res)
-		*res = bp->b_un.b_addr + blkoff(fs, offset);
-	*bpp = bp;
+	if (ap->a_res)
+		*ap->a_res = bp->b_un.b_addr + blkoff(fs, ap->a_offset);
+	*ap->a_bpp = bp;
 	return (0);
 }
-#undef vp
-#undef offset
-#undef res
-#undef bpp

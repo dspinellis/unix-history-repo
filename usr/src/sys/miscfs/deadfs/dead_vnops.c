@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dead_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -116,17 +116,11 @@ struct vnodeopv_desc dead_vnodeop_opv_desc =
 int
 dead_lookup (ap)
 	struct vop_lookup_args *ap;
-#define dvp (ap->a_dvp)
-#define vpp (ap->a_vpp)
-#define cnp (ap->a_cnp)
 {
 
-	*vpp = NULL;
+	*ap->a_vpp = NULL;
 	return (ENOTDIR);
 }
-#undef dvp
-#undef vpp
-#undef cnp
 
 /*
  * Open always fails as if device did not exist.
@@ -134,18 +128,10 @@ dead_lookup (ap)
 /* ARGSUSED */
 dead_open (ap)
 	struct vop_open_args *ap;
-#define vp (ap->a_vp)
-#define mode (ap->a_mode)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
 
 	return (ENXIO);
 }
-#undef vp
-#undef mode
-#undef cred
-#undef p
 
 /*
  * Vnode op for read
@@ -153,25 +139,17 @@ dead_open (ap)
 /* ARGSUSED */
 dead_read (ap)
 	struct vop_read_args *ap;
-#define vp (ap->a_vp)
-#define uio (ap->a_uio)
-#define ioflag (ap->a_ioflag)
-#define cred (ap->a_cred)
 {
 
-	if (chkvnlock(vp))
+	if (chkvnlock(ap->a_vp))
 		panic("dead_read: lock");
 	/*
 	 * Return EOF for character devices, EIO for others
 	 */
-	if (vp->v_type != VCHR)
+	if (ap->a_vp->v_type != VCHR)
 		return (EIO);
 	return (0);
 }
-#undef vp
-#undef uio
-#undef ioflag
-#undef cred
 
 /*
  * Vnode op for write
@@ -179,20 +157,12 @@ dead_read (ap)
 /* ARGSUSED */
 dead_write (ap)
 	struct vop_write_args *ap;
-#define vp (ap->a_vp)
-#define uio (ap->a_uio)
-#define ioflag (ap->a_ioflag)
-#define cred (ap->a_cred)
 {
 
-	if (chkvnlock(vp))
+	if (chkvnlock(ap->a_vp))
 		panic("dead_write: lock");
 	return (EIO);
 }
-#undef vp
-#undef uio
-#undef ioflag
-#undef cred
 
 /*
  * Device ioctl operation.
@@ -200,34 +170,17 @@ dead_write (ap)
 /* ARGSUSED */
 dead_ioctl (ap)
 	struct vop_ioctl_args *ap;
-#define vp (ap->a_vp)
-#define com (ap->a_command)
-#define data (ap->a_data)
-#define fflag (ap->a_fflag)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
 	USES_VOP_IOCTL;
 
-	if (!chkvnlock(vp))
+	if (!chkvnlock(ap->a_vp))
 		return (EBADF);
-	return (VOP_IOCTL(vp, com, data, fflag, cred, p));
+	return (VOP_IOCTL(ap->a_vp, ap->a_command, ap->a_data, ap->a_fflag, ap->a_cred, ap->a_p));
 }
-#undef vp
-#undef com
-#undef data
-#undef fflag
-#undef cred
-#undef p
 
 /* ARGSUSED */
 dead_select (ap)
 	struct vop_select_args *ap;
-#define vp (ap->a_vp)
-#define which (ap->a_which)
-#define fflags (ap->a_fflags)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
 
 	/*
@@ -235,65 +188,48 @@ dead_select (ap)
 	 */
 	return (1);
 }
-#undef vp
-#undef which
-#undef fflags
-#undef cred
-#undef p
 
 /*
  * Just call the device strategy routine
  */
 dead_strategy (ap)
 	struct vop_strategy_args *ap;
-#define bp (ap->a_bp)
 {
 	USES_VOP_STRATEGY;
 
-	if (bp->b_vp == NULL || !chkvnlock(bp->b_vp)) {
-		bp->b_flags |= B_ERROR;
-		biodone(bp);
+	if (ap->a_bp->b_vp == NULL || !chkvnlock(ap->a_bp->b_vp)) {
+		ap->a_bp->b_flags |= B_ERROR;
+		biodone(ap->a_bp);
 		return (EIO);
 	}
-	return (VOP_STRATEGY(bp));
+	return (VOP_STRATEGY(ap->a_bp));
 }
-#undef bp
 
 /*
  * Wait until the vnode has finished changing state.
  */
 dead_lock (ap)
 	struct vop_lock_args *ap;
-#define vp (ap->a_vp)
 {
 	USES_VOP_LOCK;
 
-	if (!chkvnlock(vp))
+	if (!chkvnlock(ap->a_vp))
 		return (0);
-	return (VOP_LOCK(vp));
+	return (VOP_LOCK(ap->a_vp));
 }
-#undef vp
 
 /*
  * Wait until the vnode has finished changing state.
  */
 dead_bmap (ap)
 	struct vop_bmap_args *ap;
-#define vp (ap->a_vp)
-#define bn (ap->a_bn)
-#define vpp (ap->a_vpp)
-#define bnp (ap->a_bnp)
 {
 	USES_VOP_BMAP;
 
-	if (!chkvnlock(vp))
+	if (!chkvnlock(ap->a_vp))
 		return (EIO);
-	return (VOP_BMAP(vp, bn, vpp, bnp));
+	return (VOP_BMAP(ap->a_vp, ap->a_bn, ap->a_vpp, ap->a_bnp));
 }
-#undef vp
-#undef bn
-#undef vpp
-#undef bnp
 
 /*
  * Print out the contents of a dead vnode.
@@ -301,12 +237,10 @@ dead_bmap (ap)
 /* ARGSUSED */
 dead_print (ap)
 	struct vop_print_args *ap;
-#define vp (ap->a_vp)
 {
 
 	printf("tag VT_NON, dead vnode\n");
 }
-#undef vp
 
 /*
  * Empty vnode failed operation

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.43 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.44 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -86,17 +86,11 @@ struct vnodeopv_desc spec_vnodeop_opv_desc =
 int
 spec_lookup (ap)
 	struct vop_lookup_args *ap;
-#define dvp (ap->a_dvp)
-#define vpp (ap->a_vpp)
-#define cnp (ap->a_cnp)
 {
 
-	*vpp = NULL;
+	*ap->a_vpp = NULL;
 	return (ENOTDIR);
 }
-#undef dvp
-#undef vpp
-#undef cnp
 
 /*
  * Open a special file: Don't allow open if fs is mounted -nodev,
@@ -106,43 +100,35 @@ spec_lookup (ap)
 /* ARGSUSED */
 spec_open (ap)
 	struct vop_open_args *ap;
-#define vp (ap->a_vp)
-#define mode (ap->a_mode)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	dev_t dev = (dev_t)vp->v_rdev;
+	dev_t dev = (dev_t)ap->a_vp->v_rdev;
 	register int maj = major(dev);
 	int error;
 
-	if (vp->v_mount && (vp->v_mount->mnt_flag & MNT_NODEV))
+	if (ap->a_vp->v_mount && (ap->a_vp->v_mount->mnt_flag & MNT_NODEV))
 		return (ENXIO);
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	case VCHR:
 		if ((u_int)maj >= nchrdev)
 			return (ENXIO);
-		VOP_UNLOCK(vp);
-		error = (*cdevsw[maj].d_open)(dev, mode, S_IFCHR, p);
-		VOP_LOCK(vp);
+		VOP_UNLOCK(ap->a_vp);
+		error = (*cdevsw[maj].d_open)(dev, ap->a_mode, S_IFCHR, ap->a_p);
+		VOP_LOCK(ap->a_vp);
 		return (error);
 
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
-		if (error = ufs_mountedon(vp))
+		if (error = ufs_mountedon(ap->a_vp))
 			return (error);
-		return ((*bdevsw[maj].d_open)(dev, mode, S_IFBLK, p));
+		return ((*bdevsw[maj].d_open)(dev, ap->a_mode, S_IFBLK, ap->a_p));
 	}
 	return (0);
 }
-#undef vp
-#undef mode
-#undef cred
-#undef p
 
 /*
  * Vnode op for read
@@ -150,14 +136,10 @@ spec_open (ap)
 /* ARGSUSED */
 spec_read (ap)
 	struct vop_read_args *ap;
-#define vp (ap->a_vp)
-#define uio (ap->a_uio)
-#define ioflag (ap->a_ioflag)
-#define cred (ap->a_cred)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	struct proc *p = uio->uio_procp;
+	struct proc *p = ap->a_uio->uio_procp;
 	struct buf *bp;
 	daddr_t bn, nextbn;
 	long bsize, bscale;
@@ -166,28 +148,28 @@ spec_read (ap)
 	int error = 0;
 
 #ifdef DIAGNOSTIC
-	if (uio->uio_rw != UIO_READ)
+	if (ap->a_uio->uio_rw != UIO_READ)
 		panic("spec_read mode");
-	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
+	if (ap->a_uio->uio_segflg == UIO_USERSPACE && ap->a_uio->uio_procp != curproc)
 		panic("spec_read proc");
 #endif
-	if (uio->uio_resid == 0)
+	if (ap->a_uio->uio_resid == 0)
 		return (0);
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	case VCHR:
-		VOP_UNLOCK(vp);
-		error = (*cdevsw[major(vp->v_rdev)].d_read)
-			(vp->v_rdev, uio, ioflag);
-		VOP_LOCK(vp);
+		VOP_UNLOCK(ap->a_vp);
+		error = (*cdevsw[major(ap->a_vp->v_rdev)].d_read)
+			(ap->a_vp->v_rdev, ap->a_uio, ap->a_ioflag);
+		VOP_LOCK(ap->a_vp);
 		return (error);
 
 	case VBLK:
-		if (uio->uio_offset < 0)
+		if (ap->a_uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
+		if ((*bdevsw[major(ap->a_vp->v_rdev)].d_ioctl)(ap->a_vp->v_rdev, DIOCGPART,
 		    (caddr_t)&dpart, FREAD, p) == 0) {
 			if (dpart.part->p_fstype == FS_BSDFFS &&
 			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
@@ -196,26 +178,26 @@ spec_read (ap)
 		}
 		bscale = bsize / DEV_BSIZE;
 		do {
-			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
-			on = uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), uio->uio_resid);
-			if (vp->v_lastr + bscale == bn) {
+			bn = (ap->a_uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
+			on = ap->a_uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), ap->a_uio->uio_resid);
+			if (ap->a_vp->v_lastr + bscale == bn) {
 				nextbn = bn + bscale;
-				error = breadn(vp, bn, (int)bsize, &nextbn,
+				error = breadn(ap->a_vp, bn, (int)bsize, &nextbn,
 					(int *)&bsize, 1, NOCRED, &bp);
 			} else
-				error = bread(vp, bn, (int)bsize, NOCRED, &bp);
-			vp->v_lastr = bn;
+				error = bread(ap->a_vp, bn, (int)bsize, NOCRED, &bp);
+			ap->a_vp->v_lastr = bn;
 			n = MIN(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
 			}
-			error = uiomove(bp->b_un.b_addr + on, n, uio);
+			error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
 			if (n + on == bsize)
 				bp->b_flags |= B_AGE;
 			brelse(bp);
-		} while (error == 0 && uio->uio_resid > 0 && n != 0);
+		} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
 		return (error);
 
 	default:
@@ -223,10 +205,6 @@ spec_read (ap)
 	}
 	/* NOTREACHED */
 }
-#undef vp
-#undef uio
-#undef ioflag
-#undef cred
 
 /*
  * Vnode op for write
@@ -234,14 +212,10 @@ spec_read (ap)
 /* ARGSUSED */
 spec_write (ap)
 	struct vop_write_args *ap;
-#define vp (ap->a_vp)
-#define uio (ap->a_uio)
-#define ioflag (ap->a_ioflag)
-#define cred (ap->a_cred)
 {
 	USES_VOP_LOCK;
 	USES_VOP_UNLOCK;
-	struct proc *p = uio->uio_procp;
+	struct proc *p = ap->a_uio->uio_procp;
 	struct buf *bp;
 	daddr_t bn;
 	int bsize, blkmask;
@@ -250,28 +224,28 @@ spec_write (ap)
 	int error = 0;
 
 #ifdef DIAGNOSTIC
-	if (uio->uio_rw != UIO_WRITE)
+	if (ap->a_uio->uio_rw != UIO_WRITE)
 		panic("spec_write mode");
-	if (uio->uio_segflg == UIO_USERSPACE && uio->uio_procp != curproc)
+	if (ap->a_uio->uio_segflg == UIO_USERSPACE && ap->a_uio->uio_procp != curproc)
 		panic("spec_write proc");
 #endif
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	case VCHR:
-		VOP_UNLOCK(vp);
-		error = (*cdevsw[major(vp->v_rdev)].d_write)
-			(vp->v_rdev, uio, ioflag);
-		VOP_LOCK(vp);
+		VOP_UNLOCK(ap->a_vp);
+		error = (*cdevsw[major(ap->a_vp->v_rdev)].d_write)
+			(ap->a_vp->v_rdev, ap->a_uio, ap->a_ioflag);
+		VOP_LOCK(ap->a_vp);
 		return (error);
 
 	case VBLK:
-		if (uio->uio_resid == 0)
+		if (ap->a_uio->uio_resid == 0)
 			return (0);
-		if (uio->uio_offset < 0)
+		if (ap->a_uio->uio_offset < 0)
 			return (EINVAL);
 		bsize = BLKDEV_IOSIZE;
-		if ((*bdevsw[major(vp->v_rdev)].d_ioctl)(vp->v_rdev, DIOCGPART,
+		if ((*bdevsw[major(ap->a_vp->v_rdev)].d_ioctl)(ap->a_vp->v_rdev, DIOCGPART,
 		    (caddr_t)&dpart, FREAD, p) == 0) {
 			if (dpart.part->p_fstype == FS_BSDFFS &&
 			    dpart.part->p_frag != 0 && dpart.part->p_fsize != 0)
@@ -280,25 +254,25 @@ spec_write (ap)
 		}
 		blkmask = (bsize / DEV_BSIZE) - 1;
 		do {
-			bn = (uio->uio_offset / DEV_BSIZE) &~ blkmask;
-			on = uio->uio_offset % bsize;
-			n = MIN((unsigned)(bsize - on), uio->uio_resid);
+			bn = (ap->a_uio->uio_offset / DEV_BSIZE) &~ blkmask;
+			on = ap->a_uio->uio_offset % bsize;
+			n = MIN((unsigned)(bsize - on), ap->a_uio->uio_resid);
 			if (n == bsize)
-				bp = getblk(vp, bn, bsize);
+				bp = getblk(ap->a_vp, bn, bsize);
 			else
-				error = bread(vp, bn, bsize, NOCRED, &bp);
+				error = bread(ap->a_vp, bn, bsize, NOCRED, &bp);
 			n = MIN(n, bsize - bp->b_resid);
 			if (error) {
 				brelse(bp);
 				return (error);
 			}
-			error = uiomove(bp->b_un.b_addr + on, n, uio);
+			error = uiomove(bp->b_un.b_addr + on, n, ap->a_uio);
 			if (n + on == bsize) {
 				bp->b_flags |= B_AGE;
 				bawrite(bp);
 			} else
 				bdwrite(bp);
-		} while (error == 0 && uio->uio_resid > 0 && n != 0);
+		} while (error == 0 && ap->a_uio->uio_resid > 0 && n != 0);
 		return (error);
 
 	default:
@@ -306,10 +280,6 @@ spec_write (ap)
 	}
 	/* NOTREACHED */
 }
-#undef vp
-#undef uio
-#undef ioflag
-#undef cred
 
 /*
  * Device ioctl operation.
@@ -317,103 +287,71 @@ spec_write (ap)
 /* ARGSUSED */
 spec_ioctl (ap)
 	struct vop_ioctl_args *ap;
-#define vp (ap->a_vp)
-#define com (ap->a_command)
-#define data (ap->a_data)
-#define fflag (ap->a_fflag)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
-	dev_t dev = vp->v_rdev;
+	dev_t dev = ap->a_vp->v_rdev;
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	case VCHR:
-		return ((*cdevsw[major(dev)].d_ioctl)(dev, com, data,
-		    fflag, p));
+		return ((*cdevsw[major(dev)].d_ioctl)(dev, ap->a_command, ap->a_data,
+		    ap->a_fflag, ap->a_p));
 
 	case VBLK:
-		if (com == 0 && (int)data == B_TAPE)
+		if (ap->a_command == 0 && (int)ap->a_data == B_TAPE)
 			if (bdevsw[major(dev)].d_flags & B_TAPE)
 				return (0);
 			else
 				return (1);
-		return ((*bdevsw[major(dev)].d_ioctl)(dev, com, data,
-		   fflag, p));
+		return ((*bdevsw[major(dev)].d_ioctl)(dev, ap->a_command, ap->a_data,
+		   ap->a_fflag, ap->a_p));
 
 	default:
 		panic("spec_ioctl");
 		/* NOTREACHED */
 	}
 }
-#undef vp
-#undef com
-#undef data
-#undef fflag
-#undef cred
-#undef p
 
 /* ARGSUSED */
 spec_select (ap)
 	struct vop_select_args *ap;
-#define vp (ap->a_vp)
-#define which (ap->a_which)
-#define fflags (ap->a_fflags)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
 	register dev_t dev;
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	default:
 		return (1);		/* XXX */
 
 	case VCHR:
-		dev = vp->v_rdev;
-		return (*cdevsw[major(dev)].d_select)(dev, which, p);
+		dev = ap->a_vp->v_rdev;
+		return (*cdevsw[major(dev)].d_select)(dev, ap->a_which, ap->a_p);
 	}
 }
-#undef vp
-#undef which
-#undef fflags
-#undef cred
-#undef p
 
 /*
  * Just call the device strategy routine
  */
 spec_strategy (ap)
 	struct vop_strategy_args *ap;
-#define bp (ap->a_bp)
 {
 
-	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
+	(*bdevsw[major(ap->a_bp->b_dev)].d_strategy)(ap->a_bp);
 	return (0);
 }
-#undef bp
 
 /*
  * This is a noop, simply returning what one has been given.
  */
 spec_bmap (ap)
 	struct vop_bmap_args *ap;
-#define vp (ap->a_vp)
-#define bn (ap->a_bn)
-#define vpp (ap->a_vpp)
-#define bnp (ap->a_bnp)
 {
 
-	if (vpp != NULL)
-		*vpp = vp;
-	if (bnp != NULL)
-		*bnp = bn;
+	if (ap->a_vpp != NULL)
+		*ap->a_vpp = ap->a_vp;
+	if (ap->a_bnp != NULL)
+		*ap->a_bnp = ap->a_bn;
 	return (0);
 }
-#undef vp
-#undef bn
-#undef vpp
-#undef bnp
 
 /*
  * At the moment we do not do any locking.
@@ -421,22 +359,18 @@ spec_bmap (ap)
 /* ARGSUSED */
 spec_lock (ap)
 	struct vop_lock_args *ap;
-#define vp (ap->a_vp)
 {
 
 	return (0);
 }
-#undef vp
 
 /* ARGSUSED */
 spec_unlock (ap)
 	struct vop_unlock_args *ap;
-#define vp (ap->a_vp)
 {
 
 	return (0);
 }
-#undef vp
 
 /*
  * Device close routine
@@ -444,16 +378,12 @@ spec_unlock (ap)
 /* ARGSUSED */
 spec_close (ap)
 	struct vop_close_args *ap;
-#define vp (ap->a_vp)
-#define flag (ap->a_fflag)
-#define cred (ap->a_cred)
-#define p (ap->a_p)
 {
-	dev_t dev = vp->v_rdev;
+	dev_t dev = ap->a_vp->v_rdev;
 	int (*devclose) __P((dev_t, int, int, struct proc *));
 	int mode;
 
-	switch (vp->v_type) {
+	switch (ap->a_vp->v_type) {
 
 	case VCHR:
 		/*
@@ -461,7 +391,7 @@ spec_close (ap)
 		 * of forcably closing the device, otherwise we only
 		 * close on last reference.
 		 */
-		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
+		if (vcount(ap->a_vp) > 1 && (ap->a_vp->v_flag & VXLOCK) == 0)
 			return (0);
 		devclose = cdevsw[major(dev)].d_close;
 		mode = S_IFCHR;
@@ -473,8 +403,8 @@ spec_close (ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		vflushbuf(vp, 0);
-		if (vinvalbuf(vp, 1))
+		vflushbuf(ap->a_vp, 0);
+		if (vinvalbuf(ap->a_vp, 1))
 			return (0);
 		/*
 		 * We do not want to really close the device if it
@@ -485,7 +415,7 @@ spec_close (ap)
 		 * sum of the reference counts on all the aliased
 		 * vnodes descends to one, we are on last close.
 		 */
-		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
+		if (vcount(ap->a_vp) > 1 && (ap->a_vp->v_flag & VXLOCK) == 0)
 			return (0);
 		devclose = bdevsw[major(dev)].d_close;
 		mode = S_IFBLK;
@@ -495,25 +425,19 @@ spec_close (ap)
 		panic("spec_close: not special");
 	}
 
-	return ((*devclose)(dev, flag, mode, p));
+	return ((*devclose)(dev, ap->a_fflag, mode, ap->a_p));
 }
-#undef vp
-#undef flag
-#undef cred
-#undef p
 
 /*
  * Print out the contents of a special device vnode.
  */
 spec_print (ap)
 	struct vop_print_args *ap;
-#define vp (ap->a_vp)
 {
 
-	printf("tag VT_NON, dev %d, %d\n", major(vp->v_rdev),
-		minor(vp->v_rdev));
+	printf("tag VT_NON, dev %d, %d\n", major(ap->a_vp->v_rdev),
+		minor(ap->a_vp->v_rdev));
 }
-#undef vp
 
 /*
  * Special device advisory byte-level locks.
@@ -521,20 +445,10 @@ spec_print (ap)
 /* ARGSUSED */
 spec_advlock (ap)
 	struct vop_advlock_args *ap;
-#define vp (ap->a_vp)
-#define id (ap->a_id)
-#define op (ap->a_op)
-#define fl (ap->a_fl)
-#define flags (ap->a_flags)
 {
 
 	return (EOPNOTSUPP);
 }
-#undef vp
-#undef id
-#undef op
-#undef fl
-#undef flags
 
 /*
  * Special device failed operation

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.45 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -65,9 +65,6 @@ int	dirchk = 0;
 int
 ufs_lookup (ap)
 	struct vop_lookup_args *ap;
-#define dvp (ap->a_dvp)
-#define vpp (ap->a_vpp)
-#define cnp (ap->a_cnp)
 {
 	USES_VOP_ACCESS;
 	USES_VOP_BLKATOFF;
@@ -91,21 +88,21 @@ ufs_lookup (ap)
 	int lockparent;			/* 1 => lockparent flag is set */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int error;
-	struct vnode *vdp = dvp;	/* saved for one special case */
+	struct vnode *vdp = ap->a_dvp;	/* saved for one special case */
 
 	bp = NULL;
 	slotoffset = -1;
-	*vpp = NULL;
-	dp = VTOI(dvp);
-	lockparent = cnp->cn_flags & LOCKPARENT;
-	wantparent = cnp->cn_flags & (LOCKPARENT|WANTPARENT);
+	*ap->a_vpp = NULL;
+	dp = VTOI(ap->a_dvp);
+	lockparent = ap->a_cnp->cn_flags & LOCKPARENT;
+	wantparent = ap->a_cnp->cn_flags & (LOCKPARENT|WANTPARENT);
 
 	/*
 	 * Check accessiblity of directory.
 	 */
 	if ((dp->i_mode & IFMT) != IFDIR)
 		return (ENOTDIR);
-	if (error = VOP_ACCESS(dvp, VEXEC, cnp->cn_cred, cnp->cn_proc))
+	if (error = VOP_ACCESS(ap->a_dvp, VEXEC, ap->a_cnp->cn_cred, ap->a_cnp->cn_proc))
 		return (error);
 
 	/*
@@ -115,13 +112,13 @@ ufs_lookup (ap)
 	 * check the name cache to see if the directory/name pair
 	 * we are looking for is known already.
 	 */
-	if (error = cache_lookup(dvp, vpp, cnp)) {
+	if (error = cache_lookup(ap->a_dvp, ap->a_vpp, ap->a_cnp)) {
 		int vpid;	/* capability number of vnode */
 
 		if (error == ENOENT)
 			return (error);
 #ifdef PARANOID
-		if (dvp == ndp->ni_rdir && (cnp->cn_flags & ISDOTDOT))
+		if (ap->a_dvp == ndp->ni_rdir && (ap->a_cnp->cn_flags & ISDOTDOT))
 			panic("ufs_lookup: .. through root");
 #endif
 		/*
@@ -131,25 +128,25 @@ ufs_lookup (ap)
 		 */
 		/*
 		 * The borrowing of variables
-		 * here is somewhat confusing.  Usually, dvp/dp
+		 * here is somewhat confusing.  Usually, ap->a_dvp/dp
 		 * is the directory being searched.
 		 * Here it's the target returned from the cache.
 		 */
 		pdp = dp;
-		dp = VTOI(*vpp);
-		dvp = *vpp;
-		vpid = dvp->v_id;
+		dp = VTOI(*ap->a_vpp);
+		ap->a_dvp = *ap->a_vpp;
+		vpid = ap->a_dvp->v_id;
 		if (pdp == dp) {   /* lookup on "." */
-			VREF(dvp);
+			VREF(ap->a_dvp);
 			error = 0;
-		} else if (cnp->cn_flags & ISDOTDOT) {
+		} else if (ap->a_cnp->cn_flags & ISDOTDOT) {
 			IUNLOCK(pdp);
-			error = vget(dvp);
-			if (!error && lockparent && (cnp->cn_flags & ISLASTCN))
+			error = vget(ap->a_dvp);
+			if (!error && lockparent && (ap->a_cnp->cn_flags & ISLASTCN))
 				ILOCK(pdp);
 		} else {
-			error = vget(dvp);
-			if (!lockparent || error || !(cnp->cn_flags & ISLASTCN))
+			error = vget(ap->a_dvp);
+			if (!lockparent || error || !(ap->a_cnp->cn_flags & ISLASTCN))
 				IUNLOCK(pdp);
 		}
 		/*
@@ -157,17 +154,17 @@ ufs_lookup (ap)
 		 * while we were waiting for the lock.
 		 */
 		if (!error) {
-			if (vpid == dvp->v_id)
+			if (vpid == ap->a_dvp->v_id)
 				return (0);
 			ufs_iput(dp);
 			if (lockparent && pdp != dp &&
-			    (cnp->cn_flags & ISLASTCN))
+			    (ap->a_cnp->cn_flags & ISLASTCN))
 				IUNLOCK(pdp);
 		}
 		ILOCK(pdp);
 		dp = pdp;
-		dvp = ITOV(dp);
-		*vpp = NULL;
+		ap->a_dvp = ITOV(dp);
+		*ap->a_vpp = NULL;
 	}
 
 	/*
@@ -178,11 +175,11 @@ ufs_lookup (ap)
 	 */
 	slotstatus = FOUND;
 	slotfreespace = slotsize = slotneeded = 0;
-	if ((cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME) &&
-	    (cnp->cn_flags & ISLASTCN)) {
+	if ((ap->a_cnp->cn_nameiop == CREATE || ap->a_cnp->cn_nameiop == RENAME) &&
+	    (ap->a_cnp->cn_flags & ISLASTCN)) {
 		slotstatus = NONE;
 		slotneeded = (sizeof(struct direct) - MAXNAMLEN +
-			cnp->cn_namelen + 3) &~ 3;
+			ap->a_cnp->cn_namelen + 3) &~ 3;
 	}
 
 	/*
@@ -196,8 +193,8 @@ ufs_lookup (ap)
 	 * profiling time and hence has been removed in the interest
 	 * of simplicity.
 	 */
-	bmask = VFSTOUFS(dvp->v_mount)->um_mountp->mnt_stat.f_iosize - 1;
-	if (cnp->cn_nameiop != LOOKUP || dp->i_diroff == 0 ||
+	bmask = VFSTOUFS(ap->a_dvp->v_mount)->um_mountp->mnt_stat.f_iosize - 1;
+	if (ap->a_cnp->cn_nameiop != LOOKUP || dp->i_diroff == 0 ||
 	    dp->i_diroff > dp->i_size) {
 		entryoffsetinblock = 0;
 		dp->i_offset = 0;
@@ -205,7 +202,7 @@ ufs_lookup (ap)
 	} else {
 		dp->i_offset = dp->i_diroff;
 		if ((entryoffsetinblock = dp->i_offset & bmask) &&
-		    (error = VOP_BLKATOFF(dvp, (off_t)dp->i_offset, NULL, &bp)))
+		    (error = VOP_BLKATOFF(ap->a_dvp, (off_t)dp->i_offset, NULL, &bp)))
 			return (error);
 		numdirpasses = 2;
 		nchstats.ncs_2passes++;
@@ -224,7 +221,7 @@ searchloop:
 			if (bp != NULL)
 				brelse(bp);
 			if (error =
-			    VOP_BLKATOFF(dvp, (off_t)dp->i_offset, NULL, &bp))
+			    VOP_BLKATOFF(ap->a_dvp, (off_t)dp->i_offset, NULL, &bp))
 				return (error);
 			entryoffsetinblock = 0;
 		}
@@ -289,8 +286,8 @@ searchloop:
 		 * Check for a name match.
 		 */
 		if (ep->d_ino) {
-			if (ep->d_namlen == cnp->cn_namelen &&
-			    !bcmp(cnp->cn_nameptr, ep->d_name,
+			if (ep->d_namlen == ap->a_cnp->cn_namelen &&
+			    !bcmp(ap->a_cnp->cn_nameptr, ep->d_name,
 				(unsigned)ep->d_namlen)) {
 				/*
 				 * Save directory entry's inode number and
@@ -327,13 +324,13 @@ searchloop:
 	 * directory has not been removed, then can consider
 	 * allowing file to be created.
 	 */
-	if ((cnp->cn_nameiop == CREATE || cnp->cn_nameiop == RENAME) &&
-	    (cnp->cn_flags & ISLASTCN) && dp->i_nlink != 0) {
+	if ((ap->a_cnp->cn_nameiop == CREATE || ap->a_cnp->cn_nameiop == RENAME) &&
+	    (ap->a_cnp->cn_flags & ISLASTCN) && dp->i_nlink != 0) {
 		/*
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
 		 */
-		if (error = VOP_ACCESS(dvp, VWRITE, cnp->cn_cred, cnp->cn_proc))
+		if (error = VOP_ACCESS(ap->a_dvp, VWRITE, ap->a_cnp->cn_cred, ap->a_cnp->cn_proc))
 			return (error);
 		/*
 		 * Return an indication of where the new directory
@@ -369,7 +366,7 @@ searchloop:
 		 * NB - if the directory is unlocked, then this
 		 * information cannot be used.
 		 */
-		cnp->cn_flags |= SAVENAME;
+		ap->a_cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
 			IUNLOCK(dp);
 		return (EJUSTRETURN);
@@ -377,8 +374,8 @@ searchloop:
 	/*
 	 * Insert name into cache (as non-existent) if appropriate.
 	 */
-	if ((cnp->cn_flags & MAKEENTRY) && cnp->cn_nameiop != CREATE)
-		cache_enter(dvp, *vpp, cnp);
+	if ((ap->a_cnp->cn_flags & MAKEENTRY) && ap->a_cnp->cn_nameiop != CREATE)
+		cache_enter(ap->a_dvp, *ap->a_vpp, ap->a_cnp);
 	return (ENOENT);
 
 found:
@@ -399,7 +396,7 @@ found:
 	 * If the final component of path name, save information
 	 * in the cache as to where the entry was found.
 	 */
-	if ((cnp->cn_flags & ISLASTCN) && cnp->cn_nameiop == LOOKUP)
+	if ((ap->a_cnp->cn_flags & ISLASTCN) && ap->a_cnp->cn_nameiop == LOOKUP)
 		dp->i_diroff = dp->i_offset &~ (DIRBLKSIZ - 1);
 
 	/*
@@ -409,11 +406,11 @@ found:
 	 * the directory (in ndp->ni_dvp), otherwise we go
 	 * on and lock the inode, being careful with ".".
 	 */
-	if (cnp->cn_nameiop == DELETE && (cnp->cn_flags & ISLASTCN)) {
+	if (ap->a_cnp->cn_nameiop == DELETE && (ap->a_cnp->cn_flags & ISLASTCN)) {
 		/*
 		 * Write access to directory required to delete files.
 		 */
-		if (error = VOP_ACCESS(dvp, VWRITE, cnp->cn_cred, cnp->cn_proc))
+		if (error = VOP_ACCESS(ap->a_dvp, VWRITE, ap->a_cnp->cn_cred, ap->a_cnp->cn_proc))
 			return (error);
 		/*
 		 * Return pointer to current entry in dp->i_offset,
@@ -427,10 +424,10 @@ found:
 			dp->i_count = dp->i_offset - prevoff;
 		if (dp->i_number == dp->i_ino) {
 			VREF(vdp);
-			*vpp = vdp;
+			*ap->a_vpp = vdp;
 			return (0);
 		}
-		if (error = VOP_VGET(dvp, dp->i_ino, &tdp))
+		if (error = VOP_VGET(ap->a_dvp, dp->i_ino, &tdp))
 			return (error);
 		/*
 		 * If directory is "sticky", then user must own
@@ -439,13 +436,13 @@ found:
 		 * implements append-only directories.
 		 */
 		if ((dp->i_mode & ISVTX) &&
-		    cnp->cn_cred->cr_uid != 0 &&
-		    cnp->cn_cred->cr_uid != dp->i_uid &&
-		    VTOI(tdp)->i_uid != cnp->cn_cred->cr_uid) {
+		    ap->a_cnp->cn_cred->cr_uid != 0 &&
+		    ap->a_cnp->cn_cred->cr_uid != dp->i_uid &&
+		    VTOI(tdp)->i_uid != ap->a_cnp->cn_cred->cr_uid) {
 			vput(tdp);
 			return (EPERM);
 		}
-		*vpp = tdp;
+		*ap->a_vpp = tdp;
 		if (!lockparent)
 			IUNLOCK(dp);
 		return (0);
@@ -457,9 +454,9 @@ found:
 	 * Must get inode of directory entry to verify it's a
 	 * regular file, or empty directory.
 	 */
-	if (cnp->cn_nameiop == RENAME && wantparent &&
-	    (cnp->cn_flags & ISLASTCN)) {
-		if (error = VOP_ACCESS(dvp, VWRITE, cnp->cn_cred, cnp->cn_proc))
+	if (ap->a_cnp->cn_nameiop == RENAME && wantparent &&
+	    (ap->a_cnp->cn_flags & ISLASTCN)) {
+		if (error = VOP_ACCESS(ap->a_dvp, VWRITE, ap->a_cnp->cn_cred, ap->a_cnp->cn_proc))
 			return (error);
 		/*
 		 * Careful about locking second inode.
@@ -467,10 +464,10 @@ found:
 		 */
 		if (dp->i_number == dp->i_ino)
 			return (EISDIR);
-		if (error = VOP_VGET(dvp, dp->i_ino, &tdp))
+		if (error = VOP_VGET(ap->a_dvp, dp->i_ino, &tdp))
 			return (error);
-		*vpp = tdp;
-		cnp->cn_flags |= SAVENAME;
+		*ap->a_vpp = tdp;
+		ap->a_cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
 			IUNLOCK(dp);
 		return (0);
@@ -496,36 +493,33 @@ found:
 	 * that point backwards in the directory structure.
 	 */
 	pdp = dp;
-	if (cnp->cn_flags & ISDOTDOT) {
+	if (ap->a_cnp->cn_flags & ISDOTDOT) {
 		IUNLOCK(pdp);	/* race to get the inode */
-		if (error = VOP_VGET(dvp, dp->i_ino, &tdp)) {
+		if (error = VOP_VGET(ap->a_dvp, dp->i_ino, &tdp)) {
 			ILOCK(pdp);
 			return (error);
 		}
-		if (lockparent && (cnp->cn_flags & ISLASTCN))
+		if (lockparent && (ap->a_cnp->cn_flags & ISLASTCN))
 			ILOCK(pdp);
-		*vpp = tdp;
+		*ap->a_vpp = tdp;
 	} else if (dp->i_number == dp->i_ino) {
-		VREF(dvp);	/* we want ourself, ie "." */
-		*vpp = dvp;
+		VREF(ap->a_dvp);	/* we want ourself, ie "." */
+		*ap->a_vpp = ap->a_dvp;
 	} else {
-		if (error = VOP_VGET(dvp, dp->i_ino, &tdp))
+		if (error = VOP_VGET(ap->a_dvp, dp->i_ino, &tdp))
 			return (error);
-		if (!lockparent || !(cnp->cn_flags & ISLASTCN))
+		if (!lockparent || !(ap->a_cnp->cn_flags & ISLASTCN))
 			IUNLOCK(pdp);
-		*vpp = tdp;
+		*ap->a_vpp = tdp;
 	}
 
 	/*
 	 * Insert name into cache if appropriate.
 	 */
-	if (cnp->cn_flags & MAKEENTRY)
-		cache_enter(dvp, *vpp, cnp);
+	if (ap->a_cnp->cn_flags & MAKEENTRY)
+		cache_enter(ap->a_dvp, *ap->a_vpp, ap->a_cnp);
 	return (0);
 }
-#undef dvp
-#undef vpp
-#undef cnp
 
 void
 ufs_dirbad(ip, offset, how)

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.38 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -142,23 +142,21 @@ loop:
 
 nfs_inactive (ap)
 	struct vop_inactive_args *ap;
-#define vp (ap->a_vp)
-#define p (ap->a_p)
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
 	extern int prtactive;
 
-	np = VTONFS(vp);
-	if (prtactive && vp->v_usecount != 0)
-		vprint("nfs_inactive: pushing active", vp);
+	np = VTONFS(ap->a_vp);
+	if (prtactive && ap->a_vp->v_usecount != 0)
+		vprint("nfs_inactive: pushing active", ap->a_vp);
 	sp = np->n_sillyrename;
 	np->n_sillyrename = (struct sillyrename *)0;
 	if (sp) {
 		/*
 		 * Remove the silly file that was rename'd earlier
 		 */
-		nfs_removeit(sp, p);
+		nfs_removeit(sp, ap->a_p);
 		crfree(sp->s_cred);
 		vrele(sp->s_dvp);
 #ifdef SILLYSEPARATE
@@ -168,22 +166,19 @@ nfs_inactive (ap)
 	np->n_flag &= NMODIFIED;
 	return (0);
 }
-#undef vp
-#undef p
 
 /*
  * Reclaim an nfsnode so that it can be used for other purposes.
  */
 nfs_reclaim (ap)
 	struct vop_reclaim_args *ap;
-#define vp (ap->a_vp)
 {
-	register struct nfsnode *np = VTONFS(vp);
-	register struct nfsmount *nmp = VFSTONFS(vp->v_mount);
+	register struct nfsnode *np = VTONFS(ap->a_vp);
+	register struct nfsmount *nmp = VFSTONFS(ap->a_vp->v_mount);
 	extern int prtactive;
 
-	if (prtactive && vp->v_usecount != 0)
-		vprint("nfs_reclaim: pushing active", vp);
+	if (prtactive && ap->a_vp->v_usecount != 0)
+		vprint("nfs_reclaim: pushing active", ap->a_vp);
 	/*
 	 * Remove the nfsnode from its hash chain.
 	 */
@@ -202,48 +197,41 @@ nfs_reclaim (ap)
 		else
 			np->n_tprev->n_tnext = np->n_tnext;
 	}
-	cache_purge(vp);
-	FREE(vp->v_data, M_NFSNODE);
-	vp->v_data = (void *)0;
+	cache_purge(ap->a_vp);
+	FREE(ap->a_vp->v_data, M_NFSNODE);
+	ap->a_vp->v_data = (void *)0;
 	return (0);
 }
-#undef vp
 
 /*
  * Lock an nfsnode
  */
 nfs_lock (ap)
 	struct vop_lock_args *ap;
-#define vp (ap->a_vp)
 {
 
 	return (0);
 }
-#undef vp
 
 /*
  * Unlock an nfsnode
  */
 nfs_unlock (ap)
 	struct vop_unlock_args *ap;
-#define vp (ap->a_vp)
 {
 
 	return (0);
 }
-#undef vp
 
 /*
  * Check for a locked nfsnode
  */
 nfs_islocked (ap)
 	struct vop_islocked_args *ap;
-#define vp (ap->a_vp)
 {
 
 	return (0);
 }
-#undef vp
 
 /*
  * Nfs abort op, called after namei() when a CREATE/DELETE isn't actually
@@ -253,13 +241,9 @@ nfs_islocked (ap)
 int
 nfs_abortop (ap)
 	struct vop_abortop_args *ap;
-#define dvp (ap->a_dvp)
-#define cnp (ap->a_cnp)
 {
 
-	if ((cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
-		FREE(cnp->cn_pnbuf, M_NAMEI);
+	if ((ap->a_cnp->cn_flags & (HASBUF | SAVESTART)) == HASBUF)
+		FREE(ap->a_cnp->cn_pnbuf, M_NAMEI);
 	return (0);
 }
-#undef dvp
-#undef cnp

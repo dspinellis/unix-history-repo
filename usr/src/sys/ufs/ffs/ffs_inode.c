@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.51 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.52 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,9 +46,6 @@ ffs_init()
  */
 ffs_vget (ap)
 	struct vop_vget_args *ap;
-#define mntp (ap->a_mp)
-#define ino (ap->a_ino)
-#define vpp (ap->a_vpp)
 {
 	register struct fs *fs;
 	register struct inode *ip;
@@ -60,14 +57,14 @@ ffs_vget (ap)
 	dev_t dev;
 	int i, type, error;
 
-	ump = VFSTOUFS(mntp);
+	ump = VFSTOUFS(ap->a_mp);
 	dev = ump->um_dev;
-	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
+	if ((*ap->a_vpp = ufs_ihashget(dev, ap->a_ino)) != NULL)
 		return (0);
 
 	/* Allocate a new vnode/inode. */
-	if (error = getnewvnode(VT_UFS, mntp, ffs_vnodeop_p, &vp)) {
-		*vpp = NULL;
+	if (error = getnewvnode(VT_UFS, ap->a_mp, ffs_vnodeop_p, &vp)) {
+		*ap->a_vpp = NULL;
 		return (error);
 	}
 	type = ump->um_devvp->v_tag == VT_MFS ? M_MFSNODE : M_FFSNODE; /* XXX */
@@ -81,7 +78,7 @@ ffs_vget (ap)
 	ip->i_lockf = 0;
 	ip->i_fs = fs = ump->um_fs;
 	ip->i_dev = dev;
-	ip->i_number = ino;
+	ip->i_number = ap->a_ino;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
@@ -95,7 +92,7 @@ ffs_vget (ap)
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ino)),
+	if (error = bread(ump->um_devvp, fsbtodb(fs, itod(fs, ap->a_ino)),
 	    (int)fs->fs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
@@ -109,11 +106,11 @@ ffs_vget (ap)
 		/* Unlock and discard unneeded inode. */
 		ufs_iput(ip);
 		brelse(bp);
-		*vpp = NULL;
+		*ap->a_vpp = NULL;
 		return (error);
 	}
 	dp = bp->b_un.b_dino;
-	dp += itoo(fs, ino);
+	dp += itoo(fs, ap->a_ino);
 	ip->i_din = *dp;
 	brelse(bp);
 
@@ -121,9 +118,9 @@ ffs_vget (ap)
 	 * Initialize the vnode from the inode, check for aliases.
 	 * Note that the underlying vnode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, ffs_specop_p, FFS_FIFOOPS, &vp)) {
+	if (error = ufs_vinit(ap->a_mp, ffs_specop_p, FFS_FIFOOPS, &vp)) {
 		ufs_iput(ip);
-		*vpp = NULL;
+		*ap->a_vpp = NULL;
 		return (error);
 	}
 	/*
@@ -149,12 +146,9 @@ ffs_vget (ap)
 	ip->i_uid = ip->i_din.di_ouid;
 	ip->i_gid = ip->i_din.di_ogid;
 
-	*vpp = vp;
+	*ap->a_vpp = vp;
 	return (0);
 }
-#undef mntp
-#undef ino
-#undef vpp
 
 /*
  * Update the access, modified, and inode change times as specified
@@ -168,25 +162,21 @@ ffs_vget (ap)
 int
 ffs_update (ap)
 	struct vop_update_args *ap;
-#define vp (ap->a_vp)
-#define ta (ap->a_ta)
-#define tm (ap->a_tm)
-#define waitfor (ap->a_waitfor)
 {
 	struct buf *bp;
 	struct inode *ip;
 	struct dinode *dp;
 	register struct fs *fs;
 
-	if (vp->v_mount->mnt_flag & MNT_RDONLY)
+	if (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
-	ip = VTOI(vp);
+	ip = VTOI(ap->a_vp);
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
 	if (ip->i_flag&IACC)
-		ip->i_atime.tv_sec = ta->tv_sec;
+		ip->i_atime.tv_sec = ap->a_ta->tv_sec;
 	if (ip->i_flag&IUPD) {
-		ip->i_mtime.tv_sec = tm->tv_sec;
+		ip->i_mtime.tv_sec = ap->a_tm->tv_sec;
 		INCRQUAD(ip->i_modrev);
 	}
 	if (ip->i_flag&ICHG)
@@ -207,17 +197,13 @@ ffs_update (ap)
 	}
 	dp = bp->b_un.b_dino + itoo(fs, ip->i_number);
 	*dp = ip->i_din;
-	if (waitfor)
+	if (ap->a_waitfor)
 		return (bwrite(bp));
 	else {
 		bdwrite(bp);
 		return (0);
 	}
 }
-#undef vp
-#undef ta
-#undef tm
-#undef waitfor
 
 #define	SINGLE	0	/* index of single indirect block */
 #define	DOUBLE	1	/* index of double indirect block */
@@ -230,10 +216,6 @@ ffs_update (ap)
  */
 ffs_truncate (ap)
 	struct vop_truncate_args *ap;
-#define ovp (ap->a_vp)
-#define length (ap->a_length)
-#define flags (ap->a_flags)
-#define cred (ap->a_cred)
 {
 	USES_VOP_UPDATE;
 	register daddr_t lastblock;
@@ -249,11 +231,11 @@ ffs_truncate (ap)
 	struct inode tip;
 	off_t osize;
 
-	vnode_pager_setsize(ovp, (u_long)length);
-	oip = VTOI(ovp);
-	if (oip->i_size <= length) {
+	vnode_pager_setsize(ap->a_vp, (u_long)ap->a_length);
+	oip = VTOI(ap->a_vp);
+	if (oip->i_size <= ap->a_length) {
 		oip->i_flag |= ICHG|IUPD;
-		error = VOP_UPDATE(ovp, &time, &time, 1);
+		error = VOP_UPDATE(ap->a_vp, &time, &time, 1);
 		return (error);
 	}
 	/*
@@ -263,7 +245,7 @@ ffs_truncate (ap)
 	 * the file is truncated to 0.
 	 */
 	fs = oip->i_fs;
-	lastblock = lblkno(fs, length + fs->fs_bsize - 1) - 1;
+	lastblock = lblkno(fs, ap->a_length + fs->fs_bsize - 1) - 1;
 	lastiblock[SINGLE] = lastblock - NDADDR;
 	lastiblock[DOUBLE] = lastiblock[SINGLE] - NINDIR(fs);
 	lastiblock[TRIPLE] = lastiblock[DOUBLE] - NINDIR(fs) * NINDIR(fs);
@@ -276,26 +258,26 @@ ffs_truncate (ap)
 	 * of subsequent file growth.
 	 */
 	osize = oip->i_size;
-	offset = blkoff(fs, length);
+	offset = blkoff(fs, ap->a_length);
 	if (offset == 0) {
-		oip->i_size = length;
+		oip->i_size = ap->a_length;
 	} else {
-		lbn = lblkno(fs, length);
+		lbn = lblkno(fs, ap->a_length);
 		aflags = B_CLRBUF;
-		if (flags & IO_SYNC)
+		if (ap->a_flags & IO_SYNC)
 			aflags |= B_SYNC;
 #ifdef QUOTA
 		if (error = getinoquota(oip))
 			return (error);
 #endif
-		if (error = ffs_balloc(oip, lbn, offset, cred, &bp, aflags))
+		if (error = ffs_balloc(oip, lbn, offset, ap->a_cred, &bp, aflags))
 			return (error);
-		oip->i_size = length;
+		oip->i_size = ap->a_length;
 		size = blksize(fs, oip, lbn);
-		(void) vnode_pager_uncache(ovp);
+		(void) vnode_pager_uncache(ap->a_vp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
-		if (flags & IO_SYNC)
+		if (ap->a_flags & IO_SYNC)
 			bwrite(bp);
 		else
 			bdwrite(bp);
@@ -316,8 +298,8 @@ ffs_truncate (ap)
 	for (i = NDADDR - 1; i > lastblock; i--)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
-	vinvalbuf(ovp, (length > 0));
-	allerror = VOP_UPDATE(ovp, &time, &time, MNT_WAIT);
+	vinvalbuf(ap->a_vp, (ap->a_length > 0));
+	allerror = VOP_UPDATE(ap->a_vp, &time, &time, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.
@@ -371,7 +353,7 @@ ffs_truncate (ap)
 		 * back as old block size minus new block size.
 		 */
 		oldspace = blksize(fs, ip, lastblock);
-		ip->i_size = length;
+		ip->i_size = ap->a_length;
 		newspace = blksize(fs, ip, lastblock);
 		if (newspace == 0)
 			panic("itrunc: newspace");
@@ -405,10 +387,6 @@ done:
 #endif
 	return (allerror);
 }
-#undef ovp
-#undef length
-#undef flags
-#undef cred
 
 /*
  * Release blocks associated with the inode ip and stored in the indirect
