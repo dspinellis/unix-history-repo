@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	4.3 (Berkeley) %G%
+.\"	@(#)4.t	4.4 (Berkeley) %G%
 .\"
 .ds RH Appendix A \- Fsck Error Conditions
 .NH
@@ -173,6 +173,35 @@ ignore this error condition.
 .IP NO
 ignore this file system and continues checking
 the next file system given.
+.sp
+.LP
+.B "UNDEFINED OPTIMIZATION IN SUPERBLOCK (SET TO DEFAULT)"
+.br
+The superblock optimization parameter is neither OPT_TIME
+nor OPT_SPACE.
+.LP
+Possible responses to the SET TO DEFAULT prompt are:
+.IP YES
+The superblock is set to request optimization to minimize
+running time of the system.
+(If optimization to minimize disk space utilization is
+desired, it can be set using \fItunefs\fP(8).)
+.IP NO
+ignore this error condition.
+.sp
+.LP
+.B "IMPOSSIBLE MINFREE=\fID\fP IN SUPERBLOCK (SET TO DEFAULT)"
+.br
+The superblock minimum space percentage is greater than 99%
+or less then 0%.
+.LP
+Possible responses to the SET TO DEFAULT prompt are:
+.IP YES
+The minfree parameter is set to 10%.
+(If some other percentage is desired,
+it can be set using \fItunefs\fP(8).)
+.IP NO
+ignore this error condition.
 .sp
 .LP
 One of the following messages will appear:
