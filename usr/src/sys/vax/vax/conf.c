@@ -1,4 +1,4 @@
-/*	conf.c	4.36	81/07/01	*/
+/*	conf.c	4.37	81/07/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -207,6 +207,7 @@ char	*mcwrite();
 int	ptsopen(), ptsclose(), ptsread(), ptswrite();
 int	ptcopen(), ptcclose(), ptcread(), ptcwrite();
 int	ptyioctl();
+struct	tty pt_tty[];
 #else
 #define ptsopen nodev
 #define ptsclose nodev
@@ -217,6 +218,7 @@ int	ptyioctl();
 #define ptcread nodev
 #define ptcwrite nodev
 #define ptyioctl nodev
+#define	pt_tty	0
 #endif
 
 #ifdef CHAOS
@@ -300,9 +302,9 @@ struct cdevsw	cdevsw[] =
 	chopen,		chclose,	chread,		chwrite,	/*19*/
 	chioctl,	nodev,		chreset,	0,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
-	ptyioctl,	nodev,		nodev,		0,
+	ptyioctl,	nodev,		nodev,		pt_tty,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
-	ptyioctl,	nodev,		nodev,		0,
+	ptyioctl,	nodev,		nodev,		pt_tty,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		accreset,	0,
 	enopen,		enclose,	enread,		enwrite,	/*23*/
