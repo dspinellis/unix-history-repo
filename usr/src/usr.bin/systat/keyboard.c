@@ -1,20 +1,20 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyboard.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)keyboard.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
-/*
- * Keyboard input support.
- */
-
-#include "systat.h"
+#include <signal.h>
 #include <ctype.h>
+#include "systat.h"
+#include "extern.h"
 
+int
 keyboard()
 {
         char ch, line[80];
