@@ -1,4 +1,4 @@
-/*	kern_time.c	5.15	83/05/27	*/
+/*	kern_time.c	5.16	83/06/10	*/
 
 #include "../machine/reg.h"
 
@@ -213,7 +213,7 @@ itimerfix(tv)
 	if (tv->tv_sec < 0 || tv->tv_sec > 100000000 ||
 	    tv->tv_usec < 0 || tv->tv_usec >= 1000000)
 		return (EINVAL);
-	if (tv->tv_sec == 0 && tv->tv_usec < tick)
+	if (tv->tv_sec == 0 && tv->tv_usec != 0 && tv->tv_usec < tick)
 		tv->tv_usec = tick;
 	return (0);
 }
