@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rlogind.c	4.24 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rlogind.c	4.25 (Berkeley) %G%";
 #endif
 
 /*
@@ -175,11 +175,11 @@ protocol(f, p)
 	int cc, stop = TIOCPKT_DOSTOP;
 
 	/*
-	 * This is a hack for the TIOCSWINSZ calls
-	 * (csh pgrp manipulation appears to cause
-	 * trouble).
+	 * Must ignore SIGTTOU, otherwise we'll stop
+	 * when we try and set slave pty's window shape
+	 * (our pgrp is that of the master pty).
 	 */
-	(void) signal(SIGTTOU, SIG_IGN);		/* XXX */
+	(void) signal(SIGTTOU, SIG_IGN);
 	for (;;) {
 		int ibits = 0, obits = 0;
 
