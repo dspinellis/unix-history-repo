@@ -34,10 +34,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00113
+ * CURRENT PATCH LEVEL:         2       00158
  * --------------------         -----   ----------------------
  *
  * 08 Apr 93	Poul-Henning Kamp	Add support for dcfclock
+ * 25 Apr 93	Bruce Evans		Support new interrupt code (intr-0.1)
  */
 
 #include "param.h"
@@ -240,6 +241,15 @@ hardclock(frame)
 	dcfclk_worker();
 #endif
 	if (needsoft) {
+#if 0
+/*
+ * XXX - hardclock runs at splhigh, so the splsoftclock is useless and
+ * softclock runs at splhigh as well if we do this.  It is not much of
+ * an optimization, since the "software interrupt" is done with a call
+ * from doreti, and the overhead of checking there is sometimes less
+ * than checking here.  Moreover, the whole %$$%$^ frame is passed by
+ * value here.
+ */
 		if (CLKF_BASEPRI(&frame)) {
 			/*
 			 * Save the overhead of a software interrupt;
@@ -248,6 +258,7 @@ hardclock(frame)
 			(void) splsoftclock();
 			softclock(frame);
 		} else
+#endif
 			setsoftclock();
 	}
 }

@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00113
+ * CURRENT PATCH LEVEL:         5       00158
  * --------------------         -----   ----------------------
  *
  * 14 Aug 92	Arne Henrik Juul	Added code in the kernel to
@@ -49,6 +49,11 @@
  *					function, (used by scsi and others)
  * 25 Mar 93	Sean Eric Fagan		Add microtimer support using timer 1
  * 08 Apr 93	Poul-Henning Kamp/P-HK	Fixes, and support for dcfclock
+ * 26 Apr 93	Bruce Evans		Eliminate findspeed, new spinwait
+ * 26 Apr 93	Rodney W. Grimes	I merged in Bruce changes and hope I
+ *					still kept the other fixes... Had to
+ *					add back in findcpuspeed that Bruce
+ *					had removed.
  */
 
 /*
@@ -68,8 +73,9 @@
 #define DAYEN 303
 
 /* X-tals being what they are, it's nice to be able to fudge this one... */
-#ifndef XTALSPEED
-#define XTALSPEED 1193182
+/* Note, the name changed here from XTALSPEED to TIMER_FREQ rgrimes 4/26/93 */
+#ifndef TIMER_FREQ
+#define	TIMER_FREQ	1193182	/* XXX - should be in isa.h */
 #endif
 
 startrtclock() {
@@ -81,8 +87,8 @@ startrtclock() {
 	outb(TIMER_MODE, TIMER_SEL0|TIMER_RATEGEN|TIMER_16BIT);
 
 	/* Correct rounding will buy us a better precision in timekeeping */
-	outb (IO_TIMER1, (XTALSPEED+hz/2)/hz);
-	outb (IO_TIMER1, ((XTALSPEED+hz/2)/hz)/256);
+	outb (IO_TIMER1, (TIMER_FREQ+hz/2)/hz);
+	outb (IO_TIMER1, ((TIMER_FREQ+hz/2)/hz)/256);
 
 	/* initialize brain-dead battery powered clock */
 	outb (IO_RTC, RTC_STATUSA);
@@ -118,9 +124,8 @@ findcpuspeed()
 	/* Formula for delaycount is :
 	 *  (loopcount * timer clock speed)/ (counter ticks * 1000)
 	 */
-	delaycount = (FIRST_GUESS * (XTALSPEED/1000)) / (0xffff-remainder);
+	delaycount = (FIRST_GUESS * (TIMER_FREQ/1000)) / (0xffff-remainder);
 }
-
 
 
 /* convert 2 digit BCD number */
@@ -251,21 +256,16 @@ resettodr()
 #define V(s)	__CONCAT(V, s)
 extern V(clk)();
 enablertclock() {
-	INTREN(IRQ0);
 	setidt(ICU_OFFSET+0, &V(clk), SDT_SYS386IGT, SEL_KPL);
-	splnone();
+	INTREN(IRQ0);
 }
 
-
-
-
+/*
+ * Delay for some number of milliseconds.
+ */
+void
 spinwait(millisecs)
-int millisecs;		/* number of milliseconds to delay */
+	int millisecs;
 {
-	int i, j;
-
-	for (i=0;i<millisecs;i++)
-		for (j=0;j<delaycount;j++)
-			;
+	DELAY(1000 * millisecs);
 }
-

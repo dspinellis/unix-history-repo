@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)icu.h	5.6 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00158
+ * --------------------         -----   ----------------------
+ *
+ * 25 Apr 93	Bruce Evans		New fast interrupt code (intr-0.1)
  */
 
 /*
@@ -49,120 +56,26 @@
 /*
  * Interrupt "level" mechanism variables, masks, and macros
  */
-extern	unsigned short	imen;	/* interrupt mask enable */
-extern	unsigned short	cpl;	/* current priority level mask */
+extern	unsigned imen;		/* interrupt mask enable */
+extern	unsigned cpl;		/* current priority level mask */
 
-extern	unsigned short highmask; /* group of interrupts masked with splhigh() */
-extern	unsigned short ttymask; /* group of interrupts masked with spltty() */
-extern	unsigned short biomask; /* group of interrupts masked with splbio() */
-extern	unsigned short netmask; /* group of interrupts masked with splimp() */
+extern	unsigned highmask;	/* group of interrupts masked with splhigh() */
+extern	unsigned ttymask;	/* group of interrupts masked with spltty() */
+extern	unsigned biomask;	/* group of interrupts masked with splbio() */
+extern	unsigned netmask;	/* group of interrupts masked with splimp() */
 
-#define	INTREN(s)	imen &= ~(s)
-#define	INTRDIS(s)	imen |= (s)
-#define	INTRMASK(msk,s)	msk |= (s)
-
+#define	INTREN(s)	(imen &= ~(s), SET_ICUS())
+#define	INTRDIS(s)	(imen |= (s), SET_ICUS())
+#define	INTRMASK(msk,s)	(msk |= (s))
+#if 0
+#define SET_ICUS()	(outb(IO_ICU1 + 1, imen), outb(IU_ICU2 + 1, imen >> 8))
 #else
-
 /*
- * Macro's for interrupt level priority masks (used in interrupt vector entry)
+ * XXX - IO_ICU* are defined in isa.h, not icu.h, and nothing much bothers to
+ * include isa.h, while too many things include icu.h.
  */
-
-/* Mask a group of interrupts atomically */
-#define	INTR(unit,mask,offst) \
-	pushl	$0 ; \
-	pushl	$ T_ASTFLT ; \
-	pushal ; \
-	nop ; \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$0x20, %al ; 	/* next, as soon as possible send EOI ... */ \
-	outb	%al, $ IO_ICU1 ; /* ... so in service bit may be cleared ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$0x20, %al ;	/* likewise, the other one as well */ \
-	outb	%al,$ IO_ICU2 ; \
-	inb	$0x84,%al ; \
-	pushl	%ds ; 		/* save our data and extra segments ... */ \
-	pushl	%es ; \
-	movw	$0x10, %ax ;	/* ... and reload with kernel's own */ \
-	movw	%ax, %ds ; \
-	movw	%ax, %es ; \
-	incl	_cnt+V_INTR ;	/* tally interrupts */ \
-	incl	_isa_intr + offst * 4 ; \
-	inb	$0x84,%al ; \
-	movzwl	_cpl,%eax ; \
-	pushl	%eax ; \
-	pushl	$ unit ; \
-	orw	mask ,%ax ; \
-	movw	%ax,_cpl ; \
-	orw	_imen,%ax ; \
-	outb	%al,$ IO_ICU1+1 ; \
-	inb	$0x84,%al ; \
-	movb	%ah,%al ; \
-	outb	%al,$ IO_ICU2+1	; \
-	inb	$0x84,%al ; \
-	sti
-
-/* Mask a group of interrupts atomically */
-#define	INTRSTRAY(unit,mask,offst) \
-	pushl	$0 ; \
-	pushl	$ T_ASTFLT ; \
-	pushal ; \
-	nop ; \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$3, %al ; 	/* look at ISR ... */ \
-	outb	%al, $ IO_ICU1 ; /* ... ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$3, %al ; 	/* look at ISR ... */ \
-	outb	%al, $ IO_ICU2 ; /* ... ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	inb	$ IO_ICU1, %al ;	/* grab ISR */ \
-	movb	%al, %dl ;	/* grab ISR */ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$2, %al ; 	/* back to look at IRR ... */ \
-	outb	%al, $ IO_ICU1 ; /* ... ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$2, %al ; 	/* back to look at IRR ... */ \
-	outb	%al, $ IO_ICU2 ; /* ... ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	inb	$ IO_ICU2, %al ;	/* grab ISR */ \
-	movb	%al, %dh ;	/* grab ISR */ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$0x20, %al ; 	/* next, as soon as possible send EOI ... */ \
-	outb	%al, $ IO_ICU1 ; /* ... so in service bit may be cleared ...*/ \
-	inb	$0x84, %al ;	/* ... ASAP */ \
-	movb	$0x20, %al ;	/* likewise, the other one as well */ \
-	outb	%al,$ IO_ICU2 ; \
-	inb	$0x84,%al ; \
-	pushl	%ds ; 		/* save our data and extra segments ... */ \
-	pushl	%es ; \
-	movw	$0x10, %ax ;	/* ... and reload with kernel's own */ \
-	movw	%ax, %ds ; \
-	movw	%ax, %es ; \
-	inb	$0x84,%al ; \
-	movzwl	_cpl,%eax ; \
-	pushl	%eax ; \
-	movzwl	%dx,%eax ; \
-	shll	$8,%eax ; \
-	movb	$ unit , %al ; \
-	pushl	%eax ; \
-	orw	mask ,%ax ; \
-	movw	%ax,_cpl ; \
-	orw	_imen,%ax ; \
-	outb	%al,$ IO_ICU1+1 ; \
-	inb	$0x84,%al ; \
-	movb	%ah,%al ; \
-	outb	%al,$ IO_ICU2+1	; \
-	inb	$0x84,%al ; \
-	sti
-
-/* Interrupt vector exit macros */
-
-/* First eight interrupts (ICU1) */
-#define	INTREXIT1	\
-	jmp	doreti
-
-/* Second eight interrupts (ICU2) */
-#define	INTREXIT2	\
-	jmp	doreti
+#define SET_ICUS()	(outb(0x21, imen), outb(0xa1, imen >> 8))
+#endif
 
 #endif
 

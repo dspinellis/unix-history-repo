@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00117
+ * CURRENT PATCH LEVEL:         3       00158
  * --------------------         -----   ----------------------
  *
  * 18 Aug 92	Frank Maclachlan	*See comments below
@@ -45,6 +45,12 @@
  *					turned on logging of stray interrupts,
  *					Now prints maddr, msize, and flags
  *					after finding a device.
+ * 26 Apr 93	Bruce Evans		New intr-0.1 code
+ *		Rodney W. Grimes	Only print io address if id_alive != -1
+ * 17 May 93	Rodney W. Grimes	renamed stray interrupt counters to
+ *					work with new intr-0.1 code.
+ *					Enabled printf for interrupt masks to
+ *					aid in bug reports.
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/01/21 14:34:23 william Exp Locker: root $";
 
@@ -91,7 +97,8 @@ static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/isa/RCS/isa.c,v 1.2 92/
 #define	DMA2_MODE	(IO_DMA2 + 2*11)	/* mode register */
 #define	DMA2_FFC	(IO_DMA2 + 2*12)	/* clear first/last FF */
 
-int config_isadev(struct isa_device *, u_short *);
+int config_isadev __P((struct isa_device *, u_int *));
+
 #ifdef notyet
 struct rlist *isa_iomem;
 
@@ -112,7 +119,7 @@ isa_configure() {
 	for (dvp = isa_devtab_net; dvp; dvp++)
 			(void) config_isadev(dvp, &netmask);
 	for (dvp = isa_devtab_null; dvp; dvp++)
-			(void) config_isadev(dvp, 0);
+			(void) config_isadev(dvp, (u_int *) NULL);
 #include "sl.h"
 #if NSL > 0
 	netmask |= ttymask;
@@ -127,7 +134,7 @@ isa_configure() {
  */
 config_isadev(isdp, mp)
 	struct isa_device *isdp;
-	u_short *mp;
+	u_int *mp;
 {
 	struct isa_driver *dp;
 	static short drqseen, irqseen;
@@ -191,19 +198,20 @@ isa_configure() {
 	struct isa_device *dvp;
 	struct isa_driver *dp;
 
+	enable_intr();
 	splhigh();
 	INTREN(IRQ_SLAVE);
 	for (dvp = isa_devtab_tty; config_isadev(dvp,&ttymask); dvp++);
 	for (dvp = isa_devtab_bio; config_isadev(dvp,&biomask); dvp++);
 	for (dvp = isa_devtab_net; config_isadev(dvp,&netmask); dvp++);
-	for (dvp = isa_devtab_null; config_isadev(dvp,0); dvp++);
+	for (dvp = isa_devtab_null; config_isadev(dvp,(u_int *) NULL); dvp++);
 #include "sl.h"
 #if NSL > 0
 	netmask |= ttymask;
 	ttymask |= netmask;
 #endif
 	/* biomask |= ttymask ;  can some tty devices use buffers? */
-	/* printf("biomask %x ttymask %x netmask %x\n", biomask, ttymask, netmask); */
+	printf("biomask %x ttymask %x netmask %x\n", biomask, ttymask, netmask);
 	splnone();
 }
 
@@ -212,7 +220,7 @@ isa_configure() {
  */
 config_isadev(isdp, mp)
 	struct isa_device *isdp;
-	u_short *mp;
+	u_int *mp;
 {
 	struct isa_driver *dp;
  
@@ -220,7 +228,7 @@ config_isadev(isdp, mp)
 		if (isdp->id_maddr) {
 			extern u_int atdevbase;
 
-			isdp->id_maddr -= 0xa0000;
+			isdp->id_maddr -= 0xa0000; /* XXX should be a define */
 			isdp->id_maddr += atdevbase;
 		}
 		isdp->id_alive = (*dp->probe)(isdp);
@@ -233,34 +241,43 @@ config_isadev(isdp, mp)
 			 * really belongs.  Rod Grimes 04/10/93
 			 */
 			(*dp->attach)(isdp);
-			printf(" at 0x%x", isdp->id_iobase);
-			if ((isdp->id_iobase + isdp->id_alive - 1) !=
-			     isdp->id_iobase)
-				printf("-0x%x",
-				       isdp->id_iobase + isdp->id_alive - 1);
-			printf(" ");
+			/*
+			 * Only print the I/O address range if id_alive != -1
+			 * Right now this is a temporary fix just for the new
+			 * NPX code so that if it finds a 486 that can use trap
+			 * 16 it will not report I/O addresses.
+			 * Rod Grimes 04/26/94
+			 */
+			if (isdp->id_alive != -1) {
+	 			printf(" at 0x%x", isdp->id_iobase);
+ 				if ((isdp->id_iobase + isdp->id_alive - 1) !=
+ 				     isdp->id_iobase)
+ 					printf("-0x%x",
+ 					       isdp->id_iobase +
+					       isdp->id_alive - 1);
+			}
 			if(isdp->id_irq)
-				printf("irq %d ", ffs(isdp->id_irq)-1);
+				printf(" irq %d", ffs(isdp->id_irq)-1);
 			if (isdp->id_drq != -1)
-				printf("drq %d ", isdp->id_drq);
+				printf(" drq %d", isdp->id_drq);
 			if (isdp->id_maddr != 0)
-				printf("maddr 0x%x ", kvtop(isdp->id_maddr));
+				printf(" maddr 0x%x", kvtop(isdp->id_maddr));
 			if (isdp->id_msize != 0)
-				printf("msize %d ", isdp->id_msize);
+				printf(" msize %d", isdp->id_msize);
 			if (isdp->id_flags != 0)
-				printf("flags 0x%x ", isdp->id_flags);
-			printf("on isa\n");
+				printf(" flags 0x%x", isdp->id_flags);
+			printf(" on isa\n");
 
 			/* This is the place the attach should be done! */
 			if(isdp->id_irq) {
 				int intrno;
 
 				intrno = ffs(isdp->id_irq)-1;
-				INTREN(isdp->id_irq);
-				if(mp)
-					INTRMASK(*mp,isdp->id_irq);
 				setidt(ICU_OFFSET+intrno, isdp->id_intr,
 					 SDT_SYS386IGT, SEL_KPL);
+				if(mp)
+					INTRMASK(*mp,isdp->id_irq);
+				INTREN(isdp->id_irq);
 			}
 		}
 		return (1);
@@ -283,7 +300,7 @@ static *defvec[16] = {
 
 /* out of range default interrupt vector gate entry */
 extern	IDTVEC(intrdefault);
-	
+
 /*
  * Fill in default interrupt table (in case of spuruious interrupt
  * during configuration of kernel, setup interrupt control unit
@@ -294,28 +311,34 @@ isa_defaultirq() {
 	/* icu vectors */
 	for (i = NRSVIDT ; i < NRSVIDT+ICU_LEN ; i++)
 		setidt(i, defvec[i],  SDT_SYS386IGT, SEL_KPL);
-
+  
 	/* out of range vectors */
 	for (i = NRSVIDT; i < NIDT; i++)
 		setidt(i, &IDTVEC(intrdefault), SDT_SYS386IGT, SEL_KPL);
-
-	/* clear npx intr latch */
-	outb(0xf1,0);
 
 	/* initialize 8259's */
 	outb(IO_ICU1, 0x11);		/* reset; program device, four bytes */
 	outb(IO_ICU1+1, NRSVIDT);	/* starting at this vector index */
 	outb(IO_ICU1+1, 1<<2);		/* slave on line 2 */
+#ifdef AUTO_EOI_1
+	outb(IO_ICU1+1, 2 | 1);		/* auto EOI, 8086 mode */
+#else
 	outb(IO_ICU1+1, 1);		/* 8086 mode */
+#endif
 	outb(IO_ICU1+1, 0xff);		/* leave interrupts masked */
-	outb(IO_ICU1, 2);		/* default to ISR on read */
+	outb(IO_ICU1, 0x0a);		/* default to IRR on read */
+	outb(IO_ICU1, 0xc0 | (3 - 1));	/* pri order 3-7, 0-2 (com2 first) */
 
 	outb(IO_ICU2, 0x11);		/* reset; program device, four bytes */
 	outb(IO_ICU2+1, NRSVIDT+8);	/* staring at this vector index */
 	outb(IO_ICU2+1,2);		/* my slave id is 2 */
+#ifdef AUTO_EOI_2
+	outb(IO_ICU2+1, 2 | 1);		/* auto EOI, 8086 mode */
+#else
 	outb(IO_ICU2+1,1);		/* 8086 mode */
+#endif
 	outb(IO_ICU2+1, 0xff);		/* leave interrupts masked */
-	outb(IO_ICU2, 2);		/* default to ISR on read */
+	outb(IO_ICU2, 0x0a);		/* default to IRR on read */
 }
 
 /* region of physical memory known to be contiguous */
@@ -540,40 +563,119 @@ isa_strayintr(d) {
 	 * the first 5 get logged, then it quits logging them, and puts
 	 * out a special message. rgrimes 3/25/1993
 	 */
-	extern u_long isa_stray_intrcnt;
+	extern u_long intrcnt_stray;
 
-	isa_stray_intrcnt++;
-	if (isa_stray_intrcnt <= 5)
+	intrcnt_stray++;
+	if (intrcnt_stray <= 5)
 		log(LOG_ERR,"ISA strayintr %x\n", d);
-	if (isa_stray_intrcnt == 5)
+	if (intrcnt_stray == 5)
 		log(LOG_CRIT,"Too many ISA strayintr not logging any more\n");
 }
 
 /*
- * Wait "n" microseconds. Relies on timer 0 to have 1Mhz clock, regardless
- * of processor board speed. Note: timer had better have been programmed
- * before this is first used!
+ * Wait "n" microseconds.
+ * Relies on timer 1 counting down from (TIMER_FREQ / hz) at
+ * (2 * TIMER_FREQ) Hz.
+ * Note: timer had better have been programmed before this is first used!
+ * (The standard programming causes the timer to generate a square wave and
+ * the counter is decremented twice every cycle.)
  */
-DELAY(n) {
-	int tick = getit(0,0) & 1;
+#define	CF		(2 * TIMER_FREQ)
+#define	TIMER_FREQ	1193182	/* XXX - should be elsewhere */
 
-	while (n--) {
-		/* wait approximately 1 micro second */
-		while (tick == getit(0,0) & 1) ;
-		
-		tick = getit(0,0) & 1;
+extern int hz;			/* XXX - should be elsewhere */
+
+int DELAY(n)
+	int n;
+{
+	int counter_limit;
+	int prev_tick;
+	int tick;
+	int ticks_left;
+	int sec;
+	int usec;
+
+#ifdef DELAYDEBUG
+	int getit_calls = 1;
+	int n1;
+	static int state = 0;
+
+	if (state == 0) {
+		state = 1;
+		for (n1 = 1; n1 <= 10000000; n1 *= 10)
+			DELAY(n1);
+		state = 2;
 	}
+	if (state == 1)
+		printf("DELAY(%d)...", n);
+#endif
+
+	/*
+	 * Read the counter first, so that the rest of the setup overhead is
+	 * counted.  Guess the initial overhead is 20 usec (on most systems it
+	 * takes about 1.5 usec for each of the i/o's in getit().  The loop
+	 * takes about 6 usec on a 486/33 and 13 usec on a 386/20.  The
+	 * multiplications and divisions to scale the count take a while).
+	 */
+	prev_tick = getit(0, 0);
+	n -= 20;
+
+	/*
+	 * Calculate (n * (CF / 1e6)) without using floating point and without
+	 * any avoidable overflows.
+	 */
+	sec = n / 1000000;
+	usec = n - sec * 1000000;
+	ticks_left = sec * CF
+		     + usec * (CF / 1000000)
+		     + usec * ((CF % 1000000) / 1000) / 1000
+		     + usec * (CF % 1000) / 1000000;
+
+	counter_limit = TIMER_FREQ / hz;
+	while (ticks_left > 0) {
+		tick = getit(0, 0);
+#ifdef DELAYDEBUG
+		++getit_calls;
+#endif
+		if (tick > prev_tick)
+			ticks_left -= prev_tick - (tick - counter_limit);
+		else
+			ticks_left -= prev_tick - tick;
+		prev_tick = tick;
+	}
+#ifdef DELAYDEBUG
+	if (state == 1)
+		printf(" %d calls to getit() at %d usec each\n",
+		       getit_calls, (n + 5) / getit_calls);
+#endif
 }
 
 getit(unit, timer) {
-	int port = (unit ? IO_TIMER2 : IO_TIMER1) + timer, val;
+	int high;
+	int low;
 
-	val = inb(port);
-	val = (inb(port) << 8) + val;
-	return (val);
+	/*
+	 * XXX - isa.h defines bogus timers.  There's no such timer as
+	 * IO_TIMER_2 = 0x48.  There's a timer in the CMOS RAM chip but
+	 * its interface is quite different.  Neither timer is an 8252.
+	 * We actually only call this with unit = 0 and timer = 0.  It
+	 * could be static...
+	 */
+	/*
+	 * Protect ourself against interrupts.
+	 * XXX - sysbeep() and sysbeepstop() need protection.
+	 */
+	disable_intr();
+	/*
+	 * Latch the count for 'timer' (cc00xxxx, c = counter, x = any).
+	 */
+	outb(IO_TIMER1 + 3, timer << 6);
+
+	low = inb(IO_TIMER1 + timer);
+	high = inb(IO_TIMER1 + timer);
+	enable_intr();
+	return ((high << 8) | low);
 }
-
-extern int hz;
 
 static beeping;
 static
@@ -591,6 +693,12 @@ void sysbeep(int pitch, int period)
 {
 
 	outb(0x61, inb(0x61) | 3);	/* enable counter 2 */
+	/*
+	 * XXX - move timer stuff to clock.c.
+	 * Program counter 2:
+	 * ccaammmb, c counter, a = access, m = mode, b = BCD
+	 * 1011x110, 11 for aa = LSB then MSB, x11 for mmm = square wave.
+	 */
 	outb(0x43, 0xb6);	/* set command for counter 2, 2 byte write */
 	
 	outb(0x42, pitch);
@@ -611,4 +719,19 @@ unsigned kbc_8042cmd(val) {
 	if (val) outb(KBCMDP, val);
 	while (inb(KBSTATP)&KBS_IBF);
 	return (inb(KBDATAP));
+}
+
+/*
+ * Return nonzero if a (masked) irq is pending for a given device.
+ */
+int
+isa_irq_pending(dvp)
+	struct isa_device *dvp;
+{
+	unsigned id_irq;
+
+	id_irq = (unsigned short) dvp->id_irq;	/* XXX silly type in struct */
+	if (id_irq & 0xff)
+		return (inb(IO_ICU1) & id_irq);
+	return (inb(IO_ICU2) & (id_irq >> 8));
 }
