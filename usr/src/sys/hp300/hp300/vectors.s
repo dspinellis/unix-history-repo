@@ -4,8 +4,16 @@
 |
 | %sccs.include.redist.gas%
 |
-|	@(#)vectors.s	7.1 (Berkeley) %G%
+|	@(#)vectors.s	7.2 (Berkeley) %G%
 |
+#define	_fpbsun		_fpfault
+#define	_fpinex		_fpfault
+#define	_fpdz		_fpfault
+#define	_fpunfl		_fpfault
+#define	_fpoperr	_fpfault
+#define	_fpovfl		_fpfault
+#define	_fpsnan		_fpfault
+
 	.text
 	.globl	_buserr,_addrerr
 	.globl	_illinst,_zerodiv,_chkinst,_trapvinst,_privinst,_trace
@@ -13,7 +21,11 @@
 	.globl	_spurintr,_lev1intr,_lev2intr,_lev3intr
 	.globl	_lev4intr,_lev5intr,_lev6intr,_lev7intr
 	.globl	_trap0,_trap1,_trap2,_trap15
+	.globl	_fpfline, _fpunsupp, _fpfault
+	.globl	_fpbsun, _fpinex, _fpdz, _fpunfl, _fpoperr, _fpovfl, _fpsnan
+	.globl	_trap12
 
+Lvectab:
 	.long	0x4ef80400	/* 0: jmp 0x400:w (unused reset SSP) */
 	.long	0		/* 1: NOT USED (reset PC) */
 	.long	_buserr		/* 2: bus error */
@@ -25,7 +37,7 @@
 	.long	_privinst	/* 8: privilege violation */
 	.long	_trace		/* 9: trace */
 	.long	_illinst	/* 10: line 1010 emulator */
-	.long	_illinst	/* 11: line 1111 emulator */
+	.long	_fpfline	/* 11: line 1111 emulator */
 	.long	_badtrap	/* 12: unassigned, reserved */
 	.long	_coperr		/* 13: coprocessor protocol violation */
 	.long	_fmterr		/* 14: format error */
@@ -58,19 +70,19 @@
 	.long	_illinst	/* 41: TRAP instruction vector */
 	.long	_illinst	/* 42: TRAP instruction vector */
 	.long	_illinst	/* 43: TRAP instruction vector */
-	.long	_illinst	/* 44: TRAP instruction vector */
+	.long	_trap12		/* 44: TRAP instruction vector */
 	.long	_illinst	/* 45: TRAP instruction vector */
 	.long	_illinst	/* 46: TRAP instruction vector */
 	.long	_trap15		/* 47: TRAP instruction vector */
- 	.long	_fptrap		/* 48: FPCP branch/set on unordered cond */
- 	.long	_fptrap		/* 49: FPCP inexact result */
- 	.long	_fptrap		/* 50: FPCP divide by zero */
- 	.long	_fptrap		/* 51: FPCP underflow */
- 	.long	_fptrap		/* 52: FPCP operand error */
- 	.long	_fptrap		/* 53: FPCP overflow */
- 	.long	_fptrap		/* 54: FPCP signalling NAN */
+ 	.long	_fpbsun		/* 48: FPCP branch/set on unordered cond */
+ 	.long	_fpinex		/* 49: FPCP inexact result */
+ 	.long	_fpdz		/* 50: FPCP divide by zero */
+ 	.long	_fpunfl		/* 51: FPCP underflow */
+ 	.long	_fpoperr	/* 52: FPCP operand error */
+ 	.long	_fpovfl		/* 53: FPCP overflow */
+ 	.long	_fpsnan		/* 54: FPCP signalling NAN */
 
-	.long	_badtrap	/* 55: unassigned, reserved */
+	.long	_fpunsupp	/* 55: FPCP unimplemented data type */
 	.long	_badtrap	/* 56: unassigned, reserved */
 	.long	_badtrap	/* 57: unassigned, reserved */
 	.long	_badtrap	/* 58: unassigned, reserved */
