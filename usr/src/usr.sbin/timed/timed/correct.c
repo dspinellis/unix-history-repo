@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)correct.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -105,19 +105,36 @@ int *x;
 adjclock(corr)
 struct timeval *corr;
 {
+	struct timeval now;
+
 	if (timerisset(corr)) {
-		if (corr->tv_sec < SAMPLEINTVL/10 && 
-					corr->tv_sec > - SAMPLEINTVL/10) {
+		if (corr->tv_sec < MAXADJ && corr->tv_sec > - MAXADJ)
 			(void)adjtime(corr, (struct timeval *)0);
 		} else {
-			corr->tv_usec = 0;
-			if (corr->tv_sec > 0)
-				corr->tv_sec = SAMPLEINTVL/10 - 2;
-			else
-				corr->tv_sec = - SAMPLEINTVL/10 + 2;
-			(void)adjtime(corr, (struct timeval *)0);
 			syslog(LOG_WARNING,
-			    "adjclock called with too large a parameter");
+			    "clock correction too large to adjust (%d sec)",
+			    corr->tv_sec);
+			(void) gettimeofday(&now, (struct timezone *)0);
+			timevaladd(&now, corr);
+			if (settimeofday(&now, (struct timezone *)0) < 0)
+				syslog(LOG_ERR, "can't set time");
 		}
+		first = 0;
+	}
+}
+
+timevaladd(tv1, tv2)
+	register struct timeval *tv1, *tv2;
+{
+	
+	tv1->tv_sec += tv2->tv_sec;
+	tv1->tv_usec += tv2->tv_usec;
+	if (tv1->tv_usec >= 1000000) {
+		tv1->tv_sec++;
+		tv1->tv_usec -= 1000000;
+	}
+	if (tv1->tv_usec < 0) {
+		tv1->tv_sec--;
+		tv1->tv_usec += 1000000;
 	}
 }
