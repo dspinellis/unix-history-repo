@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.4	%G%	*/
+/*	vfs_lookup.c	4.5	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -107,6 +107,9 @@ seloop:
 	u.u_segflg = 1;
 	eo = 0;
 	bp = NULL;
+	if (dp == u.u_rdir && u.u_dent.d_name[0] == '.' &&
+	    u.u_dent.d_name[1] == '.' && u.u_dent.d_name[2] == 0)
+		goto cloop;
 
 eloop:
 

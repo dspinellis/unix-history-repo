@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.9	%G%	*/
+/*	tty_subr.c	4.10	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

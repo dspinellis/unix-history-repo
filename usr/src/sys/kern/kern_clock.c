@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.15	%G%	*/
+/*	kern_clock.c	4.16	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,9 +21,6 @@
 #include "dh.h"
 #include "dz.h"
 
-#define	SCHMAG	9/10
-
-
 /*
  * Hardclock is called straight from
  * the real time clock interrupt.
@@ -35,7 +32,7 @@
  *	arrange for soft clock interrupt
  *	kernel pc profiling
  *
- * At softclock interrupt time we:
+ * At software (softclock) interrupt time we:
  *	implement callouts
  *	maintain date
  *	lightning bolt wakeup (every second)
@@ -64,10 +61,10 @@ hardclock(pc, ps)
 	/*
 	 * update callout times
 	 */
-	if(callout[0].c_func == NULL)
+	if (callout[0].c_func == NULL)
 		goto out;
 	p1 = &callout[0];
-	while(p1->c_time<=0 && p1->c_func!=NULL)
+	while (p1->c_time<=0 && p1->c_func!=NULL)
 		p1++;
 	p1->c_time--;
 out:
@@ -92,6 +89,9 @@ out:
 				u.u_limit[LIM_CPU] += 5;
 		}
 	}
+	/*
+	 * Update iostat information.
+	 */
 	if (USERMODE(ps)) {
 		u.u_vm.vm_utime++;
 		if(u.u_procp->p_nice > NZERO)
@@ -109,6 +109,9 @@ out:
 	for (s = 0; s < DK_NDRIVE; s++)
 		if (dk_busy&(1<<s))
 			dk_time[s]++;
+	/*
+	 * Adjust priority of current process.
+	 */
 	if (!noproc) {
 		pp = u.u_procp;
 		pp->p_cpticks++;
@@ -120,23 +123,43 @@ out:
 				pp->p_pri = pp->p_usrpri;
 		}
 	}
+	/*
+	 * Time moves on.
+	 */
 	++lbolt;
 #if VAX780
+	/*
+	 * On 780's, impelement a fast UBA watcher,
+	 * to make sure uba's don't get stuck.
+	 */
 	if (cpu == VAX_780 && panicstr == 0 && !BASEPRI(ps))
 		unhang();
 #endif
+	/*
+	 * Schedule a software interrupt for the rest
+	 * of clock activities.
+	 */
 	setsoftclock();
 }
 
 /*
- * Constant for decay filter for cpu usage.
+ * SCHMAG is the constant in the digital decay cpu
+ * usage priority assignment.  Each second we multiply
+ * the previous cpu usage estimate by SCHMAG.  At 9/10
+ * it tends to decay away all knowledge of previous activity
+ * in about 10 seconds.
+ */
+#define	SCHMAG	9/10
+
+/*
+ * Constant for decay filter for cpu usage field
+ * in process table (used by ps au).
  */
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 
 /*
  * Software clock interrupt.
- * This routine is blocked by spl1(),
- * which doesn't block device interrupts!
+ * This routine runs at lower priority than device interrupts.
  */
 /*ARGSUSED*/
 softclock(pc, ps)
@@ -202,7 +225,7 @@ softclock(pc, ps)
 	 */
 	if (lbolt >= hz) {
 		/*
-		 * This doesn't mean much since we run at
+		 * This doesn't mean much on VAX since we run at
 		 * software interrupt time... if hardclock()
 		 * calls softclock() directly, it prevents
 		 * this code from running when the priority
@@ -372,10 +395,10 @@ softclock(pc, ps)
 }
 
 /*
- * timeout is called to arrange that
+ * Timeout is called to arrange that
  * fun(arg) is called in tim/hz seconds.
  * An entry is sorted into the callout
- * structure. The time in each structure
+ * structure.  The time in each structure
  * entry is the number of hz's more
  * than the previous entry.
  * In this way, decrementing the
@@ -396,19 +419,19 @@ timeout(fun, arg, tim)
 	t = tim;
 	p1 = &callout[0];
 	s = spl7();
-	while(p1->c_func != 0 && p1->c_time <= t) {
+	while (p1->c_func != 0 && p1->c_time <= t) {
 		t -= p1->c_time;
 		p1++;
 	}
 	p1->c_time -= t;
 	p2 = p1;
 	p3 = callout+(ncallout-2);
-	while(p2->c_func != 0) {
+	while (p2->c_func != 0) {
 		if (p2 >= p3)
 			panic("timeout");
 		p2++;
 	}
-	while(p2 >= p1) {
+	while (p2 >= p1) {
 		(p2+1)->c_time = p2->c_time;
 		(p2+1)->c_func = p2->c_func;
 		(p2+1)->c_arg = p2->c_arg;

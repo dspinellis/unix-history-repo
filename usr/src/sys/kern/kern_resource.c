@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.3	%G%	*/
+/*	kern_resource.c	4.4	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -24,9 +24,9 @@ sysacct()
 	uap = (struct a *)u.u_ap;
 	if (suser()) {
 		if (uap->fname==NULL) {
-			if (acctp) {
-				plock(acctp);
-				iput(acctp);
+			if (ip = acctp) {
+				plock(ip);
+				iput(ip);
 				acctp = NULL;
 			}
 			return;
@@ -110,25 +110,4 @@ register long t;
 		}
 	}
 	return((exp<<13) + t);
-}
-
-/*
- * lock user into core as much
- * as possible. swapping may still
- * occur if core grows.
- */
-syslock()
-{
-	register struct proc *p;
-	register struct a {
-		int	flag;
-	} *uap;
-
-	uap = (struct a *)u.u_ap;
-	if(suser()) {
-		p = u.u_procp;
-		p->p_flag &= ~SULOCK;
-		if(uap->flag)
-			p->p_flag |= SULOCK;
-	}
 }
