@@ -1,3 +1,4 @@
+# @(#)Makefile	1.2 (Berkeley) %G%
 # transcript/lib/Makefile.bsd
 #
 # Copyright (c) 1985 Adobe Systems Incorporated. All Rights Reserved. 
@@ -13,17 +14,16 @@ FILES = banner.pro enscript.pro pstext.pro \
 
 PRG = psint.sh psbad.sh
 
-OWNER = daemon
-GROUP = tex
+OWNER = bin
+GROUP = bin
 
 programs all:
 	sed -e s,XPSLIBDIRX,$(PSLIBDIR),g psint.proto > psint.sh
 
 install: 
 	cd $(PSLIBDIR); rm -rf - ${FILES} ${PRG} *.afm 
-	cp ${FILES} ${PRG} *.afm $(PSLIBDIR)
-	cd $(PSLIBDIR); chown $(OWNER) ${FILES} ${PRG} *.afm; \
-		chgrp $(GROUP) ${FILES} ${PRG} *.afm; \
+	cp -p ${FILES} ${PRG} *.afm $(PSLIBDIR)
+	cd $(PSLIBDIR); chown $(OWNER).$(GROUP) ${FILES} ${PRG} *.afm; \
 		chmod 664 ${FILES} *.afm; \
 		chmod 775 ${PRG}
 	cd $(PSLIBDIR); \
@@ -33,12 +33,8 @@ install:
 		ln psbad.sh psbad
 	-rm -rf $(PSLIBDIR)/troff.font $(PSLIBDIR)/ditroff.font
 	-mkdir $(PSLIBDIR)/troff.font $(PSLIBDIR)/ditroff.font
-	cp troff.font/* $(PSLIBDIR)/troff.font
-	cd $(PSLIBDIR)/troff.font; make ${MFLAGS} install
-	cd $(PSLIBDIR)/troff.font; chown $(OWNER) . * ; chgrp $(GROUP) . *
-	cp ditroff.font/* $(PSLIBDIR)/ditroff.font
-	-cd $(PSLIBDIR)/ditroff.font; make ${MFLAGS} install
-	-cd $(PSLIBDIR)/ditroff.font; chown $(OWNER) . * ; chgrp $(GROUP) . *
+	cd troff.font; make ${MFLAGS} install
+	cd ditroff.font; make ${MFLAGS} install
 
 clean:
 	rm -f - *.BAK *.CKP .emacs_[0-9]*
