@@ -8,9 +8,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	6.19 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	6.20 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	6.19 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	6.20 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -229,6 +229,23 @@ udbexpand(a, sendq, e)
 					key.size, key.data, i);
 				return EX_TEMPFAIL;
 			}
+
+			/*
+			**  If this address has a -request address, reflect
+			**  it into the envelope.
+			*/
+
+			(void) strcpy(keybuf, a->q_user);
+			(void) strcat(keybuf, ":mailsender");
+			keylen = strlen(keybuf);
+			key.data = keybuf;
+			key.size = keylen;
+			i = (*up->udb_dbp->get)(up->udb_dbp, &key, &info, 0);
+			if (i != 0 || info.size <= 0)
+				break;
+			a->q_owner = xalloc(info.size + 1);
+			bcopy(info.data, a->q_owner, info.size);
+			a->q_owner[info.size] = '\0';
 			break;
 
 		  case UDB_REMOTE:
