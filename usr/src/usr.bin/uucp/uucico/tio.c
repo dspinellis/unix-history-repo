@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tio.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tio.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -32,6 +32,8 @@ struct tbuf {
 
 extern jmp_buf Failbuf;
 
+extern long Bytes_Sent, Bytes_Received;
+
 twrmsg(type, str, fn)
 char type;
 register char *str;
@@ -43,7 +45,7 @@ register char *str;
 	if(setjmp(Failbuf))
 		return FAIL;
 	signal(SIGALRM, pkfail);
-	alarm(MAXMSGTIME);
+	alarm(MAXMSGTIME*5);
 	bufr[0] = type;
 	s = &bufr[1];
 	while (*str)
@@ -69,7 +71,7 @@ register char *str;
 	if(setjmp(Failbuf))
 		return FAIL;
 	signal(SIGALRM, pkfail);
-	alarm(MAXMSGTIME);
+	alarm(MAXMSGTIME*5);
 	for (;;) {
 		len = read(fn, str, TPACKSIZE);
 		if (len == 0)
@@ -96,6 +98,7 @@ FILE *fp1;
 	struct timeb t1, t2;
 	long bytes;
 	char text[TBUFSIZE];
+	float ft;
 
 	if(setjmp(Failbuf))
 		return FAIL;
@@ -116,7 +119,7 @@ FILE *fp1;
 #endif !vax and !pdp11 and !ns32000
 		DEBUG(8,"twrdata sending %d bytes\n",len);
 		len += sizeof(long);
-		alarm(MAXMSGTIME);
+		alarm(MAXMSGTIME*5);
 		ret = twrblk((char *)&bufr, len, fn);
 		alarm(0);
 		if (ret != len)
@@ -126,7 +129,7 @@ FILE *fp1;
 	}
 	bufr.t_nbytes = 0;
 	len = sizeof(long);
-	alarm(MAXMSGTIME);
+	alarm(MAXMSGTIME*5);
 	ret = twrblk((char *)&bufr, len, fn);
 	alarm(0);
 	if (ret != len)
@@ -144,9 +147,11 @@ FILE *fp1;
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "sent data %ld bytes %ld.%02d secs",
-				bytes, (long)t2.time, mil/10);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(text, "sent data %ld bytes %.2f secs %ld bps",
+		bytes, ft, (long)((float)bytes*8./ft));
 	sysacct(bytes, t2.time);
+	Bytes_Sent += bytes;
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;
@@ -160,6 +165,7 @@ FILE *fp2;
 	struct timeb t1, t2;
 	int mil;
 	long bytes, Nbytes;
+	float ft;
 
 	if(setjmp(Failbuf))
 		return FAIL;
@@ -172,7 +178,7 @@ FILE *fp2;
 #endif !USG
 	bytes = 0L;
 	for (;;) {
-		alarm(MAXMSGTIME);
+		alarm(MAXMSGTIME*5);
 		len = trdblk((char *)&Nbytes,sizeof Nbytes,fn);
 		alarm(0);
 		if (len != sizeof Nbytes)
@@ -184,7 +190,7 @@ FILE *fp2;
 		nread = Nbytes;
 		if (nread == 0)
 			break;
-		alarm(MAXMSGTIME);
+		alarm(MAXMSGTIME*5);
 		len = trdblk(bufr, nread, fn);
 		alarm(0);
 		if (len < 0) {
@@ -210,9 +216,11 @@ FILE *fp2;
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(bufr, "received data %ld bytes %ld.%02d secs",
-				bytes, (long)t2.time, mil/10);
-	sysacct(bytes, t2.time - t1.time);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(bufr, "received data %ld bytes %.2f secs %ld bps",
+		bytes, ft, (long)((float)bytes*8./ft));
+	sysacct(bytes, t2.time);
+	Bytes_Received += bytes;
 	DEBUG(1, "%s\n", bufr);
 	syslog(bufr);
 	return SUCCESS;
