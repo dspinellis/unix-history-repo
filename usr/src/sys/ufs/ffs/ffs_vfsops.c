@@ -4,49 +4,49 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.56 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.57 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "proc.h"
-#include "kernel.h"
-#include "vnode.h"
-#include "specdev.h"
-#include "mount.h"
-#include "buf.h"
-#include "file.h"
-#include "disklabel.h"
-#include "ioctl.h"
-#include "errno.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
+#include <sys/specdev.h>
+#include <sys/mount.h>
+#include <sys/buf.h>
+#include <sys/file.h>
+#include <sys/disklabel.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
+#include <sys/malloc.h>
 #include "ioctl.h"
 #include "disklabel.h"
 #include "stat.h"
 
-#include "quota.h"
-#include "fs.h"
-#include "ufsmount.h"
-#include "inode.h"
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/ufsmount.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufs_extern.h>
+
+#include <ufs/ffs/fs.h>
+#include <ufs/ffs/ffs_extern.h>
+
+static int ffs_sbupdate __P((struct ufsmount *, int));
 
 struct vfsops ufs_vfsops = {
-	ufs_mount,
+	ffs_mount,
 	ufs_start,
-	ufs_unmount,
+	ffs_unmount,
 	ufs_root,
 	ufs_quotactl,
-	ufs_statfs,
-	ufs_sync,
+	ffs_statfs,
+	ffs_sync,
 	ufs_fhtovp,
 	ufs_vptofh,
-	ufs_init
+	ffs_init,
 };
-
-/*
- * Flag to allow forcible unmounting.
- */
-int doforce = 1;
 
 /*
  * Called by vfs_mountroot when ufs is going to be mounted as root.
@@ -55,30 +55,29 @@ int doforce = 1;
  */
 #define ROOTNAME	"root_device"
 
-ufs_mountroot()
+ffs_mountroot()
 {
-	register struct mount *mp;
 	extern struct vnode *rootvp;
+	register struct fs *fs;
+	register struct mount *mp;
 	struct proc *p = curproc;	/* XXX */
 	struct ufsmount *ump;
-	register struct fs *fs;
 	u_int size;
 	int error;
 
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
+	mp = malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
 	mp->mnt_op = &ufs_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
 	mp->mnt_exroot = 0;
 	mp->mnt_mounth = NULLVP;
-	error = mountfs(rootvp, mp, p);
-	if (error) {
-		free((caddr_t)mp, M_MOUNT);
+	if (error = ffs_mountfs(rootvp, mp, p)) {
+		free(mp, M_MOUNT);
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
-		(void)ufs_unmount(mp, 0, p);
-		free((caddr_t)mp, M_MOUNT);
+		(void)ffs_unmount(mp, 0, p);
+		free(mp, M_MOUNT);
 		return (error);
 	}
 	rootfs = mp;
@@ -94,7 +93,7 @@ ufs_mountroot()
 	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->mnt_stat, p);
+	(void)ffs_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	inittodr(fs->fs_time);
 	return (0);
@@ -105,7 +104,8 @@ ufs_mountroot()
  *
  * mount system call
  */
-ufs_mount(mp, path, data, ndp, p)
+static int
+ffs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
 	caddr_t data;
@@ -157,6 +157,7 @@ ufs_mount(mp, path, data, ndp, p)
 	if (error = namei(ndp, p))
 		return (error);
 	devvp = ndp->ni_vp;
+
 	if (devvp->v_type != VBLK) {
 		vrele(devvp);
 		return (ENOTBLK);
@@ -166,7 +167,7 @@ ufs_mount(mp, path, data, ndp, p)
 		return (ENXIO);
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0)
-		error = mountfs(devvp, mp, p);
+		error = ffs_mountfs(devvp, mp, p);
 	else {
 		if (devvp != ump->um_devvp)
 			error = EINVAL;	/* needs translation */
@@ -186,14 +187,15 @@ ufs_mount(mp, path, data, ndp, p)
 	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->mnt_stat, p);
+	(void)ffs_statfs(mp, &mp->mnt_stat, p);
 	return (0);
 }
 
 /*
  * Common code for mount and mountroot
  */
-mountfs(devvp, mp, p)
+int
+ffs_mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;
 	struct proc *p;
@@ -226,8 +228,8 @@ mountfs(devvp, mp, p)
 		error = EINVAL;		/* XXX needs translation */
 		goto out;
 	}
-	ump = (struct ufsmount *)malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
-	ump->um_fs = (struct fs *)malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
+	ump = malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
+	ump->um_fs = malloc((u_long)fs->fs_sbsize, M_SUPERBLK,
 	    M_WAITOK);
 	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)ump->um_fs,
 	   (u_int)fs->fs_sbsize);
@@ -271,7 +273,7 @@ mountfs(devvp, mp, p)
 		fs->fs_dbsize = size;
 	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
-	base = space = (caddr_t)malloc((u_long)fs->fs_cssize, M_SUPERBLK,
+	base = space = malloc((u_long)fs->fs_cssize, M_SUPERBLK,
 	    M_WAITOK);
 	for (i = 0; i < blks; i += fs->fs_frag) {
 		size = fs->fs_bsize;
@@ -284,7 +286,7 @@ mountfs(devvp, mp, p)
 		error = bread(devvp, fsbtodb(fs, fs->fs_csaddr + i), size,
 			NOCRED, &bp);
 		if (error) {
-			free((caddr_t)base, M_SUPERBLK);
+			free(base, M_SUPERBLK);
 			goto out;
 		}
 		bcopy((caddr_t)bp->b_un.b_addr, space, (u_int)size);
@@ -302,6 +304,18 @@ mountfs(devvp, mp, p)
 	ump->um_devvp = devvp;
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
+
+	/* Initialize UFS glue. */
+	ump->um_blkatoff = ffs_blkatoff;
+	ump->um_write = ffs_write;
+	ump->um_iget = ffs_iget;
+	ump->um_ialloc = ffs_ialloc;
+	ump->um_ifree = ffs_ifree;
+	ump->um_itrunc = ffs_itrunc;
+	ump->um_iupdat = ffs_iupdat;
+	ump->um_bwrite = bwrite;
+	ump->um_bmap = ffs_bmap;
+
 	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
@@ -317,35 +331,23 @@ out:
 	if (needclose)
 		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
-		free((caddr_t)ump->um_fs, M_SUPERBLK);
-		free((caddr_t)ump, M_UFSMNT);
+		free(ump->um_fs, M_SUPERBLK);
+		free(ump, M_UFSMNT);
 		mp->mnt_data = (qaddr_t)0;
 	}
 	return (error);
 }
 
 /*
- * Make a filesystem operational.
- * Nothing to do at the moment.
- */
-/* ARGSUSED */
-ufs_start(mp, flags, p)
-	struct mount *mp;
-	int flags;
-	struct proc *p;
-{
-
-	return (0);
-}
-
-/*
  * unmount system call
  */
-ufs_unmount(mp, mntflags, p)
+int
+ffs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
 	struct proc *p;
 {
+	extern int doforce;
 	register struct ufsmount *ump;
 	register struct fs *fs;
 	int i, error, ronly, flags = 0;
@@ -379,108 +381,10 @@ ufs_unmount(mp, mntflags, p)
 		return (error);
 	fs = ump->um_fs;
 	ronly = !fs->fs_ronly;
-	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
-	irele(ip);
-	return (error);
-}
-
-/*
- * Return root of a filesystem
- */
-ufs_root(mp, vpp)
-	struct mount *mp;
-	struct vnode **vpp;
-{
-	register struct inode *ip;
-	struct inode *nip;
-	struct vnode tvp;
-	int error;
-
-	tvp.v_mount = mp;
-	ip = VTOI(&tvp);
-	ip->i_vnode = &tvp;
-	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	error = iget(ip, (ino_t)ROOTINO, &nip);
-	if (error)
-		return (error);
-	*vpp = ITOV(nip);
-	return (0);
-}
-
-/*
- * Do operations associated with quotas
- */
-ufs_quotactl(mp, cmds, uid, arg, p)
-	struct mount *mp;
-	int cmds;
-	uid_t uid;
-	caddr_t arg;
-	struct proc *p;
-{
-	struct ufsmount *ump = VFSTOUFS(mp);
-	int cmd, type, error;
-
-#ifndef QUOTA
-	return (EOPNOTSUPP);
-#else
-	if (uid == -1)
-		uid = p->p_cred->p_ruid;
-	cmd = cmds >> SUBCMDSHIFT;
-
-	switch (cmd) {
-	case Q_GETQUOTA:
-	case Q_SYNC:
-		if (uid == p->p_cred->p_ruid)
-			break;
-		/* fall through */
-	default:
-		if (error = suser(p->p_ucred, &p->p_acflag))
-			return (error);
-	}
-
-	type = cmd & SUBCMDMASK;
-	if ((u_int)type >= MAXQUOTAS)
-		return (EINVAL);
-
-	switch (cmd) {
-
-	case Q_QUOTAON:
-		return (quotaon(p, mp, type, arg));
-
-	case Q_QUOTAOFF:
-		if (vfs_busy(mp))
-			return (0);
-		error = quotaoff(p, mp, type);
-		vfs_unbusy(mp);
-		return (error);
-
-	case Q_SETQUOTA:
-		return (setquota(mp, uid, type, arg));
-
-	case Q_SETUSE:
-		return (setuse(mp, uid, type, arg));
-
-	case Q_GETQUOTA:
-		return (getquota(mp, uid, type, arg));
-
-	case Q_SYNC:
-		if (vfs_busy(mp))
-			return (0);
-		error = qsync(mp);
-		vfs_unbusy(mp);
-		return (error);
-
-	default:
-		return (EINVAL);
-	}
-	/* NOTREACHED */
-#endif
-}
-
-/*
  * Get file system statistics.
  */
-ufs_statfs(mp, sbp, p)
+int
+ffs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
 	struct proc *p;
@@ -491,7 +395,7 @@ ufs_statfs(mp, sbp, p)
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	if (fs->fs_magic != FS_MAGIC)
-		panic("ufs_statfs");
+		panic("ffs_statfs");
 	sbp->f_type = MOUNT_UFS;
 	sbp->f_fsize = fs->fs_fsize;
 	sbp->f_bsize = fs->fs_bsize;
@@ -511,8 +415,6 @@ ufs_statfs(mp, sbp, p)
 	return (0);
 }
 
-int	syncprt = 0;
-
 /*
  * Go through the disk queues to initiate sandbagged IO;
  * go through the inodes to write those that have been modified;
@@ -520,10 +422,12 @@ int	syncprt = 0;
  *
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
-ufs_sync(mp, waitfor)
+int
+ffs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
+	extern int syncprt;
 	register struct vnode *vp;
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
@@ -531,7 +435,7 @@ ufs_sync(mp, waitfor)
 	int error, allerror = 0;
 
 	if (syncprt)
-		bufstats();
+		ufs_bufstats();
 	fs = ump->um_fs;
 	/*
 	 * Write back modified superblock.
@@ -545,7 +449,7 @@ ufs_sync(mp, waitfor)
 		}
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
-		allerror = sbupdate(ump, waitfor);
+		allerror = ffs_sbupdate(ump, waitfor);
 	}
 	/*
 	 * Write back each (modified) inode.
@@ -569,7 +473,7 @@ loop:
 		if (vp->v_dirtyblkhd)
 			vflushbuf(vp, 0);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
-		    (error = iupdat(ip, &time, &time, 0)))
+		    (error = ffs_iupdat(ip, &time, &time, 0)))
 			allerror = error;
 		vput(vp);
 	}
@@ -586,7 +490,8 @@ loop:
 /*
  * Write a superblock and associated information back to disk.
  */
-sbupdate(mp, waitfor)
+static int
+ffs_sbupdate(mp, waitfor)
 	struct ufsmount *mp;
 	int waitfor;
 {
@@ -637,103 +542,4 @@ sbupdate(mp, waitfor)
 			bawrite(bp);
 	}
 	return (error);
-}
-
-/*
- * Print out statistics on the current allocation of the buffer pool.
- * Can be enabled to print out on every ``sync'' by setting "syncprt"
- * above.
- */
-bufstats()
-{
-	int s, i, j, count;
-	register struct buf *bp, *dp;
-	int counts[MAXBSIZE/CLBYTES+1];
-	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
-
-	for (bp = bfreelist, i = 0; bp < &bfreelist[BQUEUES]; bp++, i++) {
-		count = 0;
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			counts[j] = 0;
-		s = splbio();
-		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
-			counts[dp->b_bufsize/CLBYTES]++;
-			count++;
-		}
-		splx(s);
-		printf("%s: total-%d", bname[i], count);
-		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
-			if (counts[j] != 0)
-				printf(", %d-%d", j * CLBYTES, counts[j]);
-		printf("\n");
-	}
-}
-
-/*
- * File handle to vnode
- *
- * Have to be really careful about stale file handles:
- * - check that the inode number is in range
- * - call iget() to get the locked inode
- * - check for an unallocated inode (i_mode == 0)
- * - check that the generation number matches
- */
-ufs_fhtovp(mp, fhp, vpp)
-	register struct mount *mp;
-	struct fid *fhp;
-	struct vnode **vpp;
-{
-	register struct ufid *ufhp;
-	register struct fs *fs;
-	register struct inode *ip;
-	struct inode *nip;
-	struct vnode tvp;
-	int error;
-
-	ufhp = (struct ufid *)fhp;
-	fs = VFSTOUFS(mp)->um_fs;
-	if (ufhp->ufid_ino < ROOTINO ||
-	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg) {
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-	tvp.v_mount = mp;
-	ip = VTOI(&tvp);
-	ip->i_vnode = &tvp;
-	ip->i_dev = VFSTOUFS(mp)->um_dev;
-	if (error = iget(ip, ufhp->ufid_ino, &nip)) {
-		*vpp = NULLVP;
-		return (error);
-	}
-	ip = nip;
-	if (ip->i_mode == 0) {
-		iput(ip);
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-	if (ip->i_gen != ufhp->ufid_gen) {
-		iput(ip);
-		*vpp = NULLVP;
-		return (EINVAL);
-	}
-	*vpp = ITOV(ip);
-	return (0);
-}
-
-/*
- * Vnode pointer to File handle
- */
-/* ARGSUSED */
-ufs_vptofh(vp, fhp)
-	struct vnode *vp;
-	struct fid *fhp;
-{
-	register struct inode *ip = VTOI(vp);
-	register struct ufid *ufhp;
-
-	ufhp = (struct ufid *)fhp;
-	ufhp->ufid_len = sizeof(struct ufid);
-	ufhp->ufid_ino = ip->i_number;
-	ufhp->ufid_gen = ip->i_gen;
-	return (0);
 }
