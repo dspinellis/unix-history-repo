@@ -1,14 +1,15 @@
-/*	defs.h	4.3	82/03/30	*/
+/*	defs.h	4.3	82/12/19	*/
 
 /*
  * adb - vax string table version; common definitions
  */
+#include <machine/psl.h>
+#include <machine/pte.h>
 
 #include <sys/param.h>
 #include <sys/dir.h>
-#include <sys/psl.h>
-#include <sys/pte.h>
 #include <sys/user.h>
+
 #include <ctype.h>
 #include <a.out.h>
 
