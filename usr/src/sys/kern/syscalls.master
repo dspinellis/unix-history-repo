@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.4 (Berkeley) %G%
+	@(#)syscalls.master	7.5 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -42,7 +42,7 @@
 15	STD	2 chmod
 16	STD	3 chown
 17	STD	1 obreak
-18	OBSOL	0 stat
+18	STD	2 getfsstat
 19	STD	3 lseek
 20	STD	0 getpid
 21	STD	4 mount
