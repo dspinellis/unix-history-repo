@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.11 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include "sys/param.h"
@@ -196,7 +196,7 @@ register char *	name;
 	*/
 	tzname[0] = tzname[1] = &s.chars[0];
 #ifdef USG_COMPAT
-	timezone = s.ttis[0].tt_gmtoff;
+	timezone = -s.ttis[0].tt_gmtoff;
 	daylight = 0;
 #endif /* USG_COMPAT */
 	for (i = 1; i < s.typecnt; ++i) {
@@ -211,7 +211,7 @@ register char *	name;
 		} else {
 			tzname[0] = &s.chars[ttisp->tt_abbrind];
 #ifdef USG_COMPAT
-			timezone = ttisp->tt_gmtoff;
+			timezone = -ttisp->tt_gmtoff;
 #endif /* USG_COMPAT */ 
 		}
 	}
