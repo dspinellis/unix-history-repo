@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)inetd.c	5.30 (Berkeley) 6/3/91";*/
-static char rcsid[] = "$Id: inetd.c,v 1.3 1993/08/01 17:59:33 mycroft Exp $";
+static char rcsid[] = "$Id: inetd.c,v 1.2 1993/09/23 17:31:38 jtc Exp $";
 #endif /* not lint */
 
 /*
@@ -672,7 +672,10 @@ more:
 		;
 	if (cp == NULL)
 		return ((struct servtab *)0);
-	sep->se_service = newstr(skip(&cp));
+	arg = skip(&cp);
+	if (arg == NULL)
+		goto more;
+	sep->se_service = newstr(arg);
 	arg = skip(&cp);
 	if (strcmp(arg, "stream") == 0)
 		sep->se_socktype = SOCK_STREAM;
