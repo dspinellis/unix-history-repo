@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.5		%G%);
+SCCSID(@(#)main.c	4.6		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -71,7 +71,7 @@ main(argc, argv, envp)
 	typedef int (*fnptr)();
 	STAB *st;
 	register int i;
-	bool readconfig = FALSE;
+	bool readconfig = TRUE;
 	bool safecf = TRUE;		/* this conf file is sys default */
 	bool queuemode = FALSE;		/* process queue requests */
 	static bool reenter = FALSE;
@@ -163,22 +163,25 @@ main(argc, argv, envp)
 	errno = 0;
 	from = NULL;
 
-	/* initialize some macros, etc. */
-	initmacros();
-
-	/* hostname */
-	av = myhostname(jbuf, sizeof jbuf);
-	if (jbuf[0] != '\0')
+	if (readconfig)
 	{
-		p = newstr(jbuf);
-		define('w', p, CurEnv);
-		setclass('w', p);
-	}
-	while (av != NULL && *av != NULL)
-		setclass('w', *av++);
+		/* initialize some macros, etc. */
+		initmacros();
 
-	/* version */
-	define('v', Version, CurEnv);
+		/* hostname */
+		av = myhostname(jbuf, sizeof jbuf);
+		if (jbuf[0] != '\0')
+		{
+			p = newstr(jbuf);
+			define('w', p, CurEnv);
+			setclass('w', p);
+		}
+		while (av != NULL && *av != NULL)
+			setclass('w', *av++);
+
+		/* version */
+		define('v', Version, CurEnv);
+	}
 
 	/* current time */
 	define('b', arpadate((char *) NULL), CurEnv);
