@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.6 (Berkeley) 83/08/16";
+static char *sccsid = "@(#)quot.c	4.7 (Berkeley) 83/08/16";
 #endif
 
 /*
@@ -155,8 +155,8 @@ check(file)
 	for (ino = 0; ino < nfiles; ) {
 		iblk = fsbtodb(&sblock, itod(&sblock, ino));
 		bread(fd, iblk, (char *)itab, sblock.fs_bsize);
-		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++) {
-			if (ino++ < ROOTINO)
+		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++, ino++) {
+			if (ino < ROOTINO)
 				continue;
 			acct(&itab[j]);
 		}
