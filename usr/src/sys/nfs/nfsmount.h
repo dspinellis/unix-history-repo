@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	8.1 (Berkeley) %G%
+ *	@(#)nfsmount.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -37,8 +37,7 @@ struct	nfsmount {
 	int	nm_wsize;		/* Max size of write rpc */
 	int	nm_readahead;		/* Num. of blocks to readahead */
 	int	nm_leaseterm;		/* Term (sec) for NQNFS lease */
-	struct nfsnode *nm_tnext;	/* Head of lease timer queue */
-	struct nfsnode *nm_tprev;
+	CIRCLEQ_HEAD(nfsnodes, nfsnode) nm_timerhead; /* Lease timer queue */
 	struct vnode *nm_inprog;	/* Vnode in prog by nqnfs_clientd() */
 	uid_t	nm_authuid;		/* Uid for authenticator */
 	int	nm_authtype;		/* Authenticator type */

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs.h	8.1 (Berkeley) %G%
+ *	@(#)nfs.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -145,8 +145,7 @@ struct nfsstats {
  * Nfs outstanding request list element
  */
 struct nfsreq {
-	struct nfsreq	*r_next;
-	struct nfsreq	*r_prev;
+	TAILQ_ENTRY(nfsreq) r_chain;
 	struct mbuf	*r_mreq;
 	struct mbuf	*r_mrep;
 	struct mbuf	*r_md;
@@ -162,6 +161,11 @@ struct nfsreq {
 	int		r_rtt;		/* RTT for rpc */
 	struct proc	*r_procp;	/* Proc that did I/O system call */
 };
+
+/*
+ * Queue head for nfsreq's
+ */
+TAILQ_HEAD(nfsreqs, nfsreq) nfs_reqq;
 
 /* Flag values for r_flags */
 #define R_TIMING	0x01		/* timing request (in mntp) */
@@ -182,7 +186,8 @@ struct nfsstats nfsstats;
  * and uid hash lists.
  */
 #define	NUIDHASHSIZ	32
-#define	NUIDHASH(uid)	((uid) & (NUIDHASHSIZ - 1))
+#define	NUIDHASH(sock, uid) \
+	(&(sock)->ns_uidhashtbl[(uid) & (sock)->ns_uidhash])
 
 /*
  * Network address hash list element
@@ -193,10 +198,8 @@ union nethostaddr {
 };
 
 struct nfsuid {
-	struct nfsuid	*nu_lrunext;	/* MUST be first */
-	struct nfsuid	*nu_lruprev;
-	struct nfsuid	*nu_hnext;
-	struct nfsuid	*nu_hprev;
+	TAILQ_ENTRY(nfsuid) nu_lru;	/* LRU chain */
+	LIST_ENTRY(nfsuid) nu_hash;	/* Hash list */
 	int		nu_flag;	/* Flags */
 	uid_t		nu_uid;		/* Uid mapped by this entry */
 	union nethostaddr nu_haddr;	/* Host addr. for dgram sockets */
@@ -209,10 +212,11 @@ struct nfsuid {
 #define	NU_INETADDR	0x1
 
 struct nfssvc_sock {
-	struct nfsuid	*ns_lrunext;	/* MUST be first */
-	struct nfsuid	*ns_lruprev;
-	struct nfssvc_sock *ns_next;
-	struct nfssvc_sock *ns_prev;
+	TAILQ_ENTRY(nfssvc_sock) ns_chain;	/* List of all nfssvc_sock's */
+	TAILQ_HEAD(nfsuidlru, nfsuid) ns_uidlruhead;
+	LIST_HEAD(nfsuidhash, nfsuid) *ns_uidhashtbl;
+	u_long		ns_uidhash;
+
 	int		ns_flag;
 	u_long		ns_sref;
 	struct file	*ns_fp;
@@ -226,7 +230,6 @@ struct nfssvc_sock {
 	struct mbuf	*ns_rec;
 	struct mbuf	*ns_recend;
 	int		ns_numuids;
-	struct nfsuid	*ns_uidh[NUIDHASHSIZ];
 };
 
 /* Bits for "ns_flag" */
@@ -235,17 +238,18 @@ struct nfssvc_sock {
 #define	SLP_NEEDQ	0x04
 #define	SLP_DISCONN	0x08
 #define	SLP_GETSTREAM	0x10
-#define	SLP_INIT	0x20
-#define	SLP_WANTINIT	0x40
-
 #define SLP_ALLFLAGS	0xff
+
+TAILQ_HEAD(nfssvc_socks, nfssvc_sock) nfssvc_sockhead;
+int nfssvc_sockhead_flag;
+#define	SLP_INIT	0x01
+#define	SLP_WANTINIT	0x02
 
 /*
  * One of these structures is allocated for each nfsd.
  */
 struct nfsd {
-	struct nfsd	*nd_next;	/* Must be first */
-	struct nfsd	*nd_prev;
+	TAILQ_ENTRY(nfsd) nd_chain;	/* List of all nfsd's */
 	int		nd_flag;	/* NFSD_ flags */
 	struct nfssvc_sock *nd_slp;	/* Current socket */
 	struct mbuf	*nd_nam;	/* Client addr for datagram req. */
@@ -263,9 +267,14 @@ struct nfsd {
 	struct proc	*nd_procp;	/* Proc ptr */
 };
 
+/* Bits for "nd_flag" */
 #define	NFSD_WAITING	0x01
-#define	NFSD_CHECKSLP	0x02
-#define	NFSD_REQINPROG	0x04
-#define	NFSD_NEEDAUTH	0x08
-#define	NFSD_AUTHFAIL	0x10
+#define	NFSD_REQINPROG	0x02
+#define	NFSD_NEEDAUTH	0x04
+#define	NFSD_AUTHFAIL	0x08
+
+TAILQ_HEAD(nfsds, nfsd) nfsd_head;
+int nfsd_head_flag;
+#define	NFSD_CHECKSLP	0x01
+
 #endif	/* KERNEL */
