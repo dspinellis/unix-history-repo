@@ -1,4 +1,4 @@
-#	Makefile	4.3	85/05/21
+#	Makefile	4.4	85/12/13
 #
 # Possible options:
 #	make		compile source for terminal tables below
@@ -45,7 +45,7 @@ install:
 	done
 	-if test ! -f ${DEST}/tabtn300; \
 	then \
-		make links; \
+		make DESTDIR=${DESTDIR} links; \
 	fi
 	install -c -m 644 README ${DEST}/README
 
