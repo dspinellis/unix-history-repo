@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	7.2 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.2.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,9 @@
 #include "mount.h"
 #include "file.h"
 #include "conf.h"
+#include "ioctl.h"
+#include "disklabel.h"
+#include "stat.h"
 
 smount()
 {
@@ -68,25 +71,48 @@ mountfs(dev, ronly, ip)
 	struct buf *tp = 0;
 	register struct buf *bp = 0;
 	register struct fs *fs;
-	int blks;
+	struct partinfo dpart;
+	int havepart = 0, blks;
 	caddr_t space;
 	int i, size;
 	register error;
 	int needclose = 0;
 
 	error =
-	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE);
+	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE,
+	        S_IFBLK);
 	if (error)
 		goto out;
 	needclose = 1;
+#ifdef SECSIZE
+	/*
+	 * If possible, determine hardware sector size
+	 * and adjust fsbtodb to correspond.
+	 */
+#endif SECSIZE
+	if ((*bdevsw[major(dev)].d_ioctl)(dev, DIOCGPART,
+	    (caddr_t)&dpart, FREAD) == 0) {
+		havepart = 1;
+		size = dpart.disklab->d_secsize;
+#ifdef SECSIZE
+		if (size < MINSECSIZE) {
+			error = EINVAL;
+			goto out;
+		}
+#endif SECSIZE
+	} else
+		size = DEV_BSIZE;
+#ifdef SECSIZE
+	tp = bread(dev, (daddr_t)(SBOFF / size), SBSIZE, size);
+#else SECSIZE
 	tp = bread(dev, SBLOCK, SBSIZE);
+#endif SECSIZE
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
 		if (mp->m_bufp != 0 && dev == mp->m_dev) {
 			mp = 0;
 			error = EBUSY;
-			needclose = 0;
 			goto out;
 		}
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -99,8 +125,8 @@ found:
 	mp->m_bufp = tp;	/* just to reserve this slot */
 	mp->m_dev = NODEV;
 	fs = tp->b_un.b_fs;
-	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE
-	    || fs->fs_bsize < sizeof(struct fs)) {
+	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
+	    fs->fs_bsize < sizeof(struct fs)) {
 		error = EINVAL;		/* also needs translation */
 		goto out;
 	}
@@ -114,6 +140,31 @@ found:
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
+#ifdef SECSIZE
+	/*
+	 * If we have a disk label, force per-partition
+	 * filesystem information to be correct
+	 * and set correct current fsbtodb shift.
+	 */
+#endif SECSIZE
+	if (havepart) {
+		dpart.part->p_fstype = FS_BSDFFS;
+		dpart.part->p_fsize = fs->fs_fsize;
+		dpart.part->p_frag = fs->fs_frag;
+#ifdef SECSIZE
+#ifdef tahoe
+		/*
+		 * Save the original fsbtodb shift to restore on updates.
+		 * (Console doesn't understand fsbtodb changes.)
+		 */
+		fs->fs_sparecon[0] = fs->fs_fsbtodb;
+#endif
+		i = fs->fs_fsize / size;
+		for (fs->fs_fsbtodb = 0; i > 1; i >>= 1)
+			fs->fs_fsbtodb++;
+#endif SECSIZE
+		fs->fs_dbsize = size;
+	}
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
 	space = wmemall(vmemall, (int)fs->fs_cssize);
 	if (space == 0) {
@@ -124,7 +175,12 @@ found:
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
+#ifdef SECSIZE
+		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size,
+		    fs->fs_dbsize);
+#else SECSIZE
 		tp = bread(dev, fsbtodb(fs, fs->fs_csaddr + i), size);
+#endif SECSIZE
 		if (tp->b_flags&B_ERROR) {
 			wmemfree(space, (int)fs->fs_cssize);
 			goto out;
@@ -145,10 +201,14 @@ found:
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
 	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
+
 	return (fs);
 out:
 	if (error == 0)
 		error = EIO;
+	if (needclose)
+		(void) closei((dev_t)ip->i_rdev, IFBLK,
+		    ronly? FREAD : FREAD|FWRITE);
 	if (ip)
 		iput(ip);
 	if (mp)
@@ -157,10 +217,6 @@ out:
 		brelse(bp);
 	if (tp)
 		brelse(tp);
-	if (needclose) {
-		(*bdevsw[major(dev)].d_close)(dev, ronly? FREAD : FREAD|FWRITE);
-		binval(dev);
-	}
 	u.u_error = error;
 	return (0);
 }
@@ -180,10 +236,11 @@ unmount1(fname, forcibly)
 {
 	dev_t dev;
 	register struct mount *mp;
-	int stillopen, flag, error;
+	int error;
 	register struct inode *ip;
 	register struct fs *fs;
 
+	forcibly = 0;					/* XXX */
 	error = getmdev(&dev, fname);
 	if (error)
 		return (error);
@@ -196,36 +253,30 @@ found:
 	nchinval(dev);	/* flush the name cache */
 	update();
 #ifdef QUOTA
-	if ((stillopen = iflush(dev, mp->m_qinod)) < 0 && !forcibly)
+	if ((error = iflush(dev, mp->m_qinod)) && !forcibly)
 #else
-	if ((stillopen = iflush(dev)) < 0 && !forcibly)
+	if ((error = iflush(dev)) && !forcibly)
 #endif
-		return (EBUSY);
-	if (stillopen < 0)
-		return (EBUSY);			/* XXX */
+		return (error);
 #ifdef QUOTA
 	closedq(mp);
 	/*
 	 * Here we have to iflush again to get rid of the quota inode.
-	 * A drag, but it would be ugly to cheat, & this doesn't happen often
+	 * A drag, but it would be ugly to cheat, & this doesn't happen often.
 	 */
 	(void)iflush(dev, (struct inode *)NULL);
 #endif
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
-	irele(ip);
 	fs = mp->m_bufp->b_un.b_fs;
 	wmemfree((caddr_t)fs->fs_csp[0], (int)fs->fs_cssize);
-	flag = !fs->fs_ronly;
 	brelse(mp->m_bufp);
 	mp->m_bufp = 0;
 	mp->m_dev = 0;
 	mpurge(mp - &mount[0]);
-	if (!stillopen) {
-		(*bdevsw[major(dev)].d_close)(dev, flag);
-		binval(dev);
-	}
-	return (0);
+	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
+	irele(ip);
+	return (error);
 }
 
 sbupdate(mp)
@@ -237,8 +288,20 @@ sbupdate(mp)
 	caddr_t space;
 	int i, size;
 
+#ifdef SECSIZE
+	bp = getblk(mp->m_dev, (daddr_t)fsbtodb(fs, SBOFF / fs->fs_fsize),
+	    (int)fs->fs_sbsize, fs->fs_dbsize);
+#else SECSIZE
 	bp = getblk(mp->m_dev, SBLOCK, (int)fs->fs_sbsize);
+#endif SECSIZE
 	bcopy((caddr_t)fs, bp->b_un.b_addr, (u_int)fs->fs_sbsize);
+#ifdef SECSIZE
+#ifdef tahoe
+	/* restore standard fsbtodb shift */
+	bp->b_un.b_fs->fs_fsbtodb = fs->fs_sparecon[0];
+	bp->b_un.b_fs->fs_sparecon[0] = 0;
+#endif
+#endif SECSIZE
 	bwrite(bp);
 	blks = howmany(fs->fs_cssize, fs->fs_fsize);
 	space = (caddr_t)fs->fs_csp[0];
@@ -246,7 +309,12 @@ sbupdate(mp)
 		size = fs->fs_bsize;
 		if (i + fs->fs_frag > blks)
 			size = (blks - i) * fs->fs_fsize;
+#ifdef SECSIZE
+		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size,
+		    fs->fs_dbsize);
+#else SECSIZE
 		bp = getblk(mp->m_dev, fsbtodb(fs, fs->fs_csaddr + i), size);
+#endif SECSIZE
 		bcopy(space, bp->b_un.b_addr, (u_int)size);
 		space += size;
 		bwrite(bp);
