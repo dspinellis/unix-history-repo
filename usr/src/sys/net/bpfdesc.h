@@ -63,18 +63,10 @@ struct bpf_d {
  * Descriptor associated with each attached hardware interface.
  */
 struct bpf_if {
-	/* List of descriptors listening on this interface. */
-	struct bpf_d *bif_dlist;
-
-	/* Pointer to the device driver's softc bpf field. */
-	struct bpf_if **bif_driverp;
-
-	/* Device parameters, see bpf.h. */
-	struct bpf_devp bif_devp;
-
-	/* Length of bpf header (bpf_hdr + padding). */
-	u_int bif_hdrlen;
-
-	/* 'ifnet' of associated interface. */
-	struct ifnet *bif_ifp;
+	struct bpf_if *bif_next;	/* list of all interfaces */
+	struct bpf_d *bif_dlist;	/* descriptor list */
+	struct bpf_if **bif_driverp;	/* pointer into softc */
+	u_int bif_dlt;			/* link layer type */
+	u_int bif_hdrlen;		/* length of header (with padding) */
+	struct ifnet *bif_ifp;		/* correspoding interface */
 };
