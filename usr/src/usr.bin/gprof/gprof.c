@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "gprof.h"
@@ -78,6 +78,11 @@ main(argc, argv)
 	case 'f':
 	    addlist( flist , *++argv );
 	    fflag = TRUE;
+	    break;
+	case 'k':
+	    addlist( kfromlist , *++argv );
+	    addlist( ktolist , *++argv );
+	    kflag = TRUE;
 	    break;
 	case 's':
 	    sflag = TRUE;
@@ -386,6 +391,11 @@ tally( rawp )
 
     parentp = nllookup( rawp -> raw_frompc );
     childp = nllookup( rawp -> raw_selfpc );
+    if ( kflag
+	 && onlist( kfromlist , parentp -> name )
+	 && onlist( ktolist , childp -> name ) ) {
+	return;
+    }
     childp -> ncall += rawp -> raw_count;
 #   ifdef DEBUG
 	if ( debug & TALLYDEBUG ) {
