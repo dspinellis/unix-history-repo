@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: st.c 1.11 92/01/21$
  *
- *      @(#)st.c	8.1 (Berkeley) %G%
+ *      @(#)st.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -402,6 +402,11 @@ stopen(dev, flag, type, p)
 	if (sc->sc_flags & STF_OPEN)
 		return(EBUSY);
 
+	/*
+	 * Be prepared to print error messages
+	 */
+	sc->sc_ctty = tprintf_open(p);
+
 	/* do a mode sense to get current */
 	modlen = sc->sc_datalen[CMD_MODE_SENSE];
 	modsense.cdb[4] = modlen;
@@ -630,7 +635,6 @@ retryselect:
 		return(EACCES);
 	}
 
-	sc->sc_ctty = tprintf_open(p);
 	/* save total number of blocks on tape */
 	sc->sc_numblks = mode.md.numblk2 << 16 |
 			 mode.md.numblk1 << 8 |
