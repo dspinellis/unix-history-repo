@@ -3,10 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.5	(Berkeley)	%G%
+#	@(#)Makefile	1.6	(Berkeley)	%G%
 #
 CFLAGS=	-O
-CFLAGS=	-g
 LIBC=	/lib/libc.a
 SRCS=	commands.c main.c network.c ring.c sys_bsd.c sys_dos.c \
 	telnet.c terminal.c tn3270.c utilities.c
