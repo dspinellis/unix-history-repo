@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1988, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)hostname.1	6.7 (Berkeley) %G%
+.\"	@(#)hostname.1	6.8 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt HOSTNAME 1
 .Os BSD 4.2
@@ -27,13 +25,15 @@ normally run at boot
 time.
 .Pp
 Options:
-.Tw Ds
-.Tp Fl s
+.Bl -tag -width flag
+.It Fl s
 Trims off any domain information from the printed
 name.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr gethostname 2
 .Sh HISTORY
-.Nm Hostname
-appeared in 4.2 BSD.
+The
+.Nm hostname
+command appeared in
+.Bx 4.2 .

@@ -4,11 +4,10 @@
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mv.1	6.8 (Berkeley) %G%
+.\"	@(#)mv.1	6.9 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt MV 1
 .Os
@@ -17,12 +16,11 @@
 .Nd move files
 .Sh SYNOPSIS
 .Nm mv
-.Op Fl f Li \&| Fl i
+.Op Fl f | Fl i
 .Ar source target
 .Nm mv
-.Op  Fl f Li \&| Fl i
+.Op  Fl f | Fl i
 .Ar source ... source directory
-.De
 .Sh DESCRIPTION
 .Pp
 In its first form, the
@@ -47,8 +45,8 @@ concatenation of the last operand, a slash, and the final pathname
 component of the named file.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl f
+.Bl -tag -width flag
+.It Fl f
 Do not prompt for confirmation before overwriting the destination
 path.
 (The
@@ -56,14 +54,14 @@ path.
 option is ignored if the
 .Fl f
 option is specified.)
-.Tp Fl i
+.It Fl i
 Causes
 .Nm mv
 to write a prompt to standard error before moving a file that would
 overwrite an existing file.
 If the response from the standard input begins with the character ``y'',
 the move is attempted.
-.Tp
+.El
 .Pp
 It is an error for either the
 .Ar source
@@ -85,12 +83,11 @@ and
 .Xr rm 1
 to accomplish the move.
 The effect is equivalent to:
-.Pp
-.Ds I
+.Bd -literal -offset indent
 rm -f destination_path && \e
 \tcp -pr source_file destination && \e
 \trm -rf source_file
-.De
+.Ed
 .Pp
 The
 .Nm mv
@@ -100,4 +97,6 @@ utility exits 0 on success, and >0 if an error occurs.
 .Sh STANDARDS
 The
 .Nm mv
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be
+.St -p1003.2
+compatible.
