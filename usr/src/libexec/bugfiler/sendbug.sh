@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sendbug.sh	5.10 (Berkeley) %G%
+#	@(#)sendbug.sh	5.11 (Berkeley) %G%
 #
 
 # create a bug report and mail it to '4bsd-bugs'.
@@ -23,6 +23,7 @@ FORMAT=/usr/share/misc/bugformat
 trap 'rm -f $TEMP ; exit 1' 1 2 3 13 15
 
 cp $FORMAT $TEMP
+chmod u+w $TEMP
 if $EDITOR $TEMP
 then
 	if cmp -s $FORMAT $TEMP
