@@ -1,4 +1,4 @@
-/*	tm.c	4.10	%G%	*/
+/*	tm.c	4.11	%G%	*/
 
 #include "tm.h"
 #if NTM > 0
@@ -23,15 +23,15 @@
 
 #include "../h/tmreg.h"
 
-struct	buf	tmtab;
 struct	buf	ctmbuf;
 struct	buf	rtmbuf;
 
 int	tmcntrlr(), tmslave(), tmdgo(), tmintr();
-struct	uba_dinfo *tminfo[NTM];
-extern	u_short	tmstd[];
+struct	uba_dinfo *tmdinfo[NTM];
+struct	uba_minfo *tmminfo[NTM];
+u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
-	{ tmcntrlr, tmslave, tmdgo, 4, 0, tmstd, "tm", tminfo };
+	{ tmcntrlr, tmslave, tmdgo, 0, tmstd, "tm", tmdinfo, tmminfo };
 int	tm_ubinfo;
 
 /* bits in minor device */
@@ -67,31 +67,32 @@ short	t_resid;
  * Determine if there is a controller for
  * a tm at address reg.  Our goal is to make the
  * device interrupt.
- * THE ARGUMENT UI IS OBSOLETE
  */
-tmcntrlr(ui, reg)
-	struct uba_dinfo *ui;
+tmcntrlr(um, reg)
+	struct uba_minfo *um;
 	caddr_t reg;
 {
+	register int br, cvec;
 
 	((struct device *)reg)->tmcs = IENABLE;
 	/*
 	 * If this is a tm03/tc11, it ought to have interrupted
 	 * by now, if it isn't (ie: it is a ts04) then we just
-	 * pray that it didn't interrupt, so autoconf will ignore it
-	 * - just in case out prayers fail, we will reference one
+	 * hope that it didn't interrupt, so autoconf will ignore it.
+	 * Just in case, we will reference one
 	 * of the more distant registers, and hope for a machine
-	 * check, or similar disaster
+	 * check, or similar disaster if this is a ts.
 	 */
 	if (badaddr(&((struct device *)reg)->tmrd, 2))
-		return(0);
-	return(1);
+		return (0);
+	return (1);
 }
 
 tmslave(ui, reg, slaveno)
 	struct uba_dinfo *ui;
 	caddr_t reg;
 {
+
 	/*
 	 * Due to a design flaw, we cannot ascertain if the tape
 	 * exists or not unless it is on line - ie: unless a tape is
@@ -101,10 +102,9 @@ tmslave(ui, reg, slaveno)
 	 * Something better will have to be done if you have two
 	 * tapes on one controller, or two controllers
 	 */
-	printf("tm: sl %d - tmi %x\n", slaveno, tminfo[0]);
-	if (slaveno != 0 || tminfo[0])
+	if (slaveno != 0 || tmdinfo[0])
 		return(0);
-	return(1);
+	return (1);
 }
 
 tmopen(dev, flag)
@@ -114,9 +114,9 @@ tmopen(dev, flag)
 	register ds, unit;
 	register struct uba_dinfo *ui;
 
-	tmtab.b_flags |= B_TAPE;
+	tmminfo[0]->um_tab.b_flags |= B_TAPE;
 	unit = minor(dev)&03;
-	if (unit>=NTM || t_openf || !(ui = tminfo[minor(dev)&03])->ui_alive) {
+	if (unit>=NTM || t_openf || !(ui = tmdinfo[minor(dev)&03])->ui_alive) {
 		u.u_error = ENXIO;		/* out of range or open */
 		return;
 	}
@@ -149,7 +149,7 @@ tmwaitrws(dev)
 	register dev;
 {
 	register struct device *addr =
-	    (struct device *)tminfo[minor(dev)&03]->ui_addr;
+	    (struct device *)tmdinfo[minor(dev)&03]->ui_addr;
 
 	spl5();
 	for (;;) {
@@ -206,6 +206,7 @@ tmstrategy(bp)
 	register struct buf *bp;
 {
 	register daddr_t *p;
+	register struct buf *tmi;
 
 	tmwaitrws(bp->b_dev);
 	if (bp != &ctmbuf) {
@@ -225,12 +226,13 @@ tmstrategy(bp)
 	}
 	bp->av_forw = NULL;
 	(void) spl5();
-	if (tmtab.b_actf == NULL)
-		tmtab.b_actf = bp;
+	tmi = &tmminfo[0]->um_tab;
+	if (tmi->b_actf == NULL)
+		tmi->b_actf = bp;
 	else
-		tmtab.b_actl->av_forw = bp;
-	tmtab.b_actl = bp;
-	if (tmtab.b_active == 0)
+		tmi->b_actl->av_forw = bp;
+	tmi->b_actl = bp;
+	if (tmi->b_active == 0)
 		tmstart();
 	(void) spl0();
 }
@@ -245,9 +247,9 @@ tmstart()
 	int s;
 
 loop:
-	if ((bp = tmtab.b_actf) == 0)
+	if ((bp = tmminfo[0]->um_tab.b_actf) == 0)
 		return;
-	ui = tminfo[minor(bp->b_dev)&03];
+	ui = tmdinfo[minor(bp->b_dev)&03];
 	addr = (struct device *)ui->ui_addr;
 	t_dsreg = addr->tmcs;
 	t_erreg = addr->tmer;
@@ -266,7 +268,7 @@ loop:
 			goto next;		/* just get status */
 		else {
 			cmd |= bp->b_command;
-			tmtab.b_active = SCOM;
+			tmminfo[0]->um_tab.b_active = SCOM;
 			if (bp->b_command == SFORW || bp->b_command == SREV)
 				addr->tmbc = bp->b_repcnt;
 			addr->tmcs = cmd;
@@ -280,19 +282,19 @@ loop:
 			tm_ubinfo = ubasetup(ui->ui_ubanum, bp, 1);
 		splx(s);
 		if ((bp->b_flags&B_READ) == 0) {
-			if (tmtab.b_errcnt)
+			if (tmminfo[0]->um_tab.b_errcnt)
 				cmd |= WIRG;
 			else
 				cmd |= WCOM;
 		} else
 			cmd |= RCOM;
 		cmd |= (tm_ubinfo >> 12) & 0x30;
-		tmtab.b_active = SIO;
+		tmminfo[0]->um_tab.b_active = SIO;
 		addr->tmba = tm_ubinfo;
 		addr->tmcs = cmd; 
 		return;
 	}
-	tmtab.b_active = SSEEK;
+	tmminfo[0]->um_tab.b_active = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		cmd |= SFORW;
 		addr->tmbc = blkno - dbtofsb(bp->b_blkno);
@@ -305,7 +307,7 @@ loop:
 
 next:
 	ubarelse(ui->ui_ubanum, &tm_ubinfo);
-	tmtab.b_actf = bp->av_forw;
+	tmminfo[0]->um_tab.b_actf = bp->av_forw;
 	iodone(bp);
 	goto loop;
 }
@@ -317,22 +319,22 @@ tmdgo()
 tmintr(d)
 {
 	register struct buf *bp;
-	register struct device *addr = (struct device *)tminfo[d]->ui_addr;
+	register struct device *addr = (struct device *)tmdinfo[d]->ui_addr;
 	register state;
 
 	if (t_flags&WAITREW && (addr->tmer&RWS) == 0) {
 		t_flags &= ~WAITREW;
 		wakeup((caddr_t)&t_flags);
 	}
-	if ((bp = tmtab.b_actf) == NULL)
+	if ((bp = tmminfo[0]->um_tab.b_actf) == NULL)
 		return;
 	t_dsreg = addr->tmcs;
 	t_erreg = addr->tmer;
 	t_resid = addr->tmbc;
 	if ((bp->b_flags & B_READ) == 0)
 		t_flags |= LASTIOW;
-	state = tmtab.b_active;
-	tmtab.b_active = 0;
+	state = tmminfo[0]->um_tab.b_active;
+	tmminfo[0]->um_tab.b_active = 0;
 	if (addr->tmcs&ERROR) {
 		while(addr->tmer & SDWN)
 			;			/* await settle down */
@@ -345,11 +347,11 @@ tmintr(d)
 		if ((bp->b_flags&B_READ) && (addr->tmer&(HARD|SOFT)) == RLE)
 			goto out;
 		if ((addr->tmer&HARD)==0 && state==SIO) {
-			if (++tmtab.b_errcnt < 7) {
+			if (++tmminfo[0]->um_tab.b_errcnt < 7) {
 				if((addr->tmer&SOFT) == NXM)
 					printf("TM UBA late error\n");
 				t_blkno++;
-				ubarelse(tminfo[d]->ui_ubanum, &tm_ubinfo);
+				ubarelse(tmdinfo[d]->ui_ubanum, &tm_ubinfo);
 				tmstart();
 				return;
 			}
@@ -385,10 +387,10 @@ out:
 			}
 		}
 errout:
-		tmtab.b_errcnt = 0;
-		tmtab.b_actf = bp->av_forw;
+		tmminfo[0]->um_tab.b_errcnt = 0;
+		tmminfo[0]->um_tab.b_actf = bp->av_forw;
 		bp->b_resid = -addr->tmbc;
-		ubarelse(tminfo[d]->ui_ubanum, &tm_ubinfo);
+		ubarelse(tmdinfo[d]->ui_ubanum, &tm_ubinfo);
 		iodone(bp);
 		break;
 
@@ -406,7 +408,7 @@ tmseteof(bp)
 	register struct buf *bp;
 {
 	register struct device *addr = 
-	    (struct device *)tminfo[minor(bp->b_dev)&03]->ui_addr;
+	    (struct device *)tmdinfo[minor(bp->b_dev)&03]->ui_addr;
 
 	if (bp == &ctmbuf) {
 		if (t_blkno > dbtofsb(bp->b_blkno)) {
@@ -521,11 +523,11 @@ tmdump()
 	start = 0;
 	num = maxfree;
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	if (tminfo[0] == 0) {
+	if (tmdinfo[0] == 0) {
 		printf("dna\n");
 		return (-1);
 	}
-	ui = phys(tminfo[0], struct uba_dinfo *);
+	ui = phys(tmdinfo[0], struct uba_dinfo *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 #if VAX780
 	if (cpu == VAX_780)
