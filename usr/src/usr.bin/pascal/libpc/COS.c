@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)COS.c 1.1 %G%";
+static char sccsid[] = "@(#)COS.c 1.2 %G%";
 
 #include <math.h>
 extern int errno;
@@ -15,7 +15,6 @@ COS(value)
 	result = cos(value);
 	if (errno != 0) {
 		ERROR("Cannot compute cos(%e)\n", value);
-		return;
 	}
 	return result;
 }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READE.c 1.6 %G%";
+static char sccsid[] = "@(#)READE.c 1.7 %G%";
 
 #include "h00vars.h"
 
@@ -21,7 +21,6 @@ READE(curfile, name)
 	if (curfile->funit & FWRITE) {
 		ERROR("%s: Attempt to read, but open for writing\n",
 			curfile->pfname);
-		return;
 	}
 	UNSYNC(curfile);
 	retval = fscanf(curfile->fbuf,
@@ -29,7 +28,6 @@ READE(curfile, name)
 	    namebuf);
 	if (retval == EOF) {
 		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
-		return;
 	}
 	if (retval == 0)
 		goto ename;
@@ -49,4 +47,5 @@ READE(curfile, name)
 	} while (--cnt);
 ename:
 	ERROR("Unknown name \"%s\" found on enumerated type read\n", namebuf);
+	return 0;
 }

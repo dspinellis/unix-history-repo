@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)NAM.c 1.3 %G%";
+static char sccsid[] = "@(#)NAM.c 1.4 %G%";
 
 #include "h00vars.h"
 
@@ -17,7 +17,6 @@ NAM(val, name)
 	if (value < 0 || value >= *sptr) {
 		ERROR("Enumerated type value of %D is out of range on output\n",
 			val);
-		return;
 	}
 	sptr++;
 	return	name + 2 + sptr[value];

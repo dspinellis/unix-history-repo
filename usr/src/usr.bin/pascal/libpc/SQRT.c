@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)SQRT.c 1.3 %G%";
+static char sccsid[] = "@(#)SQRT.c 1.4 %G%";
 
 #include <math.h>
 
@@ -11,7 +11,6 @@ SQRT(value)
 {
 	if (value < 0) {
 		ERROR("Negative argument of %e to sqrt\n", value);
-		return;
 	}
 	return sqrt(value);
 }
