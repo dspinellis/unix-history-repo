@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -309,8 +309,8 @@ settime(e)
 
 	now = curtime();
 	tm = gmtime(&now);
-	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
-			tm->tm_mday, tm->tm_hour, tm->tm_min);
+	(void) sprintf(tbuf, "%04d%02d%02d%02d%02d", tm->tm_year + 1900,
+			tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf, e);
 	(void) strcpy(dbuf, ctime(&now));
 	*strchr(dbuf, '\n') = '\0';
