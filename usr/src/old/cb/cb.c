@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)cb.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)cb.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 int	slevel[10];
 int	clevel	= 0;
@@ -37,6 +37,7 @@ int	peek	= -1;
 int	tabs	= 0;
 int	lastchar;
 int	c;
+int	getstr();
 main(argc,argv) int argc;
 char argv[];
 {
@@ -217,10 +218,10 @@ char argv[];
 			string[j++] = c;
 			paren++;
 			if(lookup(wfor) == 1){
-				while((c = gets()) != ';');
+				while((c = getstr()) != ';');
 				ct=0;
 cont:
-				while((c = gets()) != ')'){
+				while((c = getstr()) != ')'){
 					if(c == '(') ct++;
 				}
 				if(ct != 0){
@@ -298,7 +299,7 @@ char *tab[];
 	}
 	return(0);
 }
-gets(){
+getstr(){
 	char ch;
 beg:
 	if((ch = string[j++] = getch()) == '\\'){
