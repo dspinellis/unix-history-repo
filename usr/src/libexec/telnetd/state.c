@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -68,10 +68,10 @@ telrcv()
 		if ((&ptyobuf[BUFSIZ] - pfrontp) < 2)
 			break;
 		c = *netip++ & 0377, ncc--;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 		if (decrypt_input)
 			c = (*decrypt_input)(c);
-#endif
+#endif	/* ENCRYPTION */
 		switch (state) {
 
 		case TS_CR:
@@ -100,10 +100,10 @@ telrcv()
 			 */
 			if ((c == '\r') && his_state_is_wont(TELOPT_BINARY)) {
 				int nc = *netip;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 				if (decrypt_input)
 					nc = (*decrypt_input)(nc & 0xff);
-#endif
+#endif	/* ENCRYPTION */
 #ifdef	LINEMODE
 				/*
 				 * If we are operating in linemode,
@@ -116,10 +116,10 @@ telrcv()
 				} else
 #endif
 				{
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 					if (decrypt_input)
 						(void)(*decrypt_input)(-1);
-#endif
+#endif	/* ENCRYPTION */
 					state = TS_CR;
 				}
 			}
@@ -440,7 +440,7 @@ extern void doclientstat();
 #endif
 #ifdef	ENCRYPTION
 extern void encrypt_send_support();
-#endif
+#endif	/* ENCRYPTION */
 
 	void
 willoption(option)
@@ -558,7 +558,7 @@ willoption(option)
 			func = encrypt_send_support;
 			changeok++;
 			break;
-#endif
+#endif	/* ENCRYPTION */
 
 		default:
 			break;
@@ -622,7 +622,7 @@ willoption(option)
 		case TELOPT_ENCRYPT:
 			func = encrypt_send_support;
 			break;
-#endif
+#endif	/* ENCRYPTION */
 		case TELOPT_LFLOW:
 			func = flowstat;
 			break;
@@ -909,11 +909,11 @@ dooption(option)
 			/* NOT REACHED */
 			break;
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 		case TELOPT_ENCRYPT:
 			changeok++;
 			break;
-#endif
+#endif	/* ENCRYPTION */
 		case TELOPT_LINEMODE:
 		case TELOPT_TTYPE:
 		case TELOPT_NAWS:
@@ -1316,22 +1316,14 @@ suboption()
 		 * If we got exactly as many VALUEs as VARs and
 		 * USERVARs, the client has the same definitions.
 		 *
-		 * If we get more VARs than the total number of VALUEs
-		 * and USERVARs, the client has the same definitions.
-		 *
 		 * If we got exactly as many VARs as VALUEs and
 		 * USERVARS, the client has reversed definitions.
-		 *
-		 * If we get more VALUEs than the total number of VARs
-		 * and USERVARs, the client has reversed definitions
 		 */
-		if ((got_uservar + got_var == got_value) ||
-		    (got_var > got_uservar + got_value)) {
+		if (got_uservar + got_var == got_value) {
 	    env_var_ok:
 			env_var = ENV_VAR;
 			env_value = ENV_VALUE;
-		} else if ((got_uservar + got_value == got_var) ||
-			   (got_value > got_uservar + got_var)) {
+		} else if (got_uservar + got_value == got_var) {
 	    env_var_wrong:
 			env_var = ENV_VALUE;
 			env_value = ENV_VAR;
@@ -1420,7 +1412,7 @@ suboption()
 	}
 	break;
 #endif
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     case TELOPT_ENCRYPT:
 	if (SB_EOF())
 		break;
@@ -1462,7 +1454,7 @@ suboption()
 		break;
 	}
 	break;
-#endif
+#endif	/* ENCRYPTION */
 
     default:
 	break;

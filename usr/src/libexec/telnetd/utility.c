@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -167,11 +167,11 @@ netclear()
 #define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
 				((*(p+1)&0xff) != EC) && ((*(p+1)&0xff) != EL))
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     thisitem = nclearto > netobuf ? nclearto : netobuf;
-#else
+#else	/* ENCRYPTION */
     thisitem = netobuf;
-#endif
+#endif	/* ENCRYPTION */
 
     while ((next = nextitem(thisitem)) <= nbackp) {
 	thisitem = next;
@@ -179,11 +179,11 @@ netclear()
 
     /* Now, thisitem is first before/at boundary. */
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     good = nclearto > netobuf ? nclearto : netobuf;
-#else
+#else	/* ENCRYPTION */
     good = netobuf;	/* where the good bytes go */
-#endif
+#endif	/* ENCRYPTION */
 
     while (nfrontp > thisitem) {
 	if (wewant(thisitem)) {
@@ -224,7 +224,7 @@ netflush()
 	      n += strlen(nfrontp);  /* get count first */
 	      nfrontp += strlen(nfrontp);  /* then move pointer */
 	    });
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (encrypt_output) {
 		char *s = nclearto ? nclearto : nbackp;
 		if (nfrontp - s > 0) {
@@ -232,7 +232,7 @@ netflush()
 			nclearto = nfrontp;
 		}
 	}
-#endif
+#endif	/* ENCRYPTION */
 	/*
 	 * if no urgent data, or if the other side appears to be an
 	 * old 4.2 client (and thus unable to survive TCP urgent data),
@@ -263,18 +263,18 @@ netflush()
 	cleanup(0);
     }
     nbackp += n;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
     if (nbackp > nclearto)
 	nclearto = 0;
-#endif
+#endif	/* ENCRYPTION */
     if (nbackp >= neturg) {
 	neturg = 0;
     }
     if (nbackp == nfrontp) {
 	nbackp = nfrontp = netobuf;
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	nclearto = 0;
-#endif
+#endif	/* ENCRYPTION */
     }
     return;
 }  /* end of netflush */
@@ -320,7 +320,7 @@ fatal(f, msg)
 	char buf[BUFSIZ];
 
 	(void) sprintf(buf, "telnetd: %s.\r\n", msg);
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	if (encrypt_output) {
 		/*
 		 * Better turn off encryption first....
@@ -329,7 +329,7 @@ fatal(f, msg)
 		encrypt_send_end();
 		netflush();
 	}
-#endif
+#endif	/* ENCRYPTION */
 	(void) write(f, buf, (int)strlen(buf));
 	sleep(1);	/*XXX*/
 	exit(1);
@@ -1010,7 +1010,7 @@ printsub(direction, pointer, length)
 	    break;
 #endif
 
-#if	defined(ENCRYPTION)
+#ifdef	ENCRYPTION
 	case TELOPT_ENCRYPT:
 	    sprintf(nfrontp, "ENCRYPT");
 	    nfrontp += strlen(nfrontp);
@@ -1096,7 +1096,7 @@ printsub(direction, pointer, length)
 		break;
 	    }
 	    break;
-#endif
+#endif	/* ENCRYPTION */
 
 	default:
 	    if (TELOPT_OK(pointer[0]))

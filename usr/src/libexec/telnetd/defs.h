@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.11 (Berkeley) %G%
+ *	@(#)defs.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -119,6 +119,10 @@ typedef unsigned char cc_t;
 
 #include <memory.h>
 #endif	/* CRAY */
+
+#ifdef __hpux
+#include <sys/ptyio.h>
+#endif
 
 #if	!defined(TIOCSCTTY) && defined(TCSETCTTY)
 # define	TIOCSCTTY TCSETCTTY

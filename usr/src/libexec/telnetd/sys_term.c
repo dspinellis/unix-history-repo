@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -16,8 +16,13 @@ static char sccsid[] = "@(#)sys_term.c	5.21 (Berkeley) %G%";
 #include <libtelnet/auth.h>
 #endif
 
+#if defined(CRAY) || defined(__hpux)
+# define PARENT_DOES_UTMP
+#endif
+
 #ifdef	NEWINIT
 #include <initreq.h>
+int	utmp_len = MAXHOSTNAMELEN;	/* sizeof(init_request.host) */
 #else	/* NEWINIT*/
 # ifdef	UTMPX
 # include <utmpx.h>
@@ -27,13 +32,25 @@ static char sccsid[] = "@(#)sys_term.c	5.21 (Berkeley) %G%";
 struct	utmp wtmp;
 
 int	utmp_len = sizeof(wtmp.ut_host);
-# ifndef CRAY
+# ifndef PARENT_DOES_UTMP
 char	wtmpf[]	= "/usr/adm/wtmp";
 char	utmpf[] = "/etc/utmp";
-# else	/* CRAY */
+# else /* PARENT_DOES_UTMP */
 char	wtmpf[]	= "/etc/wtmp";
+# endif /* PARENT_DOES_UTMP */
+
+# ifdef CRAY
 #include <tmpdir.h>
 #include <sys/wait.h>
+#  if defined(_SC_CRAY_SECURE_SYS) && !defined(SCM_SECURITY)
+   /*
+    * UNICOS 6.0/6.1 do not have SCM_SECURITY defined, so we can
+    * use it to tell us to turn off all the socket security code,
+    * since that is only used in UNICOS 7.0 and later.
+    */
+#   undef _SC_CRAY_SECURE_SYS
+#  endif
+
 #  if defined(_SC_CRAY_SECURE_SYS)
 #include <sys/sysv.h>
 #include <sys/secstat.h>
@@ -53,6 +70,10 @@ extern struct sysv sysv;
 
 #ifdef	STREAMS
 #include <sys/stream.h>
+#endif
+#ifdef __hpux
+#include <sys/resource.h>
+#include <sys/proc.h>
 #endif
 #include <sys/tty.h>
 #ifdef	t_erase
@@ -425,7 +446,8 @@ char *myline = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
 #endif	/* CRAY */
 
 	int
-getpty()
+getpty(ptynum)
+int *ptynum;
 {
 	register int p;
 #ifdef	STREAMSPTY
@@ -448,9 +470,15 @@ getpty()
 	int dummy;
 #endif
 
+#ifndef	__hpux
 	(void) sprintf(line, "/dev/ptyXX");
 	p1 = &line[8];
 	p2 = &line[9];
+#else
+	(void) sprintf(line, "/dev/ptym/ptyXX");
+	p1 = &line[13];
+	p2 = &line[14];
+#endif
 
 	for (cp = "pqrstuvwxyzPQRST"; *cp; cp++) {
 		struct stat stb;
@@ -468,7 +496,13 @@ getpty()
 			*p2 = "0123456789abcdef"[i];
 			p = open(line, 2);
 			if (p > 0) {
+#ifndef	__hpux
 				line[5] = 't';
+#else
+				for (p1 = &line[8]; *p1; p1++)
+					*p1 = *(p1+1);
+				line[9] = 't';
+#endif
 				chown(line, 0, 0);
 				chmod(line, 0600);
 #if defined(sun) && defined(TIOCGPGRP) && BSD < 199207
@@ -484,16 +518,15 @@ getpty()
 		}
 	}
 #else	/* CRAY */
-	register int npty;
 	extern lowpty, highpty;
 	struct stat sb;
 
-	for (npty = lowpty; npty <= highpty; npty++) {
-		(void) sprintf(myline, "/dev/pty/%03d", npty);
+	for (*ptynum = lowpty; *ptynum <= highpty; (*ptynum)++) {
+		(void) sprintf(myline, "/dev/pty/%03d", *ptynum);
 		p = open(myline, 2);
 		if (p < 0)
 			continue;
-		(void) sprintf(line, "/dev/ttyp%03d", npty);
+		(void) sprintf(line, "/dev/ttyp%03d", *ptynum);
 		/*
 		 * Here are some shenanigans to make sure that there
 		 * are no listeners lurking on the line.
@@ -912,7 +945,7 @@ tty_isnewmap()
 }
 #endif
 
-#ifdef	CRAY
+#ifdef PARENT_DOES_UTMP
 # ifndef NEWINIT
 extern	struct utmp wtmp;
 extern char wtmpf[];
@@ -927,15 +960,15 @@ nologinproc(sig)
 	gotalarm++;
 }
 # endif	/* NEWINIT */
-#endif /* CRAY */
+#endif /* PARENT_DOES_UTMP */
 
 #ifndef	NEWINIT
-# ifdef	CRAY
+# ifdef PARENT_DOES_UTMP
 extern void utmp_sig_init P((void));
 extern void utmp_sig_reset P((void));
 extern void utmp_sig_wait P((void));
 extern void utmp_sig_notify P((int));
-# endif
+# endif /* PARENT_DOES_UTMP */
 #endif
 
 /*
@@ -985,7 +1018,7 @@ getptyslave()
 # endif
 
 
-# ifdef	CRAY
+# ifdef PARENT_DOES_UTMP
 	/*
 	 * Wait for our parent to get the utmp stuff to get done.
 	 */
@@ -1031,9 +1064,9 @@ getptyslave()
 # endif	/* USE_TERMIO */
 
 	/*
-	 * Settings for UNICOS
+	 * Settings for UNICOS (and HPUX)
 	 */
-# ifdef	CRAY
+# if defined(CRAY) || defined(__hpux)
 	termbuf.c_oflag = OPOST|ONLCR|TAB3;
 	termbuf.c_iflag = IGNPAR|ISTRIP|ICRNL|IXON;
 	termbuf.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK;
@@ -1045,7 +1078,7 @@ getptyslave()
 	 * systems, other than 4.4BSD.  In 4.4BSD the
 	 * kernel does the initial terminal setup.
 	 */
-# if defined(USE_TERMIO) && !defined(CRAY) && (BSD <= 43)
+# if defined(USE_TERMIO) && !(defined(CRAY) || defined(__hpux)) && (BSD <= 43)
 #  ifndef	OXTABS
 #   define OXTABS	0
 #  endif
@@ -1132,7 +1165,7 @@ cleanopen(line)
 	 * Hangup anybody else using this ttyp, then reopen it for
 	 * ourselves.
 	 */
-# if !defined(CRAY) && (BSD <= 43) && !defined(STREAMSPTY)
+# if !(defined(CRAY) || defined(__hpux)) && (BSD <= 43) && !defined(STREAMSPTY)
 	(void) signal(SIGHUP, SIG_IGN);
 	vhangup();
 	(void) signal(SIGHUP, SIG_DFL);
@@ -1253,14 +1286,14 @@ startslave(host, autologin, autoname)
 #endif
 
 #ifndef	NEWINIT
-# ifdef	CRAY
+# ifdef	PARENT_DOES_UTMP
 	utmp_sig_init();
-# endif	/* CRAY */
+# endif	/* PARENT_DOES_UTMP */
 
 	if ((i = fork()) < 0)
 		fatalperror(net, "fork");
 	if (i) {
-# ifdef	CRAY
+# ifdef PARENT_DOES_UTMP
 		/*
 		 * Cray parent will create utmp entry for child and send
 		 * signal to child to tell when done.  Child waits for signal
@@ -1280,16 +1313,22 @@ startslave(host, autologin, autoname)
 		SCPYN(wtmp.ut_user, "LOGIN");
 		SCPYN(wtmp.ut_host, host);
 		SCPYN(wtmp.ut_line, line + sizeof("/dev/") - 1);
+#ifndef	__hpux
 		SCPYN(wtmp.ut_id, wtmp.ut_line+3);
+#else
+		SCPYN(wtmp.ut_id, wtmp.ut_line+7);
+#endif
 		pututline(&wtmp);
 		endutent();
 		if ((i = open(wtmpf, O_WRONLY|O_APPEND)) >= 0) {
 			(void) write(i, (char *)&wtmp, sizeof(struct utmp));
 			(void) close(i);
 		}
+#ifdef	CRAY
 		(void) signal(WJSIGNAL, sigjob);
+#endif
 		utmp_sig_notify(pid);
-# endif	/* CRAY */
+# endif	/* PARENT_DOES_UTMP */
 	} else {
 		getptyslave();
 		start_login(host, autologin, autoname);
@@ -1363,7 +1402,7 @@ init_env()
 	envp = envinit;
 	if (*envp = getenv("TZ"))
 		*envp++ -= 3;
-#ifdef	CRAY
+#if	defined(CRAY) || defined(__hpux)
 	else
 		*envp++ = "TZ=GMT0";
 #endif
@@ -1426,8 +1465,10 @@ start_login(host, autologin, name)
 	 * -f : force this login, he has already been authenticated
 	 */
 	argv = addarg(0, "login");
+#if	!defined(NO_LOGIN_H)
 	argv = addarg(argv, "-h");
 	argv = addarg(argv, host);
+#endif
 #ifdef	__svr4__
 	/*
 	 * SVR4 version of -h takes TERM= as second arg, or -
@@ -1473,7 +1514,7 @@ start_login(host, autologin, name)
 #endif
 	if (getenv("USER")) {
 		argv = addarg(argv, getenv("USER"));
-#if	defined(CRAY) && defined(NO_LOGIN_P)
+#if	(defined(CRAY) || defined(__hpux)) && defined(NO_LOGIN_P)
 		{
 			register char **cpp;
 			for (cpp = environ; *cpp; cpp++)
@@ -1545,7 +1586,7 @@ addarg(argv, val)
 cleanup(sig)
 	int sig;
 {
-#ifndef	CRAY
+#ifndef	PARENT_DOES_UTMP
 # if (BSD > 43) || defined(convex)
 	char *p;
 
@@ -1567,11 +1608,12 @@ cleanup(sig)
 	(void) shutdown(net, 2);
 	exit(1);
 # endif
-#else	/* CRAY */
+#else	/* PARENT_DOES_UTMP */
 # ifdef	NEWINIT
 	(void) shutdown(net, 2);
 	exit(1);
 # else	/* NEWINIT */
+#  ifdef CRAY
 	static int incleanup = 0;
 	register int t;
 
@@ -1594,20 +1636,32 @@ cleanup(sig)
 	}
 	incleanup = 1;
 	sigsetmask(t);
+	if (secflag) {
+		/*
+		 *	We need to set ourselves back to a null
+		 *	label to clean up.
+		 */
+
+		setulvl(sysv.sy_minlvl);
+		setucmp((long)0);
+	}
 
 	t = cleantmp(&wtmp);
 	setutent();	/* just to make sure */
+#  endif /* CRAY */
 	rmut(line);
 	close(pty);
 	(void) shutdown(net, 2);
+#  ifdef CRAY
 	if (t == 0)
 		cleantmp(&wtmp);
+#  endif /* CRAY */
 	exit(1);
 # endif	/* NEWINT */
-#endif	/* CRAY */
+#endif	/* PARENT_DOES_UTMP */
 }
 
-#if	defined(CRAY) && !defined(NEWINIT)
+#if defined(PARENT_DOES_UTMP) && !defined(NEWINIT)
 /*
  * _utmp_sig_rcv
  * utmp_sig_init
@@ -1645,6 +1699,11 @@ utmp_sig_reset()
 	(void) signal(SIGUSR1, func);	/* reset handler to default */
 }
 
+# ifdef __hpux
+# define sigoff() /* do nothing */
+# define sigon() /* do nothing */
+# endif
+
 	void
 utmp_sig_wait()
 {
@@ -1665,6 +1724,7 @@ utmp_sig_notify(pid)
 	kill(pid, SIGUSR1);
 }
 
+# ifdef CRAY
 static int gotsigjob = 0;
 
 	/*ARGSUSED*/
@@ -1782,7 +1842,8 @@ cleantmpdir(jid, tpath, user)
 		break;
 	}
 }
-#endif	/* defined(CRAY) && !defined(NEWINIT) */
+# endif /* CRAY */
+#endif	/* defined(PARENT_DOES_UTMP) && !defined(NEWINIT) */
 
 /*
  * rmut()
@@ -1820,7 +1881,7 @@ rmut()
 }  /* end of rmut */
 #endif
 
-#if	!defined(UTMPX) && !defined(CRAY) && BSD <= 43
+#if	!defined(UTMPX) && !(defined(CRAY) || defined(__hpux)) && BSD <= 43
 	void
 rmut()
 {
@@ -1872,3 +1933,42 @@ rmut()
 	(void) chown(line, 0, 0);
 }  /* end of rmut */
 #endif	/* CRAY */
+
+#ifdef __hpux
+rmut (line)
+char *line;
+{
+	struct utmp utmp;
+	struct utmp *utptr;
+	int fd;			/* for /etc/wtmp */
+
+	utmp.ut_type = USER_PROCESS;
+	(void) strncpy(utmp.ut_id, line+12, sizeof(utmp.ut_id));
+	(void) setutent();
+	utptr = getutid(&utmp);
+	/* write it out only if it exists */
+	if (utptr) {
+		utptr->ut_type = DEAD_PROCESS;
+		utptr->ut_time = time((long *) 0);
+		(void) pututline(utptr);
+		/* set wtmp entry if wtmp file exists */
+		if ((fd = open(wtmpf, O_WRONLY | O_APPEND)) >= 0) {
+			(void) write(fd, utptr, sizeof(utmp));
+			(void) close(fd);
+		}
+	}
+	(void) endutent();
+
+	(void) chmod(line, 0666);
+	(void) chown(line, 0, 0);
+	line[14] = line[13];
+	line[13] = line[12];
+	line[8] = 'm';
+	line[9] = '/';
+	line[10] = 'p';
+	line[11] = 't';
+	line[12] = 'y';
+	(void) chmod(line, 0666);
+	(void) chown(line, 0, 0);
+}
+#endif
