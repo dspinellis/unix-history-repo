@@ -1,4 +1,4 @@
-/*	ht.c	4.13	81/03/10	*/
+/*	ht.c	4.14	81/03/11	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -7,10 +7,8 @@
  *
  * TODO:
  *	test error handling
- *	test tape with disk on same mba
  *	test ioctl's
  *	see how many rewind interrups we get if we kick when not at BOT
- *	test writing on write prot tape and error thereby
  *	check rle error on block tape code
  */
 #include "../h/param.h"
@@ -99,7 +97,7 @@ htopen(dev, flag)
 	register int tuunit;
 	register struct mba_device *mi;
 	register struct tu_softc *sc;
-	int dens;
+	int olddens, dens;
 
 	tuunit = TUUNIT(dev);
 	if (tuunit >= NTU || (sc = &tu_softc[tuunit])->sc_openf ||
@@ -107,10 +105,12 @@ htopen(dev, flag)
 		u.u_error = ENXIO;
 		return;
 	}
-	htcommand(dev, HT_SENSE, 1);
+	olddens = sc->sc_dens;
 	dens =
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
 		HTTC_PDP11|sc->sc_slave;
+	htcommand(dev, HT_SENSE, 1);
+	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0 || 
 	   (flag&FWRITE) && (sc->sc_dsreg&HTDS_WRL) ||
 	   (sc->sc_dsreg & HTDS_BOT) == 0 && (flag&FWRITE) &&
