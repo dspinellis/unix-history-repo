@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setmode.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)setmode.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -39,12 +39,14 @@ struct bitcmd {
  * bits) followed by a '+' (set bits).
  */
 mode_t
-getmode(set, omode)
-	register struct bitcmd *set;
+getmode(bbox, omode)
+	void *bbox;
 	mode_t omode;
 {
+	register struct bitcmd *set;
 	register mode_t newmode, value;
 
+	set = (struct bitcmd *)bbox;
 	newmode = omode;
 	for (value = 0;; set++)
 		switch(set->cmd) {
@@ -177,7 +179,7 @@ addcmd(set, op, who, oparg, mask)
 	} \
 	set = addcmd(set, (a), (b), (c), (d))
 
-struct bitcmd *
+void *
 setmode(p)
 	register char *p;
 {
@@ -186,6 +188,7 @@ setmode(p)
 	mode_t mask;
 	struct bitcmd *set, *saveset, *endset;
 	int permXbits, setlen;
+	static int compress_mode();
 
 	/*
 	 * Get a copy of the mask for the permissions that are mask relative.
@@ -218,7 +221,7 @@ setmode(p)
 				return(NULL);
 			}
 		ADDCMD('=', (STANDARD_BITS|S_ISTXT), perm, mask);
-		return(saveset);
+		return((void *)saveset);
 	}
 
 	if (!*p) {
@@ -335,7 +338,7 @@ apply:		if (!*p)
 	(void)printf("After compress_mode()\n");
 	dumpmode(saveset);
 #endif
-	return(saveset);
+	return((void *)saveset);
 }
 
 #ifdef SETMODE_DEBUG
