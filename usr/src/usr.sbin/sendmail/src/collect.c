@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -66,6 +66,9 @@ maketemp(from)
 
 	if (smtpmode)
 		message("354 Enter mail, end with \".\" on a line by itself");
+
+	/* set global timer to monitor progress */
+	sfgetset(TimeOuts.to_datablock);
 
 	/*
 	**  Try to read a UNIX-style From line
@@ -257,6 +260,9 @@ readerr:
 			printf("collect: read error\n");
 		inputerr = TRUE;
 	}
+
+	/* reset global timer */
+	sfgetset((time_t) 0);
 
 	if (fflush(tf) != 0)
 		tferror(tf, e);
