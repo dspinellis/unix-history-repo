@@ -1,4 +1,4 @@
-# $Id: files,v 1.12 1993/12/12 12:21:57 davidg Exp $
+# $Id: files,v 1.13 1993/12/19 00:49:35 wollman Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -23,9 +23,10 @@ isofs/isofs_util.c	optional isofs
 isofs/isofs_vfsops.c	optional isofs
 isofs/isofs_vnops.c	optional isofs
 isofs/isofs_rrip.c      optional isofs
-kern/aout_imgact.c	standard
 kern/dead_vnops.c	standard
 kern/fifo_vnops.c	standard
+kern/imgact_aout.c	standard
+kern/imgact_shell.c	standard
 kern/init_main.c	standard
 kern/init_sysent.c	standard
 kern/kern__physio.c	standard
@@ -46,7 +47,6 @@ kern/kern_subr.c	standard
 kern/kern_synch.c	standard
 kern/kern_time.c	standard
 kern/kern_xxx.c		standard
-kern/shell_imgact.c	standard
 kern/spec_vnops.c	standard
 kern/subr_log.c		standard
 kern/subr_mcount.c	optional profiling-routine
