@@ -25,7 +25,7 @@ SRCS=	 	AllocRing.cc Obstack.cc builtin.cc \
 
 CFLAGS+=	-I$(.CURDIR) -I$(.CURDIR)/../libiberty
 CXXFLAGS=	-nostdinc++ -I$(.CURDIR) -I$(.CURDIR)/../g++-include \
-		-I$(.CURDIR)/../iostream
+		-I$(.CURDIR)/../include -I$(.CURDIR)/../iostream
 NOMAN=		noman
 .PATH:		$(.CURDIR)/../iostream $(.CURDIR)/../libiberty
 
