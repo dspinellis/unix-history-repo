@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -182,6 +182,7 @@ readsb(listerr)
 	daddr_t super = bflag ? bflag : SBLOCK;
 
 	initbarea(&asblk);
+	dev_bsize = DEV_BSIZE;
 	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
@@ -205,6 +206,8 @@ readsb(listerr)
 	 * of whole super block against an alternate super block.
 	 * When an alternate super-block is specified this check is skipped.
 	 */
+	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
+	sblk.b_bno = sblk.b_bno * DEV_BSIZE / dev_bsize;
 	if (bflag)
 		return (1);
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
