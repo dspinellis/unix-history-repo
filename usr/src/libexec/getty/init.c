@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -87,5 +87,6 @@ struct	gettyflags gettyflags[] = {
 	{ "hc",	1 },			/* don't set hangup on close */
 	{ "ub", 0 },			/* unbuffered output */
 	{ "ab", 0 },			/* auto-baud detect with '\r' */
+	{ "dx", 0 },			/* set decctlq */
 	{ 0 }
 };
