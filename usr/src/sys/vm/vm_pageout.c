@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	8.6 (Berkeley) %G%
+ *	@(#)vm_pageout.c	8.7 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -295,7 +295,11 @@ vm_pageout_page(m, object)
 		 * shortage, so we put pause for awhile and try again.
 		 * XXX could get stuck here.
 		 */
+		vm_page_unlock_queues();
+		vm_object_unlock(object);
 		(void) tsleep((caddr_t)&lbolt, PZERO|PCATCH, "pageout", 0);
+		vm_object_lock(object);
+		vm_page_lock_queues();
 		break;
 	}
 	case VM_PAGER_FAIL:
