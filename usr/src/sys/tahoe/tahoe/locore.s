@@ -1,4 +1,4 @@
-/*	locore.s	1.19	87/06/26	*/
+/*	locore.s	1.20	87/06/26	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -1064,15 +1064,16 @@ ENTRY(copyoutstr, 0)
 	jneq	3b
 #else
 	decl	r2
+	beql	9f			# cannot handle case of r2 == 0!
 	cmps3				# check for null up to last byte
+9:
 	incl	r2
 	cmpl	$1,r2			# get to last byte on page?
 	bneq	3b
 	tstb	(r0)			# last byte on page null?
-	beql	9f
+	beql	3b
 	incl	r0			# not null, so bump pointer
-9:
-#endif notdef
+#endif not good_cmps3
 	subl2	r3,r0			# back up r0
 	movl	r4,r1
 	movl	r3,r2
