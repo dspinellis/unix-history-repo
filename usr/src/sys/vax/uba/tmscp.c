@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.7 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.8 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -275,6 +275,12 @@ struct  uba_driver tmscpdriver =
 
 #define DELAYTEN 1000
 
+/*
+ * Unfortunately qbgetpri can't be used because the TK50 doesn't flip the
+ * TMSCP_STEP2 flag in the tmscpsa register until after the pending interrupt
+ * has been acknowledged by the cpu. If you are at spl6(), the TMSCP_STEP2
+ * flag never gets set and you return (0).
+ */
 tmscpprobe(reg, ctlr)
 	caddr_t reg;		/* address of the IP register */
 	int ctlr;		/* index of controller in the tmscp_softc array */
@@ -283,7 +289,7 @@ tmscpprobe(reg, ctlr)
 	register struct tmscp_softc *sc = &tmscp_softc[ctlr];
 				/* ptr to software controller structure */
 	struct tmscpdevice *tmscpaddr; /* ptr to tmscpdevice struct (IP & SA) */
-	int count, s;		/* for probe delay time out */
+	int count;		/* for probe delay time out */
 
 #	ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
@@ -297,9 +303,6 @@ tmscpprobe(reg, ctlr)
 	 * The device is not really initialized at this point, this is just to
 	 * find out if the device exists.
 	 */
-#ifdef QBA
-	s = spl6();
-#endif
 	sc->sc_ivec = (uba_hd[numuba].uh_lastiv -= 4);
 	tmscpaddr->tmscpip = 0;
 
@@ -311,10 +314,8 @@ tmscpprobe(reg, ctlr)
 		DELAY(10000);
 		count=count+1;
 		}
-	if (count == DELAYTEN) {
-		splx(s);
+	if (count == DELAYTEN)
 		return(0);		
-	}
 
 	tmscpaddr->tmscpsa = TMSCP_ERR|(NCMDL2<<11)|(NRSPL2<<8)|TMSCP_IE|(sc->sc_ivec/4);
 
@@ -326,13 +327,11 @@ tmscpprobe(reg, ctlr)
 		DELAY(10000);
 		count = count+1;
 		}
-	if (count == DELAYTEN) {
-		splx(s);
+	if (count == DELAYTEN)
 		return(0);
-	}
 
 #ifdef QBA
-	sc->sc_ipl = br = qbgetpri();
+	sc->sc_ipl = br = 0x15;
 #endif
 	return(sizeof (struct tmscpdevice));
 }
