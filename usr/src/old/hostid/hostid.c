@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)hostid.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hostid.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -36,20 +36,23 @@ main(argc, argv)
 		printf("%#x\n", gethostid());
 		exit(0);
 	}
-	id = argv[1];
 
-	if ((hostid = inet_addr(id)) == -1) {
-		if (*id == '0' && (id[1] == 'x' || id[1] == 'X'))
+	id = argv[1];
+	if (hp = gethostbyname(id)) {
+		bcopy(hp->h_addr, &addr, sizeof(addr));
+		hostid = addr;
+	} else if (index(id, '.')) {
+		if ((hostid = inet_addr(id)) == -1)
+			goto usage;
+	} else {
+		if (id[0] == '0' && (id[1] == 'x' || id[1] == 'X'))
 			id += 2;
 		if (sscanf(id, "%x", &hostid) != 1) {
-			if (hp = gethostbyname(argv[1])) {
-				bcopy(hp->h_addr, &addr, sizeof(addr));
-				hostid = addr;
-			} else {
-				fprintf(stderr,
-			"usage: %s [hexnum or internet address]\n", argv[0]);
-				exit(1);
-			}
+usage:
+			fprintf(stderr,
+			    "usage: %s [hexnum or internet address]\n",
+			    argv[0]);
+			exit(1);
 		}
 	}
 
