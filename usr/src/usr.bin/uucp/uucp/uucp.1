@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uucp.1	6.4 (Berkeley) %G%
+.\"	@(#)uucp.1	6.5 (Berkeley) %G%
 .\"
 .TH UUCP 1 ""
 .AT 3
@@ -52,7 +52,7 @@ a pathname prefixed by
 .BR ~ ,
 where
 .B ~
-is expanded into the system's public directory (usually /usr/spool/uucppublic);
+is expanded into the system's public directory (usually /var/spool/uucppublic);
 .IP (4)
 a partial pathname, which is prefixed by the current directory.
 .PP
@@ -130,7 +130,7 @@ as the spool directory instead of the default.
 Turn on the debugging at level
 .I debug.
 .SH FILES
-/usr/spool/uucp - spool directory
+/var/spool/uucp - spool directory
 .br
 /usr/lib/uucp/* - other data and program files
 .SH SEE ALSO

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uuq.1	6.3 (Berkeley) %G%
+.\"	@(#)uuq.1	6.4 (Berkeley) %G%
 .\"
 .TH UUQ 1 ""
 .UC 6
@@ -69,12 +69,12 @@ directory.
 Use \fIbaud\fP to compute the transfer time instead of the default
 1200 baud.
 .SH FILES
-.ta \w'/usr/spool/uucp/D.hostname/D.*   'u
-/usr/spool/uucp/	Default spool directory
-/usr/spool/uucp/C./C.*	Control files
+.ta \w'/var/spool/uucp/D.hostname/D.*   'u
+/var/spool/uucp/	Default spool directory
+/var/spool/uucp/C./C.*	Control files
 .br
-/usr/spool/uucp/D\fIhostname\fP./D.*	Outgoing data files
-/usr/spool/uucp/X./X.*	Outgoing execution files
+/var/spool/uucp/D\fIhostname\fP./D.*	Outgoing data files
+/var/spool/uucp/X./X.*	Outgoing execution files
 .SH SEE ALSO
 uucp(1), uux(1), uulog(1), uusnap(8)
 .SH BUGS
