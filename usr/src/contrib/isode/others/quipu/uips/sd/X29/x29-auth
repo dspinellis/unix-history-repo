@@ -1,0 +1,33 @@
+# Part of /etc/x29-auth
+#
+# (Control file for x29d, which is available from info-server@cl.cam.ac.uk)
+#
+# Public access to X.500
+#
+# Only accepts calls with calling-address starting '0000' (This is appropriate
+# to UK JANET-only sites. Others should omit the four zeros)
+#
+# Command name is /usr/local/lib/public-widget/startup
+#
+# -x means X29 calls only
+#
+# -a 000041131503 specifies the address that this service responds to
+#
+# -u 9681 specifies the UID to run the program under.
+# This should be in the passwd file with '*' as password, and should
+# NOT be a UID used for any other purpose
+#
+# -g 9002 specifies the GID. Comments for UID apply. See group file.
+#
+# -n public-widget specifies the name that will appear in 'ps' output
+# when this program is running.
+#
+# \ $calling_shortname\ $called_cudf+4
+# SPACES ARE SIGNIFICANT!
+# This gives the rest of the command line to the program.
+# Here, we say that the calling address is to be reverse-translated if
+# possible, and used as parameter 1.
+# If a Call User Data Field is present (e.g. calls through PSS-JANET gateways)
+# it is to be used as parameter 2
+#
+0000*@/usr/local/lib/public-widget/startup:-x -a 000041131503 -u 9681 -g 9002 -n public-widget\ $calling_shortname\ $called_cudf+4:

@@ -1,0 +1,51 @@
+# This is 'CSHRC' - it is invoked by the file .cshrc in your home directory
+# It gets read by EVERY new shell (csh) that you start.
+# At login time, this file is read before '.login'
+
+# first work out what type of computer we are using:
+set cputype = "unknown"
+if ($cputype == "unknown") if (-x /bin/sun3) if { /bin/sun3 } set cputype = "sun"
+if ($cputype == "unknown") if (-x /bin/sparc) if { /bin/sparc } set cputype = "sparc"
+if ($cputype == "unknown") if (-x /bin/pyr) if { /bin/pyr } set cputype = "pyr"
+if ($cputype == "unknown") if (-x /bin/vax) if { /bin/vax } set cputype = "vax"
+
+# Name of directory containing all members of this group
+set groupdir = ${HOME}/..
+
+# Set environment variable to tell X-windows programs where to find things
+setenv X11 /usr/local/lib/X11
+
+# path is a list of directories in which the shell will look for programs
+set path=( ${home}/bin ${home}/bin.${cputype} ${groupdir}/bin \
+	${groupdir}/bin.${cputype} /usr/local/bin /usr/ucb /bin /usr/bin \
+	/usr/hosts /usr/games $X11/share/bin /usr/new .)
+
+# history defines how many commands csh will remember
+set history = 20
+
+# Define the prompt that the system gives when ready for a new command
+set prompt = "`hostname`% "
+
+# 'alias' provides for some shorthand:
+
+# make 'lf' give a useful listing of files showing their types
+alias lf "ls -F"
+
+# make '.' be short for 'logout'
+alias . logout
+
+# make 'hi' be short for 'history'
+alias hi history
+
+# make 'rm' always ask before removing anything
+alias rm "rm -i"
+
+# Use a shell variable to store the name of the last directory we were in,
+# so that 'back' will take us back there.
+alias cd 'set old="$cwd"; chdir \!*'
+alias back 'set back="$old"; set old="$cwd"; cd "$back"; unset back; dirs'
+
+# Now do any things that your group supervisor wants, before carrying on
+# with your own .cshrc
+set grouplib = ${HOME}/../lib
+if ( -r ${grouplib}/CSHRC ) source ${grouplib}/CSHRC

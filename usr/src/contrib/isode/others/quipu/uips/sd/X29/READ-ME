@@ -1,0 +1,54 @@
+This directory contains files to help you set up a public-access directory
+service on an X29 address.
+
+It assumes the use of x29d, the public-domain X29 listner available from
+Cambridge University, UK. For details, mail info-server@cl.cam.ac.uk
+with the following message:
+
+Request: catalogue
+Topic: x25d
+Request: end
+
+
+It may be possible to mount a similar service using other X29 listners
+or even by using telnet on IP networks to call a special port. Neither
+option has been tested at Brunel.
+
+Setting up the service:
+
+Make a directory to hold the files. This should be in a stable part of
+local filestore. At Brunel we use /usr/local/lib/public-widget.
+
+Copy the script 'startup' to the new directory, and also copy 'LOGIN' to
+.login in the same directory.
+
+Edit 'startup' to give appropriate prompts and messages.
+If you do not have X installed, you will need to delete the reference
+to 'xterm'.
+
+Choose the UID and GID that the service will run under.
+Neither should be used for other purposes.
+We use numbers in the 9000 range at Brunel. The disadvantage of high numbers
+is that some system logfiles suddenly grow, so choose lower numbers if
+possible. On UK Pilot machines, very few UIDs are used, so numbers around
+70 would be appropriate.
+
+Create a user in /etc/passwd with the appropriate UID and GID. e.g.
+
+x500x29:*:70:70:Public X500 service:/usr/local/lib/public-widget:/bin/csh
+
+This is more for reference than anything else. Nobody will be using this
+name to log in.
+
+
+Add a line to your x29-auth file similar to the one in x29-auth here.
+Choose and appropriate X29 address for the service, and make sure that
+your x29d is listening on that address.
+
+Create the logfile and make it writable by the chosen UID.
+Make sure that the other files and the directory itself are NOT writable
+by that UID (e.g. have 'root' own them and do:
+
+	chmod -w * . .login
+
+in that directory.
