@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)ufs_lockf.c	7.7 (Berkeley) 7/2/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00169
+ * --------------------         -----   ----------------------
+ *
+ * 04 Jun 93	Paul Kranenburg		Fix dangling pointer in lockf struct
+ *
  */
 
 #include "param.h"
@@ -155,6 +163,21 @@ lf_setlock(lock)
 		}
 #endif /* LOCKF_DEBUG */
 		if (error = tsleep((caddr_t)lock, priority, lockstr, 0)) {
+
+			/* Don't leave a dangling pointer in block list */
+			if (lf_getblock(lock) == block) {
+				struct lockf	**prev;
+
+				/* Still there, find us on list */
+				prev = &block->lf_block;
+				while ((block = block->lf_block) != NOLOCKF) {
+					if (block == lock) {	
+						*prev = block->lf_block;
+						break;
+					}
+					prev = &block->lf_block;
+				}
+			}
 			free(lock, M_LOCKF);
 			return (error);
 		}
