@@ -1,0 +1,1 @@
+../../bsdi.1.0/include/compat.h
