@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -249,15 +249,11 @@ Lst  	    stoppedJobs;	/* Lst of Job structures describing
 				 * limits or migration home */
 
 
-#if defined(USE_PGRP) && defined(SYSV)
-#define KILL(pid,sig)	killpg(-(pid),(sig))
-#else
 # if defined(USE_PGRP)
 #define KILL(pid,sig)	killpg((pid),(sig))
 # else
 #define KILL(pid,sig)	kill((pid),(sig))
 # endif
-#endif
 
 static void JobRestart();
 static int  JobStart();
@@ -1075,11 +1071,7 @@ JobExec(job, argv)
 	 * by killing its process family, but not commit suicide.
 	 */
 	
-#if defined(SYSV)
-	(void) setpgrp();
-#else
 	(void) setpgrp(0, getpid());
-#endif
 #endif USE_PGRP
 
 	if (job->flags & JOB_REMOTE) {
