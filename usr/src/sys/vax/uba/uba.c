@@ -1,4 +1,4 @@
-/*	uba.c	4.55	82/10/22	*/
+/*	uba.c	4.56	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -315,7 +315,6 @@ ubareset(uban)
 	uh->uh_users = 0;
 	uh->uh_zvcnt = 0;
 	uh->uh_xclu = 0;
-	uh->uh_hangcnt = 0;
 	uh->uh_actf = uh->uh_actl = 0;
 	uh->uh_bdpwant = 0;
 	uh->uh_mrwant = 0;
