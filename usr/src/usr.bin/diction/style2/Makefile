@@ -1,8 +1,9 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	style2
 CFLAGS+=-I${.CURDIR} -I${.CURDIR}/../style1
 SRCS=	style2.c
+CLEANFILES=style2.c
 DPADD=	${LIBL}
 LDADD=	-ll
 NOMAN=	noman
