@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.7	%G%";
+char id_libF77[] = "@(#)main.c	2.8	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -41,7 +41,11 @@ struct action {
 	{"Hangup", 0},			/* SIGHUP  */
 	{"Interrupt!", 0},		/* SIGINT  */
 	{"Quit!", 1},			/* SIGQUIT */
+#ifdef UCBVAX
+	{"Illegal ", 1},		/* SIGILL  */
+#else
 	{"Illegal instruction", 1},	/* SIGILL  */
+#endif
 	{"Trace Trap", 1},		/* SIGTRAP */
 	{"IOT Trap", 1},		/* SIGIOT  */
 	{"EMT Trap", 1},		/* SIGEMT  */
@@ -73,6 +77,12 @@ struct action act_fpe[] = {
 	{"Floating divide by zero", 0},
 	{"Floating point underflow", 0},
 };
+
+struct action act_ill[] = {
+	{"addr mode", 1},
+	{"instruction", 1},
+	{"operand", 0},
+};
 #endif
 
 sigdie(s, t, pc)
@@ -94,7 +104,13 @@ if (act->mesg)
 			fprintf(units[STDERR].ufd, ": Type=%d?", t);
 		}
 	else if (s == SIGILL)
-		fprintf(units[STDERR].ufd, ": Code=%d", t);
+		{
+		if (t == 4) t = 2;	/* 4.0bsd botch */
+		if (t >= 0 && t <= 2)
+			fprintf(units[STDERR].ufd, "%s", act_ill[t].mesg);
+		else
+			fprintf(units[STDERR].ufd, "compat mode: Code=%d", t);
+		}
 	putc('\n', units[STDERR].ufd);
 #else
 	fprintf(units[STDERR].ufd, "%s\n", act->mesg);
