@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)man.c	8.8 (Berkeley) %G%";
 
 int f_all, f_where;
 
-static void	 build_page __P((char *, char *));
+static void	 build_page __P((char *, char **));
 static void	 cat __P((char *));
 static char	*check_pager __P((char *));
 static void	 cleanup __P((void));
@@ -52,7 +52,7 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	ENTRY *defp, *defnewp, *intmpp;
+	ENTRY *defp, *defnewp;
 	ENTRY *section, *sectp, *sectnewp, *subp, *tp;
 	glob_t pg;
 	size_t len;
@@ -110,7 +110,7 @@ main(argc, argv)
 	if (!f_cat && !f_how)
 		if (!isatty(1))
 			f_cat = 1;
-		else if (pager = getenv("PAGER"))
+		else if ((pager = getenv("PAGER")) != NULL)
 			pager = check_pager(pager);
 		else
 			pager = _PATH_PAGER;
@@ -281,10 +281,6 @@ main(argc, argv)
 				continue;
 			cat(*ap);
 		}
-		if (intmpp != NULL)
-			intmpp = intmpp->list.qe_next;
-		for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
-			cat(intmpp->s);
 		cleanup();
 		exit (0);
 	}
@@ -294,11 +290,6 @@ main(argc, argv)
 				continue;
 			how(*ap);
 		}
-		intmpp = getlist("_intmp");
-		if (intmpp != NULL)
-			intmpp = intmpp->list.qe_next;
-		for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
-			how(intmpp->s);
 		cleanup();
 		exit (0);
 	}
@@ -308,11 +299,6 @@ main(argc, argv)
 				continue;
 			(void)printf("%s\n", *ap);
 		}
-		intmpp = getlist("_intmp");
-		if (intmpp != NULL)
-			intmpp = intmpp->list.qe_next;
-		for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
-			(void)printf("%s\n", intmpp->s);
 		cleanup();
 		exit (0);
 	}
@@ -326,12 +312,6 @@ main(argc, argv)
 			continue;
 		len += strlen(*ap) + 1;
 	}
-	intmpp = getlist("_intmp");
-	if (intmpp != NULL)
-		intmpp = intmpp->list.qe_next;
-	for (; intmpp != NULL; intmpp = intmpp->list.qe_next)
-		len += strlen(intmpp->s);
-
 	if ((cmd = malloc(len)) == NULL) {
 		cleanup();
 		err(1, NULL);
@@ -346,15 +326,6 @@ main(argc, argv)
 			continue;
 		len = strlen(*ap);
 		memmove(p, *ap, len);
-		p += len;
-		*p++ = ' ';
-	}
-	intmpp = getlist("_intmp");
-	if (intmpp != NULL)
-		intmpp = intmpp->list.qe_next;
-	for (; intmpp != NULL; intmpp = intmpp->list.qe_next) { 
-		len = strlen(intmpp->s);
-		memmove(p, intmpp->s, len);
 		p += len;
 		*p++ = ' ';
 	}
@@ -448,11 +419,9 @@ easy:				anyfound = 1;
 				(void)snprintf(buf,
 				     sizeof(buf), "*/%s%s", page, sufp->s);
 				if (!fnmatch(buf, pg->gl_pathv[cnt], 0)) {
-					if (!f_where) {
+					if (!f_where)
 						build_page(p + 1,
-						    pg->gl_pathv[cnt]);
-						pg->gl_pathv[cnt] = "";
-					}
+						    &pg->gl_pathv[cnt]);
 					*p = ' ';
 					found = 1;
 					break;
@@ -493,8 +462,8 @@ easy:				anyfound = 1;
  *	Build a man page for display.
  */
 static void
-build_page(fmt, path)
-	char *fmt, *path;
+build_page(fmt, pathp)
+	char *fmt, **pathp;
 {
 	static int warned;
 	ENTRY *intmpp, *tp;
@@ -507,7 +476,7 @@ build_page(fmt, path)
 		warnx("Formatting manual page...");
 	}
 
-	/* Add an "in tmp" list. */
+	/* Add a remove-when-done list. */
 	if ((intmpp = getlist("_intmp")) == NULL)
 		intmpp = addlist("_intmp");
 
@@ -515,8 +484,8 @@ build_page(fmt, path)
 	for (; *fmt && isspace(*fmt); ++fmt);
 
 	/*
-	 * Get a temporary file and build a version of the file to display.
-	 * Link the built file into the list.
+	 * Get a temporary file and build a version of the file
+	 * to display.  Replace the old file name with the new one.
 	 */
 	(void)strcpy(tpath, _PATH_TMP);
 	if ((fd = mkstemp(tpath)) == -1) {
@@ -524,14 +493,20 @@ build_page(fmt, path)
 		err(1, "%s", tpath);
 	}
 	(void)snprintf(buf, sizeof(buf), "%s > %s", fmt, tpath);
-	(void)snprintf(cmd, sizeof(cmd), buf, path);
+	(void)snprintf(cmd, sizeof(cmd), buf, *pathp);
 	(void)system(cmd);
 	(void)close(fd);
-	if ((tp = malloc(sizeof(ENTRY))) == NULL ||
-	    (tp->s = strdup(tpath)) == NULL) {
+	if ((*pathp = strdup(tpath)) == NULL) {
 		cleanup();
 		err(1, NULL);
 	}
+
+	/* Link the built file into the remove-when-done list. */
+	if ((tp = malloc(sizeof(ENTRY))) == NULL) {
+		cleanup();
+		err(1, NULL);
+	}
+	tp->s = *pathp;
 	queue_enter_tail(&intmpp->list, tp, ENTRY *, list);
 }
 
