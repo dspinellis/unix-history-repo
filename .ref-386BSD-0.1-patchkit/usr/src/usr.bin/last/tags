@@ -1,8 +1,0 @@
-Mlast	last.c	/^main(argc, argv)$/
-addarg	last.c	/^addarg(type, arg)$/
-addtty	last.c	/^addtty(ttyname)$/
-hostconv	last.c	/^hostconv(arg)$/
-onintr	last.c	/^onintr(signo)$/
-ttyconv	last.c	/^ttyconv(arg)$/
-want	last.c	/^want(bp, check)$/
-wtmp	last.c	/^wtmp()$/
