@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.6 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -34,9 +34,7 @@ typedef struct direct	DIRECT;
 #define	MPB	((dp->di_mode & IFMT) == IFMPB)
 #define	SPECIAL	(BLK || CHR || MPC || MPB)
 
-daddr_t	startib;		/* blk num of first in raw area */
-struct	dinode ibase[MAXIPG];
-int	niblk;
+ino_t	startinum;		/* blk num of first in raw area */
 
 struct bufarea {
 	struct bufarea	*b_next;		/* must be first */
@@ -131,6 +129,7 @@ daddr_t	dupblk;
 
 int	inosumbad;
 int	offsumbad;
+int	frsumbad;
 
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
@@ -375,15 +374,18 @@ check(dev)
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		if (getblk(&cgblk, cgtod(c, &sblock), sblock.fs_cgsize) == 0)
 			continue;
-		dp = ginode();
-		if (dp == NULL)
-			continue;
 		n = 0;
-		for (i = 0; i < sblock.fs_ipg; i++, inum++, dp++) {
+		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
+			dp = ginode();
+			if (dp == NULL)
+				continue;
 			if (ALLOC) {
 				if (!isset(cgrp.cg_iused, i)) {
+					/*
 					printf("%d bad, not used\n", inum);
+					*/
 					inosumbad++;
+					n++;
 				}
 				lastino = inum;
 				if (ftypeok(dp) == 0) {
@@ -417,8 +419,11 @@ check(dev)
 			} else {
 				n++;
 				if (isset(cgrp.cg_iused, i)) {
+					/*
 					printf("%d bad, marked used\n", inum);
+					*/
 					inosumbad++;
+					n--;
 				}
 				if (dp->di_mode != 0) {
 					pfatal("PARTIALLY ALLOCATED INODE I=%u", inum);
@@ -444,20 +449,18 @@ check(dev)
 		pfunc = pass1b;
 		inum = 0;
 		for (c = 0; c < sblock.fs_ncg; c++) {
-			dp = ginode();
-			if (dp == NULL)
-				continue;
-			for (i = 0; i < sblock.fs_ipg; i++, inum++, dp++)
+			for (i = 0; i < sblock.fs_ipg; i++, inum++) {
+				dp = ginode();
+				if (dp == NULL)
+					continue;
 				if (getstate() != USTATE &&
 				    (ckinode(dp, ADDR) & STOP))
 					goto out1b;
+			}
 		}
 	}
 out1b:
-	if (inoblk.b_dirty) {
-		bwrite(&dfile, (char *)ibase, startib, niblk*BSIZE);
-		inoblk.b_dirty = 0;
-	}
+	flush(&dfile, &inoblk);
 /* 2 */
 	if (preen == 0)
 		printf("** Phase 2 - Check Pathnames\n");
@@ -565,14 +568,22 @@ out1b:
 	copy(blkmap, freemap, (unsigned)bmapsz);
 	dupblk = 0;
 	n_index = sblock.fs_ncg * (cgdmin(0, &sblock) - cgtod(0, &sblock));
-	n_index += SBLOCK;	/* super-block and boot block */
-	n_bad = -SBLOCK;	/* ... which appear (inaccurately) bad */
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		daddr_t cbase = cgbase(c,&sblock);
 		short bo[MAXCPG][NRPOS];
+		short frsum[FRAG];
+		int blk;
+
 		for (n = 0; n < sblock.fs_cpg; n++)
 			for (i = 0; i < NRPOS; i++)
 				bo[n][i] = 0;
+		for (i = 0; i < FRAG; i++) {
+			frsum[i] = 0;
+		}
+		/*
+		 * need to account for the spare boot and super blocks
+		 * which appear (inaccurately) bad
+		 */
 		n_bad += cgtod(c, &sblock) - cbase;
 		if (getblk(&cgblk, cgtod(c, &sblock), sblock.fs_cgsize) == 0)
 			continue;
@@ -586,11 +597,23 @@ out1b:
 				s = b * NSPF;
 				bo[s/sblock.fs_spc]
 				    [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
-			} else
+			} else {
 				for (d = 0; d < FRAG; d++)
 					if (isset(cgrp.cg_free, b+d))
 						if (pass5(cbase+b+d,1) == STOP)
 							goto out5;
+				blk = ((cgrp.cg_free[b / NBBY] >> (b % NBBY)) &
+				       (0xff >> (NBBY - FRAG)));
+				if (blk != 0)
+					fragacct(blk, frsum, 1);
+			}
+		}
+		for (i = 0; i < FRAG; i++) {
+			if (cgrp.cg_frsum[i] != frsum[i]) {
+				printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
+					c, i, cgrp.cg_frsum[i], frsum[i]);
+				frsumbad++;
+			}
 		}
 		for (n = 0; n < sblock.fs_cpg; n++)
 			for (i = 0; i < NRPOS; i++)
@@ -607,10 +630,11 @@ out5:
 		if ((b = n_blks+n_ffree+FRAG*n_bfree+n_index+n_bad) != fmax) {
 			pwarn("%ld BLK(S) MISSING\n", fmax - b);
 			fixcg = 1;
-		} else if (inosumbad+offsumbad) {
-			pwarn("SUMMARY INFORMATION %s%sBAD\n",
+		} else if (inosumbad + offsumbad + frsumbad) {
+			pwarn("SUMMARY INFORMATION %s%s%sBAD\n",
 			    inosumbad ? "(INODE FREE) " : "",
-			    offsumbad ? "(BLOCK OFFSETS) " : "");
+			    offsumbad ? "(BLOCK OFFSETS) " : "",
+			    frsumbad ? "(FRAG SUMMARIES) " : "");
 			fixcg = 1;
 		} else if (n_ffree != sblock.fs_nffree ||
 		    n_bfree != sblock.fs_nbfree) {
@@ -1064,7 +1088,7 @@ char *s;
 }
 
 adjust(lcnt)
-register short lcnt;
+	register short lcnt;
 {
 	register DINODE *dp;
 
@@ -1112,6 +1136,7 @@ char *s;
 		pfunc = pass4;
 		ckinode(dp, ADDR);
 		zapino(dp);
+		setstate(USTATE);
 		inodirty();
 		inosumbad++;
 	}
@@ -1157,7 +1182,7 @@ char *dev;
 	}
 	if (preen == 0)
 		printf("\n");
-	fixcg = 0; inosumbad = 0; offsumbad = 0;
+	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0;
 	dfile.mod = 0;
 	n_files = n_blks = n_ffree = n_bfree = 0;
 	muldup = enddup = &duplist[0];
@@ -1172,7 +1197,7 @@ char *dev;
 		ckfini();
 		return (0);
 	}
-	sblk.b_bno = SBLOCK;
+	sblk.b_bno = super;
 	if (sblock.fs_magic != FS_MAGIC)
 		{ badsb("MAGIC NUMBER WRONG"); return (0); }
 	if (sblock.fs_ncg < 1)
@@ -1218,8 +1243,7 @@ char *dev;
 	statemap = (char *)calloc(imax+1, sizeof(char));
 	lncntp = (short *)calloc(imax+1, sizeof(short));
 
-	niblk = sblock.fs_ipg / INOPB;
-	startib = fmax;
+	startinum = imax + 1;
 	return (1);
 
 badsb:
@@ -1245,19 +1269,14 @@ ginode()
 
 	if (inum > imax)
 		return (NULL);
-	iblk = itod(inum, &sblock);
-	if (iblk < startib || iblk >= startib+niblk) {
-		if (inoblk.b_dirty)
-			bwrite(&dfile, (char *)ibase, startib, niblk*BSIZE);
-		inoblk.b_dirty = 0;
-		startib = cgimin(inum/sblock.fs_ipg, &sblock);
-		if (bread(&dfile, (char *)ibase, iblk, niblk*BSIZE) == 0) {
-			startib = fmax;
+	if (inum < startinum || inum >= startinum + INOPB) {
+		iblk = itod(inum, &sblock);
+		if (getblk(&inoblk, iblk, BSIZE) == NULL) {
 			return (NULL);
 		}
-		startib = iblk;
+		startinum = (inum / INOPB) * INOPB;
 	}
-	return (&ibase[(iblk - startib)*INOPB + itoo(inum)]);
+	return (&inoblk.b_un.b_dinode[inum % INOPB]);
 }
 
 ftypeok(dp)
@@ -1371,6 +1390,11 @@ ckfini()
 
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
+	if (sblk.b_bno != SBLOCK) {
+		sblk.b_bno = SBLOCK;
+		sbdirty();
+		flush(&dfile, &sblk);
+	}
 	flush(&dfile, &inoblk);
 	close(dfile.rfdes);
 	close(dfile.wfdes);
@@ -1414,10 +1438,11 @@ copy(fp, tp, size)
 
 makecg()
 {
-	int c;
+	int c, blk;
 	daddr_t dbase, d, dmin, dmax;
 	long i, j, s;
 	register struct csum *cs;
+	register DINODE *dp;
 
 	sblock.fs_nbfree = 0;
 	sblock.fs_nffree = 0;
@@ -1426,6 +1451,7 @@ makecg()
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
+		dmin = cgdmin(c, &sblock) - dbase;
 		cs = &sblock.fs_cs[c];
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
@@ -1437,28 +1463,24 @@ makecg()
 		cgrp.cg_nffree = 0;
 		cgrp.cg_nbfree = 0;
 		cgrp.cg_nifree = 0;
-		cgrp.cg_rotor = 0;
+		cgrp.cg_rotor = dmin;
+		cgrp.cg_frotor = dmin;
 		cgrp.cg_irotor = 0;
+		for (i = 0; i < FRAG; i++)
+			cgrp.cg_frsum[i] = 0;
 		inum = sblock.fs_ipg * c;
-		for (i = 0; i < sblock.fs_ipg; inum++, i++)
-		switch (getstate()) {
-
-		case USTATE:
+		for (i = 0; i < sblock.fs_ipg; inum++, i++) {
+			dp = ginode();
+			if (dp == NULL)
+				continue;
+			if (ALLOC) {
+				if (DIR)
+					cgrp.cg_ndir++;
+				setbit(cgrp.cg_iused, i);
+				continue;
+			}
 			cgrp.cg_nifree++;
 			clrbit(cgrp.cg_iused, i);
-			continue;
-
-		case DSTATE:
-			cgrp.cg_ndir++;
-			/* fall into ... */
-
-		case FSTATE:
-			setbit(cgrp.cg_iused, i);
-			continue;
-
-		default:
-			errexit("internal error: inode state %d in makecg()\n",
-			    getstate());
 		}
 		while (i < MAXIPG) {
 			clrbit(cgrp.cg_iused, i);
@@ -1467,7 +1489,6 @@ makecg()
 		for (s = 0; s < MAXCPG; s++)
 			for (i = 0; i < NRPOS; i++)
 				cgrp.cg_b[s][i] = 0;
-		dmin = cgdmin(c, &sblock) - dbase;
 		if (c == 0) {
 			dmin += howmany(cssize(&sblock), BSIZE) * FRAG;
 		}
@@ -1487,15 +1508,24 @@ makecg()
 				s = d * NSPF;
 				cgrp.cg_b[s/sblock.fs_spc]
 				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
-			} else
+			} else if (j > 0) {
 				cgrp.cg_nffree += j;
+				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
+				       (0xff >> (NBBY - FRAG)));
+				fragacct(blk, cgrp.cg_frsum, 1);
+			}
 		}
-		for (; d < dmax - dbase; d++) {
+		for (j = d; d < dmax - dbase; d++) {
 			if (!getbmap(dbase+d)) {
 				setbit(cgrp.cg_free, d);
 				cgrp.cg_nffree++;
 			} else
 				clrbit(cgrp.cg_free, d);
+		}
+		if (j != d) {
+			blk = ((cgrp.cg_free[j / NBBY] >> (j % NBBY)) &
+			       (0xff >> (NBBY - FRAG)));
+			fragacct(blk, cgrp.cg_frsum, 1);
 		}
 		for (; d < MAXBPG; d++)
 			clrbit(cgrp.cg_free, d);
@@ -1509,6 +1539,39 @@ makecg()
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
 	sbdirty();
+}
+
+/*
+ * update the frsum fields to reflect addition or deletion 
+ * of some frags
+ */
+fragacct(fragmap, fraglist, cnt)
+	char fragmap;
+	short fraglist[];
+	int cnt;
+{
+	int inblk;
+	register int field, subfield;
+	register int siz, pos;
+
+	inblk = (int)(fragtbl[fragmap] << 1);
+	fragmap <<= 1;
+	for (siz = 1; siz < FRAG; siz++) {
+		if (((1 << siz) & inblk) == 0)
+			continue;
+		field = around[siz];
+		subfield = inside[siz];
+		for (pos = siz; pos <= FRAG; pos++) {
+			if ((fragmap & field) == subfield) {
+				fraglist[siz] += cnt;
+				pos += siz;
+				field <<= siz;
+				subfield <<= siz;
+			}
+			field <<= 1;
+			subfield <<= 1;
+		}
+	}
 }
 
 findino(dirp)
