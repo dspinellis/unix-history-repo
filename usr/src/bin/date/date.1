@@ -1,12 +1,12 @@
-.\" Copyright (c) 1980, 1990 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1980, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)date.1	8.1 (Berkeley) %G%
+.\"     @(#)date.1	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DATE 1
@@ -32,7 +32,7 @@ Only the superuser may set the date.
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl d
-Set the kernel's values for daylight savings time.
+Set the kernel's value for daylight savings time.
 If
 .Ar dst
 is non-zero, future calls
@@ -43,7 +43,7 @@ will return a non-zero
 .It Fl n
 The utility
 .Xr timed 8
-is used to synchronize the clocks of groups of machines.
+is used to synchronize the clocks on groups of machines.
 By default, if
 .Xr timed
 is running,
@@ -55,11 +55,11 @@ option stops
 .Nm date
 from setting the time for other than the current machine.
 .It Fl r
-Print out the date and time for
+Print out the date and time in
 .Ar seconds
 from the Epoch.
 .It Fl t
-Set the kernel's values for minutes west of
+Set the kernel's value for minutes west of
 .Tn GMT .
 .Ar Minutes_west
 specifies the number of minutes returned in
@@ -85,7 +85,7 @@ The format string for the default display is:
 .Pp
 If an operand does not have a leading plus sign, it is interpreted as
 a value for setting the system's notion of the current date and time.
-The canonical representation for setting the date and time:
+The canonical representation for setting the date and time is:
 .Pp
 .Bl -tag -width Ds -compact -offset indent
 .It Ar yy
@@ -103,14 +103,14 @@ Minutes, a number from 0 to 59.
 Seconds, a number from 0 to 61 (59 plus a a maximum of two leap seconds).
 .El
 .Pp
-Everything but the minutes are optional.
+Everything but the minutes is optional.
 .Pp
 Time changes for Daylight Saving and Standard time and leap seconds
 and years are handled automatically.
 .Sh EXAMPLES
 The command:
 .Bd -literal -offset indent
-date ``+DATE: %m/%d/%y%nTIME: %H:%M:%n''
+date ``+DATE: %m/%d/%y%nTIME: %H:%M:%s%n''
 .Ed
 .Pp
 will display:
@@ -125,7 +125,7 @@ date 8506131627
 .Ed
 .Pp
 sets the date to
-.Dq Li "June 13 1985, 4:27 PM" .
+.Dq Li "June 13, 1985, 4:27 PM" .
 .Pp
 The command:
 .Bd -literal -offset indent
@@ -154,7 +154,7 @@ A record of the user setting the time.
 .Re
 .Sh DIAGNOSTICS
 Exit status is 0 on success, 1 if unable to set the date, and 2
-if able to set the local date but failing to set it globally.
+if able to set the local date, but unable to set it globally.
 .Pp
 Occasionally, when
 .Xr timed
@@ -179,8 +179,7 @@ with
 .Tn VMS ,
 however, uses local time (rather than
 .Tn GMT )
-and does not understand
-daylight-saving time.
+and does not understand daylight-savings time.
 Thus, if you use both
 .Tn UNIX
 and
@@ -188,7 +187,7 @@ and
 .Tn VMS
 will be running on
 .Tn GMT .
-.Sh HISTORY
+.Sh STANDARDS
 The
 .Nm date
 command is expected to be compatible with
