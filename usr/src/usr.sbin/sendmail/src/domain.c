@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.45 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.46 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.45 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.46 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -91,6 +91,8 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	char *fallbackMX = FallBackMX;
 	static bool firsttime = TRUE;
 	bool trycanon = FALSE;
+	int (*resfunc)();
+	extern int res_query(), res_search();
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 	extern bool getcanonname();
@@ -131,9 +133,13 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	if (!UseNameServer)
 		goto punt;
+	if (HasWildcardMX && ConfigLevel >= 6)
+		resfunc = res_query;
+	else
+		resfunc = res_search;
 
 	errno = 0;
-	n = res_search(host, C_IN, T_MX, (u_char *) &answer, sizeof(answer));
+	n = (*resfunc)(host, C_IN, T_MX, (u_char *) &answer, sizeof(answer));
 	if (n < 0)
 	{
 		if (tTd(8, 1))
