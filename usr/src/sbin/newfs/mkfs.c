@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.3 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -20,7 +20,7 @@ static	char *sccsid = "@(#)mkfs.c	2.2 (Berkeley) %G%";
 #include "../h/inode.h"
 #include "../h/fs.h"
 #endif
-#include <ndir.h>
+#include <dir.h>
 
 #define UMASK		0755
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -431,7 +431,10 @@ initcg(cylno)
 	acg.cg_time = utime;
 	acg.cg_magic = CG_MAGIC;
 	acg.cg_cgx = cylno;
-	acg.cg_ncyl = sblock.fs_cpg;
+	if (cylno == sblock.fs_ncg - 1)
+		acg.cg_ncyl = sblock.fs_ncyl % sblock.fs_cpg;
+	else
+		acg.cg_ncyl = sblock.fs_cpg;
 	acg.cg_niblk = sblock.fs_ipg;
 	acg.cg_ndblk = dmax - cbase;
 	acg.cg_cs.cs_ndir = 0;
@@ -508,9 +511,11 @@ initcg(cylno)
 			setbit(acg.cg_free, d);
 			acg.cg_cs.cs_nffree++;
 		}
+		for (; d % sblock.fs_frag != 0; d++)
+			clrbit(acg.cg_free, d);
 	}
-	for (; d < MAXBPG(&sblock); d++)
-		clrbit(acg.cg_free, d);
+	for (d /= sblock.fs_frag; d < MAXBPG(&sblock); d ++)
+		clrblock(&sblock, acg.cg_free, d);
 	sblock.fs_cstotal.cs_ndir += acg.cg_cs.cs_ndir;
 	sblock.fs_cstotal.cs_nffree += acg.cg_cs.cs_nffree;
 	sblock.fs_cstotal.cs_nbfree += acg.cg_cs.cs_nbfree;
