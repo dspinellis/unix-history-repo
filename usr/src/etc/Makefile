@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.22 (Berkeley) %G%
+#	@(#)Makefile	5.23 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -95,6 +95,9 @@ distribution:
 	(cd /usr/lib && rm -f grmd && ln -s /usr/hpux/lib/grmd grmd)
 	(cd /usr/lib && rm -f tmac && ln -s /usr/share/tmac tmac)
 	(cd /usr/ucb && rm -f rdist && ln -s /usr/bin/rdist rdist)
+.if ${MACHINE} == "hp300"
+	(cd /usr/bin && rm -f X11 && ln -s /usr/X11/bin X11)
+#.endif
 
 hcx9-distribution:
 	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS2} \
