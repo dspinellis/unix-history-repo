@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	1.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -439,6 +439,7 @@ int	DoVirtTerm = YES;	/* Set up a virtual terminal */
 int	New = NO;		/* use new tty discipline */
 int	HasAM;			/* True if terminal has automatic margins */
 int	PadBaud;		/* Min rate of padding needed */
+int	lines, columns;
 
 # define CAPBUFSIZ	1024
 char	Capbuf[CAPBUFSIZ];	/* line from /etc/termcap for this TtyType */
@@ -483,6 +484,7 @@ char	*argv[];
 	char		*nextarg();
 	char		*mapped();
 	extern char	*rindex();
+	struct winsize	win;
 # ifdef V6
 	extern char	*hsgettype();
 # else
@@ -1093,6 +1095,18 @@ ask:
 		if (tgetstr("pc", &bufp) != 0)
 			PC = buf[0];
 
+		columns = tgetnum("co");
+		lines = tgetnum("li");
+
+		/* Set window size */
+		if (DoSetenv) {
+			ioctl(FILEDES, TIOCGWINSZ, &win);
+			if (win.ws_row == 0 && win.ws_col == 0) {
+				win.ws_row = lines;
+				win.ws_col = columns;
+				ioctl(FILEDES, TIOCSWINSZ, &win);
+			}
+		}
 		/* output startup string */
 		if (!NoInit)
 		{
@@ -1279,15 +1293,13 @@ settabs()
 	char *capsp = caps;
 	char *clear_tabs, *set_tab, *set_column, *set_pos;
 	char *tg_out, *tgoto();
-	int columns, lines, c;
+	int c;
 
 	clear_tabs = tgetstr("ct", &capsp);
 	set_tab = tgetstr("st", &capsp);
 	set_column = tgetstr("ch", &capsp);
 	if (set_column == 0)
 		set_pos = tgetstr("cm", &capsp);
-	columns = tgetnum("co");
-	lines = tgetnum("li");
 
 	if (clear_tabs && set_tab) {
 		prc('\r');	/* force to be at left margin */
