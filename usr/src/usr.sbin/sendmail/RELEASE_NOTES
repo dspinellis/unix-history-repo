@@ -1,11 +1,11 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.9.1 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.9.2 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
 summary of the changes in that release.
 
-8.6.9/8.6.9	94/04/
+8.6.9/8.6.9	94/04/19
 	Do all mail delivery completely disconnected from any terminal.
 		This provides consistency with daemon delivery and
 		may have some security implications.
