@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)canfield.c 4.2 %G%";
+static char sccsid[] = "@(#)canfield.c 4.3 %G%";
 
 /*
  * The canfield program
@@ -348,27 +348,34 @@ removecard(a, b)
 }
 
 /* procedure to print the cards on the board */
-printrank(a, b, cp)
+printrank(a, b, cp, inverse)
 struct cardtype *cp;
+bool inverse;
 {
 	move(b, a);
+	if (cp->rank != 10)
+		addch(' ');
+	if (inverse)
+		standout();
 	switch (cp->rank) {
 		case 2: case 3: case 4: case 5: case 6: case 7:
 		case 8: case 9: case 10:
-			printw("%2d", cp->rank);
+			printw("%d", cp->rank);
 			break;
 		case Ace:
-			printw(" A");
+			addch('A');
 			break;
 		case Jack:
-			printw(" J");
+			addch('J');
 			break;
 		case Queen:
-			printw(" Q");
+			addch('Q');
 			break;
 		case King:
-			printw(" K");
+			addch('K');
 	}
+	if (inverse)
+		standend();
 }
 
 printcard(a, b, cp)
@@ -381,8 +388,14 @@ struct cardtype *cp;
 		move(b, a);
 		printw(" ? ");
 	} else {
-		printrank(a, b, cp);
+		bool inverse = (cp->suit == 'd' || cp->suit == 'h');
+
+		printrank(a, b, cp, inverse);
+		if (inverse)
+			standout();
 		addch(cp->suit);
+		if (inverse)
+			standend();
 	}
 }
 
@@ -503,7 +516,7 @@ startgame()
 	printw("Base");
 	move(foundrow - 1, basecol);
 	printw("Rank");
-	printrank(basecol, foundrow, found[0]);
+	printrank(basecol, foundrow, found[0], 0);
 	for (j=0; j<=3; j++)
 		fndbase(&tableau[j], pilemap[j], tabrow);
 	fndbase(&stock, stockcol, stockrow);
