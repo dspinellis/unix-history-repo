@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 struct delayval;
@@ -18,7 +18,7 @@ int	 getent __P((char *, char *));
 int	 getflag __P((char *));
 long	 getnum __P((char *));
 char	*getstr __P((char *, char **));
-void	 gettable __P((char *, char *, char *));
+void	 gettable __P((char *, char *));
 void	 makeenv __P((char *[]));
 char	*portselector __P((void));
 void	 set_ttydefaults __P((int));
