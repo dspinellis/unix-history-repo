@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imp.c	7.5 (Berkeley) %G%
+ *	@(#)if_imp.c	7.6 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -628,8 +628,10 @@ impsnd(ifp, m)
 				HOST_ENQUE(hp, m);
 				if (hp->h_rfnm + hp->h_qcnt <= IMP_MAXHOSTMSG)
 					sc->imp_msgready++;
-			} else
+			} else {
 				error = ENOBUFS;
+				IF_DROP(&ifp->if_snd);
+			}
 		} else
 			error = ENOBUFS;
 	} else if (sc->imp_cb.ic_oactive == 0)
@@ -830,6 +832,7 @@ impioctl(ifp, cmd, data)
 				sc->imp_state = IMPS_DOWN;
 				sc->imp_msgready = 0;
 				hostreset(ifp->if_unit);
+				if_down(ifp);
 			}
 		} else if (ifp->if_flags & IFF_UP && sc->imp_state == IMPS_DOWN)
 			impinit(ifp->if_unit);
