@@ -1,3 +1,4 @@
+/*	rxformat.c	4.2	83/04/28	*/
 
 #include <stdio.h>
 #include <sys/file.h>
