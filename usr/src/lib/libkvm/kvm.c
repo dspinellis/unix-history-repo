@@ -6,19 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <machine/pte.h>
-#include <machine/vmparam.h>
 #include <sys/param.h>
-#include <sys/vmmac.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/ioctl.h>
 #include <sys/kinfo.h>
 #include <sys/tty.h>
+#include <machine/vmparam.h>
 #include <fcntl.h>
 #include <kvm.h>
 #include <nlist.h>
@@ -27,6 +24,21 @@ static char sccsid[] = "@(#)kvm.c	5.13 (Berkeley) %G%";
 #include <paths.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef SPPWAIT
+#define NEWVM
+#endif
+
+#ifdef NEWVM
+#define	btop(x)		(((unsigned)(x)) >> PGSHIFT)	/* XXX */
+#define	ptob(x)		((caddr_t)((x) << PGSHIFT))	/* XXX */
+#include <vm/vm.h>	/* ??? kinfo_proc currently includes this*/
+#include <sys/kinfo_proc.h>
+#else
+#include <machine/pte.h>
+#include <sys/vmmac.h>
+#include <sys/text.h>
+#endif
 
 /*
  * files
@@ -66,6 +78,7 @@ static	int	nswap;
 static	char	*tmp;
 #if defined(hp300)
 static	int	lowram;
+static	struct ste *Sysseg;
 #endif
 
 #define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
@@ -110,8 +123,10 @@ static struct nlist nl[] = {
 #define	X_NPROC		9
 #define	X_LAST		9
 #if defined(hp300)
+	{ "_Sysseg" },
+#define	X_SYSSEG	(X_LAST+1)
 	{ "_lowram" },
-#define	X_LOWRAM	(X_LAST+1)
+#define	X_LOWRAM	(X_LAST+2)
 #endif
 	{ "" },
 };
@@ -344,8 +359,8 @@ kvm_getprocs(what, arg)
 			return (-1);
 		}
 		if (copysize % sizeof (struct kinfo_proc)) {
-			seterr("proc size mismatch (kinfo_proc: %d)",
-				sizeof (struct kinfo_proc));
+			seterr("proc size mismatch (got %d total, kinfo_proc: %d)",
+				copysize, sizeof (struct kinfo_proc));
 			return (-1);
 		}
 		kvmnprocs = copysize / sizeof (struct kinfo_proc);
@@ -390,7 +405,9 @@ kvm_doprocs(what, arg, buff)
 	struct pgrp pgrp;
 	struct session sess;
 	struct tty tty;
+#ifndef NEWVM
 	struct text text;
+#endif
 
 	/* allproc */
 	if (kvm_read(nl[X_ALLPROC].n_value, &p, 
@@ -406,6 +423,30 @@ again:
 			seterr("can't read proc at %x", p);
 			return (-1);
 		}
+#ifdef NEWVM
+		if (kvm_read(proc.p_cred, &eproc.e_pcred,
+		    sizeof (struct pcred)) == sizeof (struct pcred))
+			(void) kvm_read(eproc.e_pcred.pc_ucred, &eproc.e_ucred,
+			    sizeof (struct ucred));
+		switch(ki_op(what)) {
+			
+		case KINFO_PROC_PID:
+			if (proc.p_pid != (pid_t)arg)
+				continue;
+			break;
+
+
+		case KINFO_PROC_UID:
+			if (eproc.e_ucred.cr_uid != (uid_t)arg)
+				continue;
+			break;
+
+		case KINFO_PROC_RUID:
+			if (eproc.e_pcred.p_ruid != (uid_t)arg)
+				continue;
+			break;
+		}
+#else
 		switch(ki_op(what)) {
 			
 		case KINFO_PROC_PID:
@@ -424,6 +465,7 @@ again:
 				continue;
 			break;
 		}
+#endif
 		/*
 		 * gather eproc
 		 */
@@ -463,6 +505,12 @@ again:
 			eproc.e_tdev = NODEV;
 		if (proc.p_wmesg)
 			kvm_read(proc.p_wmesg, eproc.e_wmesg, WMESGLEN);
+#ifdef NEWVM
+		(void) kvm_read(proc.p_vmspace, &eproc.e_vm,
+		    sizeof (struct vmspace));
+		eproc.e_xsize = eproc.e_xrssize =
+			eproc.e_xccount = eproc.e_xswrss = 0;
+#else
 		if (proc.p_textp) {
 			kvm_read(proc.p_textp, &text, sizeof (text));
 			eproc.e_xsize = text.x_size;
@@ -473,6 +521,7 @@ again:
 			eproc.e_xsize = eproc.e_xrssize =
 			  eproc.e_xccount = eproc.e_xswrss = 0;
 		}
+#endif
 
 		switch(ki_op(what)) {
 
@@ -542,6 +591,61 @@ kvm_freeprocs()
 	}
 }
 
+#ifdef NEWVM
+struct user *
+kvm_getu(p)
+	struct proc *p;
+{
+	register struct kinfo_proc *kp = (struct kinfo_proc *)p;
+	register int i;
+	register char *up;
+	struct pte pte[CLSIZE*2];
+
+	if (kvminit == 0 && kvm_init(NULL, NULL, NULL, 0) == -1)
+		return (NULL);
+	if (p->p_stat == SZOMB) {
+		seterr("zombie process");
+		return (NULL);
+	}
+	/*
+	 * Reading from swap is too complicated right now.
+	 */
+	if ((p->p_flag & SLOAD) == 0)
+		return(NULL);
+	/*
+	 * Read u-area one page at a time for the benefit of post-mortems
+	 */
+	up = (char *) p->p_addr;
+	for (i = 0; i < UPAGES; i++) {
+		klseek(kmem, (long)up, 0);
+		if (read(kmem, user.upages[i], CLBYTES) != CLBYTES) {
+			seterr("cant read page %x of u of pid %d from %s",
+			    up, p->p_pid, kmemf);
+			return(NULL);
+		}
+		up += CLBYTES;
+	}
+	pcbpf = (int) btop(p->p_addr);	/* what should this be really? */
+	/*
+	 * Conjure up a physical address for the arguments.
+	 */
+	argaddr0 = argaddr1 = 0;
+#ifdef hp300
+	if (kp->kp_eproc.e_vm.vm_pmap.pm_ptab) {
+		klseek(kmem,
+		    (long)&kp->kp_eproc.e_vm.vm_pmap.pm_ptab
+		    [btoc(USRSTACK-CLBYTES*2)], 0);
+		if (read(kmem, (char *)&pte, sizeof(pte)) == sizeof(pte)) {
+			argaddr0 = ctob(pftoc(pte[CLSIZE*0].pg_pfnum));
+			argaddr1 = ctob(pftoc(pte[CLSIZE*1].pg_pfnum));
+		}
+	}
+	kp->kp_eproc.e_vm.vm_rssize =
+	    kp->kp_eproc.e_vm.vm_pmap.pm_stats.resident_count; /* XXX */
+#endif
+	return(&user.user);
+}
+#else
 struct user *
 kvm_getu(p)
 	const struct proc *p;
@@ -565,7 +669,7 @@ kvm_getu(p)
 		(void) lseek(swap, (long)dtob(p->p_swaddr), 0);
 		if (read(swap, (char *)&user.user, sizeof (struct user)) != 
 		    sizeof (struct user)) {
-			seterr("can't read u for pid %d from %s\n",
+			seterr("can't read u for pid %d from %s",
 			    p->p_pid, swapf);
 			return (NULL);
 		}
@@ -609,6 +713,7 @@ kvm_getu(p)
 	}
 	return (&user.user);
 }
+#endif
 
 char *
 kvm_getargs(p, up)
@@ -624,12 +729,21 @@ kvm_getargs(p, up)
 	register int *ip;
 	char c;
 	int nbad;
+#ifndef NEWVM
 	struct dblock db;
+#endif
 	char *file;
+	int stkoff = 0;
 
+#if defined(NEWVM) && defined(hp300)
+	stkoff = 24;	/* XXX for sigcode */
+#endif
 	if (up == NULL || p->p_pid == 0 || p->p_pid == 2)
 		goto retucomm;
 	if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
+#ifdef NEWVM
+		goto retucomm;	/* XXX for now */
+#else
 		if (swap < 0 || p->p_ssize == 0)
 			goto retucomm;
 		vstodb(0, CLSIZE, &up->u_smap, &db, 1);
@@ -642,6 +756,7 @@ kvm_getargs(p, up)
 		if (read(swap, (char *)&argspac.argc[0], CLBYTES) != CLBYTES)
 			goto bad;
 		file = swapf;
+#endif
 	} else {
 		if (argaddr0) {
 			lseek(mem, (long)argaddr0, 0);
@@ -656,6 +771,7 @@ kvm_getargs(p, up)
 	}
 	ip = &argspac.argi[CLBYTES*2/sizeof (int)];
 	ip -= 2;		/* last arg word and .long 0 */
+	ip -= stkoff / sizeof (int);
 	while (*--ip) {
 		if (ip == argspac.argi)
 			goto retucomm;
@@ -663,7 +779,7 @@ kvm_getargs(p, up)
 	*(char *)ip = ' ';
 	ip++;
 	nbad = 0;
-	for (cp = (char *)ip; cp < &argspac.argc[CLBYTES*2]; cp++) {
+	for (cp = (char *)ip; cp < &argspac.argc[CLBYTES*2-stkoff]; cp++) {
 		c = *cp & 0177;
 		if (c == 0)
 			*cp = ' ';
@@ -693,7 +809,7 @@ kvm_getargs(p, up)
 	return (cmdbuf);
 
 bad:
-	seterr("error locating command name for pid %d from %s\n",
+	seterr("error locating command name for pid %d from %s",
 	    p->p_pid, file);
 retucomm:
 	(void) strcpy(cmdbuf, " (");
@@ -712,6 +828,7 @@ getkvars()
 		/* We must do the sys map first because klseek uses it */
 		long	addr;
 
+#ifndef NEWVM
 		Syssize = nl[X_SYSSIZE].n_value;
 		Sysmap = (struct pte *)
 			calloc((unsigned) Syssize, sizeof (struct pte));
@@ -727,6 +844,7 @@ getkvars()
 			seterr("can't read Sysmap");
 			return (-1);
 		}
+#endif
 #if defined(hp300)
 		addr = (long) nl[X_LOWRAM].n_value;
 		(void) lseek(kmem, addr, 0);
@@ -736,10 +854,25 @@ getkvars()
 			return (-1);
 		}
 		lowram = btop(lowram);
+		Sysseg = (struct ste *) malloc(NBPG);
+		if (Sysseg == NULL) {
+			seterr("out of space for Sysseg");
+			return (-1);
+		}
+		addr = (long) nl[X_SYSSEG].n_value;
+		(void) lseek(kmem, addr, 0);
+		read(kmem, (char *)&addr, sizeof(addr));
+		(void) lseek(kmem, (long)addr, 0);
+		if (read(kmem, (char *) Sysseg, NBPG) != NBPG) {
+			seterr("can't read Sysseg");
+			return (-1);
+		}
 #endif
 	}
+#ifndef NEWVM
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
+#endif
 	if (kvm_read((long)nl[X_NSWAP].n_value, &nswap, sizeof (long)) !=
 	    sizeof (long)) {
 		seterr("can't read nswap");
@@ -767,13 +900,13 @@ kvm_read(loc, buf, len)
 	if (iskva(loc)) {
 		klseek(kmem, loc, 0);
 		if (read(kmem, buf, len) != len) {
-			seterr("error reading kmem at %x\n", loc);
+			seterr("error reading kmem at %x", loc);
 			return (-1);
 		}
 	} else {
 		lseek(mem, loc, 0);
 		if (read(mem, buf, len) != len) {
-			seterr("error reading mem at %x\n", loc);
+			seterr("error reading mem at %x", loc);
 			return (-1);
 		}
 	}
@@ -794,6 +927,7 @@ klseek(fd, loc, off)
 	(void) lseek(fd, (off_t)loc, off);
 }
 
+#ifndef NEWVM
 /*
  * Given a base/size pair in virtual swap area,
  * return a physical base/size pair which is the
@@ -824,7 +958,39 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	dbp->db_size = MIN(vssize, blk - vsbase);
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
+#endif
 
+#ifdef NEWVM
+static off_t
+vtophys(loc)
+	long	loc;
+{
+	off_t newloc = (off_t) -1;
+#ifdef hp300
+	int p, ste, pte;
+
+	ste = *(int *)&Sysseg[loc >> SG_ISHIFT];
+	if ((ste & SG_V) == 0) {
+		seterr("vtophys: segment not valid");
+		return((off_t) -1);
+	}
+	p = btop(loc & SG_PMASK);
+	newloc = (ste & SG_FRAME) + (p * sizeof(struct pte));
+	(void) lseek(kmem, (long)(newloc-(off_t)ptob(lowram)), 0);
+	if (read(kmem, (char *)&pte, sizeof pte) != sizeof pte) {
+		seterr("vtophys: cannot locate pte");
+		return((off_t) -1);
+	}
+	newloc = pte & PG_FRAME;
+	if (pte == PG_NV || newloc < (off_t)ptob(lowram)) {
+		seterr("vtophys: page not valid");
+		return((off_t) -1);
+	}
+	newloc = (newloc - (off_t)ptob(lowram)) + (loc & PGOFSET);
+#endif
+	return((off_t) newloc);
+}
+#else
 static off_t
 vtophys(loc)
 	long loc;
@@ -859,6 +1025,7 @@ vtophys(loc)
 	loc = (long) (ptob(pftoc(pte->pg_pfnum)) + (loc & PGOFSET));
 	return(loc);
 }
+#endif
 
 #include <varargs.h>
 static char errbuf[_POSIX2_LINE_MAX];
