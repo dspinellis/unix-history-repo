@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_proto.c	7.11 (Berkeley) %G%
+ *	@(#)iso_proto.c	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -57,16 +57,19 @@ int clnp_output(), clnp_init(),clnp_slowtimo(),clnp_drain();
 int rclnp_input(), rclnp_output(), rclnp_ctloutput(), raw_usrreq();
 int	clnp_usrreq();
 
-int	tp_ctloutput();
-int	tpclnp_ctlinput();
-int	tpclnp_input();
-int	tp_usrreq();
+int	tp_ctloutput(), tpclnp_ctlinput(), tpclnp_input(), tp_usrreq();
 int	tp_init(), tp_fasttimo(), tp_slowtimo(), tp_drain();
 int	cons_init(), tpcons_input();
 
-int	esis_input(), esis_ctlinput(), esis_init(), esis_usrreq();
-int	cltp_input(), cltp_ctlinput(), cltp_init(), cltp_usrreq(), cltp_output();
 int isis_input();
+int	esis_input(), esis_ctlinput(), esis_init(), esis_usrreq();
+int	idrp_input(), idrp_init(), idrp_usrreq();
+int	cltp_input(), cltp_ctlinput(), cltp_init(), cltp_usrreq(), cltp_output();
+
+#ifdef TUBA
+int	tuba_usrreq(), tuba_ctloutput(), tuba_init(), tuba_tcpinput(); 
+int	tuba_slowtimo(), tuba_fasttimo(); 
+#endif
 
 struct protosw isosw[] = {
 /*
@@ -118,12 +121,27 @@ struct protosw isosw[] = {
   0,			0,				0,					0
 },
 
+/* ISOPROTO_IDRP */
+{ SOCK_DGRAM,	&isodomain,		ISOPROTO_IDRP,		PR_ATOMIC|PR_ADDR,
+  idrp_input,	0,				0,					0,
+  idrp_usrreq,
+  idrp_init,	0,				0,					0
+},
+
 /* ISOPROTO_TP */
 { SOCK_SEQPACKET,	&isodomain,	ISOPROTO_TP,		PR_CONNREQUIRED|PR_WANTRCVD,
-  tpclnp_input,		0,			tpclnp_ctlinput,	tp_ctloutput,
+  tpclnp_input,	0,				tpclnp_ctlinput,	tp_ctloutput,
   tp_usrreq,
-  tp_init,			tp_fasttimo,			tp_slowtimo,		tp_drain,
+  tp_init,		tp_fasttimo,	tp_slowtimo,		tp_drain,
 },
+
+#ifdef TUBA
+{ SOCK_STREAM,	&isodomain,		ISOPROTO_TCP,		PR_CONNREQUIRED|PR_WANTRCVD,
+  tuba_tcpinput,	0,			0,					tuba_ctloutput,
+  tuba_usrreq,
+  tuba_init,	tuba_fasttimo,	tuba_fasttimo,		0
+},
+#endif
 
 #ifdef TPCONS
 /* ISOPROTO_TP */
