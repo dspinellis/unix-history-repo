@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsmount.h	7.6 (Berkeley) %G%
+ *	@(#)nfsmount.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -47,3 +47,45 @@ struct	nfsmount {
  */
 #define VFSTONFS(mp)	((struct nfsmount *)((mp)->mnt_data))
 #endif /* KERNEL */
+
+/*
+ * Prototypes for NFS mount operations
+ */
+int	nfs_mount __P((
+		struct mount *mp,
+		char *path,
+		caddr_t data,
+		struct nameidata *ndp,
+		struct proc *p));
+int	nfs_start __P((
+		struct mount *mp,
+		int flags,
+		struct proc *p));
+int	nfs_unmount __P((
+		struct mount *mp,
+		int mntflags,
+		struct proc *p));
+int	nfs_root __P((
+		struct mount *mp,
+		struct vnode **vpp));
+int	nfs_quotactl __P((
+		struct mount *mp,
+		int cmds,
+		int uid,	/* should be uid_t */
+		caddr_t arg,
+		struct proc *p));
+int	nfs_statfs __P((
+		struct mount *mp,
+		struct statfs *sbp,
+		struct proc *p));
+int	nfs_sync __P((
+		struct mount *mp,
+		int waitfor));
+int	nfs_fhtovp __P((
+		struct mount *mp,
+		struct fid *fhp,
+		struct vnode **vpp));
+int	nfs_vptofh __P((
+		struct vnode *vp,
+		struct fid *fhp));
+int	nfs_init __P(());
