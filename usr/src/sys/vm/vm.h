@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm.h	7.4 (Berkeley) %G%
+ *	@(#)vm.h	7.5 (Berkeley) %G%
  */
 
 #ifndef VM_H
@@ -41,10 +41,10 @@ typedef	struct queue_entry	queue_head_t;
 typedef	struct queue_entry	queue_chain_t;
 typedef	struct queue_entry	*queue_entry_t;
 
-#define	queue_first(head)	((head)->next)
-#define	queue_next(elm)		((elm)->next)
-#define	queue_empty(head)	((head)->next == 0)
-#define	queue_end(elm, head)	((elm) == 0)
+#define	queue_first(head)	((head)->qe_next)
+#define	queue_next(elm)		((elm)->qe_next)
+#define	queue_empty(head)	((head)->qe_next == 0)
+#define	queue_end(head, elm)	((elm) == 0)
 
 #define queue_enter(head, elt, type, field) \
 	queue_enter_tail(head, elt, type, field)
