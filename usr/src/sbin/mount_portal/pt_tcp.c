@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_tcp.c	8.1 (Berkeley) %G%
+ *	@(#)pt_tcp.c	8.2 (Berkeley) %G%
  *
  * $Id: pt_tcp.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -51,6 +51,7 @@ int *fdp;
 	struct in_addr *ip[2];
 	struct in_addr ina;
 	int s_port;
+	int priv = 0;
 	struct sockaddr_in sain;
 
 	q = strchr(p, '/');
@@ -58,14 +59,25 @@ int *fdp;
 		return (EINVAL);
 	*q = '\0';
 	strcpy(host, p);
-	p = q++;
+	p = q + 1;
 
 	q = strchr(p, '/');
-	if (q == 0 || q - p >= sizeof(port))
+	if (q)
+		*q = '\0';
+	if (strlen(p) >= sizeof(port))
 		return (EINVAL);
-	*q = '\0';
 	strcpy(port, p);
-	p = q++;
+	if (q) {
+		p = q + 1;
+		if (strcmp(p, "priv") == 0) {
+			if (pcr->pcr_uid == 0)
+				priv = 1;
+			else
+				return (EPERM);
+		} else {
+			return (EINVAL);
+		}
+	}
 
 	hp = gethostbyname(host);
 	if (hp != 0) {
@@ -96,7 +108,10 @@ int *fdp;
 	while (ipp[0]) {
 		int so;
 
-		so = socket(AF_INET, SOCK_STREAM, 0);
+		if (priv)
+			so = rresvport((int *) 0);
+		else
+			so = socket(AF_INET, SOCK_STREAM, 0);
 		if (so < 0) {
 			syslog(LOG_ERR, "socket: %m");
 			return (errno);
