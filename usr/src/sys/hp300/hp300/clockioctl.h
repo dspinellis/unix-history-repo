@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: clockioctl.h 1.0 89/11/05$
+ * from: Utah $Hdr: clockioctl.h 1.1 90/07/09$
  *
- *	@(#)clockioctl.h	7.1 (Berkeley) %G%
+ *	@(#)clockioctl.h	7.2 (Berkeley) %G%
  */
 
 #define	CLOCKMAP	_IOWR('C', 1, int)
