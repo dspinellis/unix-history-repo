@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.11 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.12 %G%";
 
     /*
      *	functions to help pi put out
@@ -11,8 +11,10 @@ static	char sccsid[] = "@(#)p2put.c 1.11 %G%";
 #include	"whoami.h"
 #ifdef PC
 #include	"0.h"
+#include	"objfmt.h"
 #include	"pcops.h"
 #include	"pc.h"
+#include	"align.h"
 
     /*
      *	mash into f77's format
@@ -88,7 +90,7 @@ putlbracket( ftnno , localbytes )
 #	define	MAXTP2REG	11
 
 	p2word( TOF77( P2FLBRAC , MAXTP2REG , ftnno ) );
-	p2word( BITSPERBYTE * localbytes );
+	p2word( roundup(BITSPERBYTE * localbytes, BITSPERBYTE * A_STACK));
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
 		fprintf( stdout
@@ -336,11 +338,16 @@ putCON8( val )
 
 	if ( !CGENNING )
 	    return;
-	putprintf( "	.data" , 0 );
-	putprintf( "	.align 2" , 0 );
 	label = getlab();
+	putprintf( "	.data" , 0 );
+	aligndot(A_DOUBLE);
 	putlab( label );
-	putprintf( "	.double 0d%.20e" , 0 , val );
+#	ifdef vax
+	    putprintf( "	.double 0d%.20e" , 0 , val );
+#	endif vax
+#	ifdef mc68000
+	    putprintf( "	.long 	0x%x,0x%x", 0, val);
+#	endif mc68000
 	putprintf( "	.text" , 0 );
 	sprintf( name , PREFIXFORMAT , LABELPREFIX , label );
 	putleaf( P2NAME , 0 , 0 , P2DOUBLE , name );
@@ -365,6 +372,7 @@ putCONG( string , length , required )
 	if ( !CGENNING )
 	    return;
 	putprintf( "	.data" , 0 );
+	aligndot(A_STRUCT);
 	label = getlab();
 	putlab( label );
 	cp = string;
@@ -757,8 +765,14 @@ printjbr( prefix , label )
     long	label;
     {
 
-	putprintf( "	jbr	" , 1 );
-	putprintf( PREFIXFORMAT , 0 , prefix , label );
+#	ifdef vax
+	    putprintf( "	jbr	" , 1 );
+	    putprintf( PREFIXFORMAT , 0 , prefix , label );
+#	endif vax
+#	ifdef mc68000
+	    putprintf( "	jra	" , 1 );
+	    putprintf( PREFIXFORMAT , 0 , prefix , label );
+#	endif mc68000
     }
 
     /*
@@ -767,7 +781,7 @@ printjbr( prefix , label )
 put( arg1 , arg2 )
     {
 
-	putprintf( "#	PUT CALLED!: arg1 = %d arg2 = 0%o" , 0 , arg1 , arg2 );
+	panic("put()");
     }
 
 #endif PC
