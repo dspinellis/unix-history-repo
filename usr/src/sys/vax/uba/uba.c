@@ -1,4 +1,4 @@
-/*	uba.c	4.30	81/04/12	*/
+/*	uba.c	4.31	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -435,5 +435,70 @@ ubaerror(uban, uh, xx, uvec, uba)
 	uba->uba_sr = sr;
 	uvec &= UBABRRVR_DIV;
 	return;
+}
+#endif
+
+#ifdef BBNNET
+/*
+ * This routine allows remapping of previously
+ * allocated UNIBUS bdp and map resources
+ * onto different memory addresses.
+ * It should only be used by routines which need
+ * small fixed length mappings for long periods of time
+ * (like the ARPANET ACC IMP interface).
+ * It only maps kernel addresses.
+ */
+ubaremap(uban, ubinfo, addr)
+	int uban;
+	register unsigned ubinfo;
+	caddr_t addr;
+{
+	register struct uba_hd *uh = &uba_hd[uban];
+	register struct pte *pte, *io;
+	register int temp, bdp;
+	int npf, o;
+
+	o = (int)addr & PGOFSET;
+	bdp = (ubinfo >> 28) & 0xf;
+	npf = (ubinfo >> 18) & 0x3ff;
+	io = &uh->uh_uba->uba_map[(ubinfo >> 9) & 0x1ff];
+	temp = (bdp << 21) | UBAMR_MRV;
+
+	/*
+	 * If using buffered data path initiate purge
+	 * of old data and set byte offset bit if next
+	 * transfer will be from odd address.
+	 */
+	if (bdp) {
+		switch (cpu) {
+#if VAX780
+		case VAX_780:
+			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
+			break;
+#endif
+#if VAX750
+		case VAX_750:
+			uh->uh_uba->uba_dpr[bdp] |=
+			    UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
+			break;
+#endif
+		}
+		if (o & 1)
+			temp |= UBAMR_BO;
+	}
+
+	/*
+	 * Set up the map registers, leaving an invalid reg
+	 * at the end to guard against wild unibus transfers.
+	 */
+	pte = &Sysmap[btop(((int)addr)&0x7fffffff)];
+	while (--npf != 0)
+		*(int *)io++ = pte++->pg_pfnum | temp;
+	*(int *)io = 0;
+
+	/*
+	 * Return effective UNIBUS address.
+	 */
+	return (ubinfo | o);
 }
 #endif

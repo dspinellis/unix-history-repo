@@ -1,4 +1,4 @@
-/*	conf.c	4.32	81/05/05	*/
+/*	conf.c	4.33	81/05/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -110,6 +110,13 @@ struct bdevsw	bdevsw[] =
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
+
+#include "acc.h"
+#if NACC > 0
+int     accreset();
+#else
+#define accreset nulldev
+#endif
 
 #include "ct.h"
 #if NCT > 0
@@ -264,7 +271,7 @@ struct cdevsw	cdevsw[] =
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nodev,		nodev,		0,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
-	nodev,		nodev,		nodev,		0,
+	nodev,		nodev,		accreset,	0,
 	nodev,		nodev,		nodev,		nodev,		/*23*/
 	nodev,		nodev,		nodev,		0,
 	nodev,		nodev,		nodev,		nodev,		/*24*/

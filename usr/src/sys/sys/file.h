@@ -1,4 +1,4 @@
-/*	file.h	4.6	81/04/28	*/
+/*	file.h	4.7	81/05/12	*/
 
 /*
  * One file structure is allocated
@@ -19,6 +19,9 @@ struct	file
 #ifdef CHAOS
 		struct connection *f_conn;
 #endif
+#ifdef BBNNET
+		struct ucb *f_ucb;      /* net connection block pointer */
+#endif BBNNET
 	} f_un;
 };
 
@@ -38,3 +41,4 @@ struct	file *falloc();
 #define	FMPY	020
 #define	FMP	030
 #define	FPORT	040
+#define FNET    0100    /* this is a network entry */
