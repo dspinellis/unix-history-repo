@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)head.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)head.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,7 +29,7 @@ static char sccsid[] = "@(#)head.c	5.6 (Berkeley) %G%";
  */
 
 void err __P((int, const char *, ...));
-void head __P((int));
+void head __P((FILE *, int));
 void obsolete __P((char *[]));
 void usage __P((void));
 
@@ -41,6 +41,7 @@ main(argc, argv)
 	char *argv[];
 {
 	register int ch;
+	FILE *fp;
 	int first, linecnt;
 	char *ep;
 
@@ -62,7 +63,7 @@ main(argc, argv)
 
 	if (*argv)
 		for (first = 1; *argv; ++argv) {
-			if (!freopen(*argv, "r", stdin)) {
+			if ((fp = fopen(*argv, "r")) == NULL) {
 				err(0, "%s: %s", *argv, strerror(errno));
 				continue;
 			}
@@ -71,21 +72,23 @@ main(argc, argv)
 				    first ? "" : "\n", *argv);
 				first = 0;
 			}
-			head(linecnt);
+			head(fp, linecnt);
+			(void)fclose(fp);
 		}
 	else
-		head(linecnt);
+		head(stdin, linecnt);
 	exit(eval);
 }
 
 void
-head(cnt)
+head(fp, cnt)
+	FILE *fp;
 	register int cnt;
 {
 	register int ch;
 
 	while (cnt--)
-		while ((ch = getchar()) != EOF) {
+		while ((ch = getc(fp)) != EOF) {
 			if (putchar(ch) == EOF)
 				err(1, "stdout: %s", strerror(errno));
 			if (ch == '\n')
