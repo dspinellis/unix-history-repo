@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.51	%G%";
+static char	SccsId[] = "@(#)main.c	3.52	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -558,6 +558,12 @@ setfrom(from, realname)
 
 	if (realname == NULL)
 		realname = From.q_paddr;
+
+# ifdef DEBUG
+	if (Debug > 1)
+		printf("setfrom(%s, %s)\n", from, realname);
+# endif DEBUG
+
 	if (from != NULL)
 	{
 		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&
@@ -573,10 +579,10 @@ setfrom(from, realname)
 	}
 
 	SuprErrs = TRUE;
-	if (from == NULL || parse(from, &From, 0) == NULL)
+	if (from == NULL || parse(from, &From, 1) == NULL)
 	{
 		from = newstr(realname);
-		(void) parse(from, &From, 0);
+		(void) parse(from, &From, 1);
 	}
 	else
 		FromFlag = TRUE;
