@@ -1,4 +1,4 @@
-#	@(#)NEWS3200	7.2 (Berkeley) %G%
+#	@(#)NEWS3200	7.3 (Berkeley) %G%
 #
 # NWS-3200
 #
@@ -12,6 +12,7 @@ options		INET
 #options		NS
 #options		KADB
 #options		QUOTA
+options		FIFO
 options		FFS
 options		NFS
 options		MFS
