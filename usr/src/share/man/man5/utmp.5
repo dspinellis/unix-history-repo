@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utmp.5	6.1 (Berkeley) %G%
+.\"	@(#)utmp.5	6.2 (Berkeley) %G%
 .\"
 .TH UTMP 5  ""
 .UC 4
@@ -35,7 +35,7 @@ A null user name indicates a logout on the associated terminal.
 Furthermore, the terminal name `~' indicates that the
 system was rebooted at the indicated time;
 the adjacent pair of entries with terminal names
-`\^|\^' and `}' indicate the system-maintained time just before and just after a
+`\^|\^' and `{' indicate the system-maintained time just before and just after a
 .I date
 command has changed the system's idea of the time.
 .PP
