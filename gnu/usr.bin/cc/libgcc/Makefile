@@ -1,9 +1,9 @@
-#	$Id: Makefile,v 1.8 1993/11/09 20:16:36 paul Exp $
+#	$Id: Makefile,v 1.9 1993/11/10 05:04:52 paul Exp $
 
 LIB=	gcc
 NOPROFILE=
 INSTALL_PIC_ARCHIVE=
-SHLIB_MAJOR= 0
+SHLIB_MAJOR= 1
 SHLIB_MINOR= 0
 
 
