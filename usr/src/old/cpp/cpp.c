@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.18 %G%";
+static char sccsid[] = "@(#)cpp.c	1.19 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -165,7 +165,7 @@ STATIC 	FILE *mout;	/* file to place dependencies on */
 #define CONT  2
 #define BACK  3
 STATIC	int	ifno;
-# define NPREDEF 20
+# define NPREDEF 30
 STATIC	char *prespc[NPREDEF];
 STATIC	char **predef = prespc;
 STATIC	char *punspc[NPREDEF];
