@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.15 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.16 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -647,8 +647,10 @@ yylex()
 				dologout(0);
 			}
 			(void) alarm(0);
-			if ((cp = index(cbuf, '\r')))
-				*cp++ = '\n'; *cp = '\0';
+			if ((cp = index(cbuf, '\r'))) {
+				*cp++ = '\n';
+				*cp = '\0';
+			}
 			if ((cp = strpbrk(cbuf, " \n")))
 				cpos = cp - cbuf;
 			if (cpos == 0)
