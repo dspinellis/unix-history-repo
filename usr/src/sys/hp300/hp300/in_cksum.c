@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1988, 1990 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: in_cksum.c 1.1 90/07/09$
  *
- *	@(#)in_cksum.c	7.5 (Berkeley) %G%
+ *	@(#)in_cksum.c	8.1 (Berkeley) %G%
  */
 
 /*
