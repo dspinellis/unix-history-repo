@@ -8,7 +8,7 @@
  *
  * all fields are separated by a single space.
  */
-1 0e \ ~
+1 0e ` ~
 2 16 1 !
 3 1e 2 @
 4 26 3 #
