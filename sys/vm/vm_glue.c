@@ -75,6 +75,7 @@
 #include "vm_page.h"
 #include "vm_kern.h"
 #include "machine/stdarg.h"
+#include "machine/vmparam.h"
 
 extern char kstack[];
 int	avefree = 0;		/* XXX */
@@ -213,7 +214,6 @@ vm_fork(p1, p2, isvfork)
 	 * Allocate a wired-down (for now) pcb and kernel stack for the process
 	 */
 
-	/* addr = UPT_MIN_ADDRESS - UPAGES*NBPG; */
 	addr = (vm_offset_t) kstack;
 
 	vp = &p2->p_vmspace->vm_map;
@@ -485,8 +485,10 @@ swapout_threads()
 			continue;
 		switch (p->p_stat) {
 		case SRUN:
+/*
 			if (p->p_pri < PUSER)
 				continue;
+*/
 			if ((tpri = p->p_time + p->p_nice * 8) > outpri2) {
 				outp2 = p;
 				outpri2 = tpri;
@@ -495,8 +497,10 @@ swapout_threads()
 			
 		case SSLEEP:
 		case SSTOP:
+/*
 			if (p->p_pri <= PRIBIO)
 				continue;
+*/
 			if (p->p_slptime > maxslp) {
 				swapout(p);
 				didswap++;
@@ -511,10 +515,10 @@ swapout_threads()
 	 * If we didn't get rid of any real duds, toss out the next most
 	 * likely sleeping/stopped or running candidate.  We only do this
 	 * if we are real low on memory since we don't gain much by doing
-	 * it (UPAGES pages).
+	 * it (UPAGES+1 pages).
 	 */
 	if (didswap == 0 && (swapinreq && 
-			vm_page_free_count <= vm_pageout_free_min)) {
+			(vm_page_free_count + vm_page_inactive_count) <= (vm_page_free_min + vm_page_inactive_target))) {
 		if ((p = outp) == 0 &&
 			(vm_page_free_count <= vm_pageout_free_min))
 			p = outp2;

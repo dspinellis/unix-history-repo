@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.11 1994/01/31 04:32:41 davidg Exp $
+ *	$Id: vm_page.c,v 1.12 1994/02/09 07:03:10 davidg Exp $
  */
 
 /*
@@ -793,6 +793,9 @@ vm_page_activate(m)
 	VM_PAGE_CHECK(m);
 
 	vm_pageout_deact_bump(m);
+
+	if( m->wire_count)
+		return;
 
 	spl = vm_disable_intr();
 

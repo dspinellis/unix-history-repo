@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_vnops.c	7.33 (Berkeley) 6/27/91
- *	$Id: vfs_vnops.c,v 1.3 1993/11/25 01:33:45 wollman Exp $
+ *	$Id: vfs_vnops.c,v 1.4 1993/12/12 12:23:22 davidg Exp $
  */
 
 #include "param.h"
@@ -381,6 +381,7 @@ vn_ioctl(fp, com, data, p)
 	default:
 		return (ENOTTY);
 
+	case VPROC:
 	case VFIFO:
 	case VCHR:
 	case VBLK:

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)swap_pager.h	7.1 (Berkeley) 12/5/90
- *	$Id: swap_pager.h,v 1.6 1994/01/14 16:27:14 davidg Exp $
+ *	$Id: swap_pager.h,v 1.7 1994/01/17 09:33:25 davidg Exp $
  */
 
 /*
@@ -89,7 +89,7 @@ boolean_t	swap_pager_getmulti(vm_pager_t, vm_page_t *, int, int, boolean_t);
 boolean_t	swap_pager_haspage(vm_pager_t, vm_offset_t);
 int		swap_pager_io(sw_pager_t, vm_page_t *, int, int, int);
 void		swap_pager_iodone(struct buf *);
-boolean_t	swap_pager_clean(vm_page_t, int);
+boolean_t	swap_pager_clean();
 
 extern struct pagerops swappagerops;
 

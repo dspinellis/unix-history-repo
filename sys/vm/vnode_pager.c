@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.10 1994/01/31 04:22:01 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.11 1994/02/06 22:19:47 davidg Exp $
  */
 
 /*
@@ -93,6 +93,7 @@ struct pagerops vnodepagerops = {
 	vnode_pager_getpage,
 	vnode_pager_getmulti,
 	vnode_pager_putpage,
+	0,
 	vnode_pager_haspage
 };
 
