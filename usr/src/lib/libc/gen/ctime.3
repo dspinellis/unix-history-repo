@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	4.1 (Berkeley) %G%
+.\"	@(#)ctime.3	5.1 (Berkeley) %G%
 .\"
-.TH CTIME 3 
+.TH CTIME 3  "26 June 1983"
 .UC 4
 .SH NAME
 ctime, localtime, gmtime, asctime, timezone \-  convert date and time to ASCII
@@ -13,7 +13,7 @@ ctime, localtime, gmtime, asctime, timezone \-  convert date and time to ASCII
 .B char *ctime(clock)
 .B long *clock;
 .PP
-.B #include <time.h>
+.B #include <sys/time.h>
 .PP
 .B struct tm *localtime(clock)
 .B long *clock;
@@ -54,10 +54,20 @@ converts a broken-down time to ASCII and returns a pointer
 to a 26-character string.
 .PP
 The structure declaration from the include file is:
-.RS
 .PP
+.RS
 .nf
-.so /usr/include/time.h
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+};
 .fi
 .RE
 .PP
@@ -68,12 +78,11 @@ and a flag that is nonzero if daylight saving time is in effect.
 .PP
 When local time is called for,
 the program consults the system to determine the time zone and
-whether the standard U.S.A. daylight saving time adjustment is
-appropriate.
-The program knows about the peculiarities
-of this conversion in 1974 and 1975;
-if necessary,
-a table for these years can be extended.
+whether the U.S.A., Australian, Eastern European, Middle European,
+or Western European daylight saving time adjustment is appropriate.
+The program knows about various peculiarities in time conversion
+over the past 10-20 years; if necessary, this understanding can
+be extended.
 .PP
 .I Timezone
 returns the name of the time zone associated with its first argument,
@@ -90,7 +99,7 @@ and the string
 .B GMT+4:30
 is produced.
 .SH "SEE ALSO"
-time(2)
+gettimeofday(2), time(3)
 .SH BUGS
 The return values point to static data
 whose content is overwritten by each call.
