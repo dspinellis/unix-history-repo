@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.51 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.52 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,20 +30,6 @@
 #include "ufsmount.h"
 #include "inode.h"
 
-/*
- * ufs vfs operations.
- */
-int ufs_mount();
-int ufs_start();
-int ufs_unmount();
-int ufs_root();
-int ufs_quotactl();
-int ufs_statfs();
-int ufs_sync();
-int ufs_fhtovp();
-int ufs_vptofh();
-int ufs_init();
-
 struct vfsops ufs_vfsops = {
 	ufs_mount,
 	ufs_start,
@@ -68,6 +54,7 @@ ufs_mountroot()
 {
 	register struct mount *mp;
 	extern struct vnode *rootvp;
+	struct proc *p = curproc;	/* XXX */
 	struct ufsmount *ump;
 	register struct fs *fs;
 	u_int size;
@@ -79,13 +66,13 @@ ufs_mountroot()
 	mp->mnt_flag = MNT_RDONLY;
 	mp->mnt_exroot = 0;
 	mp->mnt_mounth = NULLVP;
-	error = mountfs(rootvp, mp);
+	error = mountfs(rootvp, mp, p);
 	if (error) {
 		free((caddr_t)mp, M_MOUNT);
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
-		(void)ufs_unmount(mp, 0);
+		(void)ufs_unmount(mp, 0, p);
 		free((caddr_t)mp, M_MOUNT);
 		return (error);
 	}
@@ -102,7 +89,7 @@ ufs_mountroot()
 	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->mnt_stat);
+	(void) ufs_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	inittodr(fs->fs_time);
 	return (0);
@@ -113,11 +100,12 @@ ufs_mountroot()
  *
  * mount system call
  */
-ufs_mount(mp, path, data, ndp)
+ufs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
 	caddr_t data;
 	struct nameidata *ndp;
+	struct proc *p;
 {
 	struct vnode *devvp;
 	struct ufs_args args;
@@ -143,9 +131,9 @@ ufs_mount(mp, path, data, ndp)
 		mp->mnt_exroot = args.exroot;
 	}
 	if ((mp->mnt_flag & MNT_UPDATE) == 0) {
-		if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
+		if ((error = getmdev(&devvp, args.fspec, ndp, p)) != 0)
 			return (error);
-		error = mountfs(devvp, mp);
+		error = mountfs(devvp, mp, p);
 	} else {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
@@ -157,7 +145,7 @@ ufs_mount(mp, path, data, ndp)
 		 */
 		if (args.fspec == 0)
 			return (0);
-		if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
+		if ((error = getmdev(&devvp, args.fspec, ndp, p)) != 0)
 			return (error);
 		if (devvp != ump->um_devvp)
 			error = EINVAL;	/* needs translation */
@@ -177,16 +165,17 @@ ufs_mount(mp, path, data, ndp)
 	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->mnt_stat);
+	(void) ufs_statfs(mp, &mp->mnt_stat, p);
 	return (0);
 }
 
 /*
  * Common code for mount and mountroot
  */
-mountfs(devvp, mp)
+mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;
+	struct proc *p;
 {
 	register struct ufsmount *ump = (struct ufsmount *)0;
 	struct buf *bp = NULL;
@@ -201,12 +190,12 @@ mountfs(devvp, mp)
 	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
 	extern struct vnode *rootvp;
 
-	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED))
+	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p))
 		return (error);
 	needclose = 1;
-	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED) != 0) {
+	if (VOP_IOCTL(devvp, DIOCGPART, (caddr_t)&dpart, FREAD, NOCRED, p) != 0)
 		size = DEV_BSIZE;
-	} else {
+	else {
 		havepart = 1;
 		size = dpart.disklab->d_secsize;
 	}
@@ -305,7 +294,7 @@ out:
 	if (bp)
 		brelse(bp);
 	if (needclose)
-		(void) VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
+		(void)VOP_CLOSE(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED, p);
 	if (ump) {
 		free((caddr_t)ump->um_fs, M_SUPERBLK);
 		free((caddr_t)ump, M_UFSMNT);
@@ -319,9 +308,10 @@ out:
  * Nothing to do at the moment.
  */
 /* ARGSUSED */
-ufs_start(mp, flags)
+ufs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
+	struct proc *p;
 {
 
 	return (0);
@@ -330,9 +320,10 @@ ufs_start(mp, flags)
 /*
  * unmount system call
  */
-ufs_unmount(mp, mntflags)
+ufs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
+	struct proc *p;
 {
 	register struct ufsmount *ump;
 	register struct fs *fs;
@@ -397,14 +388,14 @@ ufs_root(mp, vpp)
 /*
  * Do operations associated with quotas
  */
-ufs_quotactl(mp, cmds, uid, arg)
+ufs_quotactl(mp, cmds, uid, arg, p)
 	struct mount *mp;
 	int cmds;
 	uid_t uid;
 	caddr_t arg;
+	struct proc *p;
 {
 	struct ufsmount *ump = VFSTOUFS(mp);
-	struct proc *p = curproc;	/* XXX */
 	int cmd, type, error;
 
 #ifndef QUOTA
@@ -467,9 +458,10 @@ ufs_quotactl(mp, cmds, uid, arg)
 /*
  * Get file system statistics.
  */
-ufs_statfs(mp, sbp)
+ufs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
+	struct proc *p;
 {
 	register struct ufsmount *ump;
 	register struct fs *fs;
@@ -726,10 +718,11 @@ ufs_vptofh(vp, fhp)
  * Check that the user's argument is a reasonable
  * thing on which to mount, and return the device number if so.
  */
-getmdev(devvpp, fname, ndp)
+getmdev(devvpp, fname, ndp, p)
 	struct vnode **devvpp;
 	caddr_t fname;
 	register struct nameidata *ndp;
+	struct proc *p;
 {
 	register struct vnode *vp;
 	int error;
@@ -737,7 +730,7 @@ getmdev(devvpp, fname, ndp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
-	if (error = namei(ndp, curproc))		/* XXX */
+	if (error = namei(ndp, p))
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
