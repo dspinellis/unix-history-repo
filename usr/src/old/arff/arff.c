@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.3 (Berkeley) 81/03/22";
+static	char *sccsid = "@(#)arff.c	4.4 (Berkeley) 81/03/22";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -6,22 +6,22 @@ static	char *sccsid = "@(#)arff.c	4.3 (Berkeley) 81/03/22";
 #include <stdio.h>
 #define dbprintf printf
 struct rt_dat {
-unsigned short	int	rt_yr:5;	/*Year - 1972			*/
-unsigned short	int	rt_dy:5;	/*day				*/
-unsigned short	int	rt_mo:5;	/*month				*/
+unsigned short	int	rt_yr:5;	/* Year - 1972			 */
+unsigned short	int	rt_dy:5;	/* day				 */
+unsigned short	int	rt_mo:5;	/* month				 */
 };
 struct	rt_axent {
 	char	rt_sent[14];
 };
 
 struct rt_ent {
-	char  rt_pad;			/*unusued		     */
-	char  rt_stat;			/*Type of entry, or end of seg*/
-	unsigned short rt_name[3];	/*Name, 3 words in rad50 form */
-	short rt_len;			/*Length of file	      */
-	char  rt_chan;			/*Only used in temporary files*/
-	char  rt_job;			/*Only used in temporary files*/
-	struct rt_dat rt_date;		/*Creation Date			*/
+	char  rt_pad;			/* unusued		     */
+	char  rt_stat;			/* Type of entry, or end of seg */
+	unsigned short rt_name[3];	/* Name, 3 words in rad50 form */
+	short rt_len;			/* Length of file	      */
+	char  rt_chan;			/* Only used in temporary files */
+	char  rt_job;			/* Only used in temporary files */
+	struct rt_dat rt_date;		/* Creation Date			 */
 };
 #define RT_TEMP 1
 #define RT_NULL 2
@@ -30,11 +30,11 @@ struct rt_ent {
 #define RT_BLOCK 512
 #define RT_DIRSIZE 31			/* max # of directory segments */
 struct rt_head {
-	short	rt_numseg;		/*number of segments available*/
-	short	rt_nxtseg;		/*segment no of next log. seg */
-	short	rt_lstseg;		/*highest seg currenltly open */
-	unsigned short	rt_entpad;	/*extra words/dir. entry      */
-	short	rt_stfile;		/*block no where files begin  */
+	short	rt_numseg;		/* number of segments available */
+	short	rt_nxtseg;		/* segment no of next log. seg */
+	short	rt_lstseg;		/* highest seg currenltly open */
+	unsigned short	rt_entpad;	/* extra words/dir. entry      */
+	short	rt_stfile;		/* block no where files begin  */
 };
 struct	rt_dir {
 	struct rt_head	rt_axhead;
@@ -91,10 +91,10 @@ char *argv[];
 {
 	register char *cp;
 
-	/*register i;
+	/* register i;
 	for(i=0; signum[i]; i++)
 		if(signal(signum[i], SIG_IGN) != SIG_IGN)
-			signal(signum[i], sigdone);*/
+			signal(signum[i], sigdone); */
 	if(argc < 2)
 		usage();
 	cp = argv[1];
@@ -113,7 +113,7 @@ char *argv[];
 			char response[128];
 			tty = open("/dev/tty",2);
 			write(tty,SURE,sizeof(SURE));
-			read(tty,response,128);
+			read(tty,response,sizeof(response));
 			if(*response!='y')
 				exit(50);
 			flag('c')++;
@@ -175,20 +175,12 @@ int (*fun)();
 	comfun = fun;
 }
 
-
-
-
-
-
-
-
 usage()
 {
-	printf("usage: ar [%s][%s] archive files ...\n", opt, man);
+
+	fprintf(stderr, "usage: ar [%s][%s] archive files ...\n", opt, man);
 	exit(1);
 }
-
-
 
 notfound()
 {
@@ -202,8 +194,6 @@ notfound()
 		}
 	return(n);
 }
-
-
 
 phserr()
 {
@@ -315,7 +305,6 @@ xcmd()
 			rtx(name);
 		}
 	    }
-
 	else
 		for(i = 0; i < namc; i++)
 		if(rtx(namv[i])==0) namv[i] = 0;
@@ -363,8 +352,10 @@ rt_init()
 		mode = 2;
 	else
 		mode = 0;
-	if((floppydes = open(defdev,mode)) < 0)
+	if((floppydes = open(defdev,mode)) < 0) {
 		dbprintf("Floppy open failed\n");
+		exit(1);
+	}
 	if(flag('c')==0) {
 		lread(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[0]);
 		dirnum = rt_dir[0].rt_axhead.rt_numseg;
@@ -404,7 +395,7 @@ char * name;
 
 	srad50(name,rname);
 
-	/*
+	/* 
 	 *  Search for name, accumulate blocks in index
 	 */
 	rt_init();
@@ -415,8 +406,6 @@ char * name;
 	    for(de=((char *)&rt_dir[segnum])+10; 
 		rt(de)->rt_stat != RT_ESEG; de += rt_entsiz) {
 		switch(rt(de)->rt_stat) {
-		case RT_ESEG:
-		        exit(1);
 		case RT_FILE:
 		case RT_TEMP:
 		if(samename(rname,rt(de)->rt_name))
@@ -485,13 +474,13 @@ register unsigned short *rname;
 {
 	register index; register char *cp;
 	char file[7],ext[4];
-	/*
+	/* 
 	 * Find end of pathname
 	 */
 	for(cp = name; *cp++; );
 	while(cp >= name && *--cp != '/');
 	cp++;
-	/*
+	/* 
 	 * Change to rad50
 	 *
 	 */
@@ -587,14 +576,15 @@ register char * obuff;
 	if(flg['m'-'a']==0)
 		while( (count -= 128) >= 0) {
 			lseek(floppydes, trans(startad), 0);
-			read(floppydes,obuff,128);
+			 if (read(floppydes,obuff,128) != 128)
+				fprintf(stderr, "arff: read error block %d\n",startad/128);
 			obuff += 128;
 			startad += 128;
 		}
 	else
 		while( (count -= 512) >= 0) {
 			lseek(floppydes,(long) (startad), 0);
-			read(floppydes,obuff,512);
+				fprintf(stderr, "arff: read error block %d\n",startad/512);
 			obuff += 512;
 			startad += 512;
 		}
@@ -609,14 +599,16 @@ register char * obuff;
 	if(flg['m'-'a']==0)
 		while( (count -= 128) >= 0) {
 			lseek(floppydes, trans(startad), 0);
-			write(floppydes,obuff,128);
+			if ( write(floppydes,obuff,128) != 128)
+				fprintf(stderr, "arff: write error block %d\n",startad/128);
 			obuff += 128;
 			startad += 128;
 		}
 	else
 		while( (count -= 512) >= 0) {
 			lseek(floppydes,(long) (startad), 0);
-			write(floppydes,obuff,512);
+			if ( write(floppydes,obuff,512) != 512)
+				fprintf(stderr, "arff: write error block %d\n",startad/512);
 			obuff += 512;
 			startad += 512;
 		}
@@ -625,13 +617,11 @@ register char * obuff;
 rcmd()
 {
 	register int i;
-	int debug;
 
 	rt_init();
 	if(namc>0)
 		for(i = 0; i < namc; i++)
-			if((debug = rtr(namv[i]))==0) namv[i]=0;
-			else printf("debug-rtr returns %d\n",debug);
+			if(rtr(namv[i])==0) namv[i]=0;
 	
 	
 }
@@ -652,7 +642,7 @@ char *name;
 			printf("r - %s\n",name),
 			toflop(name,bufp->st_size,dope);
 		else {
-			printf("%s will not fit in currently used file on floppy\n",name);
+			fprintf(stderr, "%s will not fit in currently used file on floppy\n",name);
 			return(1);
 		}
 	} else {
@@ -670,8 +660,6 @@ char *name;
 					goto found;
 				}
 				continue;
-			case RT_ESEG:
-				exit(1);  
 			}
 		}
 	    }
@@ -723,7 +711,6 @@ overwrite:
 	de->rt_chan = 0;
 	de->rt_job = 0;
 	lwrite((6+segnum*2)*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[segnum]);
-
 }
 
 toflop(name,ocount,dope)
@@ -736,7 +723,7 @@ long ocount;
 	
 	file = open(name,0);
 	if(file < 0) {
-		printf("arff: couldn't open %s\n",name);exit(1);}
+		fprintf(stderr, "arff: couldn't open %s\n",name);exit(1);}
 	for( ; count >= 512; count -= 512) {
 		read(file,buff,512);
 		lwrite(startad,512,buff);
