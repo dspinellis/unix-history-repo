@@ -1,9 +1,4 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	1.3	(Berkeley)	%G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -40,16 +35,6 @@
 #	instrs		included in pseudo.c; instructions and semantic info
 #				for each instructions
 #
-HDRS=	astoks.H astokfix.awk as.h asscan.h assyms.h asexpr.h 
-SRCS=	asscan1.c asscan2.c asscan3.c asscan4.c bignum.c asmain.c asparse.c \
-	asexpr.c assyms.c asjxxx.c ascode.c aspseudo.c assizetab.c asio.c
-OBJS=	asscan1.o asscan2.o asscan3.o asscan4.o bignum.o asparse.o asexpr.o \
-	asmain.o assyms.o asjxxx.o ascode.o aspseudo.o assizetab.o asio.o
-GRIND = astoks.h as.h asscan.h assyms.h asexpr.h instrs.h asnumber.h \
-	asscanl.h asscan1.c asscan2.c asscan3.c asscan4.c bignum.c \
-	asmain.c asscan.c asparse.c asexpr.c assyms.c asjxxx.c ascode.c \
-	asio.c assizetab.c aspseudo.c
-#
 #	available flags:
 #
 #	AS		This is the assembler; always set
@@ -73,37 +58,24 @@ GRIND = astoks.h as.h asscan.h assyms.h asexpr.h instrs.h asnumber.h \
 #			strings, null terminated, and can be no more
 #			than BUFSIZ long.
 #			
-DFLAGS=	-DAS
-CFLAGS=	-O $(DFLAGS)
+PROG=	as
+CFLAGS+=-DAS -I.
+SRCS=	asscan1.c asscan2.c asscan3.c asscan4.c bignum.c asmain.c asparse.c \
+	asexpr.c assyms.c asjxxx.c ascode.c aspseudo.c assizetab.c asio.c
+CLEANFILES+=astoks.h instrs.as
 
-all: as
-
-as: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} ${OBJS} -o $@
+.PATH: ${.CURDIR}/../as.vax
 
 astoks.h: astoks.H astokfix.awk
-	awk -f astokfix.awk < astoks.H > astoks.h
+	awk -f ${.CURDIR}/astokfix.awk < ${.CURDIR}/astoks.H > astoks.h
 
 aspseudo.o: as.h astoks.h aspseudo.c instrs.h instrs.as
-	${CC} -c -R ${DFLAGS} aspseudo.c
+	${CC} ${CFLAGS} -R -c ${.IMPSRC}
 
-instrs.as: instrs
-	(echo FLAVOR AS ; cat instrs) | awk -f instrs > instrs.as
+instrs.as: ${.CURDIR}/instrs
+	(echo FLAVOR AS ; cat ${.CURDIR}/instrs) | \
+	    awk -f ${.CURDIR}/instrs > instrs.as
 
-clean:
-	rm -f ${OBJS} core as
+.include <bsd.prog.mk>
 
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin as ${DESTDIR}/usr/bin
-
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+all depend lint tags: astoks.h instrs.as

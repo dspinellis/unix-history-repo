@@ -1,98 +1,105 @@
-#
-# Copyright (c) 1987 The Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	4.13 (Berkeley) %G%
-#
-CFLAGS=	-O
-LIBC=	/lib/libc.a
-SRCS=	atoplot.c chrtab.c crtdriver.c crtplot.c debug.c driver.c plottoa.c
-OBJS=	atoplot.o chrtab.o crtdriver.o crtplot.o debug.o driver.o plottoa.o
-ALL=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
+#	@(#)Makefile	4.14 (Berkeley) %G%
+
+PROGS=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot implot atoplot plottoa grnplot
-MAN=	plot.0
+SRCS=	atoplot.c chrtab.c crtdriver.c crtplot.c debug.c driver.c plottoa.c
+BINDIR=	/usr/bin
+MAN1=	plot.0
 
-all: ${ALL} debug
+LIB300=		/usr/lib/lib300.a
+LIB300s=	/usr/lib/lib300s.a
+LIB4013=	/usr/lib/lib4013.a
+LIB4014=	/usr/lib/lib4014.a
+LIB450=		/usr/lib/lib450.a
+LIBCOMPAT=	/usr/lib/libcompat.a
+LIBCURSES=	/usr/lib/libcurses.a
+LIBM=		/usr/lib/libm.a
+LIBPLOT2648=	/usr/lib/libplot2648.a
+LIBPLOT7221=	/usr/lib/libplot7221.a
+LIBPLOT=	/usr/lib/libplot.a
+LIBPLOTAED=	/usr/lib/libplotaed.a
+LIBPLOTBG=	/usr/lib/libplotbg.a
+LIBPLOTDUMB=	/usr/lib/libplotdumb.a
+LIBPLOTGIGI=	/usr/lib/libplotgigi.a
+LIBPLOTGRN=	/usr/lib/libplotgrn.a
+LIBPLOTIMAGEN=	/usr/lib/libplotimagen.a
+LIBTERMCAP=	/usr/lib/libtermcap.a
 
-tek: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l4014 -lm -lcompat
+all: ${PROGS} ${MAN1}
 
-t4013: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l4013 -lm -lcompat
+aedplot: driver.o ${LIBPLOTAED} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotaed -lcompat
 
-t300: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l300 -lm -lcompat
+atoplot: atoplot.c ${LIBPLOT} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/atoplot.c -lplot -lm -lcompat
 
-t300s: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l300s -lm -lcompat
+bgplot: driver.o ${LIBPLOTBG} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotbg -lm -lcompat
 
-t450: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -l450 -lm -lcompat
+crtplot: crtdriver.o crtplot.o ${LIBCURSES} ${LIBTERMCAP} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} crtdriver.o crtplot.o -lcurses \
+	    -ltermcap -lm -lcompat
 
-aedplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotaed -lcompat
+debug:
+	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/debug.c
 
-bgplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotbg -lm -lcompat
+dumbplot: driver.o ${LIBPLOTDUMB} ${LIBTERMCAP} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotdumb -ltermcap \
+	    -lm -lcompat
 
-crtplot: crtdriver.o crtplot.o
-	${CC} ${CFLAGS} -o $@ crtdriver.o crtplot.o -lcurses -ltermcap -lm -lcompat
+gigiplot: driver.o ${LIBPLOTGIGI} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotgigi -lm -lcompat
 
-dumbplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotdumb -ltermcap -lm -lcompat
+grnplot: driver.o ${LIBPLOTGRN} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotgrn -lm -lcompat
 
-gigiplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotgigi -lm -lcompat
+hp7221plot: driver.o ${LIBPLOT7221} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplot7221 -lm -lcompat
 
-hpplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplot2648 -lm -lcompat
+hpplot: driver.o ${LIBPLOT2648} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplot2648 -lm -lcompat
 
-hp7221plot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplot7221 -lm -lcompat
+implot: driver.o ${LIBPLOTIMAGEN} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -lplotimagen -lm -lcompat
 
-implot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotimagen -lm -lcompat
+plottoa: plottoa.c
+	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/plottoa.c
 
-atoplot: atoplot.o
-	${CC} ${CFLAGS} -o $@ atoplot.o -lplot -lm -lcompat
+t300: driver.o  ${LIB300} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l300 -lm -lcompat
 
-plottoa: plottoa.o
-	${CC} ${CFLAGS} -o $@ plottoa.o
+t300s: driver.o ${LIB300S} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l300s -lm -lcompat
 
-grnplot: driver.o
-	${CC} ${CFLAGS} -o $@ driver.o -lplotgrn -lm -lcompat
+t4013: driver.o ${LIB4013} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l4013 -lm -lcompat
 
-debug: debug.o
-	${CC} ${CFLAGS} -o $@ debug.o
+t450: driver.o  ${LIB450} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l450 -lm -lcompat
+
+tek: driver.o ${LIB4014} ${LIBM} ${LIBCOMPAT}
+	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l4014 -lm -lcompat
 
 clean:
-	rm -f ${OBJS} ${ALL} debug core
+	rm -f a.out Errs errs mklog core ${PROGS} driver.o crtdriver.o \
+	    crtplot.o debug
 
 cleandir: clean
-	rm -f ${MAN} tags .depend
+	rm -f ${MAN1} ${.CURDIR}/tags .depend
 
 depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC}
 
-install: ${MAN}
-	install -s -o bin -g bin -m 755 ${ALL} ${DESTDIR}/usr/libexec/plot
-	install -c -o bin -g bin -m 755 plot.sh ${DESTDIR}/usr/bin/plot
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+install: maninstall
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} ${PROGS} \
+	    ${DESTDIR}/usr/libexec/plot
+	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} ${.CURDIR}/plot.sh \
+	    ${DESTDIR}${BINDIR}/plot
 
 lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+	${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
 
 tags: ${SRCS}
-	ctags ${SRCS}
+	${CTAGS} -f ${.CURDIR}/tags ${.ALLSRC}
+
+.include <bsd.prog.mk>

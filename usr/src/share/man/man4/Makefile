@@ -1,31 +1,17 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.4 (Berkeley) %G%
-#
-#
-MDIR=	${DESTDIR}/usr/share/man/cat4
-OBJS=	bk.0 drum.0 icmp.0 idp.0 imp.0 inet.0 ip.0 kadb.0 lo.0 netintro.0 \
-	ns.0 nsip.0 null.0 pty.0 spp.0 tcp.0 tty.0 udp.0
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-all clean depend lint tags:
+MAN4=	bk.0 drum.0 fd.0 icmp.0 idp.0 imp.0 inet.0 ip.0 kadb.0 lo.0 \
+	netintro.0 ns.0 nsip.0 null.0 pty.0 spp.0 tcp.0 tty.0 udp.0
+MLINKS=	netintro.4 networking.4
+SUBDIR=	man4.tahoe man4.vax
+
+all: ${MAN4}
+
+clean depend lint tags:
 
 cleandir:
-	rm -f ${OBJS}
+	rm -f ${MAN4}
 
-install: ${OBJS}
-	install -c -o bin -g bin -m 444 ${OBJS} ${MDIR}
-	rm -f ${MDIR}/networking.0; ln ${MDIR}/netintro.0 ${MDIR}/networking.0
+install: maninstall
+
+.include <bsd.prog.mk>

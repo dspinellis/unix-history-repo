@@ -1,48 +1,8 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.8 (Berkeley) %G%
-#
-CFLAGS=	-O
-LIBC=	/lib/libc.a
+#	@(#)Makefile	5.9 (Berkeley) %G%
+
+PROG=	man
 SRCS=	config.c man.c
-OBJS=	config.o man.o
-MAN=	man.0 man.config.0
+MAN1=	man.0
+MAN5=	man.conf.0
 
-all: man
-
-man: ${LIBC} ${OBJS}
-	${CC} -o $@ ${OBJS}
-
-clean:
-	rm -f core man ${OBJS}
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend:
-	mkdep ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/bin
-	install -c -o bin -g bin -m 444 man.0 ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 man.config.0 ${DESTDIR}/usr/man/cat5
-
-lint:
-	lint ${CFLAGS} ${SRCS}
-
-tags:
-	ctags ${SRCS}
+.include <bsd.prog.mk>

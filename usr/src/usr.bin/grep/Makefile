@@ -1,66 +1,51 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.5 (Berkeley) %G%
-#
-#
-# -Dstrrchr=rindex, -Dstrchr=index	for troglodytes.
-# -DSLOWSYS		invoke xread() for system time quirk on PDP, others? 
-# -DNOKANJI		default is for Japanese Unix.  undef only for raw
-#			 parity-marked search capability, not standard w/grep.
-# -DCHINESE		for systems using EUC Chinese2 codes
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
-CFLAGS=	-O -Dstrrchr=rindex -Dstrchr=index -DNOKANJI
-LIBC=	/lib/libc.a
-ALL=	egrep old.ucb.grep old.bin.grep old.fgrep old.egrep
+# -DSLOWSYS	invoke xread() for system time quirk on PDP, others?
+# -DNOKANJI	default is for Japanese Unix.  undef only for raw
+#		parity-marked search capability, not standard w/grep.
+# -DCHINESE	for systems using EUC Chinese2 codes
+# -Dstrrchr=rindex, -Dstrchr=index	as necessary
+
+PROGS=	egrep old.ucb.grep old.bin.grep old.fgrep old.egrep
+CFLAGS+=-Dstrrchr=rindex -Dstrchr=index -DNOKANJI
 SRCS=	egrep.c old.ucb.grep.c old.bin.grep.c old.fgrep.c old.egrep.c
-OBJS=
-MAN=	grep.0
+LIBC=	/usr/lib/libc.a
+MAN1=	grep.0
+LINKS=	${BINDIR}/egrep ${BINDIR}/grep ${BINDIR}/egrep ${BINDIR}/fgrep
+MLINKS=	grep.1 egrep.1 grep.1 fgrep.1
 
-all: ${ALL}
+all: ${PROGS} ${MAN1}
 
-egrep oegrep old.ucb.grep old.bin.grep old.fgrep old.egrep: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+egrep oegrep old.ucb.grep old.bin.grep old.fgrep: ${.PREFIX}.c ${LIBC}
+	${CC} -o ${.TARGET} ${CFLAGS} ${.CURDIR}/${.PREFIX}.c
+
+old.egrep: old.egrep.c ${LIBC}
+	${CC} -o ${.TARGET} ${CFLAGS} ${.PREFIX}.c
 
 clean:
-	rm -f ${OBJS} core ${ALL} old.egrep.c
+	rm -f a.out Errs errs mklog core ${PROGS} old.egrep.c
 
 cleandir: clean
-	rm -f ${MAN} tags .depend
+	rm -f ${MAN1} ${.CURDIR}/tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS:M-[ID]*} ${.ALLSRC}
 
-install: ${MAN}
-	install -s -o bin -g bin -m 755 egrep ${DESTDIR}/usr/bin/egrep
-	rm -f ${DESTDIR}/usr/bin/fgrep ${DESTDIR}/usr/bin/grep
-	ln ${DESTDIR}/usr/bin/egrep ${DESTDIR}/usr/bin/grep
-	ln ${DESTDIR}/usr/bin/egrep ${DESTDIR}/usr/bin/fgrep
-	install -s -o bin -g bin -m 755 old.ucb.grep old.bin.grep old.fgrep \
-		old.egrep ${DESTDIR}/usr/libexec
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/man/cat1/egrep.0
-	rm -f ${DESTDIR}/usr/man/cat1/fgrep.0
-	ln ${DESTDIR}/usr/man/cat1/grep.0 ${DESTDIR}/usr/man/cat1/egrep.0
-	ln ${DESTDIR}/usr/man/cat1/grep.0 ${DESTDIR}/usr/man/cat1/fgrep.0
+install: maninstall
+
+maninstall: beforeinstall
+
+beforeinstall:
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} egrep \
+	    ${DESTDIR}${BINDIR}/egrep
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    old.ucb.grep old.bin.grep old.fgrep old.egrep \
+	    ${DESTDIR}/usr/libexec
 
 lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+	${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
 
 tags: ${SRCS}
-	ctags ${SRCS}
+	${CTAGS} ${.ALLSRC} -f ${.CURDIR}/tags
 
-FRC:
+.include <bsd.prog.mk>
