@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.11	%G%";
+static char SccsId[] = "@(#)readcf.c	3.12	%G%";
 
 /*
 **  READCF -- read control file.
@@ -10,6 +10,10 @@ static char SccsId[] = "@(#)readcf.c	3.11	%G%";
 **
 **	Parameters:
 **		cfname -- control file name.
+**		safe -- set if this is a system configuration file.
+**			Non-system configuration files can not do
+**			certain things (e.g., leave the SUID bit on
+**			when executing mailers).
 **
 **	Returns:
 **		none.
@@ -21,8 +25,9 @@ static char SccsId[] = "@(#)readcf.c	3.11	%G%";
 struct rewrite	*RewriteRules[10];
 
 
-readcf(cfname)
+readcf(cfname, safe)
 	char *cfname;
+	bool safe;
 {
 	FILE *cf;
 	char buf[MAXLINE];
@@ -132,7 +137,7 @@ readcf(cfname)
 			break;
 
 		  case 'M':		/* define mailer */
-			makemailer(&buf[1]);
+			makemailer(&buf[1], safe);
 			break;
 
 		  default:
@@ -156,6 +161,7 @@ readcf(cfname)
 **			  a local "from" name to one that can be
 **			  returned to this machine.
 **			* the argument vector (a series of parameters).
+**		safe -- set if this is a safe configuration file.
 **
 **	Returns:
 **		none.
@@ -175,8 +181,9 @@ readcf(cfname)
 				*p++ = '\0'; \
 		}
 
-makemailer(line)
+makemailer(line, safe)
 	char *line;
+	bool safe;
 {
 	register char *p;
 	register char *q;
@@ -203,6 +210,8 @@ makemailer(line)
 	mpath = q;
 	SETWORD;
 	mopts = crackopts(q);
+	if (!safe)
+		mopts &= ~M_RESTR;
 	SETWORD;
 	mfrom = q;
 
