@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -35,7 +35,6 @@ vax_ioconf()
 	fprintf(fp, "#include \"../sys/param.h\"\n");
 	fprintf(fp, "#include \"../sys/buf.h\"\n");
 	fprintf(fp, "#include \"../sys/map.h\"\n");
-	fprintf(fp, "#include \"../sys/vm.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#include \"../vaxmba/mbavar.h\"\n");
 	fprintf(fp, "#include \"../vaxuba/ubavar.h\"\n\n");
@@ -454,7 +453,6 @@ hp300_ioconf()
 	fprintf(fp, "#include \"../sys/param.h\"\n");
 	fprintf(fp, "#include \"../sys/buf.h\"\n");
 	fprintf(fp, "#include \"../sys/map.h\"\n");
-	fprintf(fp, "#include \"../sys/vm.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#include \"../hpdev/device.h\"\n\n");
 	fprintf(fp, "\n");
