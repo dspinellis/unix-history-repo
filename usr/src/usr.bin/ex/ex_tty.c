@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.7	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.8	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -55,8 +55,7 @@ setterm(type)
 	char *type;
 {
 	char *tgoto();
-	register int unknown, i;
-	register int l;
+	register int unknown;
 	char ltcbuf[TCBUFSIZE];
 
 	if (type[0] == 0)
@@ -67,18 +66,7 @@ setterm(type)
 		unknown++;
 		CP(ltcbuf, "xx|dumb:");
 	}
-	i = LINES = tgetnum("li");
-	if (LINES <= 5)
-		LINES = 24;
-	if (LINES > TUBELINES)
-		LINES = TUBELINES;
-	l = LINES;
-	if (ospeed < B1200)
-		l = 9;	/* including the message line at the bottom */
-	else if (ospeed < B2400)
-		l = 17;
-	if (l > LINES)
-		l = LINES;
+	setsize();
 	aoftspace = tspace;
 	zap();
 	/*
@@ -127,12 +115,6 @@ setterm(type)
 	}
 #endif
 
-	options[WINDOW].ovalue = options[WINDOW].odefault = l - 1;
-	if (defwind) options[WINDOW].ovalue = defwind;
-	options[SCROLL].ovalue = options[SCROLL].odefault = HC ? 11 : ((l-1) / 2);
-	COLUMNS = tgetnum("co");
-	if (COLUMNS <= 4)
-		COLUMNS = 1000;
 	if (tgoto(CM, 2, 2)[0] == 'O')	/* OOPS */
 		CA = 0, CM = 0;
 	else
@@ -145,8 +127,6 @@ setterm(type)
 	PC = xPC ? xPC[0] : 0;
 	aoftspace = tspace;
 	CP(ttytype, longname(ltcbuf, type));
-	if (i <= 0)
-		LINES = 2;
 	/* proper strings to change tty type */
 	termreset();
 	gettmode();
@@ -156,6 +136,41 @@ setterm(type)
 		value(SLOWOPEN) = 1;	/* see also gettmode above */
 	if (unknown)
 		serror("%s: Unknown terminal type", type);
+}
+
+setsize()
+{
+	register int l, i;
+	struct winsize win;
+
+	if (ioctl(0, TIOCGWINSZ, &win) < 0) {
+		i = LINES = tgetnum("li");
+		COLUMNS = tgetnum("co");
+	} else {
+		if ((LINES = winsz.ws_row = win.ws_row) == 0)
+			LINES = tgetnum("li");
+		i = LINES;
+		if ((COLUMNS = winsz.ws_col = win.ws_col) == 0)
+			COLUMNS = tgetnum("co");
+	}
+	if (LINES <= 5)
+		LINES = 24;
+	if (LINES > TUBELINES)
+		LINES = TUBELINES;
+	l = LINES;
+	if (ospeed < B1200)
+		l = 9;	/* including the message line at the bottom */
+	else if (ospeed < B2400)
+		l = 17;
+	if (l > LINES)
+		l = LINES;
+	if (COLUMNS <= 4)
+		COLUMNS = 1000;
+	options[WINDOW].ovalue = options[WINDOW].odefault = l - 1;
+	if (defwind) options[WINDOW].ovalue = defwind;
+	options[SCROLL].ovalue = options[SCROLL].odefault = HC ? 11 : ((l-1) / 2);
+	if (i <= 0)
+		LINES = 2;
 }
 
 zap()
