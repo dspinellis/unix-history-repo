@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.15 (Berkeley) %G%
+ *	@(#)if_ether.c	6.16 (Berkeley) %G%
  */
 
 /*
@@ -150,16 +150,21 @@ arpresolve(ac, m, destip, desten, usetrailers)
 	}
 	lna = in_lnaof(*destip);
 	ifp = &ac->ac_if;
-	/* if for us, then use software loopback driver */
-	if (destip->s_addr == ac->ac_ipaddr.s_addr &&
-	    (loif.if_flags & IFF_UP)) {
-		sin.sin_family = AF_INET;
-		sin.sin_addr = *destip;
-		(void) looutput(&loif, m, (struct sockaddr *)&sin);
-		/*
-		 * The packet has already been sent and freed.
-		 */
-		return (0);
+	/* if for us, use software loopback driver if up */
+	if (destip->s_addr == ac->ac_ipaddr.s_addr) {
+		if (loif.if_flags & IFF_UP) {
+			sin.sin_family = AF_INET;
+			sin.sin_addr = *destip;
+			(void) looutput(&loif, m, (struct sockaddr *)&sin);
+			/*
+			 * The packet has already been sent and freed.
+			 */
+			return (0);
+		} else {
+			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten,
+			    sizeof(ac->ac_enaddr));
+			return (1);
+		}
 	}
 	s = splimp();
 	ARPTAB_LOOK(at, destip->s_addr);
