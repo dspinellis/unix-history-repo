@@ -202,8 +202,9 @@ are fairly useless in a networked environment and should be
 avoided, if possible.
 .PP
 Standard database make routines are slow especially for big passwd
-files.
-You can have much faster routines, but loose binary compatibility
+files. Moreover, *pwd.db bases are too big and waste root space.
+You can have much faster routines with small *pwd.db,
+but loose binary compatibility
 with previous versions and with other BSD-like systems.
 If you want to setup much faster routines, define
 .B PW_COMPACT
