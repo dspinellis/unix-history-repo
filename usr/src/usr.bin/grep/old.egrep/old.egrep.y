@@ -13,9 +13,12 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)old.egrep.y	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)old.egrep.y	4.4 (Berkeley) %G%";
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
+#define BLKSIZE 8192
 #define MAXLIN 350
 #define MAXPOS 4000
 #define NCHARS 128
@@ -501,7 +504,9 @@ char *file;
 	register char *p;
 	register cstat;
 	register ccount;
-	char buf[1024];
+	static char *buf;
+	static int blksize;
+	struct stat stb;
 	char *nlp;
 	int istat;
 	if (file) {
@@ -512,13 +517,25 @@ char *file;
 		}
 	}
 	else f = 0;
+	if (buf == NULL) {
+		if (fstat(f, &stb) > 0 && stb.st_blksize > 0)
+			blksize = stb.st_blksize;
+		else
+			blksize = BLKSIZE;
+		buf = (char *)malloc(2*blksize);
+		if (buf == NULL) {
+			fprintf(stderr, "egrep: no memory for %s\n", file);
+			retcode = 2;
+			return;
+		}
+	}
 	ccount = 0;
 	lnum = 1;
 	tln = 0;
 	blkno = 0;
 	p = buf;
 	nlp = p;
-	if ((ccount = read(f,p,512))<=0) goto done;
+	if ((ccount = read(f,p,blksize))<=0) goto done;
 	istat = cstat = gotofn[0]['\n'];
 	if (out[cstat]) goto found;
 	for (;;) {
@@ -541,7 +558,7 @@ char *file;
 							if (bflag) printf("%d:", blkno);
 							if (nflag) printf("%ld:", lnum);
 							if (p <= nlp) {
-								while (nlp < &buf[1024]) putchar(*nlp++);
+								while (nlp < &buf[2*blksize]) putchar(*nlp++);
 								nlp = buf;
 							}
 							while (nlp < p) putchar(*nlp++);
@@ -553,17 +570,17 @@ char *file;
 				}
 				cfound:
 				if (--ccount <= 0) {
-					if (p <= &buf[512]) {
-						if ((ccount = read(f, p, 512)) <= 0) goto done;
+					if (p <= &buf[blksize]) {
+						if ((ccount = read(f, p, blksize)) <= 0) goto done;
 					}
-					else if (p == &buf[1024]) {
+					else if (p == &buf[2*blksize]) {
 						p = buf;
-						if ((ccount = read(f, p, 512)) <= 0) goto done;
+						if ((ccount = read(f, p, blksize)) <= 0) goto done;
 					}
 					else {
-						if ((ccount = read(f, p, &buf[1024]-p)) <= 0) goto done;
+						if ((ccount = read(f, p, &buf[2*blksize]-p)) <= 0) goto done;
 					}
-					blkno++;
+					blkno += ccount / 512;
 				}
 			}
 		}
@@ -577,17 +594,17 @@ char *file;
 		}
 		brk2:
 		if (--ccount <= 0) {
-			if (p <= &buf[512]) {
-				if ((ccount = read(f, p, 512)) <= 0) break;
+			if (p <= &buf[blksize]) {
+				if ((ccount = read(f, p, blksize)) <= 0) break;
 			}
-			else if (p == &buf[1024]) {
+			else if (p == &buf[2*blksize]) {
 				p = buf;
-				if ((ccount = read(f, p, 512)) <= 0) break;
+				if ((ccount = read(f, p, blksize)) <= 0) break;
 			}
 			else {
-				if ((ccount = read(f, p, &buf[1024] - p)) <= 0) break;
+				if ((ccount = read(f, p, &buf[2*blksize] - p)) <= 0) break;
 			}
-			blkno++;
+			blkno += ccount / 512;
 		}
 	}
 done:	close(f);
