@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.11	82/08/22	*/
+/*	sys_generic.c	5.12	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,7 +20,6 @@
 #else
 #define	CHARGE(nothing)
 #endif
-#include "../h/vlimit.h"
 #include "../h/descrip.h"
 #include "../h/uio.h"
 
@@ -230,7 +229,8 @@ rwip(ip, uio, rw)
 		return (u.u_error);
 	}
 	if (rw == UIO_WRITE && type == IFREG &&
-	    uio->uio_offset + uio->uio_resid > u.u_limit[LIM_FSIZE]) {
+	    uio->uio_offset + uio->uio_resid >
+	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
 		psignal(u.u_procp, SIGXFSZ);
 		return (EMFILE);
 	}
