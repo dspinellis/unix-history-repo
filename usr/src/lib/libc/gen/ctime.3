@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.1 (Berkeley) %G%
+.\"	@(#)ctime.3	6.2 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
@@ -57,24 +57,21 @@ The structure declaration from the include file is:
 .PP
 .RS
 .nf
+.nr .0 .8i+\w'int tm_isdst'u
+.ta .5i \n(.0u \n(.0u+\w'/* 0-000'u+1n
 struct tm {
-	int	tm_sec;
-	int	tm_min;
-	int	tm_hour;
-	int	tm_mday;
-	int	tm_mon;
-	int	tm_year;
-	int	tm_wday;
-	int	tm_yday;
-	int	tm_isdst;
+	int tm_sec;	/* 0-59	seconds */
+	int tm_min;	/* 0-59	minutes */
+	int tm_hour;	/* 0-23	hour */
+	int tm_mday;	/* 1-31	day of month */
+	int tm_mon;	/* 0-11	month */
+	int tm_year;	/* 0-	year \- 1900 */
+	int tm_wday;	/* 0-6	day of week (Sunday = 0) */
+	int tm_yday;	/* 0-365	day of year */
+	int tm_isdst;	/* flag:	daylight savings time in effect */
 };
 .fi
 .RE
-.PP
-These quantities give the time on a 24-hour clock,
-day of month (1-31), month of year (0-11), day of week
-(Sunday = 0), year \- 1900, day of year (0-365),
-and a flag that is nonzero if daylight saving time is in effect.
 .PP
 When local time is called for,
 the program consults the system to determine the time zone and
