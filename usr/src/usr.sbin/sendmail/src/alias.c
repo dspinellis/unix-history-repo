@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.18	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.19	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.18	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.19	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -77,6 +77,10 @@ alias(a)
 		return;
 
 	To = a->q_paddr;
+
+	/*
+	**  Look up this name
+	*/
 
 # ifdef DBM
 	/* create a key for fetch */
@@ -206,7 +210,11 @@ readaliases(aliasfile, init)
 		NoAlias++;
 		return;
 	}
-	/* read and interpret lines */
+
+	/*
+	**  Read and interpret lines
+	*/
+
 	lineno = 0;
 	skipping = FALSE;
 	while (fgets(line, sizeof (line), af) != NULL)
@@ -229,7 +237,15 @@ readaliases(aliasfile, init)
 		}
 		skipping = FALSE;
 
-		/* process the LHS */
+		/*
+		**  Process the LHS
+		**	Find the final colon, and parse the address.
+		**	It should resolve to a local name -- this will
+		**	be checked later (we want to optionally do
+		**	parsing of the RHS first to maximize error
+		**	detection).
+		*/
+
 		for (p = line; *p != '\0' && *p != ':' && *p != '\n'; p++)
 			continue;
 		if (*p == '\0' || *p == '\n')
@@ -244,6 +260,13 @@ readaliases(aliasfile, init)
 			*--p = ':';
 			goto syntaxerr;
 		}
+
+		/*
+		**  Process the RHS.
+		**	'al' is the internal form of the LHS address.
+		**	'p' points to the text of the RHS.
+		*/
+
 		rhs = p;
 		for (;;)
 		{
@@ -265,7 +288,7 @@ readaliases(aliasfile, init)
 						p[-1] = c;
 						continue;
 					}
-					parse(p2, &bl, -1);
+					(void) parse(p2, &bl, -1);
 					p[-1] = c;
 					while (isspace(*p))
 						p++;
@@ -277,7 +300,7 @@ readaliases(aliasfile, init)
 			/* see if there should be a continuation line */
 			c = fgetc(af);
 			if (!feof(af))
-				ungetc(c, af);
+				(void) ungetc(c, af);
 			if (c != ' ' && c != '\t')
 				break;
 
@@ -292,6 +315,11 @@ readaliases(aliasfile, init)
 			syserr("aliases: %d: cannot alias non-local names", lineno);
 			continue;
 		}
+
+		/*
+		**  Insert alias into symbol table or DBM file
+		*/
+
 # ifdef DBM
 		if (init)
 		{
@@ -318,8 +346,10 @@ readaliases(aliasfile, init)
 **	This is similar but not identical to aliasing.
 **
 **	Parameters:
-**		user -- the name of the user who's mail we
-**			would like to forward to.
+**		user -- the name of the user who's mail we would like
+**			to forward to.  It must have been verified --
+**			i.e., the q_home field must have been filled
+**			in.
 **
 **	Returns:
 **		none.
@@ -333,8 +363,6 @@ forward(user)
 	ADDRESS *user;
 {
 	char buf[60];
-	register FILE *fp;
-	register char *p;
 	struct stat stbuf;
 
 # ifdef DEBUG
@@ -344,6 +372,10 @@ forward(user)
 
 	if (user->q_mailer != MN_LOCAL || bitset(QBADADDR, user->q_flags))
 		return;
+# ifdef DEBUG
+	if (user->q_home == NULL)
+		syserr("forward: no home");
+# endif DEBUG
 
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home);

@@ -5,13 +5,20 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.34	%G%";
+static char SccsId[] = "@(#)deliver.c	3.35	%G%";
 
 /*
-**  DELIVER -- Deliver a message to a particular address.
+**  DELIVER -- Deliver a message to a list of addresses.
+**
+**	This routine delivers to everyone on the same host as the
+**	user on the head of the list.  It is clever about mailers
+**	that don't handle multiple users.  It is NOT guaranteed
+**	that it will deliver to all these addresses however -- so
+**	deliver should be called once for each address on the
+**	list.
 **
 **	Parameters:
-**		to -- the address to deliver the message to.
+**		to -- head of the address list to deliver to.
 **		editfcn -- if non-NULL, we want to call this function
 **			to output the letter (instead of just out-
 **			putting it raw).
@@ -130,8 +137,6 @@ deliver(to, editfcn)
 		user = to->q_user;
 		To = to->q_paddr;
 		to->q_flags |= QDONTSEND;
-		firstone = FALSE;
-
 # ifdef DEBUG
 		if (Debug)
 			printf("   send to `%s'\n", user);
@@ -200,6 +205,11 @@ deliver(to, editfcn)
 			}
 		}
 
+		/*
+		**  Address is verified -- add this user to mailer
+		**  argv, and add it to the print list of recipients.
+		*/
+
 		/* create list of users for error messages */
 		if (tobuf[0] != '\0')
 			(void) strcat(tobuf, ",");
@@ -242,8 +252,6 @@ deliver(to, editfcn)
 	**	The argument vector gets built, pipes
 	**	are created as necessary, and we fork & exec as
 	**	appropriate.
-	**
-	**	Notice the tacky hack to handle private mailers.
 	*/
 
 	if (editfcn == NULL)
@@ -448,9 +456,6 @@ sendoff(m, pvp, editfcn)
 **	Side Effects:
 **		Errors may be incremented.
 **		ExitStat may be set.
-**
-**	Called By:
-**		deliver
 */
 
 giveresponse(stat, force, m)
@@ -463,6 +468,10 @@ giveresponse(stat, force, m)
 	register int i;
 	extern int N_SysEx;
 	char buf[30];
+
+	/*
+	**  Compute status message from code.
+	*/
 
 	i = stat - EX__BASE;
 	if (i < 0 || i > N_SysEx)
@@ -540,23 +549,30 @@ putmessage(fp, m)
 {
 	char buf[BUFSIZ];
 	register int i;
-	HDR *h;
-	register char *p;
+	register HDR *h;
 	extern char *arpadate();
 	bool anyheader = FALSE;
 	extern char *capitalize();
 	extern char SentDate[];
 
-	/* output "From" line unless supressed */
+	/*
+	**  Output "From" line unless supressed
+	*/
+
 	if (!bitset(M_NHDR, m->m_flags))
 	{
 		(void) expand("$l", buf, &buf[sizeof buf - 1]);
 		fprintf(fp, "%s\n", buf);
 	}
 
-	/* output all header lines */
+	/*
+	**  Output all header lines
+	*/
+
 	for (h = Header; h != NULL; h = h->h_link)
 	{
+		register char *p;
+
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
 		{
 			p = ")><(";		/* can't happen (I hope) */
@@ -586,11 +602,13 @@ putmessage(fp, m)
 				fprintf(fp, "Original-From: %s\n", ofrom);
 		}
 	}
-
 	if (anyheader)
 		fprintf(fp, "\n");
 
-	/* output the body of the message */
+	/*
+	**  Output the body of the message
+	*/
+
 	rewind(TempFile);
 	while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, TempFile)) > 0)
 		(void) fwrite(buf, 1, i, fp);
@@ -620,7 +638,6 @@ mailfile(filename)
 {
 	register FILE *f;
 	register int pid;
-	register int i;
 
 	/*
 	**  Fork so we can change permissions here.
@@ -649,6 +666,7 @@ mailfile(filename)
 		(void) fclose(f);
 		(void) fflush(stdout);
 		exit(EX_OK);
+		/*NOTREACHED*/
 	}
 	else
 	{

@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	3.3	%G%";
+static char SccsId[] = "@(#)macro.c	3.4	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -15,7 +15,7 @@ extern int	Debug;
 **			of the last usable position in buf.
 **
 **	Returns:
-**		buf.
+**		End of interpolated output.
 **
 **	Side Effects:
 **		none.
@@ -27,9 +27,8 @@ expand(s, buf, buflim)
 	register char *buf;
 	char *buflim;
 {
-	register char *q;
 	register char *bp;
-	bool skipping;
+	bool skipping;		/* set if conditionally skipping output */
 
 # ifdef DEBUG
 	if (Debug > 3)
@@ -39,7 +38,14 @@ expand(s, buf, buflim)
 	skipping = FALSE;
 	for (bp = buf; *s != '\0'; s++)
 	{
-		/* q will be the interpolated quantity */
+		register char *q;
+
+		/*
+		**  Check for non-ordinary (special?) character --
+		**  always escaped with dollar sign.
+		**	'q' will be the interpolated quantity.
+		*/
+
 		q = NULL;
 		if (*s == '$')
 		{

@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.16	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.17	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -21,8 +21,6 @@ static char	SccsId[] = "@(#)savemail.c	3.16	%G%";
 **		Saves the letter, by writing or mailing it back to the
 **		sender, or by putting it in dead.letter in her home
 **		directory.
-**
-**		WARNING: the user id is reset to the original user.
 */
 
 savemail()
@@ -93,7 +91,7 @@ savemail()
 				syserr("Cannot open %s", Transcript);
 			(void) expand("$n", buf, &buf[sizeof buf - 1]);
 			printf("\r\nMessage from %s...\r\n", buf);
-			printf("Errors occurred while sending mail, transcript follows:\r\n");
+			printf("Errors occurred while sending mail; transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) != NULL && !ferror(stdout))
 				fputs(buf, stdout);
 			if (ferror(stdout))
@@ -128,6 +126,7 @@ savemail()
 			ExitStat = EX_SOFTWARE;
 			finis();
 		}
+		to_addr.q_next = NULL;
 		i = deliver(&to_addr, errhdr);
 		bmove((char *) &to_addr, (char *) &From, sizeof From);
 		if (i != 0)
@@ -204,8 +203,9 @@ savemail()
 */
 
 
-errhdr(fp)
+errhdr(fp, m)
 	register FILE *fp;
+	register struct mailer *m;
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
@@ -214,11 +214,36 @@ errhdr(fp)
 	if ((xfile = fopen(Transcript, "r")) == NULL)
 		syserr("Cannot open %s", Transcript);
 	errno = 0;
+
+	/*
+	**  Output header of error message.
+	*/
+
+	if (bitset(M_NEEDDATE, m->m_flags))
+	{
+		(void) expand("$b", buf, &buf[sizeof buf - 1]);
+		fprintf(fp, "Date: %s\n", buf);
+	}
+	if (bitset(M_NEEDFROM, m->m_flags))
+	{
+		(void) expand("$g", buf, &buf[sizeof buf - 1]);
+		fprintf(fp, "From: %s (Mail Delivery Subsystem)\n", buf);
+	}
 	fprintf(fp, "To: %s\n", To);
 	fprintf(fp, "Subject: Unable to deliver mail\n");
+
+	/*
+	**  Output transcript of errors
+	*/
+
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
 	while (fgets(buf, sizeof buf, xfile) != NULL)
 		fputs(buf, fp);
+
+	/*
+	**  Output text of original message
+	*/
+
 	if (NoReturn)
 		fprintf(fp, "\n   ----- Return message suppressed -----\n\n");
 	else if (TempFile != NULL)
@@ -229,6 +254,11 @@ errhdr(fp)
 	}
 	else
 		fprintf(fp, "\n  ----- No message was collected -----\n\n");
+
+	/*
+	**  Cleanup and exit
+	*/
+
 	(void) fclose(xfile);
 	if (errno != 0)
 		syserr("errhdr: I/O error");

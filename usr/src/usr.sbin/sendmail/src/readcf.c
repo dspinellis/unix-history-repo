@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)readcf.c	3.12	%G%";
+static char SccsId[] = "@(#)readcf.c	3.13	%G%";
 
 /*
 **  READCF -- read control file.
@@ -240,7 +240,7 @@ makemailer(line, safe)
 	margv[i++] = NULL;
 
 	/* save the argv */
-	m->m_argv = (char **) xalloc(sizeof margv[0] * i);
+	m->m_argv = (char **) xalloc((unsigned) (sizeof margv[0] * i));
 	bmove((char *) margv, (char *) m->m_argv, sizeof margv[0] * i);
 }
 /*
@@ -255,6 +255,8 @@ makemailer(line, safe)
 **	Side Effects:
 **		prints rewrite rules.
 */
+
+# ifdef DEBUG
 
 printrules()
 {
@@ -287,6 +289,8 @@ printrules()
 		}
 	}
 }
+
+# endif DEBUG
 /*
 **  CRACKOPTS -- crack mailer options
 **
@@ -325,7 +329,7 @@ struct optlist	OptList[] =
 	'h',	M_HST_UPPER,
 	'x',	M_FULLNAME,
 	'A',	M_ARPAFMT,
-	0,	0
+	'\0',	0
 };
 
 crackopts(p)

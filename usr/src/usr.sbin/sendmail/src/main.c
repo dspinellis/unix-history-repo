@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.31	%G%";
+static char	SccsId[] = "@(#)main.c	3.32	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -40,7 +40,9 @@ static char	SccsId[] = "@(#)main.c	3.31	%G%";
 **		-Ffullname	Select what the full-name should be
 **				listed as.
 **		-a		This mail should be in ARPANET std
-**				format.
+**				format (obsolete version).
+**		-am		Called from an FTP "MAIL" command.
+**		-af		Called from an FTP "MLFL" command.
 **		-n		Don't do aliasing.  This might be used
 **				when delivering responses, for
 **				instance.
@@ -74,6 +76,8 @@ static char	SccsId[] = "@(#)main.c	3.31	%G%";
 **				everything that happens.
 **		-t		Read "to" addresses from message.
 **				Looks at To:, Cc:, and Bcc: lines.
+**		-I		Initialize the DBM alias files from
+**				the text format files.
 **		-Cfilename	Use alternate configuration file.
 **		-Afilename	Use alternate alias file.
 **		-DXvalue	Define macro X to have value.
@@ -87,20 +91,6 @@ static char	SccsId[] = "@(#)main.c	3.31	%G%";
 **
 **	Compilation Flags:
 **		LOG -- if set, everything is logged.
-**
-**	Compilation Instructions:
-**		cc -c -O main.c conf.c deliver.c parse.c
-**		cc -n -s *.o -lS
-**		chown root a.out
-**		chmod 755 a.out
-**		mv a.out sendmail
-**
-**	Deficiencies:
-**		It ought to collect together messages that are
-**			destined for a single host and send these
-**			to the auxiliary mail server together.
-**		It should take "user at host" as three separate
-**			parameters and combine them into one address.
 **
 **	Author:
 **		Eric Allman, UCB/INGRES
@@ -271,7 +261,19 @@ main(argc, argv)
 			break;
 
 		  case 'F':	/* set full name */
-			fullname = &p[2];
+			p += 2;
+			if (*p == '\0')
+			{
+				p = *++argv;
+				if (--argc <= 0 || *p == '-')
+				{
+					syserr("Bad -F flag");
+					argc++;
+					argv--;
+					break;
+				}
+			}
+			fullname = p;
 			break;
 
 		  case 'h':	/* hop count */
@@ -730,14 +732,6 @@ setfrom(from, realname)
 **
 **	Side Effects:
 **		exits sendmail
-**
-**	Called By:
-**		main
-**		via signal on interrupt.
-**
-**	Deficiencies:
-**		It may be that it should only remove the input
-**			file if there have been no errors.
 */
 
 finis()
@@ -766,9 +760,6 @@ finis()
 **	Side Effects:
 **		Turns the standard output into a special file
 **			somewhere.
-**
-**	Called By:
-**		main
 */
 
 openxscrpt()

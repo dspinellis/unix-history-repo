@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.22	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.23	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -183,7 +183,6 @@ prescan(addr, delim)
 	static char buf[MAXNAME+MAXATOM];
 	static char *av[MAXATOM+1];
 	char **avp;
-	bool space;
 	bool bslashmode;
 	int cmntcnt;
 	int brccnt;
@@ -194,7 +193,6 @@ prescan(addr, delim)
 	int nstate;
 	extern char lower();
 
-	space = FALSE;
 	q = buf;
 	bslashmode = FALSE;
 	cmntcnt = brccnt = 0;
@@ -255,7 +253,6 @@ prescan(addr, delim)
 
 			  case SPACE:		/* linear white space */
 				state = nstate;
-				space = TRUE;
 				break;
 
 			  case OPER:		/* operator */
@@ -371,7 +368,6 @@ prescan(addr, delim)
 				return (NULL);
 			}
 			brccnt++;
-			space = FALSE;
 			if (brccnt == 1)
 			{
 				/* we prefer using machine readable name */
@@ -943,6 +939,8 @@ sameaddr(a, b, wildflg)
 **		none.
 */
 
+# ifdef DEBUG
+
 printaddr(a, follow)
 	register ADDRESS *a;
 	bool follow;
@@ -961,3 +959,5 @@ printaddr(a, follow)
 		a = a->q_next;
 	}
 }
+
+# endif DEBUG
