@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id: vm_fault.c,v 1.16 1994/04/14 07:50:18 davidg Exp $
+ * $Id: vm_fault.c,v 1.17 1994/04/20 07:07:10 davidg Exp $
  */
 
 /*
@@ -328,10 +328,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				(object->pager && object->pager->pg_type == PG_SWAP &&
 				!vm_pager_has_page(object->pager, offset+object->paging_offset)))) {
 				if (vaddr < VM_MAXUSER_ADDRESS && curproc && curproc->p_pid >= 48) /* XXX */ {
-					UNLOCK_AND_DEALLOCATE;
 					printf("Process %d killed by vm_fault -- out of swap\n", curproc->p_pid);
 					psignal(curproc, SIGKILL);
-					return KERN_RESOURCE_SHORTAGE;
+					curproc->p_cpu = 0;
+					curproc->p_nice = PRIO_MIN;
+					setpri(curproc);
 				}
 			}
 

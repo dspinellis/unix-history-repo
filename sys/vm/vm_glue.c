@@ -425,7 +425,7 @@ noswap:
 	(void) splhigh();
 	if (((vm_page_free_count + vm_page_inactive_count) >=
 	    (vm_page_inactive_target + vm_page_free_reserved)) ||
-	    (vm_page_free_count >= vm_page_free_min)) {
+	    (vm_page_free_count > vm_page_free_reserved)) {
 		spl0();
 		faultin(p);
 		p->p_time = 0;

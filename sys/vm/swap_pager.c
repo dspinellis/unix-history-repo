@@ -39,7 +39,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.25 1994/04/05 03:23:47 davidg Exp $
+ * $Id: swap_pager.c,v 1.26 1994/04/26 00:42:37 davidg Exp $
  */
 
 /*
@@ -143,9 +143,11 @@ struct buf * getpbuf() ;
 void relpbuf(struct buf *bp) ;
 
 static inline void swapsizecheck() {
-	if( vm_swap_size < 128*btodb(NBPG))
+	if( vm_swap_size < 128*btodb(NBPG)) {
+		if( swap_pager_full)
+			printf("swap_pager: out of space\n");
 		swap_pager_full = 1;
-	else if( vm_swap_size > 192*btodb(NBPG))
+	} else if( vm_swap_size > 192*btodb(NBPG))
 		swap_pager_full = 0;
 }
 
@@ -402,28 +404,40 @@ swap_pager_freeswapspace( unsigned from, unsigned to) {
  * this routine frees swap blocks from a specified pager
  */
 void
-swap_pager_freespace(pager, start, size)
-	vm_pager_t pager;
+_swap_pager_freespace(swp, start, size)
+	sw_pager_t swp;
 	vm_offset_t start;
 	vm_offset_t size;
 {
-	sw_pager_t swp = (sw_pager_t) pager->pg_data;
 	vm_offset_t i;
 	int s;
 
 	s = splbio();
 	for (i = start; i < round_page(start + size - 1); i += NBPG) {
-		int *addr = swap_pager_diskaddr(swp, i, 0);
+		int valid;
+		int *addr = swap_pager_diskaddr(swp, i, &valid);
 		if (addr && *addr != SWB_EMPTY) {
 			swap_pager_freeswapspace(*addr, *addr+btodb(NBPG) - 1);
-			vm_swap_size += btodb(NBPG);
-			swapsizecheck();
+			if( valid) {
+				vm_swap_size += btodb(NBPG);
+				swap_pager_setvalid(swp, i, 0);
+			}
 			*addr = SWB_EMPTY;
 		}
 	}
+	swapsizecheck();
 	splx(s);
 }
 
+void
+swap_pager_freespace(pager, start, size) 
+	vm_pager_t pager;
+	vm_offset_t start;
+	vm_offset_t size;
+{
+	_swap_pager_freespace((sw_pager_t) pager->pg_data, start, size);
+}
+	
 /*
  * swap_pager_reclaim frees up over-allocated space from all pagers
  * this eliminates internal fragmentation due to allocation of space
@@ -497,7 +511,6 @@ rfinished:
  */
 	for (i = 0; i < reclaimcount; i++) {
 		swap_pager_freeswapspace(reclaims[i], reclaims[i]+btodb(NBPG) - 1);
-		vm_swap_size += btodb(NBPG);
 		swapsizecheck();
 		wakeup((caddr_t) &in_reclaim);
 	}
@@ -555,10 +568,12 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
  * (release allocated space)
  */
 	for (i = 0; i < offset + srcoffset; i += NBPG) {
-		int *addr = swap_pager_diskaddr(srcswp, i, 0);
+		int valid;
+		int *addr = swap_pager_diskaddr(srcswp, i, &valid);
 		if (addr && *addr != SWB_EMPTY) {
 			swap_pager_freeswapspace(*addr, *addr+btodb(NBPG) - 1);
-			vm_swap_size += btodb(NBPG);
+			if( valid)
+				vm_swap_size += btodb(NBPG);
 			swapsizecheck();
 			*addr = SWB_EMPTY;
 		}
@@ -587,23 +602,22 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
 				 */
 				if (!dstvalid && dstaddrp && *dstaddrp != SWB_EMPTY) {
 					swap_pager_freeswapspace(*dstaddrp, *dstaddrp+btodb(NBPG) - 1);
-					vm_swap_size += btodb(NBPG);
-					swapsizecheck();
 					*dstaddrp = SWB_EMPTY;
 				}
 				if (dstaddrp && *dstaddrp == SWB_EMPTY) {
 					*dstaddrp = *srcaddrp;
 					*srcaddrp = SWB_EMPTY;
 					swap_pager_setvalid(dstswp, i + dstoffset, 1);
-				}
-			}
+					vm_swap_size -= btodb(NBPG);
+				} 
+			} 
 		/*
 		 * if the source is not empty at this point, then deallocate the space.
 		 */
 			if (*srcaddrp != SWB_EMPTY) {
 				swap_pager_freeswapspace(*srcaddrp, *srcaddrp+btodb(NBPG) - 1);
-				vm_swap_size += btodb(NBPG);
-				swapsizecheck();
+				if( srcvalid)
+					vm_swap_size += btodb(NBPG);
 				*srcaddrp = SWB_EMPTY;
 			}
 		}
@@ -613,15 +627,17 @@ swap_pager_copy(srcpager, srcoffset, dstpager, dstoffset, offset)
  * deallocate the rest of the source object
  */
 	for (i = dstswp->sw_osize + offset + srcoffset; i < srcswp->sw_osize; i += NBPG) {
-		int *srcaddrp = swap_pager_diskaddr(srcswp, i, 0);
+		int valid;
+		int *srcaddrp = swap_pager_diskaddr(srcswp, i, &valid);
 		if (srcaddrp && *srcaddrp != SWB_EMPTY) {
 			swap_pager_freeswapspace(*srcaddrp, *srcaddrp+btodb(NBPG) - 1);
-			vm_swap_size += btodb(NBPG);
-			swapsizecheck();
+			if( valid)
+				vm_swap_size += btodb(NBPG);
 			*srcaddrp = SWB_EMPTY;
 		}
 	}
 				
+	swapsizecheck();
 	splx(s);
 
 	free((caddr_t)srcswp->sw_blocks, M_VMPGDATA);
@@ -677,12 +693,13 @@ swap_pager_dealloc(pager)
 		if (bp->swb_block[j] != SWB_EMPTY) {
 			swap_pager_freeswapspace((unsigned)bp->swb_block[j],
 				(unsigned)bp->swb_block[j] + btodb(NBPG) - 1);
-			vm_swap_size += btodb(NBPG);
-			swapsizecheck();
+			if( bp->swb_valid & (1<<j))
+				vm_swap_size += btodb(NBPG);
 			bp->swb_block[j] = SWB_EMPTY;
 		}
 	}
 	splx(s);
+	swapsizecheck();
 
 	/*
 	 * Free swap management resources
@@ -983,6 +1000,7 @@ swap_pager_input(swp, m, count, reqpage)
 		for (i = first; i < count; i++) {
 			m[i-first] = m[i];
 			reqaddr[i-first] = reqaddr[i];
+			off[i-first] = off[i];
 		}
 		count -= first;
 		reqpage -= first;
@@ -1159,6 +1177,9 @@ swap_pager_input(swp, m, count, reqpage)
 					PAGE_WAKEUP(m[i]);
 				}
 			}
+			if( swap_pager_full) {
+				_swap_pager_freespace( swp, m[0]->offset+paging_offset, count*NBPG);
+			}
 		} else {
 			swap_pager_ridpages(m, count, reqpage);
 		}
@@ -1243,17 +1264,15 @@ swap_pager_output(swp, m, count, flags, rtvals)
 			}
 				
 retrygetspace:
-			if (ntoget > 1 &&
+			if (!swap_pager_full && ntoget > 1 &&
 				swap_pager_getswapspace(ntoget * btodb(NBPG), &blk)) {
 
-				for (i = 0; i < ntoget; i++)
+				for (i = 0; i < ntoget; i++) {
 					swb[j]->swb_block[i] = blk + btodb(NBPG) * i;
+					swb[j]->swb_valid = 0;
+				}
 
 				reqaddr[j] = swb[j]->swb_block[off];
-				vm_swap_size -= ntoget * btodb(NBPG);
-				swapsizecheck();
-				if( swap_pager_full)
-					swap_pager_reclaim();
 			} else if (!swap_pager_getswapspace(btodb(NBPG),
 				&swb[j]->swb_block[off])) {
 				/*
@@ -1265,18 +1284,10 @@ retrygetspace:
 					goto retrygetspace;
 				}
 				rtvals[j] = VM_PAGER_TRYAGAIN;
-				/*
-				 * here on swap space full.
-				 */
-				if (swap_pager_full == 0)
-					printf("swap_pager: out of swap space !!!\n");
 				failed = 1;
 			} else {
-				vm_swap_size -= btodb(NBPG);
-				swapsizecheck();
-				if( swap_pager_full)
-					swap_pager_reclaim();
 				reqaddr[j] = swb[j]->swb_block[off];
+				swb[j]->swb_valid &= ~(1<<off);
 			}
 			splx(s);
 		}
@@ -1300,12 +1311,16 @@ retrygetspace:
 		if( rtvals[i] != VM_PAGER_OK) {
 			if( swb[i])
 				--swb[i]->swb_locked;
-			break;
 		}
 	}
 
-	if( i == 0)
+	for(i = 0; i < count; i++)
+		if( rtvals[i] != VM_PAGER_OK)
+			break;
+
+	if( i == 0) {
 		return VM_PAGER_TRYAGAIN;
+	}
 
 	count = i;
 	for(i=0;i<count;i++) {
@@ -1397,6 +1412,13 @@ retrygetspace:
 	for(i=0;i<count;i++) {
 		foff = m[i]->offset + paging_offset;
 		off = swap_pager_block_offset(swp, foff);
+		/*
+		 * if we are setting the valid bit anew,
+		 * then diminish the swap free space
+		 */
+		if( (swb[i]->swb_valid & (1 << off)) == 0)
+			vm_swap_size -= btodb(NBPG);
+			
 		/*
 		 * set the valid bit
 		 */
