@@ -1,0 +1,98 @@
+Thu Dec  3 19:23:27 1992  Per Bothner  (bothner@cygnus.com)
+
+	* Makefile.in: Fix distclean, realclean to not delete
+	Makefile before recursing.
+
+Tue Nov 17 22:16:37 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Makefile.in:  Include 'fib' among the other SUBDIRS.
+
+Thu Aug  6 14:47:09 1992  Ian Lance Taylor  (ian@tweedledumber.cygnus.com)
+
+	* benchmarks/Makefile.in: removed unused MINUS_G variable.
+
+Mon Jul 20 16:10:03 1992  Mike Stump  (mrs@cygnus.com)
+
+	* ADT-examples/keyhash.cc (Word_Read::operator ()):  Add a cast
+	from void * to char * since it is not a standard conversion.
+	* ADT-examples/keyhash.cc (Word_Read::Word_Read):  Convert old
+	style base initialization to new style.
+
+Wed Jun 17 16:40:10 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* Makefile.in, */Makefile.in:  Fix *clean rules.
+	* Makefile.in:  Use FLAGS_TO_PASS to pass current
+	flags to subdirs.
+	* release.log:  Removed and merged with ../WHATS.NEW.
+	* fib/Makefile.in:  Use CFLAGS instead of old MINUS_G.
+	* ADT-examples/{genPatkey.cc,search.cc}:  Use the
+	more portable rand/srand instead of srandom/random
+	(who cares if it is less random).
+
+Wed Jun  3 23:26:44 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* benchmarks/dhrystone.cc:  Clean up calls to time():
+	Use (_G_time_t*) instead of (long*) for argument casts.
+	Also #Include <time.h> instead of bad K&R-style prototype.
+
+Fri May 29 12:35:48 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* lf/Dirent.cc, lf/Dirent.h, lf/directory.cc:  Simplify to
+	assume Posix-style direct.h.  (dirent.h fixed to compensate.)
+	* lf/directory.cc:  Do The Right thing even if no symlinks.
+	* lf/directory.cc:  More portable:  Don't depend on d_namlen.
+	* benchmarks/dhrystone.cc: Fix to use _G_SYSV instead of USG.
+
+Thu May 14 15:01:54 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* lf/Makefile.in:  Don't have 'make check' run ./lf -
+	it dies on Irix.  FIXME.
+	* benchmarks/Makefile.in:  Don't have 'make check' run ./byval -
+	it dies on Iris and DECstation.  FIXME.
+
+Wed May  6 22:51:11 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* graph/graph.cc:  Use ostrstream instead of deprecated dtoa.
+
+Fri Apr 17 14:56:51 1992  Per Bothner  (bothner@cygnus.com)
+
+	* lf directory:  Shortened all file names (entry-handler.cc
+	to entry.cc etc), as a gradual migrartion to handle SYSV and DOS.
+	* Makefile.in, */Makefile.in:  Common changes (see ../ChangeLog).
+
+Tue Mar  3 11:34:21 1992  Heinrich G. Seidl  (hgs@rtl.cygnus.com)
+
+	* Removed `rem-blank.awk' (now done in ../Make.defs with sed)
+	  moved `etags.c', `c++-mode.el' and `g++dep.sh' into ../utils
+	  moved `fib.cc' into `fib' (updated Makefile and Sanitize ...)
+
+Sun Mar  1 17:01:39 1992  Per Bothner  (bothner@cygnus.com)
+
+	* PlotFile3D/PlotFile3D.{h,cc}:  Change error method
+	to return void, not volatile void.
+	* benchmarks/dhrystone.cc: Lexical fix to avoid warning.
+	* Makefile.in:  Add 'check' rule.
+	Avoid duplicate work sub-directory scan for 'realclean'.
+	* {ADT-examples,PlotFile3D,benchmarks,graph,lf}/Makefile.in:
+	Add 'check' rule, following updates standards.text.
+	* graph/Makefile.in:  Add stuff to 'clean' rule.
+
+Thu Feb 27 16:28:08 1992  Per Bothner  (bothner@cygnus.com)
+
+	* lf/Dirent.h:  Fix prototypes for FOO_Dirent_error_handler.
+
+Mon Feb  3 15:04:05 1992  Per Bothner  (bothner at cygnus.com)
+
+	* PlotFile3 directory:  Converted to use iostream functionality.
+
+Sun Feb  2 13:12:16 1992  Per Bothner  (bothner at cygnus.com)
+
+	* fib.cc:  Add #include <builtin.h>.
+
+Sun Jan 26 19:10:21 1992  Per Bothner  (bothner at cygnus.com)
+
+	* ADT-examples/{Patmain.cc,search.cc,tsort.cc}:
+	Add #includes that are needed due to reorganization.
+	* graph/{Makefile.in,configure.in, depend}:  Use depend
+	rule in ../../Make.defs to generate separate depend file.
+	* trie/gen/main.cc (main):  Use iostream package.
