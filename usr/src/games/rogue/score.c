@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)score.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)score.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -180,7 +180,8 @@ short other;
 
 	md_lock(1);
 
-	if ((fp = fopen(_PATH_SCOREFILE, "a+")) == NULL) {
+	if ((fp = fopen(_PATH_SCOREFILE, "r+")) == NULL &&
+	    (fp = fopen(_PATH_SCOREFILE, "w+")) == NULL) {
 		message("cannot read/write/create score file", 0);
 		sf_error();
 	}
