@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)from.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)from.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -60,8 +60,10 @@ main(argc, argv)
 			name = pp->pw_name;
 		}
 	}
-	if (freopen(name, "r", stdin) == NULL)
+	if (freopen(name, "r", stdin) == NULL) {
+		fprintf(stderr, "Can't open /usr/spool/mail/%s\n", name);
 		exit(0);
+	}
 	while (fgets(lbuf, sizeof lbuf, stdin) != NULL)
 		if (lbuf[0] == '\n' && stashed) {
 			stashed = 0;
