@@ -14,7 +14,7 @@
  * If you don't run uucp you don't even need any rmail.
  */
 
-static char	SccsId[] =	"@(#)rmail.c	3.1	%G%";
+static char	SccsId[] =	"@(#)rmail.c	3.2	%G%";
 
 # include <stdio.h>
 # include <sysexits.h>
@@ -83,7 +83,7 @@ main(argc, argv)
 	}
 	strcat(from, ufrom);
 
-	sprintf(cmd, "%s -f%s", MAILER, from);
+	sprintf(cmd, "%s -em -f%s", MAILER, from);
 	while (*++argv != NULL)
 	{
 		strcat(cmd, " '");
