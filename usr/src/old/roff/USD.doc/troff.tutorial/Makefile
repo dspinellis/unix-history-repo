@@ -1,8 +1,8 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 DIR=	usd/22.trofftut
 SRCS=	tt.mac tt00 tt01 tt02 tt03 tt04 tt05 tt06 tt07 tt08 tt09 tt10 \
 	tt11 tt12 tt13 tt14 ttack ttcharset ttindex
-MACROS=	-msU
+MACROS=	-ms
 
 .include <bsd.doc.mk>
