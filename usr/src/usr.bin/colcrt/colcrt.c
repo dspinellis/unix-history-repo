@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)colcrt.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)colcrt.c	4.3 (Berkeley) %G%";
+
 #include <stdio.h>
 /*
  * colcrt - replaces col for crts with new nroff esp. when using tbl.
@@ -178,12 +179,13 @@ pflush(ol)
 		lastomit = 0;
 		printf("%s\n", cp);
 	}
-	copy(page, page[ol], (267 - ol) * 132);
-	clear(page[267- ol], ol * 132);
+	bcopy(page[ol], page, (267 - ol) * 132);
+	bzero(page[267- ol], ol * 132);
 	outline -= ol;
 	outcol = 0;
 	first = 1;
 }
+
 move(l, m)
 	int l, m;
 {
@@ -209,26 +211,4 @@ move(l, m)
 				*dp = ' ';
 		page[l][0] = 0;
 	}
-}
-
-copy(to, from, i)
-	register char *to, *from;
-	register int i;
-{
-
-	if (i > 0)
-		do
-			*to++ = *from++;
-		while (--i);
-}
-
-clear(at, cnt)
-	register char *at;
-	register int cnt;
-{
-
-	if (cnt > 0)
-		do
-			*at++ = 0;
-		while (--cnt);
 }
