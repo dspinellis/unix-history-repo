@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-DTRACE -O
 SRCS=	agoto.c aminmax.c aon.c areaclear.c beep.c bitcopy.c cleara.c \
@@ -36,7 +36,9 @@ MAN=	lib2648.0
 all: lib2648.a
 
 lib2648.a: ${OBJS}
-	ar cr lib2648.a `lorder ${OBJS} | tsort`
+	@echo building normal lib2648
+	@ar cr lib2648.a `lorder ${OBJS} | tsort`
+	ranlib lib2648.a
 
 clean:
 	rm -f ${OBJS} core lib2648.a
@@ -49,7 +51,7 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -o bin -g bin -m 644 lib2648.a ${DESTDIR}/usr/lib/lib2648.a
-	ranlib ${DESTDIR}/usr/lib/lib2648.a
+	ranlib -t ${DESTDIR}/usr/lib/lib2648.a
 	install -c -o bin -g bin -m 444 lib2648.0 ${DESTDIR}/usr/man/cat3
 
 lint: ${SRCS}
