@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.7 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -21,6 +21,7 @@
 
 #include "ns.h"
 #include "ns_pcb.h"
+#include "ns_if.h"
 #include "idp.h"
 #include "idp_var.h"
 #include "ns_error.h"
@@ -34,21 +35,31 @@ struct	sockaddr_ns idp_ns = { AF_NS };
 /*
  *  This may also be called for raw listeners.
  */
-idp_input(m, nsp)
+idp_input(m, nsp, ifp)
 	struct mbuf *m;
 	register struct nspcb *nsp;
+	struct ifnet *ifp;
 {
 	register struct idp *idp = mtod(m, struct idp *);
 
-	if (nsp==0) {
+	if (nsp==0)
 		panic("No nspcb");
-	}
-
 	/*
 	 * Construct sockaddr format source address.
 	 * Stuff source address and datagram in user buffer.
 	 */
 	idp_ns.sns_addr = idp->idp_sna;
+	if (ns_netof(idp->idp_sna)==0) {
+		register struct ifaddr *ia;
+
+		for (ia = ifp->if_addrlist; ia; ia->ifa_next) {
+			if (ia->ifa_addr.sa_family == AF_NS) {
+				idp_ns.sns_addr.x_net =
+					IA_SNS(ia)->sns_addr.x_net;
+				break;
+			}
+		}
+	}
 	nsp->nsp_rpt = idp->idp_pt;
 	if ( ! (nsp->nsp_flags & NSP_RAWIN) ) {
 		m->m_len -= sizeof (struct idp);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.9 (Berkeley) %G%
+ *	@(#)ns_input.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,7 +95,7 @@ next:
 	 */
 	for (nsp = nsrawpcb.nsp_next; nsp != &nsrawpcb; nsp = nsp->nsp_next) {
 		struct mbuf *m1 = m_copy(m, 0, (int)M_COPYALL);
-		if (m1) idp_input(m1, nsp);
+		if (m1) idp_input(m1, nsp, ifp);
 	}
 
 	idp = mtod(m, struct idp *);
@@ -189,14 +189,14 @@ next:
 			switch (idp->idp_pt) {
 
 			    case NSPROTO_SPP:
-				    spp_input(m,nsp);
+				    spp_input(m, nsp, ifp);
 				    goto next;
 
 			    case NSPROTO_ERROR:
 				    ns_err_input(m);
 				    goto next;
 			}
-		idp_input(m,nsp);
+		idp_input(m, nsp, ifp);
 	} else {
 		ns_error(m, NS_ERR_NOSOCK, 0);
 	}
@@ -233,11 +233,19 @@ idp_ctlinput(cmd, arg)
 	if (nsctlerrmap[cmd] == 0)
 		return;		/* XXX */
 	type = NS_ERR_UNREACH_HOST;
-	if (cmd == PRC_IFDOWN)
-		ns = &((struct sockaddr_ns *)arg)->sns_addr;
-	else if (cmd == PRC_HOSTDEAD || cmd == PRC_HOSTUNREACH)
-		ns = (struct ns_addr *)arg;
-	else {
+	switch (cmd) {
+		struct sockaddr_ns *sns;
+
+	case PRC_IFDOWN:
+	case PRC_HOSTDEAD:
+	case PRC_HOSTUNREACH:
+		sns = (struct sockaddr_ns *)arg;
+		if (sns->sns_family != AF_INET)
+			return;
+		ns = &sns->sns_addr;
+		break;
+
+	default:
 		errp = (struct ns_errp *)arg;
 		ns = &errp->ns_err_idp.idp_dna;
 		type = errp->ns_err_num;
