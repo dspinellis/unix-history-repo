@@ -1,4 +1,4 @@
-#	@(#)bsd.subdir.mk	5.9 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	5.10 (Berkeley) %G%
 
 .MAIN: all
 
@@ -44,6 +44,10 @@ cleandir: _SUBDIRUSE
 depend: _SUBDIRUSE
 .endif
 
+.if !target(manpages)
+manpages: _SUBDIRUSE
+.endif
+
 .if !target(install)
 .if !target(beforeinstall)
 beforeinstall:
@@ -55,6 +59,9 @@ install: afterinstall
 afterinstall: realinstall
 realinstall: beforeinstall _SUBDIRUSE
 .endif
+.if !target(maninstall)
+maninstall: _SUBDIRUSE
+.endif
 
 .if !target(lint)
 lint: _SUBDIRUSE
@@ -62,6 +69,10 @@ lint: _SUBDIRUSE
 
 .if !target(obj)
 obj: _SUBDIRUSE
+.endif
+
+.if !target(objdir)
+objdir: _SUBDIRUSE
 .endif
 
 .if !target(tags)
