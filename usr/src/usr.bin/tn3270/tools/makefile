@@ -59,9 +59,6 @@ mkdctype:	mkdctype.o ../ctlr/ebc_disp.o ectype.o
 ../ascii/asctab.o:
 	(cd ../ascii; make asctab.o)
 
-../ascii/m4.out:
-	(cd ../ascii; make m4.out)
-
 ../general/globals.o:
 	(cd ../general; make globals.o)
 
@@ -106,11 +103,11 @@ depend:
 dohits.o: ../general/general.h ../ascii/ascebc.h ../ctlr/ebc_disp.h
 dohits.o: ../ctlr/function.h dohits.h
 ectype.o: ectype.h
-mkastosc.o: ../general/general.h ../ascii/m4.out ../ascii/ascebc.h
+mkastosc.o: ../general/general.h ../ascii/ascebc.h
 mkastosc.o: ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
 mkdctype.o: ../ctlr/ebc_disp.h ectype.h
 mkastods.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
 mkdstoas.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h
 mkhits.o: ../ascii/ascebc.h ../ctlr/ebc_disp.h ../ctlr/function.h dohits.h
 prt3270.o: ../general/general.h ../ascii/ascebc.h ../ctlr/hostctlr.h
-prt3270.o: ../ctlr/screen.h ../ascii/m4.out ../general/globals.h
+prt3270.o: ../ctlr/screen.h ../general/globals.h

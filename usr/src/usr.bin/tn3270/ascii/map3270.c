@@ -54,16 +54,13 @@ static	char	sccsid[] = "@(#)map3270.c	3.1  10/29/86";
 
 #define	IsPrint(c)	((isprint(c) && !isspace(c)) || ((c) == ' '))
 
-#define	LETS_SEE_ASCII
-#include "m4.out"
-
 #include "state.h"
 
 #include "../general/globals.h"
 #include "map3270.ext"
 
 /* this is the list of types returned by the lex processor */
-#define	LEX_CHAR	TC_HIGHEST		/* plain unadorned character */
+#define	LEX_CHAR	400			/* plain unadorned character */
 #define	LEX_ESCAPED	LEX_CHAR+1		/* escaped with \ */
 #define	LEX_CARETED	LEX_ESCAPED+1		/* escaped with ^ */
 #define	LEX_END_OF_FILE LEX_CARETED+1		/* end of file encountered */
@@ -87,7 +84,7 @@ typedef struct {
 
 #define	panic(s)	{ fprintf(stderr, s); exit(1); }
 
-static state firstentry = { 0, TC_NULL, 0, 0 };
+static state firstentry = { 0, STATE_NULL, 0, 0 };
 static state *headOfQueue = &firstentry;
 
 /* the following is a primitive adm3a table, to be used when nothing
@@ -98,13 +95,14 @@ static state *headOfQueue = &firstentry;
 static int debug = 0;		/* debug flag (for debuggin tables) */
 #endif	/* DEBUG */
 
-static int doPaste = 1;			/* should we have side effects */
-static int picky = 0;			/* do we complain of unknown TC's? */
-static char usePointer = 0;		/* use pointer, or file */
+static int (*GetTc)();
+static int doPaste = 1;		/* should we have side effects */
+static int picky = 0;		/* do we complain of unknown functions? */
+static char usePointer = 0;	/* use pointer, or file */
 static FILE *ourFile= 0;
-static char *environPointer = 0;	/* if non-zero, point to input
-					 * string in core.
-					 */
+static char *environPointer = 0;/* if non-zero, point to input
+				 * string in core.
+				 */
 static char **whichkey = 0;
 static char *keysgeneric[] = {
 #include "default.map"		/* Define the default default */
@@ -478,7 +476,7 @@ GetState()
 
     pState = (state *) malloc(sizeof (state));
 
-    pState->result = TC_NULL;
+    pState->result = STATE_NULL;
     pState->next = 0;
 
     return(pState);
@@ -515,7 +513,7 @@ char			*identifier;	/* for error messages */
     if (!count) {
 	return(head);	/* return pointer to the parent */
     }
-    if ((head->result != TC_NULL) && (head->result != TC_GOTO)) {
+    if ((head->result != STATE_NULL) && (head->result != STATE_GOTO)) {
 	/* this means that a previously defined sequence is an initial
 	 * part of this one.
 	 */
@@ -530,8 +528,8 @@ char			*identifier;	/* for error messages */
 #   endif	/* DEBUG */
     pState = GetState();
     pState->match = *string;
-    if (head->result == TC_NULL) {
-	head->result = TC_GOTO;
+    if (head->result == STATE_NULL) {
+	head->result = STATE_GOTO;
 	head->address = pState;
 	other = pState;
     } else {		/* search for same character */
@@ -585,7 +583,7 @@ char *identifier;		/* entry being parsed (for error messages) */
     if (!doPaste) {
 	return(1);
     }
-    if ((head->result != TC_NULL) && (head->result != tc)) {
+    if ((head->result != STATE_NULL) && (head->result != tc)) {
 	/* this means that this sequence is an initial part
 	 * of a previously defined one.
 	 */
@@ -599,25 +597,6 @@ char *identifier;		/* entry being parsed (for error messages) */
 }
 
 static
-GetTc(string)
-char *string;
-{
-    register TC_Ascii_t *Tc;
-
-    for (Tc = TC_Ascii;
-		Tc < TC_Ascii+sizeof TC_Ascii/sizeof (TC_Ascii_t); Tc++) {
-	if (!ustrcmp(string, Tc->tc_name)) {
-#	    ifdef	DEBUG
-		if (debug) {
-		    fprintf(stderr, "%s = ", Tc->tc_name);
-		}
-#	    endif	/* DEBUG */
-	    return(Tc->tc_value&0xff);
-	}
-    }
-    return(0);
-}
-static
 GetDefinition()
 {
     stringWithLength *string;
@@ -629,19 +608,15 @@ GetDefinition()
     }
     string->array[string->length] = 0;
     if (doPaste) {
-	if ((Tc = GetTc(string->array)) == 0) {
+	if ((Tc = (*GetTc)(string->array)) == STATE_NULL) {
 	    if (picky) {
 		fprintf(stderr, "%s: unknown 3270 key identifier\n",
 							string->array);
 	    }
-	    Tc = TC_NULL;
-	} else if (Tc < TC_LOWEST_USER) {
-	    fprintf(stderr, "%s is not allowed to be specified by a user.\n",
-			string->array);
-	    return(0);
+	    Tc = STATE_NULL;
 	}
     } else {
-	Tc = TC_LOWEST_USER;
+	Tc = STATE_NULL;		/* XXX ? */
     }
     GetWS();
     if (!GetCharacter('=')) {
@@ -860,14 +835,16 @@ char *string;
  */
 
 state *
-InitControl(keybdPointer, pickyarg)
+InitControl(keybdPointer, pickyarg, translator)
 char	*keybdPointer;
 int	pickyarg;		/* Should we be picky? */
+int	(*translator)();	/* Translates ascii string to integer */
 {
     extern char *getenv();
     int GotIt;
 
     picky = pickyarg;
+    GetTc = translator;
 
     if (keybdPointer == 0) {
         keybdPointer = getenv("KEYBD");

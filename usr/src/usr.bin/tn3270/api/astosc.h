@@ -14,6 +14,7 @@ struct astosc {
     unsigned char
 	scancode,		/* Scan code for this function */
 	shiftstate;		/* Shift state for this function */
+    enum ctlrfcn function;	/* Internal function identifier */
     char *name;			/* Name of this function */
 };
 
