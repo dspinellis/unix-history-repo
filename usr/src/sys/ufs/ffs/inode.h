@@ -2,19 +2,9 @@
  * Copyright (c) 1982, 1989 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.12 (Berkeley) %G%
+ *	@(#)inode.h	7.13 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -51,9 +41,10 @@ struct inode {
 #define	i_nlink		i_din.di_nlink
 #define	i_uid		i_din.di_uid
 #define	i_gid		i_din.di_gid
-/* ugh! -- must be fixed */
-#if defined(vax) || defined(tahoe)
+#if BYTE_ORDER == LITTLE_ENDIAN || defined(tahoe) /* ugh! -- must be fixed */
 #define	i_size		i_din.di_qsize.val[0]
+#else /* BYTE_ORDER == BIG_ENDIAN */
+#define	i_size		i_din.di_qsize.val[1]
 #endif
 #define	i_db		i_din.di_db
 #define	i_ib		i_din.di_ib
