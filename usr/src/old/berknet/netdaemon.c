@@ -252,11 +252,6 @@ day()
 		return( 1 );		/* day */
 }
 
-int subs;
-ignoreit() {
-	signal(SIGALRM,0);
-}
-
 send(jname)
 	char *jname;
 {	/* push those bytes */
@@ -440,7 +435,6 @@ forw:
 			dump.elaptot += diff;
 			while((pid = fork()) == -1)sleep(2);
 			if(pid == 0){
-				extern char *logfile;
 				RENICE0();
 #ifdef CCV7
 				/* make sure the spawned child has it's own
@@ -448,24 +442,17 @@ forw:
 					"try again" message
 				*/
 				setpgrp();
-				/*
-				 * log error messages on unit 2 from subprocess
-				 * though this may not sync very well
-				 */
 #endif CCV7
-				dup2(open("/logit",1),2);
-				lseek(2,0,2);
 				execl(netcmd,"net","-x","-m",longname(hd.hd_mchto),
 					"-s",tempfile,0);
 				error("%s: %s",netcmd,sys_errlist[errno]);
 				exit(EX_UNAVAILABLE);
 				}
-			while (pid != wait(&rcode))
-				error("netdaemon: wait returned with wrong pid\n");
+			wait(&rcode);
 			unlink(tempfile);
 			rcode >>= 8;
 			if(rcode != 0)
-				error("%s: pass-thru rcode %d", netcmd, rcode);
+				error("pass-thru rcode %d", rcode);
 			debug("passthru to %c code %c rcode %d",
 				hd.hd_mchto,hd.hd_code,rcode);
 			return(1);
@@ -476,21 +463,7 @@ forw:
 
 	while((pid = fork()) == -1)sleep(2);
 	if(pid > 0){
-		if (++subs < 10)
-		{
-			signal(SIGALRM,ignoreit);
-			alarm(5);
-		}
-		/*
-		 * Note: we expect the alarm to cause a system
-		 * call aborted error thus to fall out of the wait()
-		 * if no processes need to be recovered after 5 seconds
-		 *
-		 * This patch is intended to limit the number of
-		 * processes the network can create at anytime
-		 * to keep from running out of processes per uid
-		 */
-		while( wait(&dummy) != -1)  if (subs) --subs;
+		wait(&dummy);
 		return(1);	/* normal return */
 	}
 	/* this is a child, who will go ahead and execute the command */
@@ -502,11 +475,8 @@ forw:
 	setpgrp();
 #endif CCV7
 
-
-	/*
 	while((pid = fork()) == -1)sleep(2);
 	if(pid != 0)exit(EX_OK);
-	*/
 
 	/* child process which forks and waits */
 	mktemp(resfile);
@@ -534,9 +504,7 @@ forw:
 		excmd(&hd,resfile,tempfile);
 	}
 	/* parent */
-	while (pid != wait(&rcode))
-			error("netdaemon:  returned wrong pid\n");
-
+	wait(&rcode);
 	rcode = (((rcode&077400) >>8) &0177);
 	/*
 	fclose(stdin);
