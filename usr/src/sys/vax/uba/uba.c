@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.1 (Berkeley) %G%
+ *	@(#)uba.c	7.2 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -26,7 +26,7 @@
 #include "ubareg.h"
 #include "ubavar.h"
 
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 char	ubasr_bits[] = UBASR_BITS;
 #endif
 
@@ -120,8 +120,12 @@ ubasetup(uban, bp, flags)
 	struct proc *rp;
 	int a, o, ubinfo;
 
-#if defined(VAX730) || defined(VAX630)
-	if (cpu == VAX_730 || cpu == VAX_630)
+#ifdef DW730
+	if (uh->uh_type == DW730)
+		flags &= ~UBA_NEEDBDP;
+#endif
+#ifdef QBA
+	if (uh->uh_type == QBA)
 		flags &= ~UBA_NEEDBDP;
 #endif
 	v = btop(bp->b_un.b_addr);
@@ -174,7 +178,7 @@ ubasetup(uban, bp, flags)
 		pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
 	else
 		pte = vtopte(rp, v);
-	io = &uh->uh_uba->uba_map[reg];
+	io = &uh->uh_mr[reg];
 	while (--npf != 0) {
 		pfnum = pte->pg_pfnum;
 		if (pfnum == 0)
@@ -232,19 +236,20 @@ ubarelse(uban, amr)
 	*amr = 0;
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
-		switch (cpu) {
-#if defined(VAX780) || defined(VAX8600)
-		case VAX_8600:
-		case VAX_780:
+		switch (uh->uh_type) {
+#ifdef DW780
+		case DW780:
 			uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 			break;
 #endif
-#if VAX750
-		case VAX_750:
+#ifdef DW750
+		case DW750:
 			uh->uh_uba->uba_dpr[bdp] |=
 			    UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 			break;
 #endif
+		default:
+			break;
 		}
 		uh->uh_bdpfree |= 1 << (bdp-1);		/* atomic */
 		if (uh->uh_bdpwant) {
@@ -282,18 +287,19 @@ ubapurge(um)
 	register struct uba_hd *uh = um->um_hd;
 	register int bdp = (um->um_ubinfo >> 28) & 0x0f;
 
-	switch (cpu) {
-#if defined(VAX780) || defined(VAX8600)
-	case VAX_8600:
-	case VAX_780:
+	switch (uh->uh_type) {
+#ifdef DW780
+	case DW780:
 		uh->uh_uba->uba_dpr[bdp] |= UBADPR_BNE;
 		break;
 #endif
-#if VAX750
-	case VAX_750:
+#ifdef DW750
+	case DW750:
 		uh->uh_uba->uba_dpr[bdp] |= UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
 #endif
+	default:
+		break;
 	}
 }
 
@@ -301,24 +307,20 @@ ubainitmaps(uhp)
 	register struct uba_hd *uhp;
 {
 
-	rminit(uhp->uh_map, (long)NUBMREG, (long)1, "uba", UAMSIZ);
-	switch (cpu) {
-#if defined(VAX780) || defined(VAX8600)
-	case VAX_8600:
-	case VAX_780:
+	rminit(uhp->uh_map, (long)uhp->uh_memsize, (long)1, "uba", UAMSIZ);
+	switch (uhp->uh_type) {
+#ifdef DW780
+	case DW780:
 		uhp->uh_bdpfree = (1<<NBDP780) - 1;
 		break;
 #endif
-#if VAX750
-	case VAX_750:
+#ifdef DW750
+	case DW750:
 		uhp->uh_bdpfree = (1<<NBDP750) - 1;
 		break;
 #endif
-#if defined(VAX730) || defined(VAX630)
-	case VAX_730:
-	case VAX_630:
+	default:
 		break;
-#endif
 	}
 }
 
@@ -361,42 +363,69 @@ ubareset(uban)
  * In these cases we really don't need the interrupts
  * enabled, but since we run with ipl high, we don't care
  * if they are, they will never happen anyways.
+ * SHOULD GET POINTER TO UBA_HD INSTEAD OF UBA.
  */
 ubainit(uba)
 	register struct uba_regs *uba;
 {
+	register struct uba_hd *uhp;
+	int isphys = 0;
 
-	switch (cpu) {
-#if defined(VAX780) || defined(VAX8600)
-	case VAX_8600:
-	case VAX_780:
+	for (uhp = uba_hd; uhp < uba_hd + numuba; uhp++) {
+		if (uhp->uh_uba == uba)
+			break;
+		if (uhp->uh_physuba == uba) {
+			isphys++;
+			break;
+		}
+	}
+	if (uhp >= uba_hd + numuba) {
+		printf("init unknown uba\n");
+		return;
+	}
+
+	switch (uhp->uh_type) {
+#ifdef DW780
+	case DW780:
 		uba->uba_cr = UBACR_ADINIT;
 		uba->uba_cr = UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
 		while ((uba->uba_cnfgr & UBACNFGR_UBIC) == 0)
 			;
 		break;
 #endif
-#if VAX750
-	case VAX_750:
+#ifdef DW750
+	case DW750:
 #endif
-#if VAX730
-	case VAX_730:
+#ifdef DW730
+	case DW730:
 #endif
-#if VAX630
-	case VAX_630:
+#ifdef QBA
+	case QBA:
 #endif
-#if defined(VAX750) || defined(VAX730) || defined(VAX630)
+#if DW750 || DW730 || QBA
 		mtpr(IUR, 0);
 		/* give devices time to recover from power fail */
 /* THIS IS PROBABLY UNNECESSARY */
 		DELAY(500000);
 /* END PROBABLY UNNECESSARY */
+#ifdef QBA
+		/*
+		 * Re-enable local memory access
+		 * from the Q-bus.
+		 */
+		if (uhp->uh_type == QBA) {
+			if (isphys)
+				*((char *)QIOPAGE630 + QIPCR) = Q_LMEAE;
+			else
+				*(uhp->uh_iopage + QIPCR) = Q_LMEAE;
+		}
+#endif QBA
 		break;
-#endif
+#endif DW750 || DW730 || QBA
 	}
 }
 
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 int	ubawedgecnt = 10;
 int	ubacrazy = 500;
 int	zvcnt_max = 5000;	/* in 8 sec */
@@ -504,13 +533,13 @@ ubameminit(uban)
 			ui->ui_addr = addr;
 		}
 	}
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 	/*
-	 * On a 780, throw away any map registers disabled by rounding
+	 * On a DW780, throw away any map registers disabled by rounding
 	 * the map disable in the configuration register
 	 * up to the next 8K boundary, or below the last unibus memory.
 	 */
-	if ((cpu == VAX_780) || (cpu == VAX_8600)) {
+	if (uh->uh_type == DW780) {
 		register i;
 
 		i = btop(((uh->uh_lastmem + 8191) / 8192) * 8192);
@@ -526,7 +555,7 @@ ubameminit(uban)
  * the configuration register is setup to disable UBA
  * response on DMA transfers to addresses controlled
  * by the disabled mapping registers.
- * On a 780, should only be called from ubameminit, or in ascending order
+ * On a DW780, should only be called from ubameminit, or in ascending order
  * from 0 with 8K-sized and -aligned addresses; freeing memory that isn't
  * the last unibus memory would free unusable map registers.
  * Doalloc is 1 to allocate, 0 to deallocate.
@@ -548,7 +577,7 @@ ubamem(uban, addr, npg, doalloc)
 	if (a) {
 		register int i, *m;
 
-		m = (int *)&uh->uh_uba->uba_map[a - 1];
+		m = (int *)&uh->uh_mr[a - 1];
 		for (i = 0; i < npg; i++)
 			*m++ = 0;	/* All off, especially 'valid' */
 		i = addr + npg * 512;
@@ -556,7 +585,7 @@ ubamem(uban, addr, npg, doalloc)
 			uh->uh_lastmem = i;
 		else if (doalloc == 0 && i == uh->uh_lastmem)
 			uh->uh_lastmem = addr;
-#if defined(VAX780) || defined(VAX8600)
+#ifdef DW780
 		/*
 		 * On a 780, set up the map register disable
 		 * field in the configuration register.  Beware
@@ -564,7 +593,7 @@ ubamem(uban, addr, npg, doalloc)
 		 * or in sections other than 8K multiples.
 		 * Ubameminit handles such requests properly, however.
 		 */
-		if ((cpu == VAX_780) || (cpu == VAX_8600)) {
+		if (uh->uh_type == DW780) {
 			i = uh->uh_uba->uba_cr &~ 0x7c000000;
 			i |= ((uh->uh_lastmem + 8191) / 8192) << 26;
 			uh->uh_uba->uba_cr = i;
