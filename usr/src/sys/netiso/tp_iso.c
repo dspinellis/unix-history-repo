@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.8 (Berkeley) %G%
+ *	@(#)tp_iso.c	7.9 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -357,7 +357,7 @@ tpclnp_mtu(so, isop, size, negot )
 		sizeismtu = 1;
 	}
 	/* have to transform size to the log2 of size */
-	for(i=TP_MIN_TPDUSIZE; (i<TP_MAX_TPDUSIZE && ((1<<i) <= *size)) ; i++)
+	for(i=TP_MIN_TPDUSIZE; (i<=TP_MAX_TPDUSIZE && ((1<<i) <= *size)) ; i++)
 		;
 	i--;
 
