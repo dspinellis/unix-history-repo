@@ -33,10 +33,24 @@
 #define	GPRFFOOT	"/usr/lib/gcrt0.o"
 #define TEMPPREF	"fort"
 
-static char *liblist [ ] =
-		{ "-lU77", "-lF77", "-lI77", "-lm", "-lc", NULL };
-static char *p_liblist [ ] =
-		{ "-lU77_p", "-lF77_p", "-lI77_p", "-lm_p", "-lc_p", NULL };
+static char *liblist [] = {
+	"-lU77",
+	"-lF77",
+	"-lI77",
+	"-lm",
+	"-lc",
+	"-lcompat",
+	NULL
+};
+static char *p_liblist [] = {
+	"-lU77_p",
+	"-lF77_p",
+	"-lI77_p",
+	"-lm_p",
+	"-lc_p",
+	"-lcompat_p",
+	NULL
+};
 
 #include <paths.h>
 
