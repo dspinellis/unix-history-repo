@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1454,7 +1454,7 @@ makemapentry(line)
 	register char *p;
 	char *mapname;
 	char *classname;
-	register STAB *map;
+	register STAB *s;
 	STAB *class;
 
 	for (p = line; isascii(*p) && isspace(*p); p++)
@@ -1494,12 +1494,24 @@ makemapentry(line)
 	}
 
 	/* enter the map */
-	map = stab(mapname, ST_MAP, ST_ENTER);
-	map->s_map.map_class = &class->s_mapclass;
-	map->s_map.map_mname = newstr(mapname);
+	s = stab(mapname, ST_MAP, ST_ENTER);
+	s->s_map.map_class = &class->s_mapclass;
+	s->s_map.map_mname = newstr(mapname);
 
-	if (class->s_mapclass.map_parse(&map->s_map, p))
-		map->s_map.map_mflags |= MF_VALID;
+	if (class->s_mapclass.map_parse(&s->s_map, p))
+		s->s_map.map_mflags |= MF_VALID;
+
+	if (tTd(37, 5))
+	{
+		printf("map %s, class %s, flags %x, file %s,\n",
+			s->s_map.map_mname, s->s_map.map_class->map_cname,
+			s->s_map.map_mflags,
+			s->s_map.map_file == NULL ? "(null)" : s->s_map.map_file);
+		printf("\tapp %s, domain %s, rebuild %s\n",
+			s->s_map.map_app == NULL ? "(null)" : s->s_map.map_app,
+			s->s_map.map_domain == NULL ? "(null)" : s->s_map.map_domain,
+			s->s_map.map_rebuild == NULL ? "(null)" : s->s_map.map_rebuild);
+	}
 }
 /*
 **  SETTIMEOUTS -- parse and set timeout values
