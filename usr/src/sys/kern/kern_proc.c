@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.13	%G%	*/
+/*	kern_proc.c	3.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -494,6 +494,7 @@ done:
 		if(q->p_pptr == p) {
 			q->p_pptr = &proc[1];
 			q->p_ppid = 1;
+			q->p_flag |= SDETACH;
 			wakeup((caddr_t)&proc[1]);
 			/*
 			 * Traced processes are killed
