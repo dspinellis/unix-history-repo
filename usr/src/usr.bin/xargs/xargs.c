@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xargs.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)xargs.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -28,16 +28,16 @@ static char sccsid[] = "@(#)xargs.c	5.11 (Berkeley) %G%";
 #include <limits.h>
 #include "pathnames.h"
 
-int fflag, tflag;
+int tflag, rval;
+
 void err __P((const char *, ...));
-void run(), usage();
+void run __P((char **));
+void usage __P((void));
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
-	extern char *optarg;
 	register int ch;
 	register char *p, *bbp, *ebp, **bxp, **exp, **xp;
 	int cnt, indouble, insingle, nargs, nflag, nline, xflag;
@@ -59,11 +59,8 @@ main(argc, argv)
 	nargs = 5000;
 	nline = ARG_MAX - 4 * 1024;
 	nflag = xflag = 0;
-	while ((ch = getopt(argc, argv, "fn:s:tx")) != EOF)
+	while ((ch = getopt(argc, argv, "n:s:tx")) != EOF)
 		switch(ch) {
-		case 'f':
-			fflag = 1;
-			break;
 		case 'n':
 			nflag = 1;
 			if ((nargs = atoi(optarg)) <= 0)
@@ -139,13 +136,13 @@ main(argc, argv)
 		case EOF:
 			/* No arguments since last exec. */
 			if (p == bbp)
-				exit(0);
+				exit(rval);
 
 			/* Nothing since end of last argument. */
 			if (argp == p) {
 				*xp = NULL;
 				run(av);
-				exit(0);
+				exit(rval);
 			}
 			goto arg1;
 		case ' ':
@@ -177,7 +174,7 @@ arg2:			*p = '\0';
 				*xp = NULL;
 				run(av);
 				if (ch == EOF)
-					exit(0);
+					exit(rval);
 				p = bbp;
 				xp = bxp;
 			} else
@@ -228,9 +225,9 @@ void
 run(argv)
 	char **argv;
 {
+	volatile int noinvoke;
 	register char **p;
 	pid_t pid;
-	volatile int noinvoke;
 	int status;
 
 	if (tflag) {
@@ -247,30 +244,28 @@ run(argv)
 	case 0:
 		execvp(argv[0], argv);
 		(void)fprintf(stderr,
-		    "xargs: %s: %s.\n", argv[0], strerror(errno));
+		    "xargs: %s: %s\n", argv[0], strerror(errno));
 		noinvoke = 1;
 		_exit(1);
 	}
 	pid = waitpid(pid, &status, 0);
 	if (pid == -1)
 		err("waitpid: %s", strerror(errno));
-	/*
-	 * If we couldn't invoke the utility or the utility didn't exit
-	 * properly, quit with 127.
-	 * Otherwise, if not specified otherwise, and the utility exits
-	 * non-zero, exit with that value.
-	 */
-	if (noinvoke || !WIFEXITED(status) || WIFSIGNALED(status))
+	/* If we couldn't invoke the utility, exit 127. */
+	if (noinvoke)
 		exit(127);
-	if (!fflag && WEXITSTATUS(status))
-		exit(WEXITSTATUS(status));
+	/* If utility signaled or exited with a value of 255, exit 1-125. */
+	if (WIFSIGNALED(status) || WEXITSTATUS(status) == 255)
+		exit(1);
+	if (WEXITSTATUS(status))
+		rval = 1;
 }
 
 void
 usage()
 {
 	(void)fprintf(stderr,
-"usage: xargs [-ft] [[-x] -n number] [-s size] [utility [argument ...]]\n");
+"usage: xargs [-t] [-n number [-x]] [-s size] [utility [argument ...]]\n");
 	exit(1);
 }
 
