@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.14 (Berkeley) %G%
+#	@(#)Makefile	1.15 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -35,6 +35,7 @@ ALLHC=	${SRCS} \
 
 OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
 	telnet.o terminal.o tn3270.o utilities.o
+MAN=	telnet.0
 
 all: telnet
 
@@ -58,8 +59,9 @@ hclist:	FRC ${ALLHC}
 depend: FRC ${SRCS}
 	mkdep ${CFLAGS} `make clist`
 
-install: FRC
+install: ${MAN} FRC
 	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 telnet.0 ${DESTDIR}/usr/man/cat1
 
 lint: FRC ${SRCS}
 	lint ${CFLAGS} `make clist`
