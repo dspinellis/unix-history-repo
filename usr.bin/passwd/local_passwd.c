@@ -91,7 +91,7 @@ getnewpasswd(pw)
 
 	(void)printf("Changing local password for %s.\n", pw->pw_name);
 
-	if (uid && pw->pw_passwd &&
+	if (uid && pw->pw_passwd && *pw->pw_passwd &&
 	    strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
 	    pw->pw_passwd)) {
 		errno = EACCES;
