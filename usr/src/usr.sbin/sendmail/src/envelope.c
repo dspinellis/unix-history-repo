@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -797,12 +797,27 @@ setsender(from, e, delimptr, internal)
 	if (e->e_from.q_mailer != NULL &&
 	    bitnset(M_CANONICAL, e->e_from.q_mailer->m_flags))
 	{
+		char **lastat;
 		extern char **copyplist();
 
-		while (*pvp != NULL && strcmp(*pvp, "@") != 0)
-			pvp++;
-		if (*pvp != NULL)
-			e->e_fromdomain = copyplist(pvp, TRUE);
+		/* get rid of any pesky angle brackets */
+		(void) rewrite(pvp, 3, 0, e);
+		(void) rewrite(pvp, 1, 0, e);
+		(void) rewrite(pvp, 4, 0, e);
+
+		/* strip off to the last "@" sign */
+		for (lastat = NULL; *pvp != NULL; pvp++)
+			if (strcmp(*pvp, "@") == 0)
+				lastat = pvp;
+		if (lastat != NULL)
+		{
+			e->e_fromdomain = copyplist(lastat, TRUE);
+			if (tTd(45, 3))
+			{
+				printf("Saving from domain: ");
+				printav(e->e_fromdomain);
+			}
+		}
 	}
 }
 /*
