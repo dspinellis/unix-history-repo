@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.62	82/10/31	*/
+/*	uipc_socket.c	4.63	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -180,12 +180,13 @@ discard:
 }
 
 /*ARGSUSED*/
-sostat(so, sb)
+sostat(so, ub)
 	struct socket *so;
-	struct stat *sb;
+	struct stat *ub;
 {
+	struct stat sb;
 
-	bzero((caddr_t)sb, sizeof (*sb));		/* XXX */
+	bzero((caddr_t)&sb, sizeof (sb));		/* XXX */
 	copyout((caddr_t)&sb, (caddr_t)ub, sizeof (sb));/* XXX */
 	return (0);					/* XXX */
 }
