@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -100,7 +100,7 @@ done:	argv += optind;
 				continue;
 			}
 			if (chmod(p->accpath, oct ?
-			    omode : getmode(set, p->statb.st_mode) && !fflag))
+			    omode : getmode(set, p->statb.st_mode)) && !fflag)
 				error(p->path);
 		}
 		exit(retval);
