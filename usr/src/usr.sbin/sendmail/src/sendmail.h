@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.54 (Berkeley) %G%
+ *	@(#)sendmail.h	6.55 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.54		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.55		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -449,6 +449,25 @@ MCI
 #define MCIS_SSD	5		/* service shutting down */
 #define MCIS_ERROR	6		/* I/O error on connection */
 /*
+**  Name canonification short circuit.
+**
+**	If the name server for a host is down, the process of trying to
+**	canonify the name can hang.  This is similar to (but alas, not
+**	identical to) looking up the name for delivery.  This stab type
+**	caches the result of the name server lookup so we don't hang
+**	multiple times.
+*/
+
+#define NAMECANON	struct _namecanon
+
+NAMECANON
+{
+	short		nc_errno;	/* cached errno */
+	short		nc_herrno;	/* cached h_errno */
+	short		nc_stat;	/* cached exit status code */
+	char		*nc_cname;	/* the canonical name */
+};
+/*
 **  Mapping functions
 **
 **	These allow arbitrary mappings in the config file.  The idea
@@ -513,6 +532,7 @@ struct symtab
 		MAP		sv_map;		/* mapping function */
 		char		*sv_hostsig;	/* host signature */
 		MCI		sv_mci;		/* mailer connection info */
+		NAMECANON	sv_namecanon;	/* canonical name cache */
 	}	s_value;
 };
 
@@ -527,6 +547,7 @@ typedef struct symtab	STAB;
 # define ST_MAPCLASS	5	/* mapping function class */
 # define ST_MAP		6	/* mapping function */
 # define ST_HOSTSIG	7	/* host signature */
+# define ST_NAMECANON	8	/* cached canonical name */
 # define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
