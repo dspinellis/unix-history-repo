@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)reset.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)reset.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,7 @@ main()
 	struct sgttyb buf;
 	struct tchars tbuf;
 	struct ltchars ltbuf;
+	static int lclear = LMDMBUF|LLITOUT|LPASS8;
 
 	ioctl(2, TIOCGETP, &buf);
 	ioctl(2, TIOCGETC, &tbuf);
@@ -44,6 +45,7 @@ main()
 	reset(&ltbuf.t_lnextc, CLNEXT);
 	reset(&ltbuf.t_werasc, CWERASE);
 	/* brkc is left alone */
+	ioctl(2, TIOCLBIC, &lclear);
 	ioctl(2, TIOCSETN, &buf);
 	ioctl(2, TIOCSETC, &tbuf);
 	ioctl(2, TIOCSLTC, &ltbuf);
