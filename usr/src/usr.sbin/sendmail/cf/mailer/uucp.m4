@@ -11,23 +11,34 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.2 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.3 (Berkeley) %G%')
 
-Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=12, M=100000
+Msuucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=mDFMhuU, S=12, R=22, M=100000
 	A=uux - -r -z -a$f -gC $h!rmail ($u)
 
-Muucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=DFMhuU, S=12, R=12, M=100000
+Muucp,	P=ifdef(`UUCP_MAILER', `UUCP_MAILER', /usr/bin/uux), F=DFMhuU, S=12, R=22, M=100000
 	A=uux - -r -z -a$f -gC $h!rmail ($u)
 
+# sender rewriting
 S12
 
 # don't qualify list:; syntax
 R$* :;				$@ $1 :;
 
-R$* < @ $j >			$1			strip local name
+R$* < @ $j. >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$+				$: $k ! $1		prepend our name
+
+# recipient rewriting
+S22
+
+# don't touch list:; syntax
+R$* :;				$@ $1 ;:
+
+R$* < @ $j. >			$1			strip local name
+R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
+R$* < @ $+ >			$2 ! $1			convert to UUCP format
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
