@@ -1,5 +1,5 @@
 /*
- * 	unix6sys.h	4.1	82/05/12
+ * 	unix6sys.h	4.2	83/07/31
  */
 #define	NSYSTRAPS	64
 #define	NSIGS	13
@@ -15,13 +15,18 @@
 #define	UNLNK	10
 #define EXEC	11
 #define	CHDIR	12
+#define	TIME	13
 #define	MKNOD	14
 #define	BRK	17
 #define	STAT	18
 #define	SEEK	19
 #define	SETUID	23
 #define	GETUID	24
+#define	STIME	25
 #define	FSTAT	28
+#define	STTY	31
+#define	GTTY	32
+#define	NICE	34
 #define	SLEEP	35
 #define	TELL	40
 #define	PIPE	42
