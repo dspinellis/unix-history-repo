@@ -1,4 +1,4 @@
-.\"	@(#)DARPAproposal.t	1.7	87/06/08
+.\"	@(#)DARPAproposal.t	1.8	87/06/15
 .\" *troff -ms
 .rm CM
 .sp 2
@@ -57,18 +57,20 @@ of several categories.
 These are:
 .RS
 .IP \(bu 3
-bug fixes,
+new facilities,
 .IP \(bu 3
-performance improvements,
+new protocol and hardware support,
 .IP \(bu 3
 completion of skeletal facilities,
 .IP \(bu 3
 generalizations of the framework to accommodate
 new hardware and software systems,
 or to remove hardware- or protocol-specific code
-from common facilities, and
+from common facilities,
 .IP \(bu 3
-new protocol and hardware support.
+bug fixes, and
+.IP \(bu 3
+performance improvements.
 .RE
 .LP
 The major changes to the kernel are:
@@ -110,14 +112,33 @@ heavily used utilities were optimized and
 many user level programs were improved by
 rewriting C library routines for efficiency.
 .IP \s+1\(bu\s0
-Many programs were rewritten to do I/O in optimal blocks for the file system.
-Most of these programs were doing their own I/O and not using the standard
-I/O library.
+A new internet name domain server has been added to allow sites to
+administer their name space locally and export it to the rest of the Internet.
+Sites not using the name server may use a static host table with a hashed
+lookup mechanism.
+.IP \s+1\(bu\s0
+A new time synchronization server has been added to allow a set of machines to
+keep their clocks within tens of milliseconds of each other.
 .IP \s+1\(bu\s0
 The system now supports the Xerox Network System
 network communication protocols.
 Most of the remaining Internet dependencies in shared common code
 have been removed or generalized.
+.IP \s+1\(bu\s0
+The math library has been completely rewritten
+by a group of numerical analysts
+to improve both its speed and accuracy.
+.IP \s+1\(bu\s0
+The symbolic debugger, \fIdbx\fP, has been dramatically improved.
+\fIDbx\fP works on C, Pascal and Fortran 77 programs and allows users
+to set break points and trace execution by source code line numbers,
+references to memory locations, procedure entry, etc.  \fIDbx\fP allows
+users to reference structured and local variables using
+the program's programming language syntax.
+.IP \s+1\(bu\s0
+Many programs were rewritten to do I/O in optimal blocks for the file system.
+Most of these programs were doing their own I/O and not using the standard
+I/O library.
 .IP \s+1\(bu\s0
 The signal mechanism has been extended
 to allow selected signals to interrupt pending system calls.
@@ -131,10 +152,6 @@ optionally, include optimization phases to improve code density and
 decrease execution time.
 Many minor bugs in the C compiler have been fixed.
 .IP \s+1\(bu\s0
-The math library has been completely rewritten
-by a group of numerical analysts
-to improve both its speed and accuracy.
-.IP \s+1\(bu\s0
 Password lookup functions now use a hashed database rather than linear
 search of the password file.
 .IP \s+1\(bu\s0
@@ -142,21 +159,6 @@ C library string routines and several standard I/O functions
 were recoded in VAX assembler for greater speed.
 The C versions are available for portability.
 Standard error is now buffered within a single call to do output.
-.IP \s+1\(bu\s0
-The symbolic debugger, \fIdbx\fP, has been dramatically improved.
-\fIDbx\fP works on C, Pascal and Fortran 77 programs and allows users
-to set break points and trace execution by source code line numbers,
-references to memory locations, procedure entry, etc.  \fIDbx\fP allows
-users to reference structured and local variables using
-the program's programming language syntax.
-.IP \s+1\(bu\s0
-A new internet name domain server has been added to allow sites to
-administer their name space locally and export it to the rest of the Internet.
-Sites not using the name server may use a static host table with a hashed
-lookup mechanism.
-.IP \s+1\(bu\s0
-A new time synchronization server has been added to allow a set of machines to
-keep their clocks within tens of milliseconds of each other.
 .NH 2
 Work since the release of 4.3BSD
 .PP
@@ -190,7 +192,7 @@ of the network connectivity.
 Both Internet and local routing algorithms are showing the strain
 of continued growth.
 We have made several changes in the local routing algorithm
-to keep accommodate the current topology,
+to keep accommodating the current topology,
 and are participating in the development of new routing algorithms
 and protocols.
 .br
@@ -268,7 +270,7 @@ but otherwise is closely related to Sun's VFS [Karels86].
 .PP
 A prototype implementation is now being developed.
 We expect that this work will be finished in time for a release at the
-end of the current DARPA contract if that is deemed desirable.
+end of the current DARPA contract.
 .NH 2
 A New Virtual Memory Implementation
 .PP
@@ -374,8 +376,8 @@ Future Projects
 The stream protocol research is a longer term project
 that we would expect would be done as part of our next contract
 or extension.
-It is our expectation that this work would be ready for release toward
-the end of the follow-on contract.
+It is our expectation that this work would be ready for release
+in about two years.
 .NH 2
 Changes to the Protocol Layering Interface
 .PP
@@ -415,9 +417,6 @@ Because AT&T will not allow others to include Streams unless they
 also change their interface to comply with the System V Interface Definition
 base and Networking Extension,
 we cannot use the Release 3 implementation of Streams in the Berkeley system.
-Given that complete compatibility thus will be difficult,
-we feel we will have complete freedom to make our
-choices based solely on technical merits.
 We intend to combine the best features of the original Bell Labs
 version of streams with the network-level structure used in 4.2BSD.
 As a result, our implementation will appear far more like the original
@@ -473,6 +472,60 @@ multiple network protocol families and address formats,
 and an ISO implementation should fit this framework without
 difficulty.
 This subject is still under consideration.
+.NH
+Collaboration with the MACH Project
+.PP
+The projects being done at Berkeley and at Carnegie-Mellon are symbiotic;
+they are related but disjoint.
+Ultimately one will subsume the other;
+our goal is to make that as easy as possible.
+This section outlines the interaction between the two projects
+for each of the areas of work that we have outlined in the previous sections.
+.PP
+The work to support multiple file system interfaces and the
+incorporation of multiple file system implementations
+fits in above the MACH interface.
+Thus it should be directly usable within the MACH system.
+This work has long term advantages in allowing the concurrent operation of
+traditional UNIX file systems along with object based file systems
+such as those proposed to support an integrated Ada environment.
+.PP
+To date,
+the work on virtual memory at Berkeley and in MACH has been largely disjoint.
+We have been emphasizing the user interface issues, while the MACH
+project has been emphasizing the implementation issues.
+We have been tracking the virtual memory work on MACH and anticipate that
+our interface can be supported with some extensions to their
+existing implementation.
+We plan to investigate the necessary extensions to MACH along with
+the implementations being done by several other groups that have
+been working on virtual memory over the past year.
+.PP
+The layering work approaches the modularization of the kernel
+in a way that is orthogonal to the MACH approach.
+MACH uses a message based approach of communicating between modules
+that reside in separate processes.
+By contrast our approach uses queues between modules within a single 
+process.
+Although the MACH approach more strongly enforces the separation of modules,
+it pays a heavy performance price since they must do a context
+switch where we can use a subroutine call.
+We believe that it is important to investigate both approaches.
+.PP
+The process debugging interface interacts heavily with the virtual memory
+system, and will have to be retrofitted into the MACH virtual memory system
+if MACH becomes the basis for future distributions in place
+of the Berkeley system.
+Since we expect to integrate much of the MACH virtual memory implementation,
+this should not prove difficult.
+Additionally, most of the issues that it addresses
+are handled above the level of the MACH interface,
+and consequently can be used without change.
+.PP
+If undertaken, the ISO protocol development would fit into the
+existing framework for networking protocols that lies above the
+MACH interface. 
+The ISO protocols would be immediately usable within a MACH system.
 .NH
 References
 .sp
