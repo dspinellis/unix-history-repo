@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.12	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.13	%G%";
 
 #define SENDMAIL	"/usr/lib/sendmail"
 
@@ -588,8 +588,7 @@ skip:
 	if ((rmf=popen(cmd, "w")) == NULL)
 		exit(1);
 	copylet(n, rmf, local ? !strcmp(rcmd, "/bin/mail") ? FORWARD : ORDINARY : REMOTE);
-	pclose(rmf);
-	exit(0);
+	exit(pclose(rmf) != 0);
 }
 
 usage()
