@@ -37,9 +37,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00016
+ * CURRENT PATCH LEVEL:         2       00053
  * --------------------         -----   ----------------------
  *
+ * 08 Sep 92	Rick "gopher I"		Fix "truncate" (conflicting?)
  * 28 Aug 92	Arne Henrik Juul	Fixed NFS "create" bug
  */
 
@@ -663,7 +664,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 			vput(nd.ni_dvp);
 		VOP_ABORTOP(&nd);
 		vap->va_size = fxdr_unsigned(long, *(tl+3));	/* 28 Aug 92*/
-		if (error = VOP_SETATTR(vp, vap, cred, p)) {
+/* 08 Sep 92*/	if (vap->va_size != -1 && (error = VOP_SETATTR(vp, vap, cred, p))) {
 			vput(vp);
 			nfsm_reply(0);
 		}
@@ -1447,10 +1448,13 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct proc *p;
 {
 	caddr_t bpos;
-	int error = 0;
+	int error;					/* 08 Sep 92*/
 	struct mbuf *mb, *mreq;
 
-	error = EPROCUNAVAIL;
+	if (*repstat)					/* 08 Sep 92*/
+		error = *repstat;
+	else
+		error = EPROCUNAVAIL;
 	nfsm_reply(0);
 	return (error);
 }
