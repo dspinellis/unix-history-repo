@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.38 (Berkeley) %G%
+.\"	@(#)contrib	5.39 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -67,10 +67,11 @@ System documentation	The Institute of Electrical and Electronics Engineers, Inc.
 TCP/IP	Rob Gurwitz and Bolt Beranek and Newman Inc.
 Timezone support	Arthur David Olson
 Transport/Network OSI layers	IBM Corp. and the University of Wisconsin
+Kernel XNS assistance	William Nesheim, J. Q. Johnson, Chris Torek and James O'Toole
 User level XNS	Cornell University
 VAX 3000 support	Mt. Xinu and Tom Ferrin
 VAX BI support	Chris Torek
-VAX device support	Digital Equipment Corp.
+VAX device support	Helge Skrivervik and Digital Equipment Corp.
 Versatec printer/plotter support	University of Toronto
 Virtual memory implementation	Avadis Tevanian, Jr., Michael Wayne Young,
 	and the Carnegie-Mellon University Mach project
