@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.10 (Berkeley) 87/04/28";
+static char sccsid[] = "@(#)route.c	5.11 (Berkeley) 87/08/29";
 #endif
 
 #include <stdio.h>
@@ -77,9 +77,9 @@ routepr(hostaddr, netaddr, hashsizeaddr)
 	klseek(kmem, hostaddr, 0);
 	read(kmem, (char *)routehash, hashsize*sizeof (struct mbuf *));
 	printf("Routing tables\n");
-	printf("%-20.20s %-20.20s %-8.8s %-6.6s %-10.10s %s\n",
+	printf("%-16.16s %-18.18s %-6.6s  %6.6s%8.8s  %s\n",
 		"Destination", "Gateway",
-		"Flags", "Refcnt", "Use", "Interface");
+		"Flags", "Refs", "Use", "Interface");
 again:
 	for (i = 0; i < hashsize; i++) {
 		if (routehash[i] == 0)
@@ -100,18 +100,18 @@ again:
 			switch(rt->rt_dst.sa_family) {
 			case AF_INET:
 				sin = (struct sockaddr_in *)&rt->rt_dst;
-				printf("%-20.20s ",
+				printf("%-16.16s ",
 				    (sin->sin_addr.s_addr == 0) ? "default" :
 				    (rt->rt_flags & RTF_HOST) ?
 				    routename(sin->sin_addr) :
 					netname(sin->sin_addr, 0L));
 				sin = (struct sockaddr_in *)&rt->rt_gateway;
-				printf("%-20.20s ", routename(sin->sin_addr));
+				printf("%-18.18s ", routename(sin->sin_addr));
 				break;
 			case AF_NS:
-				printf("%-20s ",
+				printf("%-16s ",
 				    ns_print((struct sockaddr_ns *)&rt->rt_dst));
-				printf("%-20s ",
+				printf("%-18s ",
 				    ns_print((struct sockaddr_ns *)&rt->rt_gateway));
 				break;
 			default:
@@ -130,7 +130,7 @@ again:
 				if (p->b_mask & rt->rt_flags)
 					*flags++ = p->b_val;
 			*flags = '\0';
-			printf("%-8.8s %-6d %-10d ", name,
+			printf("%-6.6s %6d %8d ", name,
 				rt->rt_refcnt, rt->rt_use);
 			if (rt->rt_ifp == 0) {
 				putchar('\n');
@@ -141,7 +141,7 @@ again:
 			read(kmem, (char *)&ifnet, sizeof (ifnet));
 			klseek(kmem, (off_t)ifnet.if_name, 0);
 			read(kmem, name, 16);
-			printf("%s%d\n", name, ifnet.if_unit);
+			printf(" %s%d\n", name, ifnet.if_unit);
 			m = mb.m_next;
 		}
 	}
