@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.44 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.45 (Berkeley) %G%
  */
 
 /*
@@ -895,39 +895,26 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 			mp = mp->mnt_next;
 			continue;
 		}
-		/*
-		 * A vget can fail if the vnode is being
-		 * recycled.  In this (rare) case, we have to start
-		 * over with this filesystem.  Also, have to
-		 * check that the next vp is still associated
-		 * with this filesystem.  RACE: could have been
-		 * recycled onto the same filesystem.
-		 */
 		savebp = bp;
 again:
 		for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+			/*
+			 * Check that the vp is still associated with
+			 * this filesystem.  RACE: could have been
+			 * recycled onto the same filesystem.
+			 */
 			if (vp->v_mount != mp) {
 				if (kinfo_vdebug)
 					printf("kinfo: vp changed\n");
 				bp = savebp;
 				goto again;
 			}
-			if (vget(vp)) {
-				if (kinfo_vdebug)
-					printf("kinfo: vget failed\n");
-				kinfo_vgetfailed++;
-				bp = savebp;
-				goto again;
-			}
 			if ((bp + VPTRSZ + VNODESZ <= ewhere) && 
 			    ((error = copyout((caddr_t)&vp, bp, VPTRSZ)) ||
 			     (error = copyout((caddr_t)vp, bp + VPTRSZ, 
-			      VNODESZ)))) {
-				vput(vp);
+			      VNODESZ))))
 				return (error);
-			}
 			bp += VPTRSZ + VNODESZ;
-			vput(vp);
 		}
 		omp = mp;
 		mp = mp->mnt_next;
