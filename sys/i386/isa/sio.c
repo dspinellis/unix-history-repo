@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.47 1994/05/30 14:35:41 ache Exp $
+ *	$Id: sio.c,v 1.48 1994/05/30 15:44:10 ache Exp $
  */
 
 #include "sio.h"
@@ -313,6 +313,12 @@ static	struct speedtab comspeedtab[] = {
 /* XXX - configure this list */
 static Port_t likely_com_ports[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8, };
 
+#if 0
+#define	FAIL(x)	1
+#else
+#define	FAIL(x)	(printf("sioprobe flunked test %d\n", (x)), 1)
+#endif
+
 static int
 sioprobe(dev)
 	struct isa_device	*dev;
@@ -389,11 +395,15 @@ sioprobe(dev)
 	 * Enable the interrupt gate and disable device interupts.  This
 	 * should leave the device driving the interrupt line low and
 	 * guarantee an edge trigger if an interrupt can be generated.
+	 */
+	outb(iobase + com_mcr, mcr_image);
+	outb(iobase + com_ier, 0);
+
+	/*
 	 * Attempt to set loopback mode so that we can send a null byte
 	 * without annoying any external device.
 	 */
-	outb(iobase + com_mcr, mcr_image/* | MCR_LOOPBACK */);
-	outb(iobase + com_ier, 0);
+	outb(iobase + com_mcr, mcr_image | MCR_LOOPBACK);
 
 	/*
 	 * Attempt to generate an output interrupt.  On 8250's, setting
@@ -421,8 +431,9 @@ sioprobe(dev)
 	 * line oscillates while we are not looking at it, since interrupts
 	 * are disabled.
 	 * XXX interrupts are NOT disabled for the multiport shared
-	 * interrupt case!  isa_configure() enables them after the probe
-	 * of the first device on a shared interrupt succeeds.
+	 * interrupt case!  DELAY() reenables them for the CPU.
+	 * config_isadev() enables for the ICU them after the probe of the
+	 * first device on a shared interrupt succeeds.
 	 */
 	outb(iobase + com_mcr, mcr_image);
 
@@ -434,13 +445,13 @@ sioprobe(dev)
 	 *	o an output interrupt is generated and its vector is correct.
 	 *	o the interrupt goes away when the IIR in the UART is read.
 	 */
-	if (   inb(iobase + com_cfcr) != CFCR_8BITS
-	    || inb(iobase + com_ier) != IER_ETXRDY
-	    || inb(iobase + com_mcr) != mcr_image
-	    || !isa_irq_pending(dev)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY
-	    || isa_irq_pending(dev)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND)
+	if (   inb(iobase + com_cfcr) != CFCR_8BITS && FAIL(0)
+	    || inb(iobase + com_ier) != IER_ETXRDY && FAIL(1)
+	    || inb(iobase + com_mcr) != mcr_image && FAIL(2)
+	    || !isa_irq_pending(dev) && FAIL(3)
+	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY && FAIL(4)
+	    || isa_irq_pending(dev) && FAIL(5)
+	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(6))
 		result = 0;
 
 	/*
@@ -454,9 +465,9 @@ sioprobe(dev)
 	 */
 	outb(iobase + com_ier, 0);
 	outb(iobase + com_cfcr, CFCR_8BITS);	/* dummy to avoid bus echo */
-	if (   inb(iobase + com_ier) != 0
-	    || isa_irq_pending(dev)
-	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND)
+	if (   inb(iobase + com_ier) != 0 && FAIL(7)
+	    || isa_irq_pending(dev) && FAIL(8)
+	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(9))
 		result = 0;
 	if (result == 0)
 		outb(iobase + com_mcr, 0);
@@ -1472,7 +1483,7 @@ comparam(tp, t)
 	divisor = ttspeedtab(t->c_ospeed, comspeedtab);
 	if (t->c_ispeed == 0)
 		t->c_ispeed = t->c_ospeed;
-	if (divisor < 0 || t->c_ispeed != t->c_ospeed)
+	if (divisor < 0 || divisor > 0 && t->c_ispeed != t->c_ospeed)
 		return (EINVAL);
 
 	/* parameters are OK, convert them to the com struct and the device */
