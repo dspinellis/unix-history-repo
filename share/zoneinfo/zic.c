@@ -4,7 +4,7 @@
  * it is in the public domain with the United States, and freely distributable
  * outside.  (Comment added by G. Wollman, FreeBSD Project.)
  */
-/* $Id$ */
+/* $Id: zic.c,v 1.2 1993/11/10 04:52:52 wollman Exp $ */
 #ifndef lint
 #ifndef NOID
 static char	elsieid[] = "@(#)zic.c	7.9";
@@ -484,7 +484,7 @@ char *	argv[];
 	if (directory == NULL)
 		directory = TZDIR;
 	if (yitcommand == NULL)
-		yitcommand = "yearistype";
+		yitcommand = "./yearistype";
 
 	setboundaries();
 
