@@ -42,7 +42,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.5 (Berkeley) 7/28/93')
+VERSIONID(`@(#)uucp.m4	8.6 (Berkeley) 10/31/93')
 
 # old UUCP mailer
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
@@ -54,11 +54,13 @@ Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M
 
 ifdef(`_MAILER_smtp_',
 `# domain-ized UUCP mailer
-Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=11, R=21, M=UUCP_MAX_SIZE,
+Muucp-dom,	P=UUCP_MAILER_PATH, F=CONCAT(mDFMhu, UUCP_MAILER_FLAGS), S=52/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), M=UUCP_MAX_SIZE,
 		A=UUCP_MAILER_ARGS')
 
 
-# sender rewriting
+#
+#  envelope and header sender rewriting
+#
 S12
 
 # handle error address as a special case
@@ -73,7 +75,9 @@ R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$+				$: $U ! $1		prepend our name
 
-# recipient rewriting
+#
+#  envelope and header recipient rewriting
+#
 S22
 
 # don't touch list:; syntax
@@ -83,6 +87,19 @@ R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
 R$* < @ $j >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
+
+
+#
+#  envelope sender rewriting for uucp-dom mailer
+#
+S52
+
+# handle error address as a special case
+R<@>				$n			errors to mailer-daemon
+
+# pass everything to standard SMTP mailer rewriting
+R$*				$@ $>11 $1
+
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links

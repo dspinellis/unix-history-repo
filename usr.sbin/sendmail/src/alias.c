@@ -36,7 +36,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.17 (Berkeley) 10/15/93";
+static char sccsid[] = "@(#)alias.c	8.19 (Berkeley) 10/31/93";
 #endif /* not lint */
 
 
@@ -299,7 +299,7 @@ aliaswait(map, ext, isopen)
 	char *ext;
 	int isopen;
 {
-	int atcnt;
+	bool attimeout = FALSE;
 	time_t mtime;
 	struct stat stb;
 	char buf[MAXNAME];
@@ -308,27 +308,39 @@ aliaswait(map, ext, isopen)
 		printf("aliaswait(%s:%s)\n",
 			map->map_class->map_cname, map->map_file);
 	if (bitset(MF_ALIASWAIT, map->map_mflags))
-		return;
+		return isopen;
 	map->map_mflags |= MF_ALIASWAIT;
 
-	atcnt = SafeAlias * 2;
-	if (atcnt > 0)
+	if (SafeAlias > 0)
 	{
 		auto int st;
+		time_t toolong = curtime() + SafeAlias;
+		unsigned int sleeptime = 2;
 
-		while (isopen && atcnt-- >= 0 &&
+		while (isopen &&
 		       map->map_class->map_lookup(map, "@", NULL, &st) == NULL)
 		{
+			if (curtime() > toolong)
+			{
+				/* we timed out */
+				attimeout = TRUE;
+				break;
+			}
+
 			/*
 			**  Close and re-open the alias database in case
 			**  the one is mv'ed instead of cp'ed in.
 			*/
 
 			if (tTd(27, 2))
-				printf("aliaswait: sleeping\n");
+				printf("aliaswait: sleeping for %d seconds\n",
+					sleeptime);
 
 			map->map_class->map_close(map);
-			sleep(30);
+			sleep(sleeptime);
+			sleeptime *= 2;
+			if (sleeptime > 60)
+				sleeptime = 60;
 			isopen = map->map_class->map_open(map, O_RDONLY);
 		}
 	}
@@ -352,7 +364,7 @@ aliaswait(map, ext, isopen)
 	(void) strcpy(buf, map->map_file);
 	if (ext != NULL)
 		(void) strcat(buf, ext);
-	if (stat(buf, &stb) < 0 || stb.st_mtime < mtime || atcnt < 0)
+	if (stat(buf, &stb) < 0 || stb.st_mtime < mtime || attimeout)
 	{
 		/* database is out of date */
 		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
@@ -437,7 +449,7 @@ rebuildaliases(map, automatic)
 			(void) lockfile(fileno(af), map->map_file, NULL,
 					LOCK_EX);
 		}
-		(void) fclose(af);
+		(void) xfclose(af, "rebuildaliases1", map->map_file);
 		errno = 0;
 		return;
 	}
@@ -468,7 +480,7 @@ rebuildaliases(map, automatic)
 	}
 
 	/* close the file, thus releasing locks */
-	fclose(af);
+	xfclose(af, "rebuildaliases2", map->map_file);
 
 	/* add distinguished entries and close the database */
 	if (bitset(MF_OPEN, map->map_mflags))

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.13 (Berkeley) 10/23/93";
+static char sccsid[] = "@(#)envelope.c	8.17 (Berkeley) 10/31/93";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -350,8 +350,8 @@ void
 initsys(e)
 	register ENVELOPE *e;
 {
-	static char cbuf[5];			/* holds hop count */
-	static char pbuf[10];			/* holds pid */
+	char cbuf[5];				/* holds hop count */
+	char pbuf[10];				/* holds pid */
 #ifdef TTYNAME
 	static char ybuf[60];			/* holds tty id */
 	register char *p;
@@ -375,7 +375,7 @@ initsys(e)
 	**	tucked away in the transcript).
 	*/
 
-	if (OpMode == MD_DAEMON && !bitset(EF_QUEUERUN, e->e_flags) &&
+	if (OpMode == MD_DAEMON && bitset(EF_QUEUERUN, e->e_flags) &&
 	    e->e_xfp != NULL)
 		OutChannel = e->e_xfp;
 
@@ -385,11 +385,11 @@ initsys(e)
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf, e);
+	define('p', newstr(pbuf), e);
 
 	/* hop count */
 	(void) sprintf(cbuf, "%d", e->e_hopcount);
-	define('c', cbuf, e);
+	define('c', newstr(cbuf), e);
 
 	/* time as integer, unix time, arpa time */
 	settime(e);
@@ -428,8 +428,8 @@ settime(e)
 {
 	register char *p;
 	auto time_t now;
-	static char tbuf[20];			/* holds "current" time */
-	static char dbuf[30];			/* holds ctime(tbuf) */
+	char tbuf[20];				/* holds "current" time */
+	char dbuf[30];				/* holds ctime(tbuf) */
 	register struct tm *tm;
 	extern char *arpadate();
 	extern struct tm *gmtime();
@@ -438,12 +438,12 @@ settime(e)
 	tm = gmtime(&now);
 	(void) sprintf(tbuf, "%04d%02d%02d%02d%02d", tm->tm_year + 1900,
 			tm->tm_mon+1, tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf, e);
+	define('t', newstr(tbuf), e);
 	(void) strcpy(dbuf, ctime(&now));
 	p = strchr(dbuf, '\n');
 	if (p != NULL)
 		*p = '\0';
-	define('d', dbuf, e);
+	define('d', newstr(dbuf), e);
 	p = arpadate(dbuf);
 	p = newstr(p);
 	if (macvalue('a', e) == NULL)
@@ -592,9 +592,14 @@ setsender(from, e, delimptr, internal)
 		SuprErrs = TRUE;
 
 	delimchar = internal ? '\0' : ' ';
+	e->e_from.q_flags = QBADADDR;
 	if (from == NULL ||
 	    parseaddr(from, &e->e_from, RF_COPYALL|RF_SENDERADDR,
-		      delimchar, delimptr, e) == NULL)
+		      delimchar, delimptr, e) == NULL ||
+	    bitset(QBADADDR, e->e_from.q_flags) ||
+	    e->e_from.q_mailer == ProgMailer ||
+	    e->e_from.q_mailer == FileMailer ||
+	    e->e_from.q_mailer == InclMailer)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
@@ -613,19 +618,31 @@ setsender(from, e, delimptr, internal)
 				p = ebuf;
 			}
 			syslog(LOG_NOTICE,
-				"from=%s unparseable, received from %s",
+				"setsender: %s: invalid or unparseable, received from %s",
 				from, p);
 		}
 # endif /* LOG */
 		if (from != NULL)
+		{
+			if (!bitset(QBADADDR, e->e_from.q_flags))
+			{
+				/* it was a bogus mailer in the from addr */
+				usrerr("553 Invalid sender address");
+			}
 			SuprErrs = TRUE;
+		}
 		if (from == realname ||
 		    parseaddr(from = newstr(realname), &e->e_from,
 			      RF_COPYALL|RF_SENDERADDR, ' ', NULL, e) == NULL)
 		{
+			char nbuf[100];
+
 			SuprErrs = TRUE;
-			if (parseaddr("postmaster", &e->e_from, RF_COPYALL,
-				      ' ', NULL, e) == NULL)
+			expand("\201n", nbuf, &nbuf[sizeof nbuf], e);
+			if (parseaddr(from = newstr(nbuf), &e->e_from,
+				      RF_COPYALL, ' ', NULL, e) == NULL &&
+			    parseaddr(from = "postmaster", &e->e_from,
+			    	      RF_COPYALL, ' ', NULL, e) == NULL)
 				syserr("553 setsender: can't even parse postmaster!");
 		}
 	}

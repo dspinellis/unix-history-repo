@@ -2,6 +2,7 @@
 
 PROG=	praliases
 CFLAGS+=-I${.CURDIR}/../src
+DPADD=	${LIBDBM}
 NOMAN=	noman
 
 .include "../../Makefile.inc"

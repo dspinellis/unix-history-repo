@@ -1,3 +1,51 @@
+8.6.4/8.6.4	93/10/31
+	Repair core-dump problem (write to read-only memory segment)
+		if you fall back to the return-to-Postmaster case in
+		savemail.  Problem reported by Richard Liu.
+	Immediately diagnose bogus sender addresses in SMTP.  This
+		makes quite certain that crackers can't use this
+		class of attack.
+	Reliability Fix:  check return value from fclose() and fsync()
+		in a few critical places.
+	Minor problem in initsys() that reversed a condition for
+		redirecting the output channel on queue runs.  It's
+		not clear this code even does anything.  From Eric
+		Wassenaar of the Dutch National Institute for Nuclear
+		and High-Energy Physics.
+	Fix some problems that caused queue runs to do "too much work",
+		such as double-reading the Errors-To: header.  From
+		Eric Wassenaar.
+	Error messages on writing the temporary file (including the
+		data file) were getting suppressed in SMTP -- this
+		fix causes them to be properly reported.  From Eric
+		Wassenaar.
+	Some changes to support AF_UNIX sockets -- this will only
+		really become relevant in the next release, but some
+		people need it for local patches.  From Michael
+		Corrigan of UC San Diego.
+	Use dynamically allocated memory (instead of static buffers)
+		for macros defined in initsys() and settime(); since
+		these can have different values depending on which
+		envelope they are in.  From Eric Wassenaar.
+	Improve logging to show ctladdr on to= logging; this tells you
+		what uid/gid processes ran as.
+	Fix a problem that caused error messages to be discarded if
+		the sender address was unparseable for some reason;
+		this was supposed to fall back to the "return to
+		postmaster" case.
+	Improve aliaswait backoff algorithm.
+	Portability patches for Linux (8.6.3 required another header
+		file) (from Karl London) and SCO UNIX.
+	CONFIG: patch prog mailer to not strip host name off of envelope
+		addresses (so that it matches local again).  From
+		Christopher Davis.
+	CONFIG: change uucp-dom mailer so that "<>" translates to $n;
+		this prevents uux from seeing lines with null names like
+		``From   Sat Oct 30 14:55:31 1993''.  From Motonori
+		Nakamura of Kyoto University.
+	CONFIG: handle <list:;> syntax correctly.  This isn't legal, but
+		it shouldn't fail miserably.  From Motonori Nakamura.
+
 8.6.3/8.6.3	93/10/24
 	IMPORTANT FIX: Fix several problems that caused open files to
 		be "lost" during queue runs; this overflowed the open

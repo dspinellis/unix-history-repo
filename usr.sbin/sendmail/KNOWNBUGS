@@ -43,9 +43,17 @@ in /ucb/sendmail/KNOWNBUGS.
   hub name.  Some sites might prefer to expose some names such as
   root.  This information is always available in Received: lines.
 
+* $c (hop count) macro improperly set.
+
+  The $c macro is supposed to contain the current hop count, for use
+  when calling a mailer.  This macro is initialized too early, and
+  is always zero (or the value of the -c command line flag, if any).
+  This macro will probably be removed entirely in a future release;
+  I don't believe there are any mailers left that require it.
+
 * If you EXPN a list or user that has a program mailer, the output of
   EXPN will include ``@local.host.name''.  You can't actually mail to
   this address.  It's not clear what the right behaviour is in this
   circumstance.
 
-(Version 8.8, last updated 10/24/93)
+(Version 8.9, last updated 10/31/93)

@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.14 (Berkeley) 9/19/93
+		@(#)README	8.15 (Berkeley) 10/31/93
 
 
 This document describes the sendmail configuration files being used
@@ -1004,6 +1004,12 @@ RULESETS (* means built in to sendmail)
    5 *	Local address rewrite (after aliasing)
   1x	mailer rules (sender qualification)
   2x	mailer rules (recipient qualification)
+  3x	mailer rules (sender header qualification)
+  4x	mailer rules (recipient header qualification)
+  5x	mailer subroutines (general)
+  6x	mailer subroutines (general)
+  7x	mailer subroutines (general)
+  8x	reserved
   90	Mailertable host stripping
   96	Bottom half of Ruleset 3 (ruleset 6 in old sendmail)
   97	Hook for recursive ruleset 0 call (ruleset 7 in old sendmail)

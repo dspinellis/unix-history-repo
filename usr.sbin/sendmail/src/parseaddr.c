@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.14 (Berkeley) 10/22/93";
+static char sccsid[] = "@(#)parseaddr.c	8.17 (Berkeley) 10/31/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -211,15 +211,17 @@ invalidaddr(addr, delimptr)
 	char savedelim;
 
 	if (delimptr != NULL)
+	{
 		savedelim = *delimptr;
+		if (savedelim != '\0')
+			*delimptr = '\0';
+	}
 #if 0
 	/* for testing.... */
 	if (strcmp(addr, "INvalidADDR") == 0)
 	{
 		usrerr("553 INvalid ADDRess");
-		if (delimptr != NULL)
-			*delimptr = savedelim;
-		return TRUE;
+		goto addrfailure;
 	}
 #endif
 	for (; *addr != '\0'; addr++)
@@ -227,12 +229,17 @@ invalidaddr(addr, delimptr)
 		if ((*addr & 0340) == 0200)
 			break;
 	}
-	if (delimptr != NULL)
-		*delimptr = savedelim;
 	if (*addr == '\0')
+	{
+		if (savedelim != '\0' && delimptr != NULL)
+			*delimptr = savedelim;
 		return FALSE;
+	}
 	setstat(EX_USAGE);
 	usrerr("553 Address contained invalid control characters");
+  addrfailure:
+	if (savedelim != '\0' && delimptr != NULL)
+		*delimptr = savedelim;
 	return TRUE;
 }
 /*
@@ -406,18 +413,18 @@ prescan(addr, delim, pvpbuf, delimptr)
 				/* diagnose and patch up bad syntax */
 				if (state == QST)
 				{
-					usrerr("653 Unbalanced '\"' (fixed)");
+					usrerr("653 Unbalanced '\"'");
 					c = '"';
 				}
 				else if (cmntcnt > 0)
 				{
-					usrerr("653 Unbalanced '(' (fixed)");
+					usrerr("653 Unbalanced '('");
 					c = ')';
 				}
 				else if (anglecnt > 0)
 				{
 					c = '>';
-					usrerr("653 Unbalanced '<' (fixed)");
+					usrerr("653 Unbalanced '<'");
 				}
 				else
 					break;
@@ -467,7 +474,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 			{
 				if (cmntcnt <= 0)
 				{
-					usrerr("653 Unbalanced ')' (fixed)");
+					usrerr("653 Unbalanced ')'");
 					c = NOCHAR;
 				}
 				else
@@ -481,7 +488,7 @@ prescan(addr, delim, pvpbuf, delimptr)
 			{
 				if (anglecnt <= 0)
 				{
-					usrerr("653 Unbalanced '>' (fixed)");
+					usrerr("653 Unbalanced '>'");
 					c = NOCHAR;
 				}
 				else
@@ -1231,6 +1238,12 @@ buildaddr(tv, a, flags, e)
 	static MAILER errormailer;
 	static char *errorargv[] = { "ERROR", NULL };
 	static char buf[MAXNAME];
+
+	if (tTd(24, 5))
+	{
+		printf("buildaddr, flags=%o, tv=", flags);
+		printav(tv);
+	}
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);

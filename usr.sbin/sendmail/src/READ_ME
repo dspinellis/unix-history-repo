@@ -30,7 +30,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-#	@(#)READ_ME	8.30 (Berkeley) 10/24/93
+#	@(#)READ_ME	8.31 (Berkeley) 10/31/93
 #
 
 This directory contains the source files for sendmail.
@@ -265,6 +265,12 @@ SunOS 4.x (Solaris 1.x)
 	this links in a new version of gethostbyname that does not
 	understand NIS, so you must have all of your hosts in DNS.
 
+	Some people have reported problems with the SunOS version of
+	-lresolv and/or in.named, and suggest that you get a newer
+	version.  The symptoms are delays when you connect to the
+	SMTP server on a SunOS machine.  There is a version of BIND
+	version 4.9 on gatekeeper.DEC.COM in pub/BSD/bind/4.9.
+
 	There is substantial disagreement about whether you can make
 	this work with resolv+, which allows you to specify a search-path
 	of services.  Some people report that it works fine, others
@@ -483,4 +489,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.30, last update 10/24/93 10:39:02)
+(Version 8.31, last update 10/31/93 11:32:52)

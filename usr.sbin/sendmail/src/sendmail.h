@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sendmail.h	8.24 (Berkeley) 10/15/93
+ *	@(#)sendmail.h	8.26 (Berkeley) 10/31/93
  */
 
 /*
@@ -41,7 +41,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.24		10/15/93";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.26		10/31/93";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -57,6 +57,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.24		10/15/93";
 # include <string.h>
 # include <time.h>
 # include <errno.h>
+# include <sys/un.h>
 
 # include "conf.h"
 # include "useful.h"
@@ -729,6 +730,7 @@ struct prival
 union bigsockaddr
 {
 	struct sockaddr		sa;	/* general version */
+	struct sockaddr_un	sunix;	/* UNIX family */
 #ifdef NETINET
 	struct sockaddr_in	sin;	/* INET family */
 #endif
@@ -765,7 +767,7 @@ EXTERN bool	CheckAliases;	/* parse addresses during newaliases */
 EXTERN bool	NoAlias;	/* suppress aliasing */
 EXTERN bool	UseNameServer;	/* use internet domain name server */
 EXTERN bool	SevenBit;	/* force 7-bit data */
-EXTERN int	SafeAlias;	/* minutes to wait until @:@ in alias file */
+EXTERN time_t	SafeAlias;	/* interval to wait until @:@ in alias file */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
 EXTERN uid_t	RealUid;	/* when Daemon, real uid of caller */

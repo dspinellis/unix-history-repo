@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.24 (Berkeley) 10/23/93 (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.27 (Berkeley) 10/29/93 (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.24 (Berkeley) 10/23/93 (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.27 (Berkeley) 10/29/93 (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -249,7 +249,7 @@ queueup(e, queueall, announce)
 				e->e_to = q->q_paddr;
 				message("queued");
 				if (LogLevel > 8)
-					logdelivery(NULL, NULL, "queued", e);
+					logdelivery(NULL, NULL, "queued", NULL, e);
 				e->e_to = NULL;
 			}
 			if (tTd(40, 1))
@@ -332,9 +332,7 @@ queueup(e, queueall, announce)
 	**  Clean up.
 	*/
 
-	fflush(tfp);
-	fsync(fileno(tfp));
-	if (ferror(tfp))
+	if (fflush(tfp) < 0 || fsync(fileno(tfp)) < 0 || ferror(tfp))
 	{
 		if (newid)
 			syserr("!552 Error writing control file %s", tf);
@@ -874,7 +872,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_flags |= EF_QUEUERUN|EF_GLOBALERRS;
 		e->e_errormode = EM_MAIL;
 		e->e_id = id;
-		GrabTo = FALSE;
+		GrabTo = UseErrorsTo = FALSE;
 		if (forkflag)
 		{
 			disconnect(1, e);

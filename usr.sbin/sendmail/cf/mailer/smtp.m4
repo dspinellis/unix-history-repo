@@ -40,25 +40,25 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.6 (Berkeley) 10/23/93')
+VERSIONID(`@(#)smtp.m4	8.7 (Berkeley) 10/31/93')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
 Mesmtp,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
-Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=19, E=\r\n,
+Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=51, E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=2040, ')A=IPC $h
 
 #
 #  envelope sender and masquerading recipient rewriting
 #
 S11
-R$+			$: $>19 $1			sender/recipient common
+R$+			$: $>51 $1			sender/recipient common
 R$* :; <@>		$@ $1 :;			list:; special case
 
 # handle unqualified names
 R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
-R$*			$@ $>29 $1
+R$*			$@ $>61 $1
 
 
 #
@@ -67,7 +67,7 @@ R$*			$@ $>29 $1
 S21
 
 # do sender/recipient common rewriting
-R$+			$: $>19 $1
+R$+			$: $>51 $1
 
 # unqualified names (e.g., "eric") are qualified by local host
 R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
@@ -78,7 +78,7 @@ R$+			$: $1 < @ $j >			add local domain
 #  header sender and masquerading recipient rewriting
 #
 S31
-R$+			$: $>19 $1			sender/recipient common
+R$+			$: $>51 $1			sender/recipient common
 R$* :; <@>		$@ $1 :;			list:; special case
 
 # do special header rewriting
@@ -90,13 +90,13 @@ R$* < @ >		$: $1 < @ $j >			in case $M undefined
 
 # handle unqualified names
 R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
-R$*			$@ $>29 $1
+R$*			$@ $>61 $1
 
 
 #
 #  common rewriting for all SMTP addresses
 #
-S19
+S51
 
 # pass <route-addr>s through
 R< @ $+ > $*		$@ < @ $1 > $2			resolve <route-addr>
@@ -117,7 +117,8 @@ ifdef(`_NO_UUCP_', `dnl',
 #
 #  common sender and masquerading recipient rewriting
 #
-S29
+S61
+
 R$=E			$@ $1 < @ $j>			show exposed names
 R$+			$: $1 < @ $M >			user w/o host
 R$+ <@>			$: $1 < @ $j >			in case $M undefined

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)conf.h	8.42 (Berkeley) 10/21/93
+ *	@(#)conf.h	8.44 (Berkeley) 10/29/93
  */
 
 /*
@@ -382,7 +382,7 @@ typedef int		pid_t;
 **	From Karl London <karl@borg.demon.co.uk>.
 */
 
-#ifdef linux
+#ifdef __linux__
 # define BSD		1	/* pretend to be BSD based today */
 # undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
@@ -390,6 +390,7 @@ typedef int		pid_t;
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# include <sys/sysmacros.h>
 #endif
 
 

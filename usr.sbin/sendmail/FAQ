@@ -1,7 +1,7 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
 			     VERY EARLY DRAFT
-		       Last Update: October 18, 1993
+		       Last Update: October 30, 1993
 
 
 This FAQ is specific to Version 8 of sendmail.
@@ -36,6 +36,10 @@ This FAQ is specific to Version 8 of sendmail.
 		gatekeeper.dec.com	/.0/BSD/net2
 		ucquais.cba.uc.edu	/pub/net2
 		ftp.luth.se		/pub/unix/4.3bsd/net2
+
+	Diffs and instructions for building this version of make under
+	SunOS 4.1.x are available on ftp.css.itd.umich.edu in
+	/pub/systems/sun/Net2-make.sun4.diff.Z.
 ----------------------------------------------------------------------
   * What macro package do I use to format the V8 man pages?
 
@@ -46,6 +50,8 @@ This FAQ is specific to Version 8 of sendmail.
 	format under the new mandoc macros.
 
 	Get the new macros with the BSD Net2 release.
+
+	This macro set is also available with newer versions of groff.
 ----------------------------------------------------------------------
   * What books are available describing sendmail?
 
@@ -58,12 +64,12 @@ This FAQ is specific to Version 8 of sendmail.
 		TCP/IP and UNIX_.  Addison-Wesley.
 	Hunt, _TCP/IP Network Administration_.  O'Reilly & Associates.
 
-|	At least two books are due out "soon":
+	At least two books are due out "soon":
 
 	Costales, Allman, and Rickert, _Sendmail_.  O'Reilly &
-|		Associates (to appear 11/93).
+|		Associates (to appear November 1, 1993).
 	Avolio & Vixie, _Sendmail Theory and Practice_.  Digital
-|		Press (release date unknown).
+		Press (release date unknown).
 ----------------------------------------------------------------------
   * How do I make all my addresses appear to be from a single host?
 
@@ -182,32 +188,43 @@ This FAQ is specific to Version 8 of sendmail.
 	ends.  If they disagree, large packets will be trashed and
 	the connection will hang.
 ----------------------------------------------------------------------
-+ * How can I get sendmail to deliver local mail to $HOME/.mail
-+   instead of into /usr/spool/mail (or /usr/mail)?
++ * I just upgraded to 8.x and suddenly I'm getting messages in my
++   syslog of the form "collect: I/O error on connection".  What is
++   going wrong?
 +
-+	This is a local mailer issue, not a sendmail issue.  Either
-+	modify your local mailer (source code will be required) or
-+	change the program called in the "local" mailer configuration
-+	description to be a new program that does this local delivery.
-+	I understand that "procmail" works well, although I haven't
-+	used it myself.
++    	Nothing.  This is just a diagnosis of a condition that had
++    	not been diagnosed before.  If you are getting a lot of these
++    	from a single host, there is probably some incompatibility
++    	between 8.x and that host.  If you get a lot of them in general,
++    	you may have network problems that are causing connections to
++    	get reset.
 ----------------------------------------------------------------------
-+ * Under V8, the "From " header gets mysteriously munged when I send
-+   to an alias.
-+
-+	``It's not a bug, it's a feature.''  This happens when you have
-+	a "owner-list" alias and you send to "list".  V8 propogates the
-+	owner information into the envelope sender field (which appears
-+	as the "From " header on UNIX mail or as the Return-Path: header)
-+	so that downstream errors are properly returned to the mailing
-+	list owner instead of to the sender.  In order to make this
-+	appear as sensible as possible to end users, I recommend making
-+	the owner point to a "request" address -- for example:
-+
-+		list:		:include:/path/name/list.list
-+		owner-list:	list-request
-+		list-request:	eric
-+
-+	This will make message sent to "list" come out as being
-+	"From list-request" instead of "From eric".
+  * How can I get sendmail to deliver local mail to $HOME/.mail
+    instead of into /usr/spool/mail (or /usr/mail)?
+
+	This is a local mailer issue, not a sendmail issue.  Either
+	modify your local mailer (source code will be required) or
+	change the program called in the "local" mailer configuration
+	description to be a new program that does this local delivery.
+	I understand that "procmail" works well, although I haven't
+	used it myself.
+----------------------------------------------------------------------
+  * Under V8, the "From " header gets mysteriously munged when I send
+    to an alias.
+
+	``It's not a bug, it's a feature.''  This happens when you have
+	a "owner-list" alias and you send to "list".  V8 propogates the
+	owner information into the envelope sender field (which appears
+	as the "From " header on UNIX mail or as the Return-Path: header)
+	so that downstream errors are properly returned to the mailing
+	list owner instead of to the sender.  In order to make this
+	appear as sensible as possible to end users, I recommend making
+	the owner point to a "request" address -- for example:
+
+		list:		:include:/path/name/list.list
+		owner-list:	list-request
+		list-request:	eric
+
+	This will make message sent to "list" come out as being
+	"From list-request" instead of "From eric".
 ----------------------------------------------------------------------

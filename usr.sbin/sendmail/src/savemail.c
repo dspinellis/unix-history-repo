@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.16 (Berkeley) 10/21/93";
+static char sccsid[] = "@(#)savemail.c	8.17 (Berkeley) 10/31/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -267,7 +267,10 @@ savemail(e)
 
 			e->e_flags |= EF_PM_NOTIFY;
 
-			q = e->e_errorqueue;
+			/* check to see if there are any good addresses */
+			for (q = e->e_errorqueue; q != NULL; q = q->q_next)
+				if (!bitset(QBADADDR|QDONTSEND, q->q_flags))
+					break;
 			if (q == NULL)
 			{
 				/* this is an error-error */

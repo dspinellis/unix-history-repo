@@ -37,9 +37,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) 10/23/93 (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) 10/31/93 (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.19 (Berkeley) 10/23/93 (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) 10/31/93 (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -1049,6 +1049,7 @@ host_map_lookup(map, name, av, statp)
 	char *cp;
 	int i;
 	register STAB *s;
+	char *timeoutmsg = "Recipient domain nameserver timed out";
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
 	extern int h_errno;
@@ -1067,6 +1068,8 @@ host_map_lookup(map, name, av, statp)
 		errno = s->s_namecanon.nc_errno;
 		h_errno = s->s_namecanon.nc_herrno;
 		*statp = s->s_namecanon.nc_stat;
+		if (CurEnv->e_message == NULL && *statp == EX_TEMPFAIL)
+			CurEnv->e_message = newstr(timeoutmsg);
 		return s->s_namecanon.nc_cname;
 	}
 
@@ -1106,11 +1109,9 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
-					char *msg = "Recipient domain nameserver timed out";
-
-					message(msg);
+					message(timeoutmsg);
 					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr(msg);
+						CurEnv->e_message = newstr(timeoutmsg);
 				}
 				*statp = EX_TEMPFAIL;
 				break;
@@ -1200,8 +1201,8 @@ anynet_ntoa(sap)
 	{
 #ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 	  case AF_UNIX:
-	  	if (sap->sun.sun_path[0] != '\0')
-	  		sprintf(buf, "[UNIX: %.64s]", sap->sun.sun_path);
+	  	if (sap->sunix.sun_path[0] != '\0')
+	  		sprintf(buf, "[UNIX: %.64s]", sap->sunix.sun_path);
 	  	else
 	  		sprintf(buf, "[UNIX: localhost]");
 		return buf;
