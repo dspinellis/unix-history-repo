@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -231,6 +231,9 @@ read_kmem()
 	Read(kmem, (char *)&dumpdev, sizeof (dumpdev));
 	Lseek(kmem, (long)current_nl[X_DUMPLO].n_value, L_SET);
 	Read(kmem, (char *)&dumplo, sizeof (dumplo));
+	if (Verbose)
+		printf("dumplo = %d (%d * %d)\n", dumplo, dumplo/DEV_BSIZE,
+		    DEV_BSIZE);
 	Lseek(kmem, (long)current_nl[X_DUMPMAG].n_value, L_SET);
 	Read(kmem, (char *)&dumpmag, sizeof (dumpmag));
 	dumplo *= DEV_BSIZE;
@@ -345,7 +348,7 @@ read_number(fn)
 	return (atoi(lin));
 }
 
-#define	BUFPAGES	(256*1024/NBPG)		/* 1/4 Mb */
+#define	BUFSIZE		(256*1024)		/* 1/4 Mb */
 
 save_core()
 {
@@ -355,14 +358,14 @@ save_core()
 	char *bfile;
 	register FILE *fp;
 
-	cp = malloc(BUFPAGES*NBPG);
+	cp = malloc(BUFSIZE);
 	if (cp == 0) {
 		log(LOG_ERR, "savecore: Can't allocate i/o buffer.\n");
 		return;
 	}
 	bounds = read_number("bounds");
 	ifd = Open(system ? system : _PATH_UNIX, O_RDONLY);
-	while((n = Read(ifd, cp, BUFPAGES*NBPG)) > 0)
+	while((n = Read(ifd, cp, BUFSIZE)) > 0)
 		Write(ofd, cp, n);
 	close(ifd);
 	close(ofd);
@@ -371,22 +374,27 @@ save_core()
 			rawname(ddname));
 		ifd = dumpfd;
 	}
-	Lseek(ifd, (off_t)(dumplo + ok(dump_nl[X_DUMPSIZE].n_value)), L_SET);
-	Read(ifd, (char *)&dumpsize, sizeof (dumpsize));
+	Lseek(dumpfd, (off_t)(dumplo + ok(dump_nl[X_DUMPSIZE].n_value)), L_SET);
+	Read(dumpfd, (char *)&dumpsize, sizeof (dumpsize));
 	(void)sprintf(cp, "vmcore.%d", bounds);
 	ofd = Create(path(cp), 0644);
 	Lseek(ifd, (off_t)dumplo, L_SET);
+	dumpsize *= NBPG;
 	log(LOG_NOTICE, "Saving %d bytes of image in vmcore.%d\n",
-	    NBPG*dumpsize, bounds);
+	    dumpsize, bounds);
 	while (dumpsize > 0) {
-		n = Read(ifd, cp,
-		    (dumpsize > BUFPAGES ? BUFPAGES : dumpsize) * NBPG);
-		if (n == 0) {
-			log(LOG_WARNING, "WARNING: vmcore may be incomplete\n");
+		n = read(ifd, cp,
+		    dumpsize > BUFSIZE ? BUFSIZE : dumpsize);
+		if (n <= 0) {
+			if (n == 0)
+				log(LOG_WARNING,
+				    "WARNING: vmcore may be incomplete\n");
+			else
+				Perror(LOG_ERR, "read: %m", "read");
 			break;
 		}
 		Write(ofd, cp, n);
-		dumpsize -= n/NBPG;
+		dumpsize -= n;
 	}
 	close(ifd);
 	close(ofd);
