@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -25,7 +25,7 @@ MAN=	install.0
 
 all: xinstall
 
-xinstall: ${LIBC}
+xinstall: install.c ${LIBC}
 	${CC} -o xinstall ${CFLAGS} install.c
 
 clean:
