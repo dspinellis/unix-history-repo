@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	7.11 (Berkeley) %G%
+ *	@(#)raw_ip.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
