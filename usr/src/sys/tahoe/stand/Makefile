@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.17 (Berkeley) %G%
+#	@(#)Makefile	7.18 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -18,27 +18,28 @@ LDTOPT=		-T ${RELOC} -e _entry -x
 DEFS=	-DSTANDALONE -DCOMPAT_42 -DTAHOE -DRELOC=0x${RELOC}
 CFLAGS=	-O ${INCPATH} ${DEFS}
 
+DRIVERS=cy.c hd.c vd.c
+SRCS=	boot.c cat.c conf.c copy.c cy.c hd.c ls.c prf.c srt0.c \
+	${DRIVERS}
+LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+
 SUBDIR=	vdformat
 ALL=	boot cat copy ls
 
-DRIVERS=cy.c hd.c vd.c
-SASRC=  bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
-	printf.c read.c sys.c write.c
-SRCS=	boot.c cat.c conf.c copy.c cy.c hd.c ls.c prf.c srt0.c \
-	${SASRC} ${DRIVERS}
-LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
-
-all: srt0.o libsa.a ${ALL} 		# ${SUBDIR}
+all: srt0.o ${ALL}				# ${SUBDIR}
 
 ${SUBDIR}:
 	cd $@; make ${MFLAGS}
 
-machdep.o: machdep.c ../include/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
-	${CC} -E ${CFLAGS} machdep.c | ${AS}  -o machdep.o
+${STAND}/obj/libsa.a:
+	cd ${STAND}; make
 
-libsa.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o} ${SASRC:.c=.o}
+libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
 	ranlib $@
+
+machdep.o: machdep.c ../include/mtpr.h ../tahoe/mem.h ../tahoe/SYS.h
+	${CC} -E ${CFLAGS} machdep.c | ${AS}  -o machdep.o
 
 boot: boot.o bootsrt0.o ${LIBS}
 	ld ${LDTSYSOPT} bootsrt0.o boot.o ${LIBS}
@@ -85,7 +86,7 @@ ncy.o: ncy.c
 	${CC} -DNOBLOCK ${CFLAGS} -c ncy.c
 
 clean:
-	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libsa.a
+	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libdrive.a
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 cleandir: clean

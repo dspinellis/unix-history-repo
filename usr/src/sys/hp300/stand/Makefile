@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	7.6 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -18,16 +18,19 @@ CFLAGS=	-O ${INCPATH} ${DEFS}
 DRIVERS=autoconf.c cons.c ct.c dca.c dcm.c fhpib.c hil.c hpib.c ite.c \
 	ite_dv.c ite_gb.c ite_rb.c ite_subr.c ite_tc.c nhpib.c rd.c \
 	scsi.c sd.c
-SASRC=  bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
-	printf.c read.c sys.c write.c
-SRCS=	conf.c machdep.c prf.c ${SASRC} ${DRIVERS}
-LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
+SRCS=	conf.c machdep.c prf.c ${DRIVERS}
+LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 ALL=	dboot nboot tboot tcopy
 
 all: ${ALL}
 
-libsa.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o} ${SASRC:.c=.o}
+dboot nboot tboot tcopy: ${STAND}/obj/libsa.a libdrive.a
+
+${STAND}/obj/libsa.a:
+	cd ${STAND}; make
+
+libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
 	ranlib $@
 
@@ -102,7 +105,7 @@ clean:
 	rm -f a.out boot cat tpboot tpcopy copy tpformat
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c nboot.c
-	rm -f libsa.a mkboot tboot tcopy dboot nboot installboot *.lif
+	rm -f libdrive.a mkboot tboot tcopy dboot nboot installboot *.lif
 
 lint:
 	lint ${INCPATH} -hxbn boot.c ${SRCS} | \
