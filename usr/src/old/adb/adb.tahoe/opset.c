@@ -1,153 +1,174 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)opset.c	1.2 (Berkeley) %G%";
 #endif
+
 /*
- *
- *	UNIX debugger
- *
+ * adb - instruction decoding
  */
 
 #include "defs.h"
 #include "optab.h"
 
-STRING		errflg;
-L_INT		dot;
-INT		dotinc;
-L_INT		var[];
+struct	optab *ioptab[256];	/* index by opcode to optab */
 
+/* set up ioptab */
+mkioptab()
+{
+	register struct optab *p;
 
-/* instruction printing */
-
-POS	type, space, incp;
-
-OPTAB ioptab[256]; /* index by opcode to optab */
-
-mkioptab() {/* set up ioptab */
-	REG OPTAB p=optab;
-	while (p->iname){
-		ioptab[p->val&LOBYTE]=p;
-		p++;
-	}
+	for (p = optab; p->iname; p++)
+		ioptab[p->val] = p;
 }
 
-printins(idsp,ins)
-	REG L_INT	ins;
+/*
+ * Print one instruction, and leave dotinc set to the number of bytes
+ * it occupied.
+ */
+printins(space)
+	int space;
 {
-	short	argno;		/* argument index */
-	REG	mode;		/* mode */
-	REG	r;		/* register name */
-	REG	d;		/* assembled byte, word, long or float */
-	long	snarf();
-	REG char *	ap;
-	REG OPTAB	ip;
+	u_char ins;		/* instruction opcode */
+	int argno;		/* argument index */
+	register int mode;	/* mode */
+	register int r;		/* register name */
+	register int d;		/* assembled byte, word, long or float */
+	register int dotoff;	/* offset from dot of current byte */
+	register u_char *ap;
+	register struct optab *ip;
+	union {
+		u_char	ub;
+		char	b;
+		short	w;
+		int	l;
+	} mem;
+	extern char *syscalls[];
+	extern int nsys;
+#define	snarfbytes(nbytes) \
+	(void) adbread(space, inkdot(dotoff), &mem.b, nbytes); \
+	checkerr(); \
+	dotoff += (nbytes)
 
-	type = DSYM;
-	space = idsp;
-	ins = byte(ins);
-	if((ip=ioptab[ins]) == (OPTAB)0) {
-		printf("?%2x%8t", ins);
+	(void) adbread(SP_INSTR, dot, &ins, 1);
+	checkerr();
+	if ((ip = ioptab[ins]) == NULL) {
+		adbprintf("?%2x", ins);
 		dotinc = 1;
 		return;
 	}
-	printf("%s%8t",ip->iname);
-	incp = 1;
+	adbprintf("%s%8t", ip->iname);
+	dotoff = 1;
 	ap = ip->argtype;
-	for (argno=0; argno<ip->nargs; argno++,ap++) {
+	for (argno = 0; argno < ip->nargs; argno++, ap++) {
 		var[argno] = 0x80000000;
-		if (argno!=0) printc(',');
-	  top:
-		if (*ap&ACCB)
-			mode = 0xAF + ((*ap&7)<<5);  /* branch displacement */
-		else{
-			mode = bchkget(inkdot(incp),idsp); ++incp;
+		if (argno != 0)
+			printc(',');
+again:
+		if (*ap & ACCB)		/* branch displacement */
+			mode = 0xAF + ((*ap & 7) << 5);
+		else {
+			snarfbytes(1);
+			mode = mem.ub;
 		}
-		r = mode&0xF;
+		r = mode & 0xF;
 		mode >>= 4;
-		switch ((int)mode) {
-			case 0:
-			case 1:
-			case 2:
-			case 3:
-				/* short literal */
-				printc('$');
-				d = mode<<4|r;
-				goto immed;
-			case 4: /* [r] */
-				printf("[%s]",regname[r]);
-				goto top;
-			case 5: /* r */
-				printf("%s",regname[r]);
-				break;
-			case 6: /* (r) */
-				printf("(%s)",regname[r]);
-				break;
-			case 7: /* -(r) */
-				printf("-(%s)",regname[r]);
-				break;
-			case 9: /* *(r)+ */
-				printc('*');
-			case 8: /* (r)+ */
-				if(r==0xF || mode==8 && (r==8 || r==9)) {
-					printc('$');
-					d = snarf((r&03)+1, idsp);
-				} else {	/*it's not PC immediate or abs*/
-					printf("(%s)+",regname[r]);
-					break;
-				}
-			immed:
-				if(ins == KCALL && d>=0 && d<SYSSIZ) {
-					if(systab[d])
-						printf(systab[d]);
-					else
-						printf("%R", d);
-					break;
-				}
-				goto disp;
-			case 0xB:	/* byte displacement deferred */
-			case 0xD:	/* word displacement deferred */
-			case 0xF:	/* long displacement deferred */
-				printc('*');
-			case 0xA:	/* byte displacement */
-			case 0xC:	/* word displacement */
-			case 0xE:	/* long displacement */
-				d = snarf(1<<((mode>>1&03)-1), idsp);
-				if (r==0xF) { /* PC offset addressing */
-					d += dot+incp;
-					psymoff(d,type,"");
-					var[argno]=d;
-					break;
-				}
-			disp:
-				if(d>=0 && d<maxoff)
-					printf("%R", d);
-				else
-					psymoff(d,type,"");
-				if (mode>=0xA)
-					printf("(%s)",regname[r]);
-				var[argno]=d;
-				break;
-		} /* end of the mode switch */
-	}
-	if (ins==CASEL) {
-		if(inkdot(incp)&01)	/* align */
-			incp++;
-		for (argno=0; argno<=var[2]; ++argno) {
-			printc(EOR);
-			printf("    %R:  ",argno+var[1]);
-			d=shorten(get(inkdot(incp+argno+argno),idsp));
-			if (d&0x8000) d -= 0x10000;
-			psymoff(inkdot(incp)+d,type,"");
+		switch (mode) {
+
+		case 0: case 1: case 2: case 3:
+			/* short literal */
+			d = mode << 4 | r;
+			goto immed;
+
+		case 4:	/* [r] */
+			adbprintf("[%s]", regname[r]);
+			goto again;
+
+		case 5:	/* r */
+			adbprintf("%s", regname[r]);
+			continue;
+
+		case 6:	/* (r) */
+			adbprintf("(%s)", regname[r]);
+			continue;
+
+		case 7:	/* -(r) */
+			adbprintf("-(%s)", regname[r]);
+			continue;
+
+		case 9:	/* *(r)+ */
+			printc('*');
+			/* FALLTHROUGH */
+
+		case 8:	/* (r)+ */
+			if (r == 0xf) {
+				/* PC immediate */
+				snarfbytes(4);
+				d = mem.l;
+			} else if (mode == 8 && (r == 8 || r == 9)) {
+				/* absolute */
+				snarfbytes((r & 1) + 1);
+				d = r == 8 ? mem.b : mem.w;
+			} else {
+				adbprintf("(%s)+", regname[r]);
+				continue;
+			}
+	immed:
+			printc('$');
+			if (ins == KCALL && (u_int)d < nsys && syscalls[d])
+				prints(syscalls[d]);
+			else
+				adbprintf("%R", d);
+			var[argno] = d;
+			continue;
+
+		case 0xA:	/* byte displacement */
+		case 0xB:	/* byte displacement deferred */
+			d = 1;
+			break;
+
+		case 0xC:	/* word displacement */
+		case 0xD:	/* word displacement deferred */
+			d = 2;
+			break;
+
+		case 0xE:	/* long displacement */
+		case 0xF:	/* long displacement deferred */
+			d = 4;
+			break;
 		}
-		incp += var[2]+var[2]+2;
+
+		/* displacement or displacement deferred */
+		if (mode & 1)
+			printc('*');
+		snarfbytes(d);
+		switch (d) {
+		case 1:
+			d = mem.b;
+			break;
+		case 2:
+			d = mem.w;
+			break;
+		case 4:
+			d = mem.l;
+			break;
+		}
+		if (r == 0xF) {	/* PC offset addressing */
+			d += dot + dotoff;
+			psymoff("%R", (addr_t)d, SP_DATA, maxoff, "");
+		} else
+			adbprintf("%V(%s)", d, regname[r]);
+		var[argno] = d;
 	}
-	dotinc=incp;
-}
+	if (ins == CASEL) {
+		register addr_t adjdot;
 
-long snarf (nbytes, idsp)
-{
-	register long value;
-
-	value = chkget(inkdot(incp), idsp);
-	incp += nbytes;
-	return(value>>(4-nbytes)*8);
+		if (inkdot(dotoff) & 01)	/* align */
+			dotoff++;
+		adjdot = inkdot(dotoff);
+		for (argno = 0; argno <= var[2]; ++argno) {
+			adbprintf("\n    %R:  ", argno + var[1]);
+			snarfbytes(2);
+			psymoff("%R", adjdot + mem.w, SP_DATA, maxoff, "");
+		}
+	}
+	dotinc = dotoff;
 }
