@@ -8,9 +8,9 @@ static	char *sccsid = "@(#)kill.c	4.3 (Berkeley) %G%";
 
 char *signm[] = { 0,
 "HUP", "INT", "QUIT", "ILL", "TRAP", "IOT", "EMT", "FPE",	/* 1-8 */
-"KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", 0,	/* 9-16 */
-"STOP", "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "TINT", "XCPU",	/* 17-24 */
-"XFSZ", 0, 0, 0, 0, 0, 0, 0,					/* 25-31 */
+"KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG",	/* 9-16 */
+"STOP", "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",	/* 17-24 */
+"XFSZ", "VTALRM", "PROF", "WINCH", 0, "USR1", "USR2", 0,	/* 25-31 */
 };
 
 main(argc, argv)
@@ -30,7 +30,7 @@ char **argv;
 	}
 	if (*argv[1] == '-') {
 		if (argv[1][1] == 'l') {
-			for (signo = 1; signo <= NSIG; signo++) {
+			for (signo = 0; signo <= NSIG; signo++) {
 				if (signm[signo])
 					printf("%s ", signm[signo]);
 				if (signo == 16)
@@ -40,16 +40,16 @@ char **argv;
 			exit(0);
 		} else if (isdigit(argv[1][1])) {
 			signo = atoi(argv[1]+1);
-			if (signo < 1 || signo > NSIG) {
+			if (signo < 0 || signo > NSIG) {
 				printf("kill: %s: number out of range\n",
 				    argv[1]);
 				exit(1);
 			}
 		} else {
 			char *name = argv[1]+1;
-			for (signo = 1; signo <= NSIG; signo++)
-			if (signm[signo] && !strcmp(signm[signo], name))
-				goto foundsig;
+			for (signo = 0; signo <= NSIG; signo++)
+				if (signm[signo] && !strcmp(signm[signo], name))
+					goto foundsig;
 			printf("kill: %s: unknown signal; kill -l lists signals\n", name);
 			exit(1);
 foundsig:
