@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,8 +60,8 @@ main(argc, argv)
 	char **ap, *cmd, *machine, *p, *p_add, *p_path, *pager, *slashp;
 	char *conffile, buf[MAXPATHLEN * 2];
 
-	conffile = NULL;
 	f_cat = f_how = 0;
+	conffile = p_add = p_path = NULL;
 	while ((ch = getopt(argc, argv, "-aC:cfhkM:m:P:w")) != EOF)
 		switch (ch) {
 		case 'a':
@@ -344,8 +344,7 @@ manual(page, tag, pg)
 	buf[0] = '*';
 
 	/* For each element in the list... */
-	if (tag != NULL)
-		e_tag = tag->list.tqh_first;
+	e_tag = tag == NULL ? NULL : tag->list.tqh_first;
 	for (; e_tag != NULL; e_tag = e_tag->q.tqe_next) {
 		(void)snprintf(buf, sizeof(buf), "%s/%s.*", e_tag->s, page);
 		if (glob(buf,
