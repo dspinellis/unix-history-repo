@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.1 (Berkeley) %G%
+.\"	@(#)title.urm	6.4 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -44,7 +44,7 @@ software, provided this copyright notice and statement of permission
 are included.
 .sp 2
 Manual pages adb.1, bc.1, compact.1, crypt.1, dc.1, deroff.1, ed.1,
-expr.1, graph.1, ld.1, learn.1, m4.1, plot.1, ptx.1, ratfor.1, spell.1,
+expr.1, graph.1, ld.1, learn.1, m4.1, plot.1, ptx.1, spell.1,
 spline.1, struct.1, tar.1, units.1, uucp.1, uux.1, ching.6, eqnchar.7,
 man.7, ms.7, and term.7
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
