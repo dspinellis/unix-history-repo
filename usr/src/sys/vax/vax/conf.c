@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.10 (Berkeley) %G%
+ *	@(#)conf.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -599,6 +599,22 @@ struct cdevsw	cdevsw[] =
 	dmzopen,        dmzclose,       dmzread,        dmzwrite,       /*37*/
 	dmzioctl,       dmzstop,        dmzreset,       dmz_tty,
 	ttselect,       nodev,
+/* 38-42 reserved to local sites */
+	nodev,		nodev,		nodev,		nodev,		/*38*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
+	nodev,		nodev,		nodev,		nodev,		/*39*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
+	nodev,		nodev,		nodev,		nodev,		/*40*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
+	nodev,		nodev,		nodev,		nodev,		/*41*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
+	nodev,		nodev,		nodev,		nodev,		/*42*/
+	nodev,		nulldev,	nulldev,	0,
+	nodev,		nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
