@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	4.3		%G%);
+SCCSID(@(#)collect.c	4.4		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -281,9 +281,9 @@ eatfrom(fm)
 	{
 		/* skip a word */
 		while (*p != '\0' && *p != ' ')
-			*p++;
+			p++;
 		while (*p == ' ')
-			*p++;
+			p++;
 		if (!isupper(*p) || p[3] != ' ' || p[13] != ':' || p[16] != ':')
 			continue;
 

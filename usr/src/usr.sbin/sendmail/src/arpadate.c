@@ -1,13 +1,24 @@
 # include "conf.h"
+# ifdef USG
+# include <time.h>
+# else
 # include "conf.h"
 # include <sys/time.h>
 # ifndef V6
 # include <sys/types.h>
 # include <sys/timeb.h>
-# endif
+# endif V6
+# endif USG
 # include "useful.h"
 
-SCCSID(@(#)arpadate.c	4.3		%G%);
+SCCSID(@(#)arpadate.c	4.4		%G%);
+
+# ifdef V6
+# define OLDTIME
+# endif V6
+# ifdef USG
+# define OLDTIME
+# endif USG
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -46,15 +57,20 @@ arpadate(ud)
 	register int i;
 	extern struct tm *localtime();
 	extern bool fconvert();
-# ifdef V6
+# ifdef OLDTIME
 	long t;
-	extern char *StdTimezone, *DstTimezone;
 	extern long time();
-# else
+# else OLDTIME
 	struct timeb t;
 	extern struct timeb *ftime();
 	extern char *timezone();
-# endif
+# endif OLDTIME
+# ifdef V6
+	extern char *StdTimezone, *DstTimezone;
+# endif V6
+# ifdef USG
+	extern char *tzname[2];
+# endif USG
 
 	/*
 	**  Get current time.
@@ -62,7 +78,7 @@ arpadate(ud)
 	**	to resolve the timezone.
 	*/
 
-# ifdef V6
+# ifdef OLDTIME
 	(void) time(&t);
 	if (ud == NULL)
 		ud = ctime(&t);
@@ -70,7 +86,7 @@ arpadate(ud)
 	ftime(&t);
 	if (ud == NULL)
 		ud = ctime(&t.time);
-# endif
+# endif OLDTIME
 
 	/*
 	**  Crack the UNIX date line in a singularly unoriginal way.
@@ -115,7 +131,14 @@ arpadate(ud)
 	else
 		p = StdTimezone;
 # else
+# ifdef USG
+	if (localtime(&t)->tm_isdst)
+		p = tzname[1];
+	else
+		p = tzname[0];
+# else
 	p = timezone(t.timezone, localtime(&t.time)->tm_isdst);
+# endif USG
 # endif V6
 	if ((strncmp(p, "GMT", 3) == 0 || strncmp(p, "gmt", 3) == 0) &&
 	    p[3] != '\0')
@@ -170,12 +193,12 @@ struct foreign
 
 static struct foreign Foreign[] =
 {
-	{ "eet",	" -0200" },	/* eastern europe */
-	{ "met",	" -0100" },	/* middle europe */
-	{ "wet",	" GMT"   },	/* western europe */
-	{ "eet dst",	" -0300" },	/* daylight saving times */
-	{ "met dst",	" -0200" },
-	{ "wet dst",	" -0100" },
+	{ "EET",	" -0200" },	/* eastern europe */
+	{ "MET",	" -0100" },	/* middle europe */
+	{ "WET",	" GMT"   },	/* western europe */
+	{ "EET DST",	" -0300" },	/* daylight saving times */
+	{ "MET DST",	" -0200" },
+	{ "WET DST",	" -0100" },
 	{ NULL,		NULL	 }
 };
 
@@ -187,10 +210,9 @@ fconvert(a, b)
 	register struct foreign *euptr;
 	register char *p;
 
-	makelower(a);
 	for (euptr = Foreign; euptr->f_from != NULL; euptr++)
 	{
-		if (strcmp(euptr->f_from, a) == 0)
+		if (sameword(euptr->f_from, a))
 		{
 			p = euptr->f_to;
 			while (*p)

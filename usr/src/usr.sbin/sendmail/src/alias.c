@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.4.1.1		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.5		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.4.1.1		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.5		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -441,8 +441,9 @@ readaliases(aliasfile, init)
 			}
 			else
 			{
-				p = &p[strlen(p) - 1];
-				*p = '\0';
+				p = &p[strlen(p)];
+				if (p[-1] == '\n')
+					*--p = '\0';
 			}
 
 			/* see if there should be a continuation line */
@@ -453,7 +454,6 @@ readaliases(aliasfile, init)
 				break;
 
 			/* read continuation line */
-			p--;
 			if (fgets(p, sizeof line - (p - line), af) == NULL)
 				break;
 			LineNumber++;

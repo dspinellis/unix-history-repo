@@ -2,9 +2,8 @@
 # include <signal.h>
 # include <sgtty.h>
 # include "sendmail.h"
-# include <sys/file.h>
 
-SCCSID(@(#)main.c	4.11		%G%);
+SCCSID(@(#)main.c	4.12		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -199,6 +198,8 @@ main(argc, argv, envp)
 		OpMode = MD_INITALIAS;
 	else if (strcmp(p, "mailq") == 0)
 		OpMode = MD_PRINT;
+	else if (strcmp(p, "smtpd") == 0)
+		OpMode = MD_DAEMON;
 	while ((p = *++av) != NULL && p[0] == '-')
 	{
 		switch (p[1])
@@ -804,8 +805,8 @@ freeze(freezefile)
 
 	/* write out the freeze header */
 	if (write(f, (char *) &fhdr, sizeof fhdr) != sizeof fhdr ||
-	    write(f, (char *) &edata, fhdr.frzinfo.frzbrk - &edata) !=
-					(fhdr.frzinfo.frzbrk - &edata))
+	    write(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
+					(int) (fhdr.frzinfo.frzbrk - &edata))
 	{
 		syserr("Cannot freeze");
 	}
@@ -863,8 +864,8 @@ thaw(freezefile)
 	}
 
 	/* now read in the freeze file */
-	if (read(f, (char *) &edata, fhdr.frzinfo.frzbrk - &edata) !=
-					(fhdr.frzinfo.frzbrk - &edata))
+	if (read(f, (char *) &edata, (int) (fhdr.frzinfo.frzbrk - &edata)) !=
+					(int) (fhdr.frzinfo.frzbrk - &edata))
 	{
 		/* oops!  we have trashed memory..... */
 		write(2, "Cannot read freeze file\n", 24);
