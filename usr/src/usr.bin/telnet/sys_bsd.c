@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_bsd.c	1.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_bsd.c	1.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -535,6 +535,14 @@ register int f;
 #else
 # ifdef	VDSUSP
 	tmp_tc.c_cc[VDSUSP] = (cc_t)(-1);
+# endif
+#endif
+#ifdef USE_TERMIO
+/*
+ * Disable VSTATUS (^T)
+ */
+# ifdef VSTATUS
+	tmp_tc.c_cc[VSTATUS] = (cc_t)(-1);
 # endif
 #endif
 #ifdef	USE_TERMIO
