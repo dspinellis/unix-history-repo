@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,8 +66,8 @@ static char sccsid[] = "@(#)more.c	5.24 (Berkeley) %G%";
 struct sgttyb	otty, savetty;
 long		file_pos, file_size;
 int		fnum, no_intty, no_tty, slow_tty;
-int		dum_opt, dlines, onquit(), end_it(), chgwinsz();
-int		onsusp();
+int		dum_opt, dlines;
+void		chgwinsz(), end_it(), onquit(), onsusp();
 int		nscroll = 11;	/* Number of lines scrolled by 'd' */
 int		fold_opt = 1;	/* Fold long lines */
 int		stop_opt = 1;	/* Stop after form feeds */
@@ -265,11 +265,11 @@ char *argv[];
 		    pr("::::::::::::::");
 		    if (promptlen > 14)
 			erase (14);
-		    printf ("\n");
+		    prtf ("\n");
 		    if(clreol) cleareol();
-		    printf("%s\n", fnames[fnum]);
+		    prtf("%s\n", fnames[fnum]);
 		    if(clreol) cleareol();
-		    printf("::::::::::::::\n");
+		    prtf("::::::::::::::\n");
 		    if (left > Lpp - 4)
 			left = Lpp - 4;
 		}
@@ -360,7 +360,7 @@ checkf (fs, clearfirst)
 		return((FILE *)NULL);
 	}
 	if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-		printf("\n*** %s: directory ***\n\n", fs);
+		prtf("\n*** %s: directory ***\n\n", fs);
 		return((FILE *)NULL);
 	}
 	if ((f = Fopen(fs, "r")) == NULL) {
@@ -383,7 +383,6 @@ checkf (fs, clearfirst)
  *	check for file magic numbers.  This code would best be shared with
  *	the file(1) program or, perhaps, more should not try and be so smart?
  */
-static
 magic(f, fs)
 	FILE *f;
 	char *fs;
@@ -398,7 +397,7 @@ magic(f, fs)
 		case 0405:
 		case 0411:
 		case 0177545:
-			printf("\n******** %s: Not a text file ********\n\n", fs);
+			prtf("\n******** %s: Not a text file ********\n\n", fs);
 			(void)fclose(f);
 			return(1);
 		}
@@ -500,6 +499,7 @@ register int num_lines;
 ** Come here if a quit signal is received
 */
 
+void
 onquit()
 {
     signal(SIGQUIT, SIG_IGN);
@@ -524,6 +524,7 @@ onquit()
 ** Come here if a signal for a window size change is received
 */
 
+void
 chgwinsz()
 {
     struct winsize win;
@@ -547,6 +548,7 @@ chgwinsz()
 ** Clean up terminal state and exit. Also come here if interrupt signal received
 */
 
+void
 end_it ()
 {
 
@@ -576,7 +578,7 @@ register FILE *f;
 
 /* Simplified printf function */
 
-printf (fmt, va_alist)
+prtf (fmt, va_alist)
 register char *fmt;
 va_dcl
 {
@@ -705,10 +707,10 @@ char *filename;
 	    cleareol ();
 	pr("--More--");
 	if (filename != NULL) {
-	    promptlen += printf ("(Next file: %s)", filename);
+	    promptlen += prtf ("(Next file: %s)", filename);
 	}
 	else if (!no_intty) {
-	    promptlen += printf ("(%d%%)", (int)((file_pos * 100) / file_size));
+	    promptlen += prtf ("(%d%%)", (int)((file_pos * 100) / file_size));
 	}
 	if (dum_opt) {
 	    promptlen += pr("[Press space to continue, 'q' to quit.]");
@@ -1010,10 +1012,10 @@ register FILE *f;
 
 		putchar ('\r');
 		erase (0);
-		printf ("\n");
+		prtf ("\n");
 		if (clreol)
 			cleareol ();
-		printf ("...back %d page", nlines);
+		prtf ("...back %d page", nlines);
 		if (nlines > 1)
 			pr ("s\n");
 		else
@@ -1056,10 +1058,10 @@ register FILE *f;
 		nlines *= dlines;
 	    putchar ('\r');
 	    erase (0);
-	    printf ("\n");
+	    prtf ("\n");
 	    if (clreol)
 		cleareol ();
-	    printf ("...skipping %d line", nlines);
+	    prtf ("...skipping %d line", nlines);
 	    if (nlines > 1)
 		pr ("s\n");
 	    else
@@ -1205,9 +1207,9 @@ int nlines;
 	case 'f':
 		kill_line ();
 		if (!no_intty)
-			promptlen = printf ("\"%s\" line %d", fnames[fnum], Currline);
+			promptlen = prtf ("\"%s\" line %d", fnames[fnum], Currline);
 		else
-			promptlen = printf ("[Not a file] line %d", Currline);
+			promptlen = prtf ("[Not a file] line %d", Currline);
 		fflush (stdout);
 		return (-1);
 	case 'n':
@@ -1283,7 +1285,7 @@ char *filename;
 		ttyin (cmdbuf, 78, '!');
 		if (expand (shell_line, cmdbuf)) {
 			kill_line ();
-			promptlen = printf ("!%s", shell_line);
+			promptlen = prtf ("!%s", shell_line);
 		}
 	}
 	fflush (stdout);
@@ -1806,6 +1808,7 @@ register FILE *f;
 
 /* Come here when we get a suspend signal from the terminal */
 
+void
 onsusp ()
 {
     /* ignore SIGTTOU so we don't get stopped if csh grabs the tty */
@@ -1823,5 +1826,5 @@ onsusp ()
     signal (SIGTSTP, onsusp);
     set_tty ();
     if (inwait)
-	    longjmp (restore);
+	    longjmp (restore, 1);
 }

@@ -1,8 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)sub1.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub1.c	4.5 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
+# include <stdarg.h>
+
 char *
 getl(p)	/* return next line of input, throw away trailing '\n' */
 	/* returns 0 if eof is had immediately */
@@ -35,12 +37,18 @@ digit(c)
 {
 	return(c>='0' && c <= '9');
 }
-error(s,p,d)
-	{
+
+error(s)
+	char *s;
+{
+	va_list ap;
+
 	fprintf(errorf,"\"%s\", line %d: (Error) ",
 		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
-	fprintf(errorf,s,p,d);
-	putc('\n',errorf);
+	va_start(ap, s);
+	vfprintf(errorf, s, ap);
+	va_end(ap);
+	putc('\n', errorf);
 # ifdef DEBUG
 	if(debug && sect != ENDSECTION) {
 		sect1dump();
@@ -55,11 +63,16 @@ error(s,p,d)
 	exit(1);	/* error return code */
 	}
 
-warning(s,p,d)
-	{
+warning(s)
+	char *s;
+{
+	va_list ap;
+
 	fprintf(errorf,"\"%s\", line %d: (Warning) ",
 		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
-	fprintf(errorf,s,p,d);
+	va_start(ap, s);
+	vfprintf(errorf, s, ap);
+	va_end(ap);
 	putc('\n',errorf);
 	fflush(errorf);
 	fflush(fout);

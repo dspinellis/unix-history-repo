@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.12 (Berkeley) 90/03/26";
+static	char *sccsid = "@(#)main.c	4.12 (Berkeley) 91/02/28";
 # include "defs"
 /*
 command make to update programs.
@@ -62,7 +62,7 @@ TIMETYPE tjunk;
 char c, *s;
 static char onechar[2] = "X";
 #ifdef unix
-int intrupt();
+void intrupt();
 #endif
 char *op = options + 1;
 
@@ -218,6 +218,7 @@ exit(0);
 #include <sys/stat.h>
 
 #ifdef unix
+void
 intrupt()
 {
 struct varblock *varptr();
@@ -261,7 +262,7 @@ return(NO);
 
 
 enbint(k)
-int (*k)();
+void (*k)();
 {
 if(sigivalue == 0)
 	signal(SIGINT,k);

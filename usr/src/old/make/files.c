@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.21 (Berkeley) 91/02/01";
+static	char *sccsid = "@(#)files.c	4.22 (Berkeley) 91/02/28";
 #include <sys/types.h>
 #include <fcntl.h>
 
@@ -208,7 +208,7 @@ return(t);
 FSTATIC char nbuf[MAXNAMLEN + 1];
 FSTATIC char *nbufend	= &nbuf[MAXNAMLEN];
 
-
+static int amatch();
 
 struct depblock *srchdir(pat, mkchain, nextdbl)
 register char *pat; /* pattern to be matched in directory */
@@ -345,6 +345,7 @@ char *s, *p;
 {
 	register int cc, scc, k;
 	int c, lc;
+	static int umatch();
 
 	scc = *s;
 	lc = 077777;
@@ -515,7 +516,6 @@ register char *f;
 char magic[SARMAG];
 #endif
 int word;
-#include <sys/stat.h>
 struct stat buf;
 
 stat(f, &buf);
