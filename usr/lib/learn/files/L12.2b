@@ -1,0 +1,27 @@
+#print
+Now are the files "dick" and "harry" the same?
+Again reply "yes" or "no".
+If there are differences between files, "diff" prints
+the lines that are different, indicating those
+from the first file by "<" and those from
+the second file by ">".
+#create dick
+new york
+bridgeport
+new haven
+new london
+providence
+boston
+#create harry
+new york
+bridgeport
+new haven
+providence
+boston
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+12.2c 5

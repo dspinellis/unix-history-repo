@@ -1,0 +1,35 @@
+#print
+To properly print a file containing an equation,
+you have to type a longer-than-usual command line.
+If you are using a DASI or GSI, to print a file
+"math" that contains mathematics, you must say
+
+  neqn math | nroff -Txxx
+
+where "-Txxx" describes the terminal you are using.
+This is usually one of
+  -T300
+  -T300S
+  -T450
+It is very important that you get this line right.
+If you don't, you'll not be happy with your output.
+
+In this directory is a file called "Example"; print
+it properly, using whichever command line is 
+appropriate to your terminal.
+Then type "ready".
+#once #create Example
+This is a little file that contains an
+example of a subscript and superscript:
+.ce
+.EQ
+a sub i + b sub i ~=~ c sub i sup 2
+.EN
+.pl 1
+#copyin
+#user
+#uncopyin
+grep 'neqn Example *| *nroff -T' <.copy >/dev/null
+#log
+#next
+1.1b 10

@@ -1,0 +1,26 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+Sometimes there will be a need for a subscript or superscript
+that has nothing to the left of it, as in references like
+  $"" sup 1$Smith, J. `A great paper...'
+
+Experiment and decide if you can get this effect
+by writing simply
+  %sup 1%Smith, J.....
+
+Type yes if this works, no if it does not.
+.pl 1
+#
+#once neqn message | nroff -T$term %s/tinyms -
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+11.1f 10

@@ -1,0 +1,27 @@
+#print
+One thing to keep in mind is that outside of
+$ signs, spaces are significant just as they
+were before.  Inside $ signs, spaces are significant
+only as delimiters, and will not add any space
+to the output.
+Furthermore, inside delimiters, new lines also
+don't matter, just as they didn't matter between
+the .EQ and .EN.
+
+Do the lines
+
+Let $alpha$ be the size of the vector $pi$.
+
+and
+
+Let $ alpha $ be the size of the vector $ pi $.
+
+produce the same output?
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+6.1d 10
