@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.2 (Berkeley) %G%
+ *	@(#)lfs.h	7.3 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -28,6 +28,10 @@ struct segusage {
 	u_long	su_flags;
 };
 
+#define	SEGTABSIZE_SU(fs) \
+	(((fs)->lfs_nseg * sizeof(SEGUSE) + \
+	((fs)->lfs_bsize - 1)) >> (fs)->lfs_bshift)
+
 /* On-disk file information.  One per file with data blocks in the segment. */
 typedef struct finfo FINFO;
 struct finfo {
@@ -35,25 +39,6 @@ struct finfo {
 	u_long	fi_version;		/* version number */
 	u_long	fi_ino;			/* inode number */
 	long	fi_blocks[1];		/* array of logical block numbers */
-};
-
-/* In-memory description of a segment about to be written */
-typedef struct segment SEGMENT;
-struct segment {
-	SEGMENT	*nextp;			/* links segments together */
-	BUF	**bpp;			/* pointer to buffer array */
-	BUF	**cbpp;			/* pointer to next available bp */
-	BUF	*ibp;			/* buffer pointer to inode page */
-	BUF	*sbp;			/* segment summary buffer pointer */
-	void	*segsum;		/* segment Summary info */
-	u_long	seg_bytes_left;		/* bytes left in segment */
-	u_long	sum_bytes_left;		/* bytes left in summary block */
-	daddr_t	saddr;			/* current disk address */
-	daddr_t	sum_addr;		/* address of current summary */
-	u_long	ninodes;		/* number of inodes in this segment */
-	u_long	nsums;			/* number of SEGSUMs in this segment */
-	u_long	seg_number;		/* number of this segment */
-	FINFO	*fip;			/* current fileinfo pointer */
 };
 
 /* On-disk and in-memory super block. */
@@ -78,17 +63,22 @@ struct lfs {
 	ino_t	lfs_ifile;		/* inode file inode number */
 	daddr_t	lfs_lastseg;		/* address of last segment written */
 	daddr_t	lfs_nextseg;		/* address of next segment to write */
+	daddr_t	lfs_curseg;		/* Current segment being written */
+	daddr_t	lfs_offset;		/* offset in curseg for next partial */
 	u_long	lfs_tstamp;		/* time stamp */
 
 /* These are configuration parameters. */
 	u_long	lfs_minfree;		/* minimum percentage of free blocks */
 
 /* These fields can be computed from the others. */
+	u_long	lfs_dbpseg;		/* disk blocks per segment */
 	u_long	lfs_inopb;		/* inodes per block */
 	u_long	lfs_ifpb;		/* IFILE entries per block */
+	u_long	lfs_sepb;		/* SEGUSE entries per block */
 	u_long	lfs_nindir;		/* indirect pointers per block */
 	u_long	lfs_nseg;		/* number of segments */
 	u_long	lfs_nspf;		/* number of sectors per fragment */
+	u_long	lfs_cleansz;		/* cleaner info size in blocks */
 	u_long	lfs_segtabsz;		/* segment table size in blocks */
 
 	u_long	lfs_segmask;		/* calculate offset within a segment */
@@ -108,7 +98,8 @@ struct lfs {
 /* These fields are set at mount time and are meaningless on disk. */
 	VNODE	*lfs_ivnode;		/* vnode for the ifile */
 	SEGUSE	*lfs_segtab;		/* in-memory segment usage table */
-	SEGMENT	*lfs_seglist;		/* list of segments being written */
+					/* XXX NOT USED */
+	void	*XXXlfs_seglist;	/* list of segments being written */
 	u_long	lfs_iocount;		/* number of ios pending */
 	u_char	lfs_fmod;		/* super block modified flag */
 	u_char	lfs_clean;		/* file system is clean flag */
@@ -139,10 +130,16 @@ struct lfs {
  */
 #define	di_inum	di_spare[0]
 
-/* Logical block numbers of indirect blocks. */
-#define S_INDIR	-1
-#define D_INDIR -2
-#define T_INDIR -3
+/* Address calculations for metadata located in the inode */
+#define	S_INDIR(fs)	-NDADDR
+#define	D_INDIR(fs)	(S_INDIR - NINDIR(fs) - 1)
+#define	T_INDIR(fs)	(D_INDIR - NINDIR(fs) * NINDIR(fs) - 1)
+
+/* Structure used to pass around logical block paths. */
+typedef struct _indir {
+	long	in_lbn;			/* logical block number */
+	int	in_off;			/* offset in buffer */
+} INDIR;
 
 /* Unassigned disk address. */
 #define	UNASSIGNED	-1
@@ -160,14 +157,19 @@ struct ifile {
 #define	if_nextfree	__ifile_u.nextfree
 };
 
-/* Segment table size, in blocks. */
-#define	SEGTABSIZE(fs) \
-	(((fs)->fs_nseg * sizeof(SEGUSE) + \
-	    ((fs)->fs_bsize - 1)) >> (fs)->fs_bshift)
+/*
+ * Cleaner information structure.  This resides in the ifile and is used
+ * to pass information between the cleaner and the kernel.
+ */
+typedef struct _cleanerinfo {
+	u_long	clean;			/* K: number of clean segments */
+	u_long	dirty;			/* K: number of dirty segments */
+	u_long	last_seg;		/* K: index of last seg written */
+	time_t	last_time;		/* K: timestamp of last seg written */
+} CLEANERINFO;
 
-#define	SEGTABSIZE_SU(fs) \
-	(((fs)->lfs_nseg * sizeof(SEGUSE) + \
-	    ((fs)->lfs_bsize - 1)) >> (fs)->lfs_bshift)
+#define	CLEANSIZE_SU(fs) \
+	((sizeof(CLEANERINFO) + (fs)->lfs_bsize - 1) >> (fs)->lfs_bshift)
 
 /*
  * All summary blocks are the same size, so we can always read a summary
@@ -178,13 +180,12 @@ struct ifile {
 /* On-disk segment summary information */
 typedef struct segsum SEGSUM;
 struct segsum {
-	u_long	ss_cksum;		/* check sum */
+	u_long	ss_sumsum;		/* check sum of summary block */
+	u_long	ss_datasum;		/* check sum of data */
 	daddr_t	ss_next;		/* next segment */
-	daddr_t	ss_prev;		/* next segment */
-	daddr_t	ss_nextsum;		/* next summary block */
 	u_long	ss_create;		/* creation time stamp */
 	u_long	ss_nfinfo;		/* number of file info structures */
-	u_long	ss_ninos;		/* number of inode blocks */
+	u_long	ss_ninos;		/* number of inodes in summary */
 	/* FINFO's... */
 };
 
@@ -194,9 +195,6 @@ struct segsum {
 /* INOPB is the number of inodes in a secondary storage block. */
 #define	INOPB(fs)	((fs)->lfs_inopb)
 
-/* IFPB -- IFILE's per block */
-#define	IFPB(fs)	((fs)->lfs_ifpb)
-
 #define	blksize(fs)		((fs)->lfs_bsize)
 #define	blkoff(fs, loc)		((loc) & (fs)->lfs_bmask)
 #define	fsbtodb(fs, b)		((b) << (fs)->lfs_fsbtodb)
@@ -205,17 +203,38 @@ struct segsum {
 #define numfrags(fs, loc)	/* calculates (loc / fs->fs_fsize) */ \
 	((loc) >> (fs)->lfs_bshift)
 
-#define	datosn(fs, daddr)	/* disk address to segment number */ \
-	(((daddr) - (fs)->lfs_sboffs[0]) / fsbtodb((fs), (fs)->lfs_ssize))
-#define sntoda(fs, sn) 		/* segment number to disk address */ \
-	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) + \
-	    (fs)->lfs_sboffs[0]))
-
-/* Read in the block containing a specific inode from the ifile. */
+/* Read in the block with a specific inode from the ifile. */
 #define	LFS_IENTRY(I, F, IN, BP) { \
-	if (bread((F)->lfs_ivnode, (IN) / IFPB(F) + (F)->lfs_segtabsz, \
+	if (bread((F)->lfs_ivnode, \
+	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
 	    (F)->lfs_bsize, NOCRED, &BP)) \
 		panic("lfs: ifile read"); \
-	(I) = (IFILE *)BP->b_un.b_addr + IN % IFPB(F); \
+	(I) = (IFILE *)BP->b_un.b_addr + IN % (F)->lfs_ifpb; \
 }
 
+/* Read in the block with a specific segment usage entry from the ifile. */
+#define	LFS_SEGENTRY(I, F, IN, BP) { \
+	if (bread((F)->lfs_ivnode, (IN) / (F)->lfs_sepb + (F)->lfs_cleansz, \
+	    (F)->lfs_bsize, NOCRED, &BP)) \
+		panic("lfs: ifile read"); \
+	(I) = (SEGUSE *)BP->b_un.b_addr + IN % (F)->lfs_sepb; \
+}
+
+/*
+ * Structures used by lfs_bmapv and lfs_markv to communicate information
+ * about inodes and data blocks.
+ */
+typedef struct block_info {
+	ino_t	bi_inode;		/* inode # */
+	off_t	bi_lbn;			/* logical block w/in file */
+	daddr_t	bi_daddr;		/* disk address of block */
+	time_t	bi_segcreate;		/* origin segment create time */
+	void	*bi_bp;			/* data buffer */
+} BLOCK_INFO;
+
+typedef struct inode_info {
+	ino_t	ii_inode;		/* inode # */
+	daddr_t	ii_daddr;		/* disk address of block */
+	time_t	ii_segcreate;		/* origin segment create time */
+	struct dinode *ii_dinode;	/* data buffer */
+} INODE_INFO;
