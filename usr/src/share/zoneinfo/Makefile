@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -101,7 +101,6 @@ PROG=	zic
 MAN5=	tzfile.0
 
 SRCS=	zic.c scheck.c ialloc.c
-OBJS=	${SRCS:.c=.o}
 
 YDATA=	africa antarctica asia australasia europe northamerica \
 	southamerica pacificnew etcetera factory
