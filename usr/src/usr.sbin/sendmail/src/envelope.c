@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.1		%G%);
+SCCSID(@(#)envelope.c	3.2		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -582,7 +582,8 @@ setsender(from)
 			FullName = NULL;
 
 		/* extract full name from passwd file */
-		if (FullName == NULL && pw->pw_gecos != NULL)
+		if (FullName == NULL && pw->pw_gecos != NULL &&
+		    strcmp(pw->pw_name, CurEnv->e_from.q_user) == 0)
 		{
 			buildfname(pw->pw_gecos, CurEnv->e_from.q_user, buf);
 			if (buf[0] != '\0')
