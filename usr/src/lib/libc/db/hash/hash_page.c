@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -162,7 +162,11 @@ __split_page(obucket, nbucket)
 	copyto = (u_short)hashp->BSIZE;
 	off = (u_short)hashp->BSIZE;
 	old_bufp = __get_buf(obucket, NULL, 0);
+	if (old_bufp == NULL)
+		return (-1);
 	new_bufp = __get_buf(nbucket, NULL, 0);
+	if (new_bufp == NULL)
+		return (-1);
 
 	old_bufp->flags |= (BUF_MOD | BUF_PIN);
 	new_bufp->flags |= (BUF_MOD | BUF_PIN);
