@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.26 (Berkeley) 84/09/04";
+static char sccsid[] = "@(#)rwhod.c	4.27 (Berkeley) 84/10/23";
 #endif
 
 #include <sys/types.h>
@@ -246,6 +246,7 @@ onalrm()
 	alarmcount++;
 	(void) fstat(utmpf, &stb);
 	if (stb.st_mtime != utmptime) {
+		utmptime = stb.st_mtime;
 		(void) lseek(utmpf, (long)0, L_SET);
 		cc = read(utmpf, (char *)utmp, sizeof (utmp));
 		if (cc < 0) {
