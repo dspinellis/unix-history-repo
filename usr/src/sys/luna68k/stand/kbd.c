@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbd.c	7.1 (Berkeley) %G%
+ *	@(#)kbd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -157,26 +157,24 @@ int	meta_flag  = 0;
 kbd_decode(code)
 	register u_char code;
 {
-	register unsigned int c, updown;
+	register unsigned int c, updown = 0;
 
 	if (code & 0x80)
 		updown = 1;
-	else
-		updown = 0;
 
 	code &= 0x7F;
 
 	c = kbd_keymap[code].km_type;
 
-	switch(c) {
+	if (c == KC_IGNORE)
+		return(KC_IGNORE);
 
-	case KC_CODE:
-		if (updown)
-			c = KC_IGNORE;
-		break;
+	if ((c == KC_CODE) && updown)
+		return(KC_IGNORE);
 
-	case KC_SHIFT:
+	if (c == KC_SHIFT) {
 		switch(kbd_keymap[code].km_code[0]) {
+
 		case KS_SHIFT:
 			shift_flag = 1 - updown;
 			break;
@@ -189,20 +187,20 @@ kbd_decode(code)
 			meta_flag  = 1 - updown;
 			break;
 		}
-		break;
 
-	default:
-		break;
+		return(KC_IGNORE);
 	}
 
-	c |= kbd_keymap[code].km_code[shift_flag];
+	if (shift_flag)
+		c = kbd_keymap[code].km_code[1];
+	else
+		c = kbd_keymap[code].km_code[0];
 
-	if (kbd_keymap[code].km_type == KC_CODE) {
-		if (meta_flag)
-			c |= 0x0080;
-		if (ctrl_flag)
-			c &= 0xFF1F;
-	}
+	if (meta_flag)
+		c |= 0x80;
+
+	if (ctrl_flag)
+		c &= 0x1F;
 
 	return(c);
 }
