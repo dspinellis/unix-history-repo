@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.21 (Berkeley) %G%
+ *	@(#)conf.h	5.22 (Berkeley) %G%
  */
 
 /*
@@ -37,6 +37,10 @@
 **	#define these if they are available; comment them out otherwise.
 */
 
+# ifdef hpux
+# define SYSTEM5	1
+# endif
+
 /* # define DBM		1	/* use DBM library (requires -ldbm) */
 /* # define NDBM	1	/* new DBM library available (requires DBM) */
 # define NEWDB		1	/* use new 4.4bsd database package db(3) */
@@ -48,7 +52,10 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define USERDB		1	/* look in user database */
-/* # define LOCKF	1	/* use System V lockf instead of flock */
+
+# ifdef SYSTEM5
+# define LOCKF		1	/* use System V lockf instead of flock */
+# endif
 
 /*
 **  Older systems don't have this error code -- it should be in
