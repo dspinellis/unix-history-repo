@@ -1,0 +1,8 @@
+     4  r := 0.;
+e \l'\w`w `u-\w`e `u '\l'\w`     4  r := 0.`u-\w`w `u\&\(rh'\l'(\w`;`u-\w`^`u)/2 '\(ua\l'(\w`;`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Digits required after decimal point
+     5  r := .0;
+e \l'\w`w `u-\w`e `u '\l'\w`     5  r := `u-\w`w `u\&\(rh'\l'(\w`.`u-\w`^`u)/2 '\(ua\l'(\w`.`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Digits required before decimal point
+     6  r := 1.e10;
+e \l'\w`w `u-\w`e `u '\l'\w`     6  r := 1.`u-\w`w `u\&\(rh'\l'(\w`e`u-\w`^`u)/2 '\(ua\l'(\w`e`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Digits required after decimal point
+     7  r := .05e-10;
+e \l'\w`w `u-\w`e `u '\l'\w`     7  r := `u-\w`w `u\&\(rh'\l'(\w`.`u-\w`^`u)/2 '\(ua\l'(\w`.`u-\w`^`u)/2 '\l'\w`---`u\&\(rh' Digits required before decimal point

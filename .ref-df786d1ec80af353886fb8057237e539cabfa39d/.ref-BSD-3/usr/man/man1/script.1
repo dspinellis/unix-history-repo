@@ -1,0 +1,78 @@
+.TH SCRIPT 1 8/1/79
+.UC
+.SH NAME
+script \- make typescript of terminal session
+.SH SYNOPSIS
+.B script
+[
+.B \-n
+] [
+.B \-s
+] [
+.B \-a
+] [
+.B \-q
+] [
+.B \-S
+shell
+] [ file ]
+.SH DESCRIPTION
+.I Script
+makes a typescript of everything printed on your terminal.
+The typescript is saved in a file, and can be sent to the
+line printer later with
+.I lpr.
+If a file name is given, the typescript
+is saved there.  If not, the typescript is saved in the file
+.I typescript.
+.PP
+To exit script, type control D.  This sends an end of file to
+all processes you have started up, and causes script to exit.
+For this reason, control D behaves as though you had typed an
+infinite number of control D's.
+.PP
+This program is useful when using a crt and a hard-copy
+record of the dialog is desired, as for a student handing
+in a program that was developed on a crt when hard-copy
+terminals are in short supply.
+.PP
+The options control what shell is used.
+.B \-n
+asks for the new shell,
+.B \-s
+asks for the standard shell.
+.B \-S
+lets you specify any shell you want.
+The default depends on the system: /bin/csh is used where possible,
+otherwise /bin/sh.
+If the requested shell is not available,
+.I script
+uses any shell it can find.
+.PP
+The
+.B \-q
+flag asks for ``quiet mode'', where the ``script started''
+and ``script done'' messages are turned off.
+The
+.B \-a
+flag causes script to append to the typescript file
+instead of creating a new file.
+.SH AUTHOR
+Mark Horton
+.SH BUGS
+Since UNIX has no way to write an end-of-file down a pipe without closing
+the pipe, there is no way to simulate a single control D without
+ending script.
+.PP
+The new shell has its standard input coming
+from a pipe rather than a tty, so stty will not work, and neither
+will ttyname.
+.PP
+When the user interrupts a printing process,
+.I script
+attempts to flush the output backed up in the pipe for better response.
+Usually the next prompt also gets flushed.
+.PP
+The new
+.IR mpx (2)
+feature could be used to make script work right.

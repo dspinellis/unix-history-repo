@@ -1,0 +1,102 @@
+#	Makefile	2.15	83/08/18
+#
+# Berkeley Mail
+#
+CFLAGS=	-O -DVMUNIX -DV7
+XSTR=	/usr/ucb/xstr
+DESTDIR=
+CTAGS=	/usr/ucb/ctags -w
+VPRINT=	/usr/ucb/print
+CGRAF=	/ja/rigel/rigel/bin/cgraf
+CGRAPH=	/ja/rigel/rigel/bin/cgraph
+NMKINDEX=/ja/rigel/rigel/bin/nmkindex
+DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
+LIBES=
+ED=	-ed
+AS=	-as
+RM=	-rm
+OBJS=	version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
+	config.o edit.o fio.o \
+SRCS=	aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
+HDRS=	rcv.h configdefs.h def.h glob.h v7.local.h local.h
+ALL=	Mail fmt
+S = $(SRCS) $(HDRS)
+
+#
+# Special massaging of C files for sharing of strings
+#
+.c.o:
+	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+	${CC} -c ${CFLAGS} x.c 
+	mv x.o $*.o
+	@$(RM) -f x.c
+
+all:	${ALL}
+
+Mail:	$S $(OBJS)
+	$(RM) -f Mail
+	@echo Loading ...
+	@$(CC) -n -o Mail $(OBJS) $(LIBES)
+	@size Mail
+
+mail.g:	$(SRCS)
+	$(CGRAF) $(SRCS) > mail.g
+
+install: all
+	install -s Mail ${DESTDIR}/usr/ucb/Mail
+	cp misc/Mail.help* ${DESTDIR}/usr/lib
+	install -s fmt ${DESTDIR}/usr/ucb/fmt
+	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
+
+version.o:	version.c
+	$(CC) -c -R version.c
+
+$S:
+	sccs get $@
+
+srcs:	$S
+
+tags:	$(SRCS)
+	${CTAGS} $(SRCS);
+
+clean:
+	$(RM) -f *.o
+	rm -f Mail a.out fmt x.c xs.c tags core
+	cp /dev/null strings
+	cp /dev/null version.c
+
+lint:
+	lint $(CFLAGS) $(SRCS)
+
+fmt:	fmt.c head.c
+	$(CC) fmt.c head.c -o fmt
+	$(RM) fmt.o head.o
+	size fmt
+
+str.o: strings
+	$(XSTR)
+	$(CC) -R -c xs.c
+	mv xs.o str.o
+	$(RM) xs.c
+
+cmdtab.o: cmdtab.c
+	$(CC) -R -c $(CFLAGS) cmdtab.c
+
+#
+# Make the version file.  /tmp is always changing.
+#
+version.c: #	/tmp
+	/bin/sh version > version.c
+
+print:	$S fmt.c
+	$(CGRAPH) > mail.g;
+	$(NMKINDEX) > mail.i;
+	$(DIRTCLOD) -x mail.i -p mail.g > mail.x
+	@$(VPRINT) Makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
+	    $(SRCS) fmt.c;
+
+wc:
+	@wc rcv.h def.h glob.h local.h v7.local.h $(SRCS)
+
+sc:
+	@grep -c \; rcv.h def.h glob.h local.h v7.local.h $(SRCS)

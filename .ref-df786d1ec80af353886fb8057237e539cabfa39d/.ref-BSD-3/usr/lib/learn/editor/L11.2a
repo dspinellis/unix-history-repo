@@ -1,0 +1,48 @@
+#print
+So far I have always put you into the editor.
+How do you get there yourself?  The main command
+interpreter (the shell) recognizes
+  ed
+as the name of the editor.  (On some systems,
+it is also called "e", which is a useful abbreviation.)
+You can also say
+  ed file1
+which put you in the editor with the current file
+"file1".  So, for example, you can print the
+last line of a file with
+  ed NAME
+  $p
+  w
+  q
+where NAME is the name of the file.
+
+In this directory is a file named "file45".  Print the
+last line of it, and then exit as above.
+#create Ref
+This file contains nothing
+of great importance and
+you should not be printing
+these lines because the only
+line that you were asked for
+was
+this line, the last line.
+#create file45
+This file contains nothing
+of great importance and
+you should not be printing
+these lines because the only
+line that you were asked for
+was
+this line, the last line.
+#copyout
+#pipe
+#user
+#unpipe
+#uncopyout
+grep last .ocopy >X1
+tail -1 Ref >X2
+#cmp X1 X2
+#log
+#next
+11.2b 10
+12.2a 5

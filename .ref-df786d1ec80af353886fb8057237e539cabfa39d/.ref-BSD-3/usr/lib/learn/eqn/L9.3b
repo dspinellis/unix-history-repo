@@ -1,0 +1,13 @@
+#print
+Does
+  ax bar
+produce the same output as
+  a x bar
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+10.1a 10

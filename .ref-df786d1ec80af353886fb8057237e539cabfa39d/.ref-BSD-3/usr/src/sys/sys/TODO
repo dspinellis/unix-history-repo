@@ -1,0 +1,21 @@
+/*	TODO	2.1	1/5/80	*/
+
+SMALL, NON-CRITICAL:
+	- test rk.c
+	- use u_wantcore, u_stklim
+	- sys call to get nswap,majorflt,cnswap,cmajorflt
+	- support interleaved paging devices, multiple controller paging
+	- share text pages at first level
+	- write i ptrace is HORRENDOUSLY inefficient for large texts
+	- get rid of need for YRCURR in clock.h
+	- mem fault on swap-in device error rather than panic
+	- use fuller range of p_cpu, p_slptime; use x_slptime
+	- count proc i/o's; compute %cpu
+	- system assumes that boot clears core past bss (ick)
+	- large core dumps are awful and even uninterruptible!
+	- should allocate ``buffers'' at boot (in locore) to make
+	  vmunix smaller (would save 0:05 in boot time, 48k bytes in vmunix)
+
+NON-PAGING RELATED:
+	- IIASA tty mods
+	- dma tty i/o (kmc-11a)
