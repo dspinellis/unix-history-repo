@@ -1,0 +1,48 @@
+#print
+Write a function named "rev(s)" which reverses
+the string "s" in place. Name the file that contains
+the function "rev.c".
+When you're satisfied, type "ready".
+#once #create Ref
+cbax0987654321
+#once #create tzaqc.c
+main(){
+	char *s1, *s2, *s3, *s4;
+	s1 = "abc";
+	s2 = "x";
+	s3 = "";
+	s4 = "1234567890";
+	rev(s1);
+	rev(s2);
+	rev(s3);
+	rev(s4);
+	printf(s1);
+	printf(s2);
+	printf(s3);
+	printf(s4);
+	printf("\n");
+}
+#user
+cc tzaqc.c rev.o
+a.out >value
+#cmp value Ref
+#succeed
+One way:
+
+rev (s)
+char *s;
+{
+	char *p;
+	int t;
+	
+	for (p=s; *p; p++)
+		;
+	for (p--; p > s; p--, s++) {
+		t = *p;
+		*p = *s;
+		*s = t;
+	}
+}
+#log
+#next
+32.1a 10

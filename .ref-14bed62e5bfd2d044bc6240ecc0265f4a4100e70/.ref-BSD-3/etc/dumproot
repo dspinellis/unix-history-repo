@@ -1,0 +1,2 @@
+chk /dev/rrp0a
+dump 0u /dev/rrp0a

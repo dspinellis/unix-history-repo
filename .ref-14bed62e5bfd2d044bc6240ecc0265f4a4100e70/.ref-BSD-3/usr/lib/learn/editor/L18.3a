@@ -1,0 +1,13 @@
+#print
+Since 'i' is the same as 'a' except for the position
+of the inserted material, what character must end
+every block of lines inserted with the 'i' command?
+Type "answer X" where X is that character.
+#copyin
+#user
+#uncopyin
+#match .
+#log
+#next
+18.3b 5
+18.2c 10

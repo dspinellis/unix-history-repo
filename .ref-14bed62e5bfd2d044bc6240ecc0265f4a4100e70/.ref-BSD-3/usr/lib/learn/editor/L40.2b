@@ -1,0 +1,27 @@
+#print
+In the file "section" change all lines ending in the characters
+  ",
+to end in
+  ,"
+so that, for example, the line
+  He said "I'll come",
+becomes
+  He said "I'll come,"
+and then rewrite the file and type "ready".
+#create Ref
+This passage contains a few
+quoted "strings,"
+of which some are "in the middle", and some
+"are at the beginning", and some "are at the end,"
+but all end with commas.
+#create section
+This passage contains a few
+quoted "strings",
+of which some are "in the middle", and some
+"are at the beginning", and some "are at the end",
+but all end with commas.
+#user
+#cmp section Ref
+#log
+#next
+40.2c 5

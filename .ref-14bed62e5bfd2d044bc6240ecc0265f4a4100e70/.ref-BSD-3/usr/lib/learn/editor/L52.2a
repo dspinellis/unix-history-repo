@@ -1,0 +1,61 @@
+#print
+You can use pairs of addresses which involve searches.  For example,
+to print all lines from the first line until the next line containing
+"stop", say
+
+  1,/stop/p
+
+In this directory is a file "list".  Print all lines from
+the first line to a line containing "023".  Then leave the editor
+and type "ready".
+#create list
+bio011
+bio012
+bio013
+bio014
+bio015
+bio016
+bio017
+bio021
+bio022
+bio023
+bio024
+bio025
+bio026
+bio027
+bio028
+bio031
+bio032
+bio033
+bio034
+bio035
+bio036
+bio037
+bio038
+bio041
+bio042
+bio043
+bio044
+bio045
+bio046
+bio047
+bio051
+#create x2
+bio011
+bio012
+bio013
+bio014
+bio015
+bio016
+bio017
+bio021
+bio022
+bio023
+#copyout
+#user
+#uncopyout
+grep bio .ocopy >x1
+#cmp x1 x2
+#log
+#next
+52.2b 5

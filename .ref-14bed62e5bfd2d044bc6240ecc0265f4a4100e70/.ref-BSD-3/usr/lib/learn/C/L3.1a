@@ -1,0 +1,56 @@
+#print
+(Section 1.3)
+The file Ref.c contains a copy of
+a program to convert Fahrenheit to
+Celsius that prints from 0 to 300
+degrees in steps of 20.
+Modify it to print from 300 down to 0
+in steps of 50. Type ready when you're done.
+#once #create Ref
+ 300  148.9
+ 250  121.1
+ 200   93.3
+ 150   65.6
+ 100   37.8
+  50   10.0
+   0  -17.8
+#once #create Ref.c
+/* print Fahrenheit-Celsius table 
+	for f = 0, 20, ..., 300 */
+main()
+{
+	int lower, upper, step;
+	float fahr, celsius;
+
+	lower = 0;	/* lower limit of temperature table */
+	upper = 300;	/* upper limit */
+	step = 20;	/* step size */
+
+	fahr = lower;
+	while (fahr <= upper) {
+		celsius = (5.0/9.0) * (fahr-32.0);
+		printf("%4.0f %6.1f\n", fahr, celsius);
+		fahr = fahr + step;
+	}
+}
+#user
+a.out >x
+#cmp Ref x
+#succeed
+Here's our solution:
+
+main()	/* Fahrenheit-Celsius 300 ... 0 by 50 */
+{
+	int lower, upper, step;
+	float fahr;
+
+	lower = 0;	/* lower limit of temperature table */
+	upper = 300;	/* upper limit */
+	step = 50;	/* step size */
+
+	for (fahr = upper; fahr >= lower; fahr = fahr - step)
+		printf("%4.0f %6.1f\n", fahr, (5.0/9.0) * (fahr-32.0));
+}
+#log
+#next
+3.1b 10

@@ -1,0 +1,25 @@
+CFLAGS = -O -DNROFF -DVMUNIX
+c = ni.o nii.o n1.o n2.o n3.o n4.o n5.o n6.o n7.o n8.o n9.o n10.o
+s = hytab.o ntab.o suftab.o
+nroff : $c $s
+	$(CC) -z -o nroff  $s $c  
+hytab.o : hytab.c
+	cc -S hytab.c
+	/usr/src/cmd/as/:rofix hytab.s
+	as -o hytab.o hytab.s
+	rm hytab.s
+ntab.o: ntab.c
+	cc -S ntab.c
+	/usr/src/cmd/as/:rofix ntab.s
+	as -o ntab.o ntab.s
+	rm ntab.s
+suftab.o: suftab.c
+	cc -S suftab.c
+	/usr/src/cmd/as/:rofix suftab.s
+	as -o suftab.o suftab.s
+	rm suftab.s
+
+install :
+	install -s nroff /usr/bin
+clean :
+	rm -f *.o

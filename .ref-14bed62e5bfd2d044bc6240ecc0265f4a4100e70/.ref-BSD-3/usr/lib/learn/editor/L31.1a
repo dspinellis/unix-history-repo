@@ -1,0 +1,38 @@
+#print
+I hope you have been checking the effects of your
+substitutions by using the 'p' command before and
+after the changes.  This is so often desired that
+you may type the 'p' on the same line, after the 's'
+command.  Thus
+  s/ab/cd/p
+changes 'ab' to 'cd' and prints the line after the change.
+In this directory there is a file named 'tree'.  Try changing
+the fourth line, which now reads
+   spruxx
+to read
+   spruce
+and then rewrite the file, and type 'ready'.
+#create Ref
+pine
+fir
+hemlock
+spruce
+birch
+beech
+hickory
+maple
+#create tree
+pine
+fir
+hemlock
+spruxx
+birch
+beech
+hickory
+maple
+#user
+#cmp Ref tree
+#log
+#next
+32.1a 10
+31.2b 5

@@ -1,0 +1,34 @@
+#print
+In this directory there is a file "pres" in which
+either the 5th line or the 6th line does not
+belong.  Edit the file, print the dubious lines,
+delete the bad one, and then rewrite the file.
+Then type "ready".
+#create Ref
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+andrew jackson
+martin van buren
+william henry harrison
+john tyler
+#create pres
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+ this is wrong Qwertyuiop
+john quincy adams
+andrew jackson
+martin van buren
+william henry harrison
+john tyler
+#user
+#cmp pres Ref
+#log
+#next
+19.2d 5
