@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READLN.c 1.1 %G%";
+static char sccsid[] = "@(#)READLN.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -14,10 +14,6 @@ READLN(curfile)
 		return;
 	}
 	IOSYNC(curfile);
-	if (curfile->funit & EOFF) {
-		ERROR(EPASTEOF, curfile->pfname);
-		return;
-	}
 	if ((curfile->funit & EOLN) == 0) {
 		fscanf(curfile->fbuf, "%*[^\n]%*c");
 	}
