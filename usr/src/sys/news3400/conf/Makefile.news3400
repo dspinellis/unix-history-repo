@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.5 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.6 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -20,18 +20,9 @@
 # -DUUDMA	compile in unibus tu58 pseudo-dma code
 #
 
-GCC=	YES
-
-.if ${GCC} == YES
 CC=	gcc -traditional -fno-builtin -nostdinc
 AS=	cc2.0 -I
 LD=	/usr/local/gnu/lib/gcc-lib/mips-sony-bsd/2.2.2/ld
-FAKEMAIN=	-Dmain=Main
-.else
-CC=	cc2.11 -I
-AS=	cc2.11 -I
-LD=	/usr/bin/ld
-.endif
 
 S=	../..
 NEWS3400=	$S/news3400
@@ -68,12 +59,12 @@ NORMAL_S_C=	${AS} -c ${COPTS} ${PARAM} $<
 #	${SYSTEM_LD_HEAD}
 #	${SYSTEM_LD} swapxxx.o
 #	${SYSTEM_LD_TAIL}
-SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vers.o vnode_if.o
+SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
 SYSTEM_LD_HEAD=	rm -f $@
-SYSTEM_LD=	@echo loading vmunix;\
-		${LD} -N -o $@ -e start -T 80001000 ${SYSTEM_OBJ} ../../libkern/obj/libkern.a
+SYSTEM_LD=	@echo loading vmunix; \
+		${LD} -N -o $@ -e start -T 80001000 ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
 SYSTEM_LD_TAIL= @echo done
 #SYSTEM_LD_TAIL= @echo rearranging symbols; symorder symbols.sort $@
 
@@ -132,7 +123,7 @@ genassym:
 	    ${NEWS3400}/news3400/genassym.c
 
 depend: assym.h param.c vnode_if.h
-	mkdep ${COPTS} ${.ALLSRC:M*.c} ioconf.c
+	mkdep ${COPTS} ${CFILES} ioconf.c
 	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} \
 	    ${NEWS3400}/news3400/genassym.c
 
