@@ -1,12 +1,12 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)lam.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lam.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 /*
  *	lam - laminate files
- *	Author:  John Kunze, Office of Comp. Affairs, UCB
+ *	Author:  John Kunze, UCB
  */
 
 #include <stdio.h>
@@ -77,7 +77,7 @@ char	**av;
 			if (!ip->sepstring)
 				ip->sepstring = (S ? (ip-1)->sepstring : "");
 			if (!ip->format)
-				ip->format = (F ? (ip-1)->format : "%s");
+				ip->format = ((P || F) ? (ip-1)->format : "%s");
 			if (!ip->eol)
 				ip->eol = (T ? (ip-1)->eol : '\n');
 			ip++;
@@ -105,7 +105,7 @@ char	**av;
 		case 'f':
 			F = (*c == 'F' ? 1 : 0);
 			if (*++p || (p = *++av)) {
-				fmtp += strlen(fmtp);
+				fmtp += strlen(fmtp) + 1;
 				if (fmtp > fmtbuf + BUFSIZ)
 					error("No more format space", "");
 				sprintf(fmtp, "%%%ss", p);
@@ -125,6 +125,22 @@ char	**av;
 }
 
 char	*
+pad(ip)
+struct	openfile	*ip;
+{
+	register char	*p = ip->sepstring;
+	register char	*lp = linep;
+
+	while (*p)
+		*lp++ = *p++;
+	if (ip->pad) {
+		sprintf(lp, ip->format, "");
+		lp += strlen(lp);
+	}
+	return(lp);
+}
+
+char	*
 gatherline(ip)
 struct	openfile	*ip;
 {
@@ -134,31 +150,24 @@ struct	openfile	*ip;
 	register char	*lp = linep;
 	char	*end = s + BUFSIZ;
 
-	if (ip->eof) {
-		p = ip->sepstring;
-		while (*p)
-			*lp++ = *p++;
-		if (ip->pad) {
-			sprintf(lp, ip->format, "");
-			lp += strlen(lp);
-		}
-		return(lp);
-	}
+	if (ip->eof)
+		return(pad(ip));
 	for (p = s; (c = fgetc(ip->fp)) != EOF && p < end; p++)
 		if ((*p = c) == ip->eol)
 			break;
 	*p = '\0';
-	p = ip->sepstring;
-	while (*p)
-		*lp++ = *p++;
-	sprintf(lp, ip->format, s);
-	lp += strlen(lp);
 	if (c == EOF) {
 		ip->eof = 1;
 		if (ip->fp == stdin)
 			fclose(stdin);
 		morefiles--;
+		return(pad(ip));
 	}
+	p = ip->sepstring;
+	while (*p)
+		*lp++ = *p++;
+	sprintf(lp, ip->format, s);
+	lp += strlen(lp);
 	return(lp);
 }
 
