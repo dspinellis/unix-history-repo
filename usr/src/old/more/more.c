@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -285,14 +285,18 @@ char *argv[];
 argscan(s)
 char *s;
 {
-	for (dlines = 0; *s != '\0'; s++)
-	{
-		switch (*s)
-		{
+	int seen_num = 0;
+
+	while (*s != '\0') {
+		switch (*s) {
 		  case '0': case '1': case '2':
 		  case '3': case '4': case '5':
 		  case '6': case '7': case '8':
 		  case '9':
+			if (!seen_num) {
+				dlines = 0;
+				seen_num = 1;
+			}
 			dlines = dlines*10 + *s - '0';
 			break;
 		  case 'd':
@@ -317,6 +321,7 @@ char *s;
 			ul_opt = 0;
 			break;
 		}
+		s++;
 	}
 }
 
