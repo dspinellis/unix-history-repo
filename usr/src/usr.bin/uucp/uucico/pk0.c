@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk0.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk0.c	5.9	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -265,7 +265,7 @@ int icount;
 						cp++;
 				}
 			}
-			pkmove(cp, ibuf, cc, B_READ);
+			bcopy(cp, ibuf, cc);
 			ibuf += cc;
 			icount -= cc;
 			count += cc;
@@ -338,7 +338,7 @@ int icount;
 			partial = B_SHORT;
 		} else
 			cc = pk->p_xsize;
-		pkmove(cp, ibuf, cc, B_WRITE);
+		bcopy(ibuf, cp, cc);
 		ibuf += cc;
 		icount -= cc;
 		pk->p_osum[x] = chksum(pk->p_ob[x], pk->p_xsize);
@@ -530,10 +530,8 @@ register struct pack *pk;
 		free((char *)bp);
 	}
 	if (rcheck != pk->p_rwindow) {
-		char buf[256];
-
-		sprintf(buf, "PK0: rc %d rw %d", rcheck, pk->p_rwindow);
-		assert(buf, Rmtname, 0);
+		syslog(LOG_WARNING, "%s: pk0: rc %d rw %d", Rmtname, rcheck,
+			pk->p_rwindow);
 	}
 	free((char *)pk);
 }
