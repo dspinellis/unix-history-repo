@@ -1,4 +1,4 @@
-\"	@(#)profiling.me	1.1 %G%
+\"	@(#)profiling.me	1.2 %G%
 .sh 1 "Types of Profiling"
 .pp
 There are a number of different uses for program profiles,
@@ -21,9 +21,9 @@ Execution counts are used in a number of different contexts.
 The exact number of times a routine or statement is activated
 can be used to determine if an algorithm is performing as 
 expected.
-Inspection of such counters may reveal algorithms whose
+Cursory inspection of such counters may reveal algorithms whose
 complexity is unsuited to the task at hand.
-Careful interpretation of counters can often reveal
+Careful interpretation of counters can often suggest
 improvements to acceptable algorithms.
 Precise examination can uncover subtle errors in an
 algorithm.
@@ -45,7 +45,7 @@ If a routine implements an abstraction by invoking other abstractions,
 the time spent in the routine will not accurately reflect the
 time required by the abstraction it implements.
 Similarly, if an abstraction is implemented by a number of
-routines the time required by the abstraction will be diffused
+routines the time required by the abstraction will be distributed
 across those routines.
 .pp
 Given the execution time for individual routines,
