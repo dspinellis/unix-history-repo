@@ -1,4 +1,10 @@
-/*	time.h	1.1	85/03/13	*/
+/*
+ * Copyright (c) 1983, 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)time.h	1.2 (Berkeley) %G%
+ */
 
 /*
  * Structure returned by gmtime and localtime calls (see ctime(3)).
@@ -13,6 +19,8 @@ struct tm {
 	int	tm_wday;
 	int	tm_yday;
 	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
 };
 
 extern	struct tm *gmtime(), *localtime();
