@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.17	(Berkeley)	83/12/30";
+static char sccsid[] = "@(#)dirs.c	3.18	(Berkeley)	85/01/18";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -7,7 +7,6 @@ static char sccsid[] = "@(#)dirs.c	3.17	(Berkeley)	83/12/30";
 #include "restore.h"
 #include <dumprestor.h>
 #include <sys/file.h>
-#include <sys/dir.h>
 
 /*
  * Symbol table of directories read from tape.
@@ -55,18 +54,6 @@ struct odirect {
 	u_short	d_ino;
 	char	d_name[ODIRSIZ];
 };
-
-/*
- * Structure and routines associated with listing directories.
- */
-struct afile {
-	ino_t	fnum;		/* inode number of file */
-	char	*fname;		/* file name */
-	short	fflags;		/* extraction flags, if any */
-	char	ftype;		/* file type, e.g. LEAF or NODE */
-};
-extern int fcmp();
-extern char *fmtentry();
 
 /*
  *	Extract directory contents, building up a directory structure
@@ -430,6 +417,24 @@ rst_readdir(dirp)
 }
 
 /*
+ * Simulate the opening of a directory
+ */
+DIR *
+rst_opendir(name)
+	char *name;
+{
+	struct inotab *itp;
+	ino_t ino;
+
+	if ((ino = dirlookup(name)) > 0 &&
+	    (itp = inotablookup(ino)) != NULL) {
+		rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
+		return (dirp);
+	}
+	return (0);
+}
+
+/*
  * Set the mode, owner, and times for all new or changed directories
  */
 setdirmodes()
@@ -516,176 +521,6 @@ genliteraldir(name, ino)
 	(void) close(dp);
 	(void) close(ofile);
 	return (GOOD);
-}
-
-/*
- * Do an "ls" style listing of a directory
- */
-printlist(name, ino)
-	char *name;
-	ino_t ino;
-{
-	register struct afile *fp;
-	register struct inotab *itp;
-	struct afile *dfp0, *dfplast;
-	struct afile single;
-
-	itp = inotablookup(ino);
-	if (itp == NULL) {
-		single.fnum = ino;
-		single.fname = savename(rindex(name, '/') + 1);
-		dfp0 = &single;
-		dfplast = dfp0 + 1;
-	} else {
-		rst_seekdir(dirp, itp->t_seekpt, itp->t_seekpt);
-		if (getdir(dirp, &dfp0, &dfplast) == FAIL)
-			return;
-	}
-	qsort((char *)dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
-	formatf(dfp0, dfplast);
-	for (fp = dfp0; fp < dfplast; fp++)
-		freename(fp->fname);
-}
-
-/*
- * Read the contents of a directory.
- */
-getdir(dirp, pfp0, pfplast)
-	DIR *dirp;
-	struct afile **pfp0, **pfplast;
-{
-	register struct afile *fp;
-	register struct direct *dp;
-	static struct afile *basefp = NULL;
-	static long nent = 20;
-
-	if (basefp == NULL) {
-		basefp = (struct afile *)calloc((unsigned)nent,
-			sizeof (struct afile));
-		if (basefp == NULL) {
-			fprintf(stderr, "ls: out of memory\n");
-			return (FAIL);
-		}
-	}
-	fp = *pfp0 = basefp;
-	*pfplast = *pfp0 + nent;
-	while (dp = rst_readdir(dirp)) {
-		if (dp == NULL || dp->d_ino == 0)
-			break;
-		if (!dflag && BIT(dp->d_ino, dumpmap) == 0)
-			continue;
-		if (vflag == 0 &&
-		    (strcmp(dp->d_name, ".") == 0 ||
-		     strcmp(dp->d_name, "..") == 0))
-			continue;
-		fp->fnum = dp->d_ino;
-		fp->fname = savename(dp->d_name);
-		fp++;
-		if (fp == *pfplast) {
-			basefp = (struct afile *)realloc((char *)basefp,
-			    (unsigned)(2 * nent * sizeof (struct afile)));
-			if (basefp == 0) {
-				fprintf(stderr, "ls: out of memory\n");
-				return (FAIL);
-			}
-			*pfp0 = basefp;
-			fp = *pfp0 + nent;
-			*pfplast = fp + nent;
-			nent *= 2;
-		}
-	}
-	*pfplast = fp;
-	return (GOOD);
-}
-
-/*
- * Print out a pretty listing of a directory
- */
-formatf(fp0, fplast)
-	struct afile *fp0, *fplast;
-{
-	register struct afile *fp;
-	struct entry *np;
-	int width = 0, w, nentry = fplast - fp0;
-	int i, j, len, columns, lines;
-	char *cp;
-
-	if (fp0 == fplast)
-		return;
-	for (fp = fp0; fp < fplast; fp++) {
-		fp->ftype = inodetype(fp->fnum);
-		np = lookupino(fp->fnum);
-		if (np != NIL)
-			fp->fflags = np->e_flags;
-		else
-			fp->fflags = 0;
-		len = strlen(fmtentry(fp));
-		if (len > width)
-			width = len;
-	}
-	width += 2;
-	columns = 80 / width;
-	if (columns == 0)
-		columns = 1;
-	lines = (nentry + columns - 1) / columns;
-	for (i = 0; i < lines; i++) {
-		for (j = 0; j < columns; j++) {
-			fp = fp0 + j * lines + i;
-			cp = fmtentry(fp);
-			fprintf(stderr, "%s", cp);
-			if (fp + lines >= fplast) {
-				fprintf(stderr, "\n");
-				break;
-			}
-			w = strlen(cp);
-			while (w < width) {
-				w++;
-				fprintf(stderr, " ");
-			}
-		}
-	}
-}
-
-/*
- * Comparison routine for qsort.
- */
-fcmp(f1, f2)
-	register struct afile *f1, *f2;
-{
-
-	return (strcmp(f1->fname, f2->fname));
-}
-
-/*
- * Format a directory entry.
- */
-char *
-fmtentry(fp)
-	register struct afile *fp;
-{
-	static char fmtres[BUFSIZ];
-	register char *cp, *dp;
-
-	if (vflag)
-		(void) sprintf(fmtres, "%5d ", fp->fnum);
-	else
-		fmtres[0] = '\0';
-	dp = &fmtres[strlen(fmtres)];
-	if (dflag && BIT(fp->fnum, dumpmap) == 0)
-		*dp++ = '^';
-	else if ((fp->fflags & NEW) != 0)
-		*dp++ = '*';
-	else
-		*dp++ = ' ';
-	for (cp = fp->fname; *cp; cp++)
-		if (!vflag && (*cp < ' ' || *cp >= 0177))
-			*dp++ = '?';
-		else
-			*dp++ = *cp;
-	if (fp->ftype == NODE)
-		*dp++ = '/';
-	*dp++ = 0;
-	return (fmtres);
 }
 
 /*

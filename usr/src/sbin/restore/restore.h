@@ -1,9 +1,10 @@
-/*	restore.h	3.9	85/01/14	*/
+/*	restore.h	3.10	85/01/18	*/
 
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
+#include <sys/dir.h>
 
 /*
  * Flags
@@ -67,6 +68,8 @@ extern char *gentempname();
 extern char *flagvalues();
 extern ino_t lowerbnd();
 extern ino_t upperbnd();
+extern DIR *rst_opendir();
+extern struct direct *rst_readdir();
 #define NIL ((struct entry *)(0))
 /*
  * Constants associated with entry structs

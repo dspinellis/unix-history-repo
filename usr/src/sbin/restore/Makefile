@@ -1,11 +1,11 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.10	(Berkeley)	%G%
+#	@(#)Makefile	4.11	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS= -O
-FILES=	main.c restore.c dirs.c symtab.c tape.c utilities.c
-OBJS=	main.o restore.o dirs.o symtab.o utilities.o
+FILES=	main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c
+OBJS=	main.o interactive.o restore.o dirs.o symtab.o utilities.o
 
 all: restore rrestore
 
