@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.48 %G%"
+SCCSID = "@(#)Makefile 1.49 %G%"
 
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
@@ -13,7 +13,7 @@ EYACC = /usr/ucb/eyacc
 RM = -rm -f
 GET = sccs -d${SRCDIR} get
 
-CFLAGS = -O -w
+CFLAGS = -O
 LDFLAGS = -z
 
 SRCDIR = /usr/src/cmd/pc0
