@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.2 %G%";
+static char *SccsId = "@(#)cmd2.c	2.3 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -279,13 +279,19 @@ deltype(msgvec)
 	int msgvec[];
 {
 	int list[2];
+	int lastdot;
 
+	lastdot = dot - &message[0] + 1;
 	if (delm(msgvec) >= 0) {
 		list[0] = dot - &message[0];
 		list[0]++;
-		touch(list[0]);
-		list[1] = NULL;
-		return(type(list));
+		if (list[0] > lastdot) {
+			touch(list[0]);
+			list[1] = NULL;
+			return(type(list));
+		}
+		printf("At EOF\n");
+		return(0);
 	}
 	else {
 		printf("No more messages\n");
