@@ -1,3 +1,0 @@
-0,10,20,30,40,50 * *	*	*	/etc/dmesg - >>/usr/adm/messages
-0,5,10,15,20,25,30,35,40,45,50,55	*	*	*	*	/usr/lib/atrun
-20	1	*	*	*	/usr/bin/calendar -

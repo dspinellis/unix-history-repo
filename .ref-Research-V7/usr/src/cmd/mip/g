@@ -1,2 +1,0 @@
-grep -n "$1" macdefs code.c local.c mac2defs local2.c order.c table.c
-cd /usr/src/cmd/mip;grep -n "$1" manifest mfile1 cgram.y comm1.c scan.c xdefs.c pftn.c trees.c mfile2 reader.c allo.c match.c  common optim.c

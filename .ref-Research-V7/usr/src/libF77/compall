@@ -1,2 +1,0 @@
-cc -c -O [a-l]*.c
-cc -c -O [m-z]*.c
