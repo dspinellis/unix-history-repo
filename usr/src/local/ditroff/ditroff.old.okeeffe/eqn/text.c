@@ -68,8 +68,6 @@ trans(c,p1) int c; char *p1; {
 		f = rf;
 		break;
 	case '|':
-		if (rf == ITAL && ttype != DEV202)
-			shim();
 		shim(); roman(c); shim(); break;
 	case '=':
 		if (rf == ITAL)

@@ -21,12 +21,9 @@ extern int	gsize;	/* global size */
 extern int	gfont;	/* global font */
 extern int	ft;	/* dflt font */
 
+extern char	*device;	/* name of output device */
 extern int	res;	/* resolution of output device */
 extern int	minsize;	/* min size it can print */
-extern int	ttype;		/* actual type of typesetter: */
-#define	DEVCAT	1
-#define	DEV202	2
-#define	DEVAPS	3
 
 extern FILE	*curfile;	/* current input file */
 extern int	ifile;	/* input file number */

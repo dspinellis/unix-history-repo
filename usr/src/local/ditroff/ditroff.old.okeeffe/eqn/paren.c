@@ -56,10 +56,7 @@ paren(leftc, p1, rightc) int p1, leftc, rightc; {
 		}
 	printf("\\v'%du'\\*(%d", -v, p1);
 	if( rightc ) {
-		if (ttype == DEV202)
-			printf("\\v'%du'", v);
-		else
-			printf("\\|\\v'%du'", v);
+		printf("\\|\\v'%du'", v);
 		switch( rightc ) {
 			case 'f':	/* floor */
 				if (n <= 1)
