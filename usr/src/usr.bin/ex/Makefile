@@ -3,14 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.24 (Berkeley) %G%
+#	@(#)Makefile	7.25 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.24 (Berkeley) %G%
+#	@(#)Makefile	7.25 (Berkeley) %G%
 #
 #
 # Copyright (c) 1987 The Regents of the University of California.
@@ -28,7 +28,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.24 (Berkeley) %G%
+#	@(#)Makefile	7.25 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -77,8 +77,8 @@ MAN=	ex.0 vi.0
 #	${CC} -E ${CFLAGS} x$*.c | xstr -c -
 #	rm -f x$*.c
 # endif
-	${CC} ${CFLAGS} -c x.c 
-	mv x.o $*.o
+	@${CC} ${CFLAGS} -c x.c
+	@mv x.o $*.o
 
 all: ex exrecover expreserve
 
