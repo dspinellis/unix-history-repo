@@ -15,7 +15,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.3 (Berkeley) %G%')
 
 Msuucp,		P=UUCP_MAILER_PATH, F=CONCAT(mDFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=100000,
 		A=UUCP_MAILER_ARGS
@@ -29,7 +29,7 @@ S12
 # handle error address as a special case
 R<@>				$n			errors to mailer-daemon
 
-# don't qualify list:; syntax
+# do not qualify list:; syntax
 R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
