@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.20 (Berkeley) %G%
+ *	@(#)iso.c	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -60,6 +60,9 @@ SOFTWARE.
 #include <netiso/iso_pcb.h>
 #include <netiso/clnp.h>
 #include <netiso/argo_debug.h>
+#ifdef TUBA
+#include <netiso/tuba_table.h>
+#endif
 
 #ifdef ISO
 
@@ -422,6 +425,11 @@ iso_control(so, cmd, data, ifp)
 			struct iso_ifaddr *nia;
 			if (cmd == SIOCDIFADDR_ISO)
 				return (EADDRNOTAVAIL);
+#ifdef TUBA
+			/* XXXXXX can't be done in the proto init routines */
+			if (tuba_tree == 0)
+				tuba_table_init();
+#endif
 			MALLOC(nia, struct iso_ifaddr *, sizeof(*nia),
 				       M_IFADDR, M_WAITOK);
 			if (nia == (struct iso_ifaddr *)0)
