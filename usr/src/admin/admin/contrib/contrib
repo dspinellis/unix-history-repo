@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.54 (Berkeley) %G%
+.\"	@(#)contrib	5.55 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -157,6 +157,7 @@ adventure(6)	Don Woods
 adventure(6)	Jim Gillogly
 adventure(6)	Will Crowther
 apply(1)	Rob Pike
+apply(1)	Jan-Simon Pendry
 ar(1)	Hugh A. Smith
 arithmetic(6)	Eamonn McManus
 arp(8)	Sun Microsystems Inc.
