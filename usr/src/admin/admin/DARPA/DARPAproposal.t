@@ -1,4 +1,4 @@
-.\"	@(#)DARPAproposal.t	1.2	87/01/30
+.\"	@(#)DARPAproposal.t	1.3	87/04/29
 .rm CM
 .sp 2
 .ce 1
@@ -18,20 +18,21 @@ Domenico Ferrari
 The release of 4.3BSD in April of 1986 addressed many of the 
 performance problems and unfinished interfaces
 present in 4.2BSD [Leffler84] [McKusick85].
-Berkeley has now embarked on a new development phase to likewise
+The Computer Systems Research Group at Berkeley
+has now embarked on a new development phase to
 update other old parts of the system.
 There are three main areas of work.
 The first is to provide a standard interface to file systems
-so that multiple local and remote file systems can be supported
-much as multiple networking protocols are by 4.3BSD.
+so that multiple local and remote file systems can be supported,
+much as multiple networking protocols are supported by 4.3BSD.
 The second is to rewrite the virtual memory system to take
 advantage of current technology and to provide new capabilities
 such as mapped files and shared memory.
-Finally, there is a need to provide more internal flexibility in a
-way similar to the System V Streams paradigm.
+Finally, there is a need to refine the internal layering of the network
+and terminal protocols to provide more internal flexibility.
 .sp 2
 .NH
-UNIX Research at Berkeley
+Current UNIX Research at Berkeley
 .PP
 Since the release of 4.3BSD in mid 1986,
 we have begun work on three major new areas of research.
@@ -41,7 +42,7 @@ in the summer of 1985, and from later discussions held at
 the annual Berkeley UNIX workshops.
 Our goal is to apply leading edge research ideas into a stable
 and reliable implementation that solves current problems in
-distributed systems research.
+operating systems research.
 .NH 2
 Toward a Compatible File System Interface
 .PP
@@ -83,8 +84,8 @@ having been based on a different starting version of UNIX,
 having targeted a different set of file systems with varying characteristics,
 and having selected a different set of file system primitive operations.
 .PP
-Our work is aimed at providing a common framework to simultaneously
-support these different distributed file systems rather than to
+Our work is aimed at providing a common framework to
+support these different distributed file systems simultaneously rather than to
 simply implement yet another protocol.
 This requires a detailed study of the existing protocols, 
 and discussion with their implementors to determine whether
@@ -100,19 +101,20 @@ toward convergence on a compatible file system interface.
 Briefly, the proposal adopts the 4.3BSD calling convention for name lookup,
 but otherwise is closely related to Sun's VFS [Karels86].
 .PP
-A prototype implementation now is being developed.
+A prototype implementation is now being developed.
 We expect that this work will be finished in time for a release at the
-end of the current contract if that is deemed desirable.
+end of the current DARPA contract if that is deemed desirable.
 .NH
 Future Projects
 .PP
 The virtual memory and stream protocol research are longer term projects
 that we would expect would be done as part of a follow on contract.
+.\" XXX future contract stategy?
 The virtual memory work uses many new and untested ideas that will
 require extensive experience to insure that they work well in a wide range
 of environments.
-It is our expectation that this work would be ready for release towards
-the end of the follow on contract.
+It is our expectation that this work would be ready for release toward
+the end of the follow-on contract.
 .NH 2
 A New Virtual Memory Implementation
 .PP
@@ -182,7 +184,7 @@ Research Center, Germany),
 Jukka Virtanen (Helsinki Univ of Technology, Finland)
 .FE
 Within the last few months, the specification of the interface has been
-agreed on.
+agreed upon.
 The next step is to design an implementation for this interface.
 There are several groups that have recently done
 virtual memory implementations, including several major UNIX vendors
@@ -197,34 +199,36 @@ services described for our user interface [Accetta86].
 Changes to the Protocol Layering Interface
 .PP
 The original work on restructuring the UNIX character I/O system
-to allow flexible configuration of the internal modules by user
-processes was done at Bell Laboratories [Ritchie84].
-Known as stackable line disciplines, these interfaces allowed a user
-process to open a raw terminal port and then push on appropriate
-processing modules (such as one to do line editing).
+to allow flexible configuration of the internal processing modules
+was done at Bell Laboratories [Ritchie84].
+Known as the stream I/O system, the new system allowed a user
+process to open a raw terminal port and then insert appropriate
+processing modules (such as one to do normal terminal line editing).
 This model allowed terminal processing modules to be used with
-virtual-circuit network modules to create ``network virtual terminals''
+virtual-circuit networks to create ``network virtual terminals''
 by stacking a terminal processing module on top of a
 networking protocol.
 .PP
-The design of the networking facilities for 4.2BSD took
-a different approach based on the \fBsocket\fP interface.
-This design allows a single system to support multiple sets of networking
-protocols with stream, datagram, and other types of access.
-Protocol modules may deal with multiplexing of data from different connections
-onto a single transport medium.
-.PP
-A problem with stackable line disciplines though, is that they
+A problem with stream line disciplines, though, is that they
 are inherently linear in nature.
-Thus, they do not adequately model the fan-in and fan-out
-associated with multiplexing.
-The simple and elegant stackable line discipline implementation
-of Eighth Edition UNIX was converted to the full production implementation
+Thus, they do not adequately handle the fan-in and fan-out
+associated with multiplexing in datagram-based networks.
+The simple and elegant stream I/O system
+of Eighth Edition UNIX was converted to the production implementation
 of Streams in System V Release 3.
 In doing the conversion, many pragmatic issues were addressed,
 including the handling of
 multiplexed connections and commercially important protocols.
 Unfortunately, the implementation complexity increased enormously.
+.PP
+The design of the networking facilities for 4.2BSD took
+a very different approach, based on the \fBsocket\fP interface
+and a flexible multi-layer network architecture.
+This design allows a single system to support multiple sets of networking
+protocols with stream, datagram, and other types of access.
+Protocol modules may deal with multiplexing of data from different connections
+onto a single transport medium, and demultiplexing of data for different
+protocols and connections received from each network device.
 .PP
 Because AT&T will not allow others to include Streams unless they
 also change their interface to comply with the System V Interface Definition
@@ -233,12 +237,22 @@ we cannot use the Release 3 implementation of Streams in the Berkeley system.
 Given that compatibility thus will be difficult,
 we feel we will have complete freedom to make our
 choices based solely on technical merits.
-As a result, our implementation will appear far more like the simpler stackable
-line disciplines than the more complex Release 3 Streams [Chandler86].
+As a result, our implementation will appear far more like the original
+Bell Labs stream implementation
+than the more complex Release 3 Streams [Chandler86].
 A socket interface will be used rather than a character device interface,
 and demultiplexing will be handled internally by the protocols in the kernel.
 However, like Streams, the interfaces between kernel
-protocol modules will follow a uniform convention.
+protocol modules above the multiplexed layers
+will follow a uniform convention.
+This convention will allow incorporation of terminal processing
+modules into a network stream, producing efficient network virtual
+terminal connections.
+It will also allow kernel support for remote procedure
+protocols based on standard transport protocols.
+Finally, this interface will provide a mechanism to extend the kernel
+protocol framework into user processes to allow prototyping
+of new protocols and to perform network monitoring functions.
 .NH
 References
 .sp
@@ -299,13 +313,6 @@ McKusick, M., M. Karels,
 \fIProceedings of the European UNIX Users Group Meeting\fP,
 Manchester, England, pp. 451-460, September 1986.
 .sp
-.IP Someren84
-Someren, J. van,
-``Paging in Berkeley UNIX,''
-Laboratorium voor schakeltechniek en techneik v.d. 
-informatieverwerkende machines,
-Codenummer 051560-44(1984)01, February 1984.
-.sp
 .IP Rifkin86
 Rifkin, A.P., M.P. Forbes, R.L. Hamilton, M. Sabrio, S. Shah, K. Yueh,
 ``RFS Architectural Overview,'' \fIUsenix Conference Proceedings\fP,
@@ -333,6 +340,13 @@ Satyanarayanan, M., \fIet al.\fP,
 ``The ITC Distributed File System: Principles and Design,''
 \fIProc. 10th Symposium on Operating Systems Principles\fP, pp. 35-50,
 ACM, December, 1985.
+.sp
+.IP Someren84
+Someren, J. van,
+``Paging in Berkeley UNIX,''
+Laboratorium voor schakeltechniek en techneik v.d. 
+informatieverwerkende machines,
+Codenummer 051560-44(1984)01, February 1984.
 .sp
 .IP Walker85
 Walker, B.J. and S.H. Kiser, ``The LOCUS Distributed File System,''
