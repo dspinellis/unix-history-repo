@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)tar.c	4.14 (Berkeley) 83/01/05";
+#ifndef lint
+static	char *sccsid = "@(#)tar.c	4.15 (Berkeley) %G%";
+#endif
 
 /*
  * Tape Archival Program
@@ -6,10 +8,11 @@ static	char *sccsid = "@(#)tar.c	4.14 (Berkeley) 83/01/05";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <signal.h>
+#include <errno.h>
 
 #define TBLOCK	512
 #define NBLOCK	20
@@ -50,11 +53,13 @@ int	tflag;
 int	cflag;
 int	mflag;
 int	fflag;
+int	iflag;
 int	oflag;
 int	pflag;
 int	wflag;
 int	hflag;
 int	Bflag;
+int	Fflag;
 
 int	mt;
 int	term;
@@ -80,6 +85,7 @@ char	magtape[] = "/dev/rmt8";
 char	*malloc();
 char	*sprintf();
 char	*strcat();
+char	*rindex();
 char	*getcwd();
 char	*getwd();
 
@@ -100,6 +106,11 @@ char	*argv[];
 		switch(*cp) {
 
 		case 'f':
+			if (*argv == 0) {
+				fprintf(stderr,
+			"tar: tapefile must be specified with 'f' option\n");
+				usage();
+			}
 			usefile = *argv++;
 			fflag++;
 			break;
@@ -182,8 +193,16 @@ char	*argv[];
 			hflag++;
 			break;
 
+		case 'i':
+			iflag++;
+			break;
+
 		case 'B':
 			Bflag++;
+			break;
+
+		case 'F':
+			Fflag++;
 			break;
 
 		default:
@@ -327,6 +346,7 @@ getdir()
 	register struct stat *sp;
 	int i;
 
+top:
 	readtape((char *)&dblock);
 	if (dblock.dbuf.name[0] == '\0')
 		return;
@@ -340,8 +360,11 @@ getdir()
 	sscanf(dblock.dbuf.size, "%lo", &sp->st_size);
 	sscanf(dblock.dbuf.mtime, "%lo", &sp->st_mtime);
 	sscanf(dblock.dbuf.chksum, "%o", &chksum);
-	if (chksum != checksum()) {
-		fprintf(stderr, "directory checksum error\n");
+	if (chksum != (i = checksum())) {
+		fprintf(stderr, "directory checksum error (%d != %d)\n",
+		    chksum, i);
+		if (iflag)
+			goto top;
 		done(2);
 	}
 	if (tfile != NULL)
@@ -368,7 +391,7 @@ putfile(longname, shortname, parent)
 	char *shortname;
 	char *parent;
 {
-	int infile;
+	int infile = 0;
 	long blocks;
 	char buf[TBLOCK];
 	register char *cp, *cp2;
@@ -376,29 +399,36 @@ putfile(longname, shortname, parent)
 	DIR *dirp;
 	int i, j;
 	char newparent[NAMSIZ+64];
+	extern int errno;
 
-	infile = open(shortname, 0);
-	if (infile < 0) {
-		fprintf(stderr, "tar: %s: cannot open file\n", longname);
-		return;
-	}
 	if (!hflag)
-		lstat(shortname, &stbuf);
-	else if (stat(shortname, &stbuf) < 0) {
-		perror(longname);
-		close(infile);
+		i = lstat(shortname, &stbuf);
+	else
+		i = stat(shortname, &stbuf);
+	if (i < 0) {
+		switch (errno) {
+		case EACCES:
+			fprintf(stderr, "tar: %s: cannot open file\n", longname);
+			break;
+		case ENOENT:
+			fprintf(stderr, "tar: %s: no such file or directory\n",
+			    longname);
+			break;
+		default:
+			fprintf(stderr, "tar: %s: cannot stat file\n", longname);
+			break;
+		}
 		return;
 	}
-	if (tfile != NULL && checkupdate(longname) == 0) {
-		close(infile);
+	if (tfile != NULL && checkupdate(longname) == 0)
 		return;
-	}
-	if (checkw('r', longname) == 0) {
-		close(infile);
+	if (checkw('r', longname) == 0)
 		return;
-	}
+	if (Fflag && checkf(shortname, stbuf.st_mode, Fflag) == 0)
+		return;
 
-	if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+	switch (stbuf.st_mode & S_IFMT) {
+	case S_IFDIR:
 		for (i = 0, cp = buf; *cp++ = longname[i++];)
 			;
 		*--cp = '/';
@@ -407,7 +437,6 @@ putfile(longname, shortname, parent)
 			if ((cp - buf) >= NAMSIZ) {
 				fprintf(stderr, "%s: file name too long\n",
 					longname);
-				close(infile);
 				return;
 			}
 			stbuf.st_size = 0;
@@ -418,7 +447,6 @@ putfile(longname, shortname, parent)
 		}
 		sprintf(newparent, "%s/%s", parent, shortname);
 		chdir(shortname);
-		close(infile);
 		if ((dirp = opendir(".")) == NULL) {
 			fprintf(stderr, "%s: directory read error\n", longname);
 			chdir(parent);
@@ -439,34 +467,23 @@ putfile(longname, shortname, parent)
 		}
 		closedir(dirp);
 		chdir(parent);
-		return;
-	}
-	i = stbuf.st_mode & S_IFMT;
-	if (i != S_IFREG && i != S_IFLNK) {
-		fprintf(stderr, "tar: %s is not a file. Not dumped\n",
-			longname);
-		return;
-	}
-	tomodes(&stbuf);
-	cp2 = longname; cp = dblock.dbuf.name; i = 0;
-	while ((*cp++ = *cp2++) && i < NAMSIZ)
-		i++;
-	if (i >= NAMSIZ) {
-		fprintf(stderr, "%s: file name too long\n", longname);
-		close(infile);
-		return;
-	}
-	if ((stbuf.st_mode & S_IFMT) == S_IFLNK) {
+		break;
+
+	case S_IFLNK:
+		tomodes(&stbuf);
+		if (strlen(longname) >= NAMSIZ) {
+			fprintf(stderr, "%s: file name too long\n", longname);
+			return;
+		}
+		strcpy(dblock.dbuf.name, longname);
 		if (stbuf.st_size + 1 >= NAMSIZ) {
 			fprintf(stderr, "%s: symbolic link too long\n",
 				longname);
-			close(infile);
 			return;
 		}
 		i = readlink(shortname, dblock.dbuf.linkname, NAMSIZ - 1);
 		if (i < 0) {
 			perror(longname);
-			close(infile);
 			return;
 		}
 		dblock.dbuf.linkname[i] = '\0';
@@ -479,65 +496,82 @@ putfile(longname, shortname, parent)
 		sprintf(dblock.dbuf.size, "%11lo", 0);
 		sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		writetape((char *)&dblock);
-		close(infile);
-		return;
-	}
-	if (stbuf.st_nlink > 1) {
-		struct linkbuf *lp;
-		int found = 0;
+		break;
 
-		for (lp = ihead; lp != NULL; lp = lp->nextp)
-			if (lp->inum == stbuf.st_ino &&
-			    lp->devnum == stbuf.st_dev) {
-				found++;
-				break;
-			}
-		if (found) {
-			strcpy(dblock.dbuf.linkname, lp->pathname);
-			dblock.dbuf.linkflag = '1';
-			sprintf(dblock.dbuf.chksum, "%6o", checksum());
-			writetape( (char *) &dblock);
-			if (vflag) {
-				fprintf(stderr, "a %s ", longname);
-				fprintf(stderr, "link to %s\n", lp->pathname);
-			}
-			lp->count--;
-			close(infile);
+	case S_IFREG:
+		if ((infile = open(shortname, 0)) < 0) {
+			fprintf(stderr, "tar: %s: cannot open file\n", longname);
 			return;
 		}
-		lp = (struct linkbuf *) malloc(sizeof(*lp));
-		if (lp == NULL) {
-			if (freemem) {
-				fprintf(stderr,
-				  "Out of memory. Link information lost\n");
-				freemem = 0;
-			}
-		} else {
-			lp->nextp = ihead;
-			ihead = lp;
-			lp->inum = stbuf.st_ino;
-			lp->devnum = stbuf.st_dev;
-			lp->count = stbuf.st_nlink - 1;
-			strcpy(lp->pathname, longname);
+		tomodes(&stbuf);
+		if (strlen(longname) >= NAMSIZ) {
+			fprintf(stderr, "%s: file name too long\n", longname);
+			return;
 		}
-	}
-	blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
-	if (vflag) {
-		fprintf(stderr, "a %s ", longname);
-		fprintf(stderr, "%ld blocks\n", blocks);
-	}
-	sprintf(dblock.dbuf.chksum, "%6o", checksum());
-	writetape((char *)&dblock);
+		strcpy(dblock.dbuf.name, longname);
+		if (stbuf.st_nlink > 1) {
+			struct linkbuf *lp;
+			int found = 0;
 
-	while ((i = read(infile, buf, TBLOCK)) > 0 && blocks > 0) {
-		writetape(buf);
-		blocks--;
+			for (lp = ihead; lp != NULL; lp = lp->nextp)
+				if (lp->inum == stbuf.st_ino &&
+				    lp->devnum == stbuf.st_dev) {
+					found++;
+					break;
+				}
+			if (found) {
+				strcpy(dblock.dbuf.linkname, lp->pathname);
+				dblock.dbuf.linkflag = '1';
+				sprintf(dblock.dbuf.chksum, "%6o", checksum());
+				writetape( (char *) &dblock);
+				if (vflag) {
+					fprintf(stderr, "a %s ", longname);
+					fprintf(stderr, "link to %s\n", lp->pathname);
+				}
+				lp->count--;
+				close(infile);
+				return;
+			}
+			lp = (struct linkbuf *) malloc(sizeof(*lp));
+			if (lp == NULL) {
+				if (freemem) {
+					fprintf(stderr,
+					  "Out of memory. Link information lost\n");
+					freemem = 0;
+				}
+			} else {
+				lp->nextp = ihead;
+				ihead = lp;
+				lp->inum = stbuf.st_ino;
+				lp->devnum = stbuf.st_dev;
+				lp->count = stbuf.st_nlink - 1;
+				strcpy(lp->pathname, longname);
+			}
+		}
+		blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
+		if (vflag) {
+			fprintf(stderr, "a %s ", longname);
+			fprintf(stderr, "%ld blocks\n", blocks);
+		}
+		sprintf(dblock.dbuf.chksum, "%6o", checksum());
+		writetape((char *)&dblock);
+
+		while ((i = read(infile, buf, TBLOCK)) > 0 && blocks > 0) {
+			writetape(buf);
+			blocks--;
+		}
+		close(infile);
+		if (blocks != 0 || i != 0)
+			fprintf(stderr, "%s: file changed size\n", longname);
+		while (--blocks >=  0)
+			putempty();
+		break;
+
+	default:
+		fprintf(stderr, "tar: %s is not a file. Not dumped\n",
+			longname);
+		break;
 	}
-	close(infile);
-	if (blocks != 0 || i != 0)
-		fprintf(stderr, "%s: file changed size\n", longname);
-	while (--blocks >=  0)
-		putempty();
 }
 
 doxtract(argv)
@@ -564,6 +598,18 @@ gotit:
 		if (checkw('x', dblock.dbuf.name) == 0) {
 			passtape();
 			continue;
+		}
+		if (Fflag) {
+			char *s;
+
+			if ((s = rindex(dblock.dbuf.name, '/')) == 0)
+				s = dblock.dbuf.name;
+			else
+				s++;
+			if (checkf(s, stbuf.st_mode, Fflag) == 0) {
+				passtape();
+				continue;
+			}
 		}
 		if (checkdir(dblock.dbuf.name))
 			continue;
@@ -738,14 +784,30 @@ checkdir(name)
 {
 	register char *cp;
 
+	/*
+	 * Quick check for existance of directory.
+	 */
+	if ((cp = rindex(name, '/')) == 0)
+		return (0);
+	*cp = '\0';
+	if (access(name, 0) >= 0) {
+		*cp = '/';
+		return (cp[1] == '\0');
+	}
+	*cp = '/';
+
+	/*
+	 * No luck, try to make all directories in path.
+	 */
 	for (cp = name; *cp; cp++) {
 		if (*cp != '/')
 			continue;
 		*cp = '\0';
-		if (access(name, 1) < 0) {
+		if (access(name, 0) < 0) {
 			if (mkdir(name, 0777) < 0) {
 				perror(name);
-				done(0);
+				*cp = '/';
+				return (0);
 			}
 			chown(name, stbuf.st_uid, stbuf.st_gid);
 			if (pflag)
@@ -831,6 +893,26 @@ response()
 	else
 		c = 'n';
 	return (c);
+}
+
+checkf(name, mode, howmuch)
+	char *name;
+	int mode, howmuch;
+{
+	int l;
+
+	if ((mode & S_IFMT) == S_IFDIR)
+		return (strcmp(name, "SCCS") != 0);
+	if ((l = strlen(name)) < 3)
+		return (1);
+	if (howmuch > 1 && name[l-2] == '.' && name[l-1] == 'o')
+		return (0);
+	if (strcmp(name, "core") == 0 ||
+	    strcmp(name, "errs") == 0 ||
+	    (howmuch > 1 && strcmp(name, "a.out") == 0))
+		return (0);
+	/* SHOULD CHECK IF IT IS EXECUTABLE */
+	return (1);
 }
 
 checkupdate(arg)
