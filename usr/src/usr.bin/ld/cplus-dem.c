@@ -1,3 +1,7 @@
+#ifndef lint
+static char sccsid[] = "@(#)cplus-dem.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 /* Demangler for GNU C++ 
    Copyright (C) 1989 Free Software Foundation, Inc.
    written by James Clark (jjc@jclark.uucp)
