@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.27	(Berkeley)	85/03/24";
+static char sccsid[] = "@(#)tape.c	3.28	(Berkeley)	85/04/23";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -654,17 +654,17 @@ getmore:
 		}
 	}
 	if (i == 0) {
-		if (pipein) {
-			bcopy((char *)&endoftapemark, b,
-				(long)TP_BSIZE);
-			flsht();
+		if (!pipein) {
+			newvol = volno + 1;
+			volno = 0;
+			getvol(newvol);
+			readtape(b);
 			return;
 		}
-		newvol = volno + 1;
-		volno = 0;
-		getvol(newvol);
-		readtape(b);
-		return;
+		if (rd % TP_BSIZE != 0)
+			panic("partial block read: %d should be %d\n",
+				rd, ntrec * TP_BSIZE);
+		bcopy((char *)&endoftapemark, &tbf[rd], (long)TP_BSIZE);
 	}
 	bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 	blksread++;
