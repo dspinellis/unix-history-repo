@@ -1,6 +1,5 @@
-/*
- * "@(#)dump.h	1.11 (Berkeley) %G%"
- */
+/*	dump.h	1.12	83/07/01	*/
+
 #define	NI		16
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
 #define MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
@@ -14,7 +13,7 @@
 #include <dumprestor.h>
 #include <sys/dir.h>
 #include <utmp.h>
-#include <time.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <fstab.h>
 
