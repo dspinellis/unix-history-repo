@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gio.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gio.c	5.6 (Berkeley) 10/9/85";
 #endif
 
 #include "uucp.h"
@@ -10,6 +10,8 @@ jmp_buf Failbuf;
 
 int Retries = 0;
 struct pack *Pk;
+
+extern long Bytes_Sent, Bytes_Received;
 
 pkfail()
 {
@@ -92,6 +94,7 @@ FILE *fp1;
 	struct timeb t1, t2;
 	long bytes;
 	char text[BUFSIZ];
+	float ft;
 
 	if(setjmp(Failbuf))
 		return FAIL;
@@ -126,9 +129,11 @@ FILE *fp1;
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "sent data %ld bytes %ld.%02d secs",
-				bytes, (long)t2.time, mil/10);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(text, "sent data %ld bytes %.2f secs %ld bps",
+		bytes, ft, (long)((float)bytes*8./ft));
 	sysacct(bytes, t2.time);
+	Bytes_Sent += bytes;
 	if (Retries > 0) 
 		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
@@ -145,6 +150,7 @@ FILE *fp2;
 	int mil;
 	long bytes;
 	char text[BUFSIZ];
+	float ft;
 
 	if(setjmp(Failbuf))
 		return FAIL;
@@ -180,9 +186,11 @@ FILE *fp2;
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(text, "received data %ld bytes %ld.%02d secs",
-				bytes, (long)t2.time, mil/10);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(text, "received data %ld bytes %.2f secs %ld bps",
+		bytes, ft, (long)((float)bytes*8./ft));
 	sysacct(bytes, t2.time);
+	Bytes_Received += bytes;
 	if (Retries > 0) 
 		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
