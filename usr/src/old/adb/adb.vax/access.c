@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)access.c	4.7 %G%";
+static	char sccsid[] = "@(#)access.c	4.8 %G%";
 #endif
 /*
  * Adb: access data in file/process address space.
@@ -63,7 +63,9 @@ access(mode, addr, space, value)
 	if (space == NSP)
 		return(0);
 	if (pid) {
-		int pmode = (space&DSP?(rd?RDUSER:WDUSER):(rd?RIUSER:WIUSER));
+		int pmode = (space&DSP ?
+		    (rd ? PT_READ_D : PT_WRITE_D) :
+		    (rd ? PT_READ_I : PT_WRITE_I));
 
 		w = ptrace(pmode, pid, addr, value);
 		if (errno)

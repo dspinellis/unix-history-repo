@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)runpcs.c	4.4 %G%";
+static	char sccsid[] = "@(#)runpcs.c	4.5 %G%";
 #endif
 /*
  *
@@ -105,7 +105,7 @@ endpcs()
 {
 	REG BKPTR	bkptr;
 	IF pid
-	THEN ptrace(EXIT,pid,0,0); pid=0; userpc=1;
+	THEN ptrace(PT_KILL,pid,0,0); pid=0; userpc=1;
 	     FOR bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt
 	     DO IF bkptr->flag
 		THEN bkptr->flag=BKPTSET;
@@ -130,7 +130,7 @@ setup()
 #else
 	IF (pid = vfork()) == 0
 #endif
-	THEN ptrace(SETTRC,0,0,0);
+	THEN ptrace(PT_TRACE_ME,0,0,0);
 #ifdef VFORK
 	     signal(SIGTRAP,nullsig);
 #endif
@@ -155,7 +155,7 @@ BKPTR	bkptr;
 	printf("exbkpt: %d\n",bkptr->count);
 #endif
 	delbp();
-	ptrace(SINGLE,pid,bkptr->loc,execsig);
+	ptrace(PT_STEP,pid,bkptr->loc,execsig);
 	bkptr->flag=BKPTSET;
 	bpwait(); chkerr(); readregs();
 }
@@ -232,11 +232,11 @@ delbp()
 		DO	IF bkptr->flag
 			THEN a=bkptr->loc;
 				IF a < txtmap.e1 THEN
-				ptrace(WIUSER,pid,a,
-					(bkptr->ins&0xFF)|(ptrace(RIUSER,pid,a,0)&~0xFF));
+				ptrace(PT_WRITE_I,pid,a,
+					(bkptr->ins&0xFF)|(ptrace(PT_READ_I,pid,a,0)&~0xFF));
 				ELSE
-				ptrace(WDUSER,pid,a,
-					(bkptr->ins&0xFF)|(ptrace(RDUSER,pid,a,0)&~0xFF));
+				ptrace(PT_WRITE_D,pid,a,
+					(bkptr->ins&0xFF)|(ptrace(PT_READ_D,pid,a,0)&~0xFF));
 				FI
 			FI
 		OD
@@ -255,11 +255,11 @@ setbp()
 		DO IF bkptr->flag
 		   THEN a = bkptr->loc;
 			IF a < txtmap.e1 THEN
-				bkptr->ins = ptrace(RIUSER, pid, a, 0);
-				ptrace(WIUSER, pid, a, BPT | (bkptr->ins&~0xFF));
+				bkptr->ins = ptrace(PT_READ_I, pid, a, 0);
+				ptrace(PT_WRITE_I, pid, a, BPT | (bkptr->ins&~0xFF));
 			ELSE
-				bkptr->ins = ptrace(RDUSER, pid, a, 0);
-				ptrace(WDUSER, pid, a, BPT | (bkptr->ins&~0xFF));
+				bkptr->ins = ptrace(PT_READ_D, pid, a, 0);
+				ptrace(PT_WRITE_D, pid, a, BPT | (bkptr->ins&~0xFF));
 			FI
 			IF errno
 			THEN prints("cannot set breakpoint: ");
@@ -295,7 +295,7 @@ bpwait()
 	     pid=0;
 	     errflg=ENDPCS;
 	ELSE signo = stat>>8;
-	     sigcode = ptrace(RUREGS, pid, &((struct user *)0)->u_code, 0);
+	     sigcode = ptrace(PT_READ_U, pid, &((struct user *)0)->u_code, 0);
 	     IF signo!=SIGTRAP
 	     THEN sigprint();
 	     ELSE signo=0;
@@ -310,7 +310,7 @@ readregs()
 	REG i;
 	FOR i=24; --i>=0; 
 	DO *(ADDR *)(((ADDR)&u)+reglist[i].roffs) =
-		    ptrace(RUREGS, pid, reglist[i].roffs, 0);
+		    ptrace(PT_READ_U, pid, reglist[i].roffs, 0);
 	OD
  	userpc= *(ADDR *)(((ADDR)&u)+PC);
 }

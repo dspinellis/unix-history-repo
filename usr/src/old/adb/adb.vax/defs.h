@@ -1,4 +1,4 @@
-/*	defs.h	4.3	82/12/19	*/
+/*	defs.h	4.4	84/10/13	*/
 
 /*
  * adb - vax string table version; common definitions
@@ -12,6 +12,7 @@
 
 #include <ctype.h>
 #include <a.out.h>
+#include <ptrace.h>
 
 #include "mac.h"
 #include "mode.h"
@@ -44,16 +45,10 @@
 #define BPT	03
 #define TBIT	020
 #define FD	0200
-#define	SETTRC	0
-#define	RDUSER	2
-#define	RIUSER	1
-#define	WDUSER	5
-#define WIUSER	4
-#define	RUREGS	3
-#define	WUREGS	6
-#define	CONTIN	7
-#define	EXIT	8
-#define SINGLE	9
+
+/* puns from <ptrace.h> */
+#define	CONTIN	PT_CONTINUE
+#define SINGLE	PT_STEP
 
 /* the quantities involving ctob() are located in the kernel stack. */
 /* the others are in the pcb. */
