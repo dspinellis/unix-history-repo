@@ -10,7 +10,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)v7.local.c	2.1 %G%";
+static char *SccsId = "@(#)v7.local.c	2.2 %G%";
 
 /*
  * Locate the user's mailbox file (ie, the place where new, unread
@@ -38,8 +38,10 @@ demail()
 
 	if (value("keep") != NOSTR)
 		close(creat(mailname, 0666));
-	else
-		remove(mailname);
+	else {
+		if (remove(mailname) < 0)
+			close(creat(mailname, 0666));
+	}
 }
 
 /*
