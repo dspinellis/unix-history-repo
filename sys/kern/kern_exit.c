@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: kern_exit.c,v 1.8 1993/10/16 15:24:15 rgrimes Exp $
  */
 
 #include "param.h"
@@ -93,7 +93,7 @@ kexit(p, rv)
 	register struct proc **pp;
 	int s;
 
-	acct(p);	/* do process accounting -- must be done before
+	acct(p);	/* MT - do  process accounting -- must be done before
 			   address space is released */
 
 #ifdef PGINPROF
