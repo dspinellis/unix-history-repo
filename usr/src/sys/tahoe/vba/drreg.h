@@ -1,4 +1,4 @@
-/*	drreg.h	1.2	86/11/23	*/
+/*	drreg.h	1.3	87/12/22	*/
 
 /*
     ------------------------------------------
@@ -139,31 +139,31 @@ struct dr11io {
 /*
  *	Ioctl commands
 */
-#define DRWAIT		_IOWR(d,1,long)
-#define	DRPIOW		_IOWR(d,2,long)
-#define DRPACL		_IOWR(d,3,long)
-#define DRDACL		_IOWR(d,4,long)
-#define DRPCYL		_IOWR(d,5,long)
-#define DRDFCN 		_IOWR(d,6,long)
-#define DRRPER 		_IOWR(d,7,long)
-#define DRRATN		_IOWR(d,8,long)
-#define DRRDMA 		_IOWR(d,9,long)
-#define DRSFCN 		_IOWR(d,10,long)
+#define DRWAIT		_IOWR('d',1,long)
+#define	DRPIOW		_IOWR('d',2,long)
+#define DRPACL		_IOWR('d',3,long)
+#define DRDACL		_IOWR('d',4,long)
+#define DRPCYL		_IOWR('d',5,long)
+#define DRDFCN 		_IOWR('d',6,long)
+#define DRRPER 		_IOWR('d',7,long)
+#define DRRATN		_IOWR('d',8,long)
+#define DRRDMA 		_IOWR('d',9,long)
+#define DRSFCN 		_IOWR('d',10,long)
 
-#define	DRSETRSTALL	_IOWR(d,13,long)
-#define	DRSETNORSTALL	_IOWR(d,14,long)
-#define	DRGETRSTALL	_IOWR(d,15,long)
-#define	DRSETRTIMEOUT	_IOWR(d,16,long)
-#define	DRGETRTIMEOUT	_IOWR(d,17,long)
-#define	DRSETWSTALL	_IOWR(d,18,long)
-#define	DRSETNOWSTALL	_IOWR(d,19,long)
-#define	DRGETWSTALL	_IOWR(d,20,long)
-#define	DRSETWTIMEOUT	_IOWR(d,21,long)
-#define	DRGETWTIMEOUT	_IOWR(d,22,long)
-#define	DRWRITEREADY	_IOWR(d,23,long)
-#define	DRREADREADY	_IOWR(d,24,long)
-#define	DRBUSY		_IOWR(d,25,long)
-#define	DRRESET		_IOWR(d,26,long)
+#define	DRSETRSTALL	_IOWR('d',13,long)
+#define	DRSETNORSTALL	_IOWR('d',14,long)
+#define	DRGETRSTALL	_IOWR('d',15,long)
+#define	DRSETRTIMEOUT	_IOWR('d',16,long)
+#define	DRGETRTIMEOUT	_IOWR('d',17,long)
+#define	DRSETWSTALL	_IOWR('d',18,long)
+#define	DRSETNOWSTALL	_IOWR('d',19,long)
+#define	DRGETWSTALL	_IOWR('d',20,long)
+#define	DRSETWTIMEOUT	_IOWR('d',21,long)
+#define	DRGETWTIMEOUT	_IOWR('d',22,long)
+#define	DRWRITEREADY	_IOWR('d',23,long)
+#define	DRREADREADY	_IOWR('d',24,long)
+#define	DRBUSY		_IOWR('d',25,long)
+#define	DRRESET		_IOWR('d',26,long)
 
 /* The block size for buffering and DMA transfers. */
 /* OM_BLOCKSIZE must be even and <= 32768. Multiples of 512 are prefered. */
@@ -172,9 +172,9 @@ struct dr11io {
 
 /* --- Define ioctl call used by dr11 utility device --  */
 
-#define DR11STAT	_IOWR(d,30,struct dr11io)   /* Get status dr11, unit 
+#define DR11STAT	_IOWR('d',30,struct dr11io)   /* Get status dr11, unit 
 						   number is dr11io.arg[0] */
-#define DR11LOOP	_IOR(d,31,struct dr11io)   /* Perform loopback test */
+#define DR11LOOP	_IOR('d',31,struct dr11io)   /* Perform loopback test */
 
 /* ---------------------------------------------------- */
 
