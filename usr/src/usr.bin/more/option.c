@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -80,11 +80,9 @@ extern char *namelogfile;
 extern int force_logfile;
 extern int logfile;
 #endif
-#if TAGS
 extern char *tagfile;
 extern char *tagpattern;
 public int tagoption = 0;
-#endif
 
 static char *opt_P();
 
@@ -238,7 +236,6 @@ toggle_option(s, do_toggle)
 		else
 			(void) opt_P(s);
 		return;
-#if TAGS
 	case 't':
 		/*
 		 * Special case for -t.
@@ -255,7 +252,6 @@ toggle_option(s, do_toggle)
 			(void) tagsearch();
 		}
 		return;
-#endif
 #if LOGFILE
 	case 'L':
 		/*
@@ -391,10 +387,8 @@ single_char_option(c)
 
 	if (c == 'P')
 		return (0);
-#if TAGS
 	if (c == 't')
 		return (0);
-#endif
 #if LOGFILE
 	if (c == 'l' || c == 'L')
 		return (0);
@@ -479,7 +473,6 @@ scan_option(s)
 		s = optstring(s, c);
 		goto next;
 #endif
-#if TAGS
 	case 't':
 	{
 		char *p;
@@ -489,7 +482,6 @@ scan_option(s)
 		findtag(p);
 		goto next;
 	}
-#endif
 	case 'P':
 		s = opt_P(s);
 		goto next;
