@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.16 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -153,8 +153,53 @@ donice(curp, chgp, n)
 	return (0);
 }
 
+#ifdef COMPAT_43
 /* ARGSUSED */
 setrlimit(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		u_int	which;
+		struct	orlimit *lim;
+	} *uap;
+	int *retval;
+{
+	struct orlimit olim;
+	struct rlimit lim;
+	int error;
+
+	if (error =
+	    copyin((caddr_t)uap->lim, (caddr_t)&olim, sizeof (struct orlimit)))
+		return (error);
+	lim.rlim_cur = olim.rlim_cur;
+	lim.rlim_max = olim.rlim_max;
+	return (dosetrlimit(p, uap->which, &lim));
+}
+
+/* ARGSUSED */
+getrlimit(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		u_int	which;
+		struct	orlimit *rlp;
+	} *uap;
+	int *retval;
+{
+	struct orlimit olim;
+
+	if (uap->which >= RLIM_NLIMITS)
+		return (EINVAL);
+	olim.rlim_cur = p->p_rlimit[uap->which].rlim_cur;
+	if (olim.rlim_cur == -1)
+		olim.rlim_cur = 0x7fffffff;
+	olim.rlim_max = p->p_rlimit[uap->which].rlim_max;
+	if (olim.rlim_max == -1)
+		olim.rlim_max = 0x7fffffff;
+	return (copyout((caddr_t)&olim, (caddr_t)uap->rlp, sizeof(olim)));
+}
+#endif /* COMPAT_43 */
+
+/* ARGSUSED */
+__setrlimit(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		u_int	which;
@@ -163,59 +208,70 @@ setrlimit(p, uap, retval)
 	int *retval;
 {
 	struct rlimit alim;
+	int error;
+
+	if (error =
+	    copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit)))
+		return (error);
+	return (dosetrlimit(p, uap->which, &alim));
+}
+
+dosetrlimit(p, which, limp)
+	struct proc *p;
+	u_int which;
+	struct rlimit *limp;
+{
 	register struct rlimit *alimp;
 	extern unsigned maxdmap;
 	int error;
 
-	if (uap->which >= RLIM_NLIMITS)
+	if (which >= RLIM_NLIMITS)
 		return (EINVAL);
-	alimp = &p->p_rlimit[uap->which];
-	if (error =
-	    copyin((caddr_t)uap->lim, (caddr_t)&alim, sizeof (struct rlimit)))
-		return (error);
-	if (alim.rlim_cur > alimp->rlim_max || alim.rlim_max > alimp->rlim_max)
+	alimp = &p->p_rlimit[which];
+	if (limp->rlim_cur > alimp->rlim_max || 
+	    limp->rlim_max > alimp->rlim_max)
 		if (error = suser(p->p_ucred, &p->p_acflag))
 			return (error);
-	if (alim.rlim_cur > alim.rlim_max)
-		alim.rlim_cur = alim.rlim_max;
+	if (limp->rlim_cur > limp->rlim_max)
+		limp->rlim_cur = limp->rlim_max;
 	if (p->p_limit->p_refcnt > 1 &&
 	    (p->p_limit->p_lflags & PL_SHAREMOD) == 0) {
 		p->p_limit->p_refcnt--;
 		p->p_limit = limcopy(p->p_limit);
-		alimp = &p->p_rlimit[uap->which];
+		alimp = &p->p_rlimit[which];
 	}
 
-	switch (uap->which) {
+	switch (which) {
 
 	case RLIMIT_DATA:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (limp->rlim_cur > maxdmap)
+			limp->rlim_cur = maxdmap;
+		if (limp->rlim_max > maxdmap)
+			limp->rlim_max = maxdmap;
 		break;
 
 	case RLIMIT_STACK:
-		if (alim.rlim_cur > maxdmap)
-			alim.rlim_cur = maxdmap;
-		if (alim.rlim_max > maxdmap)
-			alim.rlim_max = maxdmap;
+		if (limp->rlim_cur > maxdmap)
+			limp->rlim_cur = maxdmap;
+		if (limp->rlim_max > maxdmap)
+			limp->rlim_max = maxdmap;
 		/*
 		 * Stack is allocated to the max at exec time with only
 		 * "rlim_cur" bytes accessible.  If stack limit is going
 		 * up make more accessible, if going down make inaccessible.
 		 */
-		if (alim.rlim_cur != alimp->rlim_cur) {
+		if (limp->rlim_cur != alimp->rlim_cur) {
 			vm_offset_t addr;
 			vm_size_t size;
 			vm_prot_t prot;
 
-			if (alim.rlim_cur > alimp->rlim_cur) {
+			if (limp->rlim_cur > alimp->rlim_cur) {
 				prot = VM_PROT_ALL;
-				size = alim.rlim_cur - alimp->rlim_cur;
-				addr = USRSTACK - alim.rlim_cur;
+				size = limp->rlim_cur - alimp->rlim_cur;
+				addr = USRSTACK - limp->rlim_cur;
 			} else {
 				prot = VM_PROT_NONE;
-				size = alimp->rlim_cur - alim.rlim_cur;
+				size = alimp->rlim_cur - limp->rlim_cur;
 				addr = USRSTACK - alimp->rlim_cur;
 			}
 			addr = trunc_page(addr);
@@ -225,12 +281,12 @@ setrlimit(p, uap, retval)
 		}
 		break;
 	}
-	*alimp = alim;
+	*alimp = *limp;
 	return (0);
 }
 
 /* ARGSUSED */
-getrlimit(p, uap, retval)
+__getrlimit(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		u_int	which;
