@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.126 (Berkeley) %G%
+ *	@(#)conf.h	8.127 (Berkeley) %G%
  */
 
 /*
@@ -647,15 +647,15 @@ extern void		*malloc();
 **
 **  Thanks to, in reverse order of contact:
 **
-**	Andrew Pam <avatar@aus.xanadu.com>
 **	John Kennedy <warlock@csuchico.edu>
+**	Andrew Pam <avatar@aus.xanadu.com>
 **	Florian La Roche <rzsfl@rz.uni-sb.de>
 **	Karl London <karl@borg.demon.co.uk>
 **
-**  Last compiled against:	[03/02/94 @ 05:34 PM (Wednesday)]
-**	sendmail 8.6.6.b9	named 4.9.2-931205-p1	db-1.73
-**	gcc 2.5.8		libc.so.4.5.19
-**	slackware 1.1.2		linux 0.99.15
+**  Last compiled against:	[12/14/94 @ 11:38:41 PM (Wednesday)]
+**	sendmail 8.7.a.5	named 4.9.3-beta12-p1	db-1.85
+**	gcc 2.6.2		libc.so.4.6.20
+**	slackware 2.1.0		linux 1.1.70
 */
 
 #ifdef __linux__
@@ -670,6 +670,10 @@ extern void		*malloc();
 #  define LA_TYPE	LA_PROCSTR
 # endif
 # define SFS_TYPE	SFS_VFS		/* use <sys/vfs.h> statfs() impl */
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/var/run/sendmail.pid"
+# endif
+# define TZ_TYPE	TZ_TNAME
 # include <sys/sysmacros.h>
 # undef atol			/* wounded in <stdlib.h> */
 #endif
