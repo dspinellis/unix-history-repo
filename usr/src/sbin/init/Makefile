@@ -1,10 +1,11 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	init
 MAN8=	init.0
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 BINMODE=500
-CFLAGS += -DDEBUGSHELL -DSECURE
+INSTALLFLAGS=-fschg
+CFLAGS+=-DDEBUGSHELL -DSECURE
 
 .include <bsd.prog.mk>
