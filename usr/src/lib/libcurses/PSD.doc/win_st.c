@@ -3,27 +3,31 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)win_st.c	5.1 (Berkeley) %G%";
+ *	@(#)win_st.c	6.1 (Berkeley) %G%";
  */
-
 
 # define	WINDOW	struct _win_st
 
 struct _win_st {
-	short	_cury, _curx;
-	short	_maxy, _maxx;
-	short	_begy, _begx;
-	short	_flags;
-	bool	_clear;
-	bool	_leave;
-	bool	_scroll;
-	char	**_y;
-	short	*_firstch;
-	short	*_lastch;
+	short		_cury, _curx;
+	short		_maxy, _maxx;
+	short		_begy, _begx;
+	short		_flags;
+	short		_ch_off;
+	bool		_clear;
+	bool		_leave;
+	bool		_scroll;
+	char		**_y;
+	short		*_firstch;
+	short		*_lastch;
+	struct _win_st	*_nextp, *_orig;
 };
 
-# define	_SUBWIN		01
-# define	_ENDLINE	02
-# define	_FULLWIN	04
-# define	_SCROLLWIN	010
+# define	_ENDLINE	001
+# define	_FULLWIN	002
+# define	_SCROLLWIN	004
+# define	_FLUSH		010
+# define	_FULLLINE	020
+# define	_IDLINE		040
 # define	_STANDOUT	0200
+# define	_NOCHANGE	-1
