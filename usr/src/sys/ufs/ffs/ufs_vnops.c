@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.10	81/04/28	*/
+/*	ufs_vnops.c	4.11	81/08/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,6 +34,12 @@ fstat()
 		ptstat(fp);
 		return;
 	}
+#ifdef BBNNET
+	if (fp->f_flag&FNET) {
+	    	u.u_error = EINVAL;
+		return;
+	}
+#endif
 	stat1(fp->f_inode, uap->sb);
 }
 

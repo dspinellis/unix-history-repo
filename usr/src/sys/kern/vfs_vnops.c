@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.11	81/05/15	*/
+/*	vfs_vnops.c	4.12	81/08/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -99,11 +99,16 @@ register struct file *fp;
 	}
 
 	if ((flag & FMP) == 0) {
-		for(fp=file; fp < fileNFILE; fp++)
+		for(fp=file; fp < fileNFILE; fp++) {
+#ifdef BBNNET
+			if (fp->f_flag & FNET)
+				continue;
+#endif
 			if (fp->f_count && (ip = fp->f_inode) &&
 			    ip->i_un.i_rdev == dev &&
 			    (ip->i_mode&IFMT) == mode)
 				return;
+		}
 		if (mode == IFBLK) {
 			/*
 			 * on last close of a block device (that isn't mounted)
