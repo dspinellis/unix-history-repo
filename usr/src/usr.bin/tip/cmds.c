@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.14 (Berkeley) %G%";
 #endif
 
 #include "tip.h"
@@ -106,9 +106,9 @@ transfer(buf, fd, eofchars)
 	while ((c&0177) != '\n');
 	ioctl(0, TIOCSETC, &defchars);
 	
+	(void) setjmp(intbuf);
 	f = signal(SIGINT, intcopy);
 	start = time(0);
-	(void) setjmp(intbuf);
 	for (ct = 0; !quit;) {
 		eof = read(FD, &c, 1) <= 0;
 		c &= 0177;
@@ -140,7 +140,7 @@ transfer(buf, fd, eofchars)
 		prtime(" lines transferred in ", time(0)-start);
 	ioctl(0, TIOCSETC, &tchars);
 	write(fildes[1], (char *)&ccc, 1);
-	signal(SIGINT, SIG_DFL);
+	signal(SIGINT, f);
 	close(fd);
 }
 
@@ -248,10 +248,11 @@ transmit(fd, eofchars, command)
 	char *pc, lastc;
 	int c, ccount, lcount;
 	time_t start_t, stop_t;
+	int (*f)();
 
 	kill(pid, SIGIOT);	/* put TIPOUT into a wait state */
-	signal(SIGINT, stopsnd);
 	stop = 0;
+	f = signal(SIGINT, stopsnd);
 	ioctl(0, TIOCSETC, &defchars);
 	read(repdes[0], (char *)&ccc, 1);
 	if (command != NULL) {
@@ -304,8 +305,8 @@ transmit(fd, eofchars, command)
 		if (boolean(value(VERBOSE)))
 			printf("\r%d", ++lcount);
 		if (boolean(value(ECHOCHECK))) {
-			alarm(value(ETIMEOUT));
 			timedout = 0;
+			alarm(value(ETIMEOUT));
 			do {	/* wait for prompt */
 				read(FD, (char *)&c, 1);
 				if (timedout || stop) {
@@ -325,7 +326,7 @@ out:
 		send(*pc);
 	stop_t = time(0);
 	fclose(fd);
-	signal(SIGINT, SIG_DFL);
+	signal(SIGINT, f);
 	if (boolean(value(VERBOSE)))
 		if (boolean(value(RAWFTP)))
 			prtime(" chars transferred in ", stop_t-start_t);
@@ -621,7 +622,7 @@ prtime(s, a)
 	}
 	printf("%s", s);
 	while (--i >= 0)
-		if (nums[i])
+		if (nums[i] || i == 0 && nums[1] == 0 && nums[2] == 0)
 			printf("%d %s%c ", nums[i], sep[i],
 				nums[i] == 1 ? '\0' : 's');
 	printf("\r\n!\r\n");
