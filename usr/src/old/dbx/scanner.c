@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c	1.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanner.c	1.11 (Berkeley) %G%";
 
 /*
  * Debugger scanner.
@@ -84,7 +84,7 @@ public Token yylex()
 	depth++;
 	if (depth > MAXDEPTH) {
 	    depth = 0;
-	    error("Alias loop (maximum %d deep).\n", MAXDEPTH);
+	    error("alias loop (maximum %d deep)", MAXDEPTH);
 	}
 again:
 	do
