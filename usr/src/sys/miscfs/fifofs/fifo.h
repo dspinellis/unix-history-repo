@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	8.4 (Berkeley) %G%
+ *	@(#)fifo.h	8.5 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -42,12 +42,12 @@ int	fifo_select __P((struct vop_select_args *));
 #define fifo_abortop ((int (*) __P((struct  vop_abortop_args *)))fifo_badop)
 #define fifo_inactive ((int (*) __P((struct  vop_inactive_args *)))nullop)
 #define fifo_reclaim ((int (*) __P((struct  vop_reclaim_args *)))nullop)
-int	fifo_lock __P((struct vop_lock_args *));
-int	fifo_unlock __P((struct vop_unlock_args *));
+#define fifo_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define fifo_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 int	fifo_bmap __P((struct vop_bmap_args *));
 #define fifo_strategy ((int (*) __P((struct  vop_strategy_args *)))fifo_badop)
 int	fifo_print __P((struct vop_print_args *));
-#define fifo_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define fifo_islocked ((int(*) __P((struct vop_islocked_args *)))vop_noislocked)
 int	fifo_pathconf __P((struct vop_pathconf_args *));
 int	fifo_advlock __P((struct vop_advlock_args *));
 #define fifo_blkatoff ((int (*) __P((struct  vop_blkatoff_args *)))fifo_badop)
