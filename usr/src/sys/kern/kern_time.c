@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.13 (Berkeley) %G%
+ *	@(#)kern_time.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -46,6 +46,7 @@ gettimeofday(p, uap, retval)
 	return (error);
 }
 
+/* ARGSUSED */
 settimeofday(p, uap, retval)
 	struct proc *p;
 	struct args {
