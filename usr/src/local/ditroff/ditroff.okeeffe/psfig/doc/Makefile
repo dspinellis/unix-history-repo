@@ -4,10 +4,11 @@ P	= paper
 Draft	=
 
 # Change these to reflect your installation
-Ditroff	= ditroff
-Eqn	= eqn
+Ditroff	= /usr/src/local/local/ditroff/ditroff
+Eqn	= dieqn -Tpsc
+Tbl	= tbl -Tpsc
 
-Macros	= -ms
+Macros	= -mns
 MyMacs	= paper.tmac ../lib/psfig.tmac
 
 # This should be the *modified* psdit
@@ -40,7 +41,7 @@ $P.eqn: $P.tbl
 	$(Eqn) -Tpsc <$P.tbl >$P.eqn
 
 $P.tbl: $P.pic
-	tbl <$P.pic >$P.tbl
+	$(Tbl) <$P.pic >$P.tbl
 
 $P.pic: $P.ms
 	pic <$P.ms >$P.pic
