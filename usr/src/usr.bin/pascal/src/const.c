@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)const.c 1.2 %G%";
+static	char sccsid[] = "@(#)const.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -16,7 +16,7 @@ constbeg()
 {
 
 /*
- * PC allows for multiple declaration
+ * this allows for multiple declaration
  * parts, unless the "standard" option
  * has been specified.
  * If a routine segment is being compiled,
@@ -25,25 +25,23 @@ constbeg()
 
 	if (!progseen)
 		level1();
-#    ifdef PC
-    	if (opt('s')) {
-		if (parts & (TPRT|VPRT)) {
-			standard();
-			error("Constant declarations must precede type and variable declarations");
-		}
-		if (parts & CPRT) {
-			standard();
-			error("All constants must be declared in one const part");
-		}
-        }
-#    endif PC
-#    ifdef OBJ
-	if (parts & (TPRT|VPRT))
-		error("Constant declarations must precede type and variable declarations");
-	if (parts & CPRT)
-		error("All constants must be declared in one const part");
-#    endif OBJ
-	parts |= CPRT;
+	if (parts[ cbn ] & (TPRT|VPRT|RPRT)) {
+	    if ( opt( 's' ) ) {
+		standard();
+	    } else {
+		warning();
+	    }
+	    error("Constant declarations should precede type, var and routine declarations");
+	}
+	if (parts[ cbn ] & CPRT) {
+	    if ( opt( 's' ) ) {
+		standard();
+	    } else {
+		warning();
+	    }
+	    error("All constants should be declared in one const part");
+	}
+	parts[ cbn ] |= CPRT;
 }
 #endif PI1
 

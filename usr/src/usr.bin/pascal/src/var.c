@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)var.c 1.2 %G%";
+static	char sccsid[] = "@(#)var.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -21,7 +21,7 @@ static	char sccsid[] = "@(#)var.c 1.2 %G%";
 varbeg()
 {
 
-/* PC allows for multiple declaration
+/* this allows for multiple declaration
  * parts except when the "standard"
  * option has been specified.
  * If routine segment is being compiled,
@@ -29,21 +29,25 @@ varbeg()
  */
 
 #ifndef PI1
-if (!progseen)
-	level1();
-#ifdef PC
-    if (opt('s')) {
-	if (parts & VPRT){
+	if (!progseen)
+		level1();
+	if ( parts[ cbn ] & RPRT ) {
+	    if ( opt( 's' ) ) {
 		standard();
-		error("All variables must be declared in one var part");
+	    } else {
+		warning();
+	    }
+	    error("Variable declarations should precede routine declarations");
 	}
-    }
-#else
-	if (parts & VPRT)
-		error("All variables must be declared in one var part");
-#endif PC
-
-	parts |= VPRT;
+	if ( parts[ cbn ] & VPRT ) {
+	    if ( opt( 's' ) ) {
+		standard();
+	    } else {
+		warning();
+	    }
+	    error("All variables should be declared in one var part");
+	}
+	parts[ cbn ] |= VPRT;
 #endif
     /*
      *  #ifndef PI0

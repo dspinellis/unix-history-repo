@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lab.c 1.2 %G%";
+static	char sccsid[] = "@(#)lab.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -33,25 +33,23 @@ label(r, l)
 	}
 	line = l;
 #ifndef PI1
-#ifdef PC
-    if (opt('s')) {
-	if (parts & (CPRT|TPRT|VPRT)){
+	if (parts[ cbn ] & (CPRT|TPRT|VPRT|RPRT)){
+	    if ( opt( 's' ) ) {
 		standard();
-		error("Label declarations must precede const, type and var declarations");
+	    } else {
+		warning();
+	    }
+	    error("Label declarations should precede const, type, var and routine declarations");
 	}
-	if (parts & LPRT) {
+	if (parts[ cbn ] & LPRT) {
+	    if ( opt( 's' ) ) {
 		standard();
-		error("All labels must be declared in one label part");
+	    } else {
+		warning();
+	    }
+	    error("All labels should be declared in one label part");
 	}
-    }
-#endif PC
-#ifdef OBJ
-	if (parts & (CPRT|TPRT|VPRT))
-		error("Label declarations must precede const, type and var declarations");
-	if (parts & LPRT)
-		error("All labels must be declared in one label part");
-#endif OBJ
-	parts |= LPRT;
+	parts[ cbn ] |= LPRT;
 #endif
 #ifndef PI0
 	for (ll = r; ll != NIL; ll = ll[2]) {

@@ -64,8 +64,8 @@
 	YSET		YSTRING		YTHEN		YDOWNTO
 	YTYPE		YUNTIL		YVAR		YWHILE
 	YWITH		YBINT		YOCT		YHEX
-	YASSERT		YCASELAB	YILLCH		YLAST
-	YEXTERN
+	YASSERT		YCASELAB	YILLCH		YEXTERN
+	YLAST
 
 /*
  * PRECEDENCE DECLARATIONS
@@ -89,7 +89,7 @@
 
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)pas.y 1.2 %G%"; */
+/* static	char sccsid[] = "@(#)pas.y 1.3 %G%"; */
 
 /*
  * The following line marks the end of the yacc
@@ -99,7 +99,7 @@
 ##
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pas.y 1.2 %G%";
+static	char sccsid[] = "@(#)pas.y 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -120,10 +120,10 @@ static	char sccsid[] = "@(#)pas.y 1.2 %G%";
  */
 
 goal:
-	prog_hedr decls procs block '.'
-		= funcend($1, $4, lineof($5));
+	prog_hedr decls block '.'
+		= funcend($1, $3, lineof($4));
 		|
-	decls procs
+	decls
 		= segend();
 		;
 	
@@ -181,6 +181,8 @@ decl:
 		|
 	var_decl
 		= varend();
+		|
+	proc_decl
 		;
 
 /*
@@ -269,21 +271,15 @@ Verror:
  * PROCEDURE AND FUNCTION DECLARATION PART
  */
 
-procs:
-	/* lambda */
-		|
-	procs proc
-		= trfree();
-		;
-proc:
+proc_decl:
 	phead YFORWARD ';'
 		= funcfwd($1);
 		|
 	phead YEXTERN ';'
 		= funcext($1);
 		|
-	pheadres decls procs block ';'
-		= funcend($1, $4, lineof($5));
+	pheadres decls block ';'
+		= funcend($1, $3, lineof($4));
 		;
 pheadres:
 	phead
