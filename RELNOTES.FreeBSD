@@ -1,0 +1,232 @@
+                                    FreeBSD
+                                Release 1.0 GAMMA
+				$Id$
+
+1. Technical overview
+---------------------
+
+FreeBSD is a freely available, full source 4.3 (+4.4 enhancements) BSD
+release for Intel i386/i486 (or compatable) based PC's.  It is based
+heavily on Bill Jolitz's 386BSD 0.1, with additions from "the patchkit",
+NetBSD, CSRG, the Free Software Foundation.
+
+Many hundreds of bugs from the 386BSD 0.1 distribution were fixed,
+and many out-of-date pieces of software were upgraded to their current
+releases.
+
+Additionally, many packages such as XFree86 1.3, xview 3.2, elm, nntp,
+mh and dozens of other miscellaneous utilities have been ported and
+are now available as add-ons.  See then next section of this document
+for more details.
+
+For a list of contributors, please see the file
+"/usr/src/CONTRIB.FreeBSD", which should be bundled with your
+distribution.
+
+The core of FreeBSD is available in 2 release versions - one with DES
+code for use only in the United States, the other without, for use
+outside the U.S.  The auxilliary packages are provided separately
+for use by anyone.
+
+2. Supported Configurations
+---------------------------
+
+FreeBSD currently runs on a wide variety of ISA and EISA bus based
+PC's, ranging from 386sx to 486 class machines (though the 386sx is
+not recommended).  Support for basic IDE/ESDI drive configurations,
+various SCSI controller, network and serial cards is also provided.
+
+Following is a list of all currently known disk controllers and
+ethernet cards known to work with FreeBSD.  Other configurations may
+very well work, and we have simply not received any indication of
+this.
+
+
+2.1. Disk Controllers
+
+WD1003 (IDE)
+
+Adaptec 1542{A,B,C} ISA SCSI controller.
+
+Adaptec 174x EISA SCSI controller in standard and enhanced mode.
+
+DTC 3290 EISA SCSI controller in emulation mode.
+
+Bustec 742A.
+
+Ultra Store 14F.
+
+In all SCSI configurations, full support is provided for SCSI-I &
+SCSI-II peripherals, including Disks, Tape drives (including DAT) and
+CDROM drives.
+
+
+2.2. Ethernet cards
+
+SMC Elite 16 WD8013 ethernet interface, and most other WD8003E,
+WD8003EBT, WD8003S, WD8003SBT and WD8013EBT based clones.
+
+Isolan AT 4141-0 (16 bit)
+
+Isolink 4110     (8 bit)
+
+Novell NE2000 ethernet interface.
+
+3Com 3C503 Etherlink II
+
+
+2.3. Misc
+
+Various 2 and 4 port serial/parallel cards
+
+
+FreeBSD does NOT support IBM's microchannel (MCA) bus.
+
+3. Obtaining FreeBSD.
+---------------------
+
+You may obtain FreeBSD in a variety of ways:
+
+1. FTP/Mail
+
+You can ftp FreeBSD and any or all of its optional packages from
+`freebsd.cdrom.com' - the offical FreeBSD release site.  By the time
+you read this, it may also be on one or more "mirror" sites somewhere
+else on the internet; check with archie for details.
+
+If you do not have access to the internet and electronic mail is your
+only recourse, then you may still fetch the files by sending mail to
+`ftpmail@decwrl.dec.com' - putting the keyword "help" in your message
+to get more information on how to fetch files from freebsd.cdrom.com.
+Note: This approach will end up sending many *tens of megabytes*
+through the mail, and should only be employed as an absolute LAST
+resort!
+
+
+2. CDROM
+
+FreeBSD may be ordered on CD from Walnut Creek CDROM, 4041 Pike Lane,
+Suite E, Concord, Ca. 94520.  1-800-786-9907 or 1-510-674-0783.
+
+Cost is $39.95 + $5 S&H in the U.S. and Canada, $10.00 overseas.
+California residents please add sales tax.
+
+Should you be dissatisfied for any reason, the CD comes with an
+unconditional return policy.
+
+
+3. 1/4" Tape, 4mm DAT, floppy
+
+  Winning Strategies, Inc.  61 Crestwood Drive #18,  Daly City, CA 94015
+  <jtc@wimsey.com>
+
+  3.5" & 5.25" floppies				$200.00
+   Contains "core" FreeBSD.
+   Shipping - add $15 for U.S. and Canada, $25 for overseas.
+
+  150MB QIC tape				$100.00
+   Contains "core" FreeBSD + XFree86.
+   Choice of either 3.5" or 5.25" boot floppies.
+   Shipping - add $10 for U.S. and Canada, $30 for overseas.
+
+  DAT & Exabyte tapes				$100.00
+   Contains everything on the Walnut Creek CD ROM.
+   Choice of either 3.5" or 5.25" boot floppies.
+   Shipping - same as for QIC tape.
+
+  All packages contain printed copies of the release and installation notes.
+
+  Visa, Mastercard, U.S. $ Money Orders, or U.S. $ checks drawn on a
+  U.S. bank accepted for payment.
+
+
+It should be noted, lest you get the wrong impression that "FreeBSD"
+is anything but, that almost no one in the "core team" makes money
+from distributions or anything else connected with FreeBSD.  We simply
+provide this information as a public service for those wishing to get
+their releases from somewhere other than the net (and the easier it
+is for you to get ahold of our software, the happier we are).
+
+
+4. Reporting problems, making suggestions, submitting code.
+-----------------------------------------------------------
+
+Your suggestions, bug reports and contributions of code are always
+valued - please do not hesitate to report any problems you may find
+(preferably with a fix attached if you can!).  Bug reports will be
+dutifully filed by our faithful bugfiler program and you can be sure
+that we'll do our best to respond to all reported bugs as soon as
+possible.
+
+
+	Bug reports:
+
+		FreeBSD-bugs@freefall.cdrom.com
+
+	Questions / Suggestions
+
+		FreeBSD-questions@freefall.cdrom.com
+
+
+5. Acknowledgements
+-------------------
+
+FreeBSD represents the cumulative work of many dozens, if not
+hundreds, of individuals from around the world who have worked very
+hard to bring you this release.  It would be very difficult, if not
+impossible, to enumerate everyone who's contributed to FreeBSD, but
+nonetheless we shall try (in alphabetical order, of course). If your
+name is not mentioned, please be assured that its omission is entirely
+accidental.
+
+
+The Computer Systems Research Group (CSGR), U.C. Berkeley.
+
+Bill Jolitz, for his extensive work with 386BSD.
+
+The FreeBSD "core" group:
+
+		J.T. Conklin
+		David Greenman
+		Rodney W. Grimes
+		Jordan K. Hubbard
+		Scott Mace
+		Andrew Moore
+		Rich Murphey
+		Paul Richards
+		Christoph Robitschko
+		Andreas Schulz
+		Rob Shady
+		Nate Williams
+
+
+Special mention to:
+
+	Robert Bruce and Jack Velte of Walnut Creek CDROM, without
+	whose help (and continuing support) this release would never
+	have been possible.
+
+	The NetBSD group for their frequent assistance and commentary.
+
+	Additional FreeBSD helpers and beta testers:
+
+	Gary Browing				Jon Cargille
+	Chris Demetriou				Julian Elischer
+	Bruce Evans				Sean Eric Fagan
+	Guy Helmer				Terry Lambert
+	Gary Moyer				Jaye Mathisen
+	L Jonas Olsson				Chris Provenzano
+	Dave Rivers				Guido van Rooij
+	Steven Wallace				Rick Weldon
+	Terry Williams				Garrett Wollman
+
+	And everyone at the University of Montana for their initial support.
+
+
+Thanks to everyone, especially those not mentioned, and we sincerely
+hope you enjoy this release of FreeBSD!
+
+
+			The FreeBSD Core Group
+
+$Id$
