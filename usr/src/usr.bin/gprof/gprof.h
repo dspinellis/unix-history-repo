@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gprof.h	5.11 (Berkeley) %G%
+ *	@(#)gprof.h	5.12 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -154,19 +154,17 @@ int	ncycle;			/* number of cycles discovered */
 
     /*
      * The header on the gmon.out file.
-     * gmon.out consists of one of these headers,
-     * and then an array of ncnt samples
-     * representing the discretized program counter values.
-     *	this should be a struct phdr, but since everything is done
-     *	as UNITs, this is in UNITs too.
+     * gmon.out consists of a struct phdr (defined in gmon.h)
+     * and then an array of ncnt samples representing the
+     * discretized program counter values.
+     *
+     *	Backward compatible old style header
      */
-struct hdr {
-    UNIT	*lowpc;
-    UNIT	*highpc;
-    int	ncnt;
+struct ophdr {
+    UNIT	*lpc;
+    UNIT	*hpc;
+    int		ncnt;
 };
-
-struct hdr	h;
 
 int	debug;
 
