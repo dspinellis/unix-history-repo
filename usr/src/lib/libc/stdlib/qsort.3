@@ -3,27 +3,33 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)qsort.3	6.5 (Berkeley) %G%
+.\"     @(#)qsort.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt QSORT 3
 .Os
 .Sh NAME
-.Nm qsort
-.Nd quicker sort
+.Nm qsort, heapsort
+.Nd sort functions
 .Sh SYNOPSIS
 .Fd #include <stdlib.h>
 .Ft void
 .Fn qsort "void *base" "size_t nmemb" "size_t size" "int (*compar)(const void *, const void *)"
+.Ft int
+.Fn heapsort "void *base" "size_t nmemb" "size_t size" "int (*compar)(const void *, const void *)"
 .Sh DESCRIPTION
 The
 .Fn qsort
-function
-is a modified partition-exchange sort, or quicksort.
+function is a modified partition-exchange sort, or quicksort.
+The
+.Fn heapsort
+function is a modified selection sort.
 .Pp
 The
 .Fn qsort
-function sorts an array of
+and
+.Fn heapsort
+functions sort an array of
 .Fa nmemb
 objects, the initial member of which is pointed to by
 .Fa base .
@@ -40,26 +46,57 @@ The comparison function must return an integer less than, equal to, or
 greater than zero if the first argument is considered to be respectively
 less than, equal to, or greater than the second.
 .Pp
-The
+The functions
 .Fn qsort
-function
-is
+and
+.Fn heapsort
+are
 .Em not
 stable, that is, if two members compare as equal, their order in
 the sorted array is undefined.
 .Pp
 The
 .Fn qsort
-function
-is an implementation of C.A.R. Hoare's ``quicksort'' algorithm, a variant
-of partition-exchange sorting; in particular, see D.E. Knuth's Algorithm Q.
+function is an implementation of C.A.R. Hoare's ``quicksort'' algorithm,
+a variant of partition-exchange sorting; in particular, see D.E. Knuth's
+Algorithm Q.
 .Fn Qsort
 takes O N lg N average time.
+This implementation uses median selection to avoid the traditional
+O N**2 worst-case behavior.
+.Pp
+The
+.Fn heapsort
+function is an implementation of J.W.J. William's ``heapsort'' algorithm,
+a variant of selection sorting; in particular, see D.E. Knuth's Algorithm H.
+.Fn Heapsort
+takes O N lg N worst-case time.
+Its
+.Em only
+advantage over
+.Fn qsort
+is that it uses no additional memory.
 .Sh RETURN VALUES
 The
 .Fn qsort
 function
 returns no value.
+.Pp
+Upon successful completion,
+.Fn heapsort
+returns 0.
+Otherwise, it returns \-1 and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+The
+.Fn heapsort
+function succeeds unless:
+.Bl -tag -width Er
+.It Bq Er EINVAL
+The
+.Fa size
+argument is zero.
 .Sh COMPATIBILITY
 Previous versions of
 .Fn qsort
@@ -78,12 +115,20 @@ This is no longer true.
 .%P pp. 10-15
 .Re
 .Rs
+.%A Williams, J.W.J
+.%D 1964
+.%T "Heapsort"
+.%J "Communications of the ACM"
+.%V 7:1
+.%P pp. 347-348
+.Re
+.Rs
 .%A Knuth, D.E.
 .%D 1968
 .%B "The Art of Computer Programming"
 .%V Vol. 3
 .%T "Sorting and Searching"
-.%P pp. 114-123
+.%P pp. 114-123, 145-149
 .Re
 .Sh STANDARDS
 The
