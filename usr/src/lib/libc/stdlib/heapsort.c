@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)heapsort.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)heapsort.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -51,7 +51,8 @@ static char sccsid[] = "@(#)heapsort.c	5.6 (Berkeley) %G%";
  * j < nmemb, select largest of Ki, Kj and Kj+1.
  */
 #define CREATE(initval, nmemb, par_i, child_i, par, child, size, count, tmp) { \
-	for (par_i = initval; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
+	for (par_i = initval; (child_i = par_i * 2) <= nmemb; \
+	    par_i = child_i) { \
 		child = (char *)bot + child_i * size; \
 		if (child_i < nmemb && compar(child, child + size) < 0) { \
 			child += size; \
@@ -79,7 +80,8 @@ static char sccsid[] = "@(#)heapsort.c	5.6 (Berkeley) %G%";
  * The time savings from this optimization are on the order of 15-20% for the
  * average case. See Knuth, Vol. 3, page 158, problem 18.
  */
-#define SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, tmp2) { \
+#define SELECT(par_i, child_i, nmemb, par, child, size, k, count, tmp1, \
+    tmp2) { \
 	for (par_i = 1; (child_i = par_i * 2) <= nmemb; par_i = child_i) { \
 		child = (char *)bot + child_i * size; \
 		if (child_i < nmemb && compar(child, child + size) < 0) { \
@@ -146,7 +148,8 @@ heapsort(bot, nmemb, size, compar)
 	 */
 	while (nmemb > 1) {
 		COPY(k, (char *)bot + nmemb * size, cnt, size, tmp1, tmp2);
-		COPY((char *)bot + nmemb * size, (char *)bot + size,  cnt, size, tmp1, tmp2);
+		COPY((char *)bot + nmemb * size, (char *)bot + size,
+		    cnt, size, tmp1, tmp2);
 		--nmemb;
 		SELECT(i, j, nmemb, t, p, size, k, cnt, tmp1, tmp2);
 	}
