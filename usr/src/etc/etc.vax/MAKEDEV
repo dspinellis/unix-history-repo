@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.29 (Berkeley) %G%
+#	@(#)MAKEDEV	4.30 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -125,7 +125,7 @@ mt*)
 		/etc/mknod rmt16	c $chr $sixteen
 		/etc/mknod rmt20	c $chr $twenty
 		/etc/mknod nmt16	b $blk $twenty ;: ditto
-		/etc/mknod nrmt16	c $blk $twenty ;: ditto
+		/etc/mknod nrmt16	c $chr $twenty ;: ditto
 		;;
 	*)
 		echo bad unit for tape in: $1
