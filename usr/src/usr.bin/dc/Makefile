@@ -1,41 +1,47 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.5	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O -I.
 LIBC=	/lib/libc.a
 SRCS=	dc.c
 OBJS=
+MAN=	dc.0
 
 all: dc
 
-dc: dc.c ${LIBC}
-	${CC} ${CFLAGS} dc.c -o $@
+dc: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core dc
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 dc ${DESTDIR}/usr/bin/dc
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-dc: dc.c /usr/include/stdio.h /usr/include/signal.h /usr/include/machine/trap.h
-dc: dc.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
