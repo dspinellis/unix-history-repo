@@ -34,8 +34,8 @@
 
 #include "machine/mtpr.h"
 
-struct sockaddr route_dst = { 0, PF_ROUTE, };
-struct sockaddr route_src = { 0, PF_ROUTE, };
+struct sockaddr route_dst = { 2, PF_ROUTE, };
+struct sockaddr route_src = { 2, PF_ROUTE, };
 struct sockproto route_proto = { PF_ROUTE, };
 
 /*ARGSUSED*/
@@ -590,11 +590,6 @@ struct protosw routesw[] = {
 { SOCK_RAW,	&routedomain,	0,		PR_ATOMIC|PR_ADDR,
   raw_input,	route_output,	raw_ctlinput,	0,
   route_usrreq,
-  raw_init,	0,		0,		0,
-},
-{ 0,		0,		0,		0,
-  raw_input,	0,		raw_ctlinput,	0,
-  raw_usrreq,
   raw_init,	0,		0,		0,
 }
 };
