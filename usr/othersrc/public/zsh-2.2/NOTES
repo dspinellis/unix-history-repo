@@ -1,0 +1,11 @@
+Important notes:
+
+1. Stuff like "ls *.sdofij 2>/dev/null" to suppress error messages
+   produced by the shell don't work anymore.  Filename generation is
+   done BEFORE redirection.  To avoid the error message, use the
+   nonomatch option, or do "( ls *.sdofij ) 2>/dev/null".
+
+2. History substitution is no longer done inside startup files.  If you
+   have sequences like \! or !" in your startup files, they will break.
+   (Especially !").  So check for those; remove the !", and change the
+   \! to !.
