@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.31 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.32 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -657,6 +657,7 @@ conval( p, o, q ) register NODE *p, *q; {
 	NODE *r;
 	int i, u;
 	CONSZ val;
+	TWORD utype;
 
 	val = q->tn.lval;
 	u = ISUNSIGNED(p->in.type) || ISUNSIGNED(q->in.type);
@@ -666,15 +667,12 @@ conval( p, o, q ) register NODE *p, *q; {
 	if( q->tn.rval != NONAME && o!=PLUS ) return(0);
 	if( p->tn.rval != NONAME && o!=PLUS && o!=MINUS ) return(0);
 
-	if( p->in.type != INT || q->in.type != INT ){
-		/* will this always work if p == q and o is UTYPE? */
-		r = block( o, p, q, INT, 0, INT );
-		r = tymatch( r );
-		p->in.type = r->in.type;
-		p->fn.cdim = r->fn.cdim;
-		p->fn.csiz = r->fn.csiz;
-		r->in.op = FREE;
-		}
+	/* usual type conversions -- handle casts of constants */
+	utype = u ? UNSIGNED : INT;
+	if( !ISPTR(p->in.type) && p->in.type != utype )
+		p = makety(p, utype, 0, (int)utype);
+	if( q->in.type != utype )
+		q = makety(q, utype, 0, (int)utype);
 
 	switch( o ){
 
