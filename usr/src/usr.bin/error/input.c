@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.3 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)input.c	1.4 (Berkeley) 82/01/22";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -29,7 +29,7 @@ static	char	inbuffer[BUFSIZ];
 
 eaterrors(r_errorc, r_errorv)
 	int	*r_errorc;
-	struct	error_desc	***r_errorv;
+	Eptr	**r_errorv;
 {
 	extern	boolean	piflag;
 	Errorclass	errorclass = C_SYNC;
@@ -82,8 +82,8 @@ erroradd(errorlength, errorv, errorclass, errorsubclass)
 	Errorclass	errorclass;
 	Errorclass	errorsubclass;
 {
-	register	struct	error_desc	*newerror;
-	register	char	*cp;
+	reg	Eptr	newerror;
+	reg	char	*cp;
 
 	if (errorclass == C_TRUE){
 		/* check canonicalization of the second argument*/
@@ -97,7 +97,7 @@ erroradd(errorlength, errorv, errorclass, errorsubclass)
 #endif
 	}
 	if (errorlength > 0){
-		newerror = (struct error_desc *)Calloc(1, sizeof(struct error_desc));
+		newerror = (Eptr)Calloc(1, sizeof(Edesc));
 		newerror->error_language = language; /* language is global */
 		newerror->error_text = errorv;
 		newerror->error_lgtext = errorlength;
@@ -147,7 +147,7 @@ Errorclass onelong()
 		if (lastchar(wordv[1]) == ':'){
 			/* cc tells us what file we are in */
 			currentfilename = wordv[1];
-			substitute(currentfilename, ':', '\0');
+			(void)substitute(currentfilename, ':', '\0');
 			language = INCC; return(C_SYNC);
 		}
 	} else
@@ -233,9 +233,10 @@ Errorclass pccccom()
  */
 Errorclass richieccom()
 {
-	register	char	*cp;
-	register	char	**nwordv;
-			char	*file;
+	reg	char	*cp;
+	reg	char	**nwordv;
+		char	*file;
+
 	if (lastchar(wordv[1]) == ':'){
 		cp = wordv[1] + strlen(wordv[1]) - 1;
 		while (isdigit(*--cp))
@@ -259,9 +260,8 @@ Errorclass richieccom()
 
 Errorclass lint0()
 {
-	register	char	*cp;
-	register	char	**nwordv;
-			char	*line, *file;
+	reg	char	**nwordv;
+		char	*line, *file;
 	/*
 	 *	Attempt a match for the new lint style normal compiler
 	 *	error messages, of the form
@@ -418,7 +418,6 @@ Errorclass make()
 }
 Errorclass ri()
 {
-	char	**nwordv;
 /*
  *	Match an error message produced by ri; here is the
  *	procedure yanked from the distributed version of ri

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)pi.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)pi.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -118,15 +118,15 @@ char *pi_imp1[] = {"improperly", "used", "on", "line"};
 char *pi_imp2[] = {"improperly", "used", "on", "lines"};
 
 boolean alldigits(string)
-	register	char	*string;
+	reg	char	*string;
 {
 	for (; *string && isdigit(*string); string++)
 		continue;
 	return(*string == '\0');
 }
 boolean instringset(member, set)
-			char	*member;
-	register	char	**set;
+		char	*member;
+	reg	char	**set;
 {
 	for(; *set; set++){
 		if (strcmp(*set, member) == 0)
@@ -148,9 +148,8 @@ boolean isdateformat(wordc, wordv)
 }
 
 boolean piptr(string)
-	register	char	*string;
+	reg	char	*string;
 {
-	int	state = 0;
 	if (*string != '-')
 		return(FALSE);
 	while (*string && *string == '-')
@@ -169,7 +168,6 @@ extern	char	**wordv;
 Errorclass pi()
 {
 	char	**nwordv;
-	char	buffer[128];
 
 	if (   ( strlen(wordv[1]) == 1)
 	    && ( (wordv[1][0] == 'e') || (wordv[1][0] == 'E') )
@@ -199,7 +197,7 @@ Errorclass pi()
 		 *	the pointer points into a tab preceded input line.
 		 */
 		language = INPI;
-		substitute(wordv[2], '^', '|');
+		(void)substitute(wordv[2], '^', '|');
 		longpiptr = position(wordv[2],'|') > (6+8);
 		nwordv = wordvsplice(longpiptr ? 2 : 4, wordc, wordv+1);
 		nwordv[0] = strsave(currentfilename);

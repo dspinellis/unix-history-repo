@@ -1,15 +1,15 @@
-static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
 #include "error.h"
 
 int	nerrors = 0;
-struct	error_desc	*er_head;
-struct	error_desc	**errors;	
+Eptr	er_head;
+Eptr	*errors;	
 
 int	nfiles = 0;
-struct	error_desc	***files;	/* array of pointers into errors*/
+Eptr	**files;	/* array of pointers into errors*/
 int	language = INCC;
 
 char	*currentfilename = "????";
@@ -19,6 +19,7 @@ char	*im_on;			/* my tty name */
 boolean	query = FALSE;		/* query the operator if touch files */
 boolean	notouch = FALSE;	/* don't touch ANY files */
 boolean	piflag	= FALSE;	/* this is not pi */
+boolean	terse	= FALSE;	/* Terse output */
 
 char	*suffixlist = ".*";	/* initially, can touch any file */
 
@@ -27,6 +28,8 @@ int	onintr();
 /*
  *	error [-I ignorename] [-n] [-q] [-t suffixlist] [-s] [-v] [infile]
  *	
+ *	-T:	terse output
+ *
  *	-I:	the following name, `ignorename' contains a list of
  *		function names that are not to be treated as hard errors.
  *		Default: ~/.errorsrc
@@ -81,53 +84,41 @@ main(argc, argv)
 	processname = argv[0];
 
 	errorfile = stdin;
-	if (argc > 1){
-		for(; (argc > 1) && (argv[1][0] == '-'); argc--, argv++){
-			for (cp = argv[1] + 1; *cp; cp++){
-				switch(*cp){
-					default:
-						fprintf(stderr, "%s: -%c: Unknown flag\n",
-							processname, *cp);
-						break;
-					case 'n':	/* no touch */
-						notouch = TRUE;
-						break;
-					case 'q':	/* query */
-						query = TRUE;
-						break;
-					case 'S':
-						Show_Errors = TRUE;
-						break;
-					case 's':	/* show summary */
-						pr_summary = TRUE;
-						break;
-					case 'v':	/* edit files */
-						edit_files = TRUE;
-						break;
+	if (argc > 1) for(; (argc > 1) && (argv[1][0] == '-'); argc--, argv++){
+		for (cp = argv[1] + 1; *cp; cp++) switch(*cp){
+		default:
+			fprintf(stderr, "%s: -%c: Unknown flag\n",
+				processname, *cp);
+			break;
+
+		case 'n':	notouch = TRUE;	break;
+		case 'q':	query = TRUE;	break;
+		case 'S':	Show_Errors = TRUE;	break;
+		case 's':	pr_summary = TRUE;	break;
+		case 'v':	edit_files = TRUE;	break;
+		case 'T':	terse = TRUE;	break;
 #ifndef ERNIE
-					case 'p':
-						*cp-- = 0; argv++; argc--;
-						if (argc > 1){
-							currentfilename=argv[1];
-							piflag = TRUE;
-						}
-						break;
+		case 'p':
+			*cp-- = 0; argv++; argc--;
+			if (argc > 1){
+				currentfilename = argv[1];
+				piflag = TRUE;
+			}
+			break;
 #endif
-					case 't':
-						*cp-- = 0; argv++; argc--;
-						if (argc > 1){
-							suffixlist = argv[1];
-						}
-						break;
-					case 'I':	/*ignore file name*/
-						*cp-- = 0; argv++; argc--;
-						if (argc > 1)
-							ignorename = argv[1];
-						break;
-				}	/*end of the argument switch*/
-			}	/*end of loop to consume characters after '-'*/
-		}	
-	}	/* end of being at least one argument */
+		case 't':
+			*cp-- = 0; argv++; argc--;
+			if (argc > 1){
+				suffixlist = argv[1];
+			}
+			break;
+		case 'I':	/*ignore file name*/
+			*cp-- = 0; argv++; argc--;
+			if (argc > 1)
+				ignorename = argv[1];
+			break;
+		}
+	}	
 	if (notouch)
 		suffixlist = 0;
 	if (argc > 1){
@@ -156,7 +147,7 @@ main(argc, argv)
 	eaterrors(&nerrors, &errors);
 	if (Show_Errors)
 		printerrors(TRUE, nerrors, errors);
-	qsort(errors, nerrors, sizeof (struct error_desc *), errorsort);
+	qsort(errors, nerrors, sizeof(Eptr), errorsort);
 	if (show_errors)
 		printerrors(FALSE, nerrors, errors);
 	findfiles(nerrors, errors, &nfiles, &files);
@@ -181,20 +172,34 @@ main(argc, argv)
 	}
 	filenames(nfiles, files);
 	fflush(stdout);
-	if (touchfiles(nfiles, files, &ed_argc, &ed_argv) && edit_files){
-		if (!query || 
-			inquire("Do you still want to edit the files you touched? ")){
-			/*
-			 *	ed_agument's first argument is
-			 *	a vi/ex compatabile search argument
-			 *	to find the first occurance of ###
-			 */
-			try("vi", ed_argc, ed_argv);
-			try("ex", ed_argc, ed_argv);
-			try("ed", ed_argc-1, ed_argv+1);
-			fprintf(stdout, "Can't find any editors.\n");
+	if (touchfiles(nfiles, files, &ed_argc, &ed_argv) && edit_files)
+		forkvi(ed_argc, ed_argv);
+}
+
+forkvi(argc, argv)
+	int	argc;
+	char	**argv;
+{
+	if (query){
+		switch(inquire(terse
+		    ? "Edit? "
+		    : "Do you still want to edit the files you touched? ")){
+		case Q_NO:
+		case Q_no:
+			return;
+		default:
+			break;
 		}
 	}
+	/*
+	 *	ed_agument's first argument is
+	 *	a vi/ex compatabile search argument
+	 *	to find the first occurance of ###
+	 */
+	try("vi", argc, argv);
+	try("ex", argc, argv);
+	try("ed", argc-1, argv+1);
+	fprintf(stdout, "Can't find any editors.\n");
 }
 
 try(name, argc, argv)
@@ -216,10 +221,10 @@ try(name, argc, argv)
 }
 
 int errorsort(epp1, epp2)
-	struct	error_desc	**epp1, **epp2;
+		Eptr	*epp1, *epp2;
 {
-	register	struct	error_desc	*ep1, *ep2;
-			int	order;
+	reg	Eptr	ep1, ep2;
+		int	order;
 	/*
 	 *	Sort by:
 	 *	1)	synchronization, non specific, discarded errors first;

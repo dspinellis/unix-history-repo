@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)filter.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)filter.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -20,13 +20,13 @@ int	lexsort();
 getignored(auxname)
 	char	*auxname;
 {
-	register	int	i;
-			FILE	*fyle;
-			char	inbuffer[256];
-			int	uid;
-			char	filename[128];
-			char	*username;
-			struct	passwd *passwdentry;
+	reg	int	i;
+		FILE	*fyle;
+		char	inbuffer[256];
+		int	uid;
+		char	filename[128];
+		char	*username;
+		struct	passwd *passwdentry;
 
 	nignored = 0;
 	if (auxname == 0){	/* use the default */
@@ -41,9 +41,9 @@ getignored(auxname)
 				return;
 		}
 		strcpy(filename, passwdentry->pw_dir);
-		strcat(filename, ERRORNAME);
+		(void)strcat(filename, ERRORNAME);
 	} else
-		strcpy(filename, auxname);
+		(void)strcpy(filename, auxname);
 #ifdef FULLDEBUG
 	printf("Opening file \"%s\" to read names to ignore.\n",
 		filename);
@@ -72,7 +72,7 @@ getignored(auxname)
 	}
 	for (i=0; i < nignored && (fgets (inbuffer, 255, fyle) != NULL); i++){
 		names_ignored[i] = strsave(inbuffer);
-		substitute(names_ignored[i], '\n', '\0');
+		(void)substitute(names_ignored[i], '\n', '\0');
 	}
 	qsort(names_ignored, nignored, sizeof *names_ignored, lexsort);
 #ifdef FULLDEBUG
@@ -92,9 +92,9 @@ int lexsort(cpp1, cpp2)
 int search_ignore(key)
 	char	*key;
 {
-	register	int	ub, lb;
-	register	int	halfway;
-			int	order;
+	reg	int	ub, lb;
+	reg	int	halfway;
+		int	order;
 
 	if (nignored == 0)
 		return(-1);
@@ -118,10 +118,10 @@ int search_ignore(key)
  *	Return the new categorization of the error class.
  */
 Errorclass discardit(errorp)
-	register	struct	error_desc	*errorp;
+	reg	Eptr	errorp;
 {
-			int	language;
-	register	int	i;
+		int	language;
+	reg	int	i;
 	Errorclass	errorclass = errorp->error_e_class;
 
 	switch(errorclass){
