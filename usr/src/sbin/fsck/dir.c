@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char version[] = "@(#)dir.c	3.4 (Berkeley) %G%";
 
 char	*endpathname = &pathname[BUFSIZ - 2];
 char	*lfname = "lost+found";
+struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
 
 DIRECT	*fsck_readdir();
 
@@ -299,8 +300,8 @@ linkup(orphan, pdir)
 		printf("\n\n");
 		return (0);
 	}
-	if (fragoff(&sblock, dp->di_size)) {
-		dp->di_size = fragroundup(&sblock, dp->di_size);
+	if (dp->di_size % DIRBLKSIZ) {
+		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
 		inodirty();
 	}
 	len = strlen(lfname);
@@ -312,7 +313,7 @@ linkup(orphan, pdir)
 	idesc.id_filesize = dp->di_size;
 	idesc.id_parent = orphan;	/* this is the inode to enter */
 	idesc.id_fix = DONTKNOW;
-	if ((ckinode(dp, &idesc) & ALTERED) == 0) {
+	if (makeentry(dp, &idesc) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
@@ -338,6 +339,73 @@ linkup(orphan, pdir)
 			printf("\n");
 	}
 	return (1);
+}
+
+/*
+ * make an entry in a directory
+ */
+makeentry(dp, idesc)
+	DINODE *dp;
+	struct inodesc *idesc;
+{
+	
+	if ((ckinode(dp, idesc) & ALTERED) != 0)
+		return (1);
+	if (expanddir(dp) == 0)
+		return (0);
+	idesc->id_filesize = dp->di_size;
+	return (ckinode(dp, idesc) & ALTERED);
+}
+
+/*
+ * Attempt to expand the size of a directory
+ */
+expanddir(dp)
+	register DINODE *dp;
+{
+	daddr_t lastbn, newblk;
+	char *cp, firstblk[DIRBLKSIZ];
+
+	lastbn = lblkno(&sblock, dp->di_size);
+	if (lastbn >= NDADDR - 1)
+		return (0);
+	if ((newblk = allocblk(sblock.fs_frag)) == 0)
+		return (0);
+	dp->di_db[lastbn + 1] = dp->di_db[lastbn];
+	dp->di_db[lastbn] = newblk;
+	dp->di_size += sblock.fs_bsize;
+	dp->di_blocks += btodb(sblock.fs_bsize);
+	if (getblk(&fileblk, dp->di_db[lastbn + 1],
+	    dblksize(&sblock, dp, lastbn + 1)) == NULL)
+		goto bad;
+	bcopy(dirblk.b_buf, firstblk, DIRBLKSIZ);
+	if (getblk(&fileblk, newblk, sblock.fs_bsize) == NULL)
+		goto bad;
+	bcopy(firstblk, dirblk.b_buf, DIRBLKSIZ);
+	for (cp = &dirblk.b_buf[DIRBLKSIZ];
+	     cp < &dirblk.b_buf[sblock.fs_bsize];
+	     cp += DIRBLKSIZ)
+		bcopy((char *)&emptydir, cp, sizeof emptydir);
+	dirty(&fileblk);
+	if (getblk(&fileblk, dp->di_db[lastbn + 1],
+	    dblksize(&sblock, dp, lastbn + 1)) == NULL)
+		goto bad;
+	bcopy((char *)&emptydir, dirblk.b_buf, sizeof emptydir);
+	pwarn("NO SPACE LEFT IN %s", pathname);
+	if (preen)
+		printf(" (EXPANDED)\n");
+	else if (reply("EXPAND") == 0)
+		goto bad;
+	dirty(&fileblk);
+	inodirty();
+	return (1);
+bad:
+	dp->di_db[lastbn] = dp->di_db[lastbn + 1];
+	dp->di_db[lastbn + 1] = 0;
+	dp->di_size -= sblock.fs_bsize;
+	dp->di_blocks -= btodb(sblock.fs_bsize);
+	freeblk(newblk, sblock.fs_frag);
+	return (0);
 }
 
 /*
