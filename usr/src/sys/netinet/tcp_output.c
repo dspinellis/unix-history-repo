@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.24	81/12/20	*/
+/*	tcp_output.c	4.25	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -164,7 +164,8 @@ send:
 	 * start persistance timer at 2 round trip times
 	 * but at least TCPTV_PERSMIN ticks.
 	 */
-	if (SEQ_GT(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
+	if (TCPS_HAVERCVDSYN(tp->t_state) &&
+	    SEQ_GT(tp->snd_nxt, tp->snd_una+tp->snd_wnd) &&
 	    tp->t_timer[TCPT_PERSIST] == 0)
 		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
 		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);

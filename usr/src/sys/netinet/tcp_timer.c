@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.8 81/12/19 */
+/* tcp_timer.c 4.9 81/12/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,6 +111,7 @@ COUNT(TCP_TIMERS);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    ((int)(2 * tp->t_srtt)) << tp->t_rxtshift,
 		    TCPTV_MIN, TCPTV_MAX);
+printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);

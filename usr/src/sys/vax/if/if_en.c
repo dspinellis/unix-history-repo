@@ -1,4 +1,4 @@
-/*	if_en.c	4.22	81/12/12	*/
+/*	if_en.c	4.23	81/12/20	*/
 
 #include "en.h"
 
@@ -240,10 +240,11 @@ COUNT(ENXINT);
 	es->es_oactive = 0;
 	es->es_delay = 0;
 	es->es_mask = ~0;
-	if (addr->en_ostat&EN_OERROR)
-		printf("en%d: output error\n", unit);
-	if (es->es_if.if_snd.ifq_head == 0) {
+	if (addr->en_ostat&EN_OERROR) {
 		es->es_if.if_oerrors++;
+		printf("en%d: output error\n", unit);
+	}
+	if (es->es_if.if_snd.ifq_head == 0) {
 		if (es->es_ifuba.ifu_xtofree) {
 			m_freem(es->es_ifuba.ifu_xtofree);
 			es->es_ifuba.ifu_xtofree = 0;
@@ -470,8 +471,8 @@ gottype:
 	 */
 	s = splimp();
 	IF_ENQUEUE(&ifp->if_snd, m);
-	splx(s);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
 		enstart(ifp->if_unit);
+	splx(s);
 	return (1);
 }

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.43 81/12/20 */
+/* tcp_usrreq.c 1.44 81/12/20 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -117,8 +117,11 @@ badcon:
 disconn:
 		if (tp->t_state < TCPS_ESTABLISHED)
 			tcp_close(tp);
+		else if ((so->so_state & SO_LETDATADRAIN) == 0)
+			tcp_drop(tp, 0);
 		else {
 			soisdisconnecting(so);
+			sbflush(&so->so_rcv);
 			tcp_usrclosed(tp);
 			(void) tcp_output(tp);
 		}
