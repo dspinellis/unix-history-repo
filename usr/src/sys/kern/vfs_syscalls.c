@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.71 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.72 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -582,6 +582,7 @@ open(p, uap, retval)
 		fdp->fd_ofiles[indx] = NULL;
 		return (error);
 	}
+	fp->f_flag = fmode & FMASK;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
 		lf.l_whence = SEEK_SET;
 		lf.l_start = 0;
@@ -601,9 +602,9 @@ open(p, uap, retval)
 			fdp->fd_ofiles[indx] = NULL;
 			return (error);
 		}
+		fp->f_flag |= FHASLOCK;
 	}
 	VOP_UNLOCK(ndp->ni_vp);
-	fp->f_flag = fmode & FMASK;
 	fp->f_type = DTYPE_VNODE;
 	fp->f_ops = &vnops;
 	fp->f_data = (caddr_t)ndp->ni_vp;
