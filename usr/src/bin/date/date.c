@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.18 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,6 +32,7 @@ struct	timeval tv, now;
 struct	timezone tz;
 char	*ap, *ep, *sp;
 int	uflag, nflag;
+int	retval;
 
 char	*timezone();
 static	int dmsize[12] =
@@ -73,31 +74,33 @@ main(argc, argv)
 			break;
 
 		    default:
-			printf(usage);
+			fprintf(stderr, usage);
 			exit(1);
 		}
 		argc--;
 		argv++;
 	}
 	if (argc > 2) {
-		printf(usage);
+		fprintf(stderr, usage);
 		exit(1);
 	}
 	if (argc == 1) 
 		goto display;
 
 	if (getuid() != 0) {
-		printf("You are not superuser: date not set\n");
+		fprintf(stderr, "You are not superuser: date not set\n");
+		retval = 1;
 		goto display;
 	}
 	username = getlogin();
-	if (username == NULL)		/* single-user or no tty */
+	if (username == NULL || *username == '\0')  /* single-user or no tty */
 		username = "root";
 
 	ap = argv[1];
 	wtmp[0].ut_time = tv.tv_sec;
 	if (gtime()) {
-		printf(usage);
+		fprintf(stderr, usage);
+		retval = 1;
 		goto display;
 	}
 	/* convert to GMT assuming local time */
@@ -112,6 +115,7 @@ main(argc, argv)
 
 		if (settimeofday(&tv, (struct timezone *)0) < 0) {
 			perror("settimeofday");
+			retval = 1;
 			goto display;
 		}
 		if ((wf = open(WTMP, O_WRONLY|O_APPEND)) >= 0) {
@@ -137,6 +141,7 @@ display:
 	if (tzn)
 		printf("%s", tzn);
 	printf("%s", ap+19);
+	exit(retval);
 }
 
 gtime()
@@ -227,6 +232,7 @@ extern	int errno;
  * If the timedaemon is in the master state, it performs the
  * correction on all slaves.  If it is in the slave state, it
  * notifies the master that a correction is needed.
+ * Returns 1 on success, 0 on failure.
  */
 settime(tv)
 	struct timeval tv;
@@ -243,6 +249,7 @@ settime(tv)
 	sp = getservbyname("timed", "udp");
 	if (sp == 0) {
 		fprintf(stderr, "udp/timed: unknown service\n");
+		retval = 2;
 		return (0);
 	}	
 	dest.sin_port = sp->s_port;
@@ -337,6 +344,7 @@ loop:
 		    "date: Can't reach time daemon, time set locally.\n");
 bad:
 	close(s);
+	retval = 2;
 	return (0);
 }
 
