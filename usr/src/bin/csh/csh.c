@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -34,6 +34,9 @@ bool	fast;
 bool	batch;
 bool	prompt = 1;
 bool	enterhist = 0;
+
+extern	gid_t getegid(), getgid();
+extern	uid_t geteuid(), getuid();
 
 main(c, av)
 	int c;
