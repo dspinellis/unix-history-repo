@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.19 (Berkeley) %G%
+#	@(#)Makefile	7.20 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -21,7 +21,7 @@ CFLAGS=	-O ${INCPATH} ${DEFS}
 DRIVERS=cy.c hd.c vd.c
 SRCS=	boot.c cat.c conf.c copy.c cy.c hd.c ls.c prf.c srt0.c \
 	${DRIVERS}
-LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+LIBS=	libsa/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 SUBDIR=	vdformat
 ALL=	boot cat copy ls
@@ -31,8 +31,8 @@ all: srt0.o ${ALL}				# ${SUBDIR}
 ${SUBDIR}:
 	cd $@; make ${MFLAGS}
 
-${STAND}/obj/libsa.a:
-	cd ${STAND}; make
+libsa/libsa.a::
+	cd libsa; make
 
 libdrive.a: conf.o machdep.o prf.o ${DRIVERS:.c=.o}
 	ar crv $@ $?
@@ -87,11 +87,12 @@ ncy.o: ncy.c
 
 clean:
 	rm -f ${ALL} *.o *.map *.bak a.out ncy.c libdrive.a
-	cd ${STAND}; make clean
+	cd libsa; make clean
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
+	cd libsa; make cleandir
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} cleandir); done
 
 depend: ${SRCS}
