@@ -1,0 +1,53 @@
+   Copyright (C) 1989, 1990, 1991 Aladdin Enterprises.  All rights reserved.
+   Distributed by Free Software Foundation, Inc.
+
+This file is part of Ghostscript.
+
+Ghostscript is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+to anyone for the consequences of using it or for whether it serves any
+particular purpose or works at all, unless he says so in writing.  Refer
+to the Ghostscript General Public License for full details.
+
+Everyone is granted permission to copy, modify and redistribute
+Ghostscript, but only under the conditions described in the Ghostscript
+General Public License.  A copy of this license is supposed to have been
+given to you along with Ghostscript so you can know your rights and
+responsibilities.  It should be in a file named COPYING.  Among other
+things, the copyright notice and this notice must be preserved on all
+copies.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+For an overview of Ghostscript and a list of the documentation files, see
+README.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+.TH GS 1
+.SH NAME 
+gs \- ghostscript previewer
+.SH SYNOPSIS
+.B gs
+[
+gs_statd.ps
+]
+[
+.I file ...
+]
+.br
+.SH DESCRIPTION
+Ghostscript is a programming language similar to Adobe Systems'
+PostScript (tm) language, which is in turn similar to Forth.
+.I Gs
+reads
+.I file
+and displays it as a Ghostscript file.
+It then interprets commands from standard input until an end of file
+character (^D or CTRL-D) is typed.
+The `quit' character (^C) also terminates Ghostscript execution.
+.SH "SEE ALSO"
+dvi2ps(1), lpr(1)
+.SH BUGS
+Beta Software.
+See the netnews group ``gnu.ghostscript.bugs''.
