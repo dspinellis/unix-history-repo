@@ -1,4 +1,4 @@
-/*	tty.h	4.3	81/02/19	*/
+/*	tty.h	4.4	81/04/19	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -81,7 +81,6 @@ struct tty
 		struct tchars t_chr;
 		struct clist t_ctlq;
 	} t_un;
-	struct	buf *t_ibp, *t_obp;
 };
 
 #define	tun	tp->t_un.t_chr
