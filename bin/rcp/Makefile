@@ -6,10 +6,10 @@ BINOWN=	root
 BINMODE=4555
 .PATH:	${.CURDIR}/../../usr.bin/rlogin
 
-.if exists(/usr/lib/libcrypt.a)
-#CFLAGS+=-DCRYPT -DKERBEROS
-#DPADD+= ${LIBCRYPT} ${LIBKRB}
-#LDADD+= -lcrypt -lkrb
+.if exists(${DESTDIR}/usr/lib/libkrb.a) && !defined(NOCRYPT)
+CFLAGS+=-DCRYPT -DKERBEROS
+DPADD+= ${LIBKRB} ${LIBDES}
+LDADD+= -lkrb -ldes
 .endif
 
 .include <bsd.prog.mk>
