@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.6 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -576,7 +576,7 @@ save()
 		ap->a_cpu = u.u_vm.vm_utime + u.u_vm.vm_stime;
 		if (sumcpu)
 			ap->a_cpu += u.u_cvm.vm_utime + u.u_cvm.vm_stime;
-		if (mproc->p_textp) {
+		if (mproc->p_textp && text) {
 			xp = &text[mproc->p_textp -
 				    (struct text *)nl[X_TEXT].n_value];
 			ap->a_tsiz = xp->x_size;
