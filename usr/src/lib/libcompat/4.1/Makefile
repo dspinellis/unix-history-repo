@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 CFLAGS=	-O ${DEFS}
 STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
