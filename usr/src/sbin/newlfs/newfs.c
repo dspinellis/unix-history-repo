@@ -289,7 +289,7 @@ main(argc, argv)
 	if (fstat(fsi, &st) < 0)
 		fatal("%s: %s", special, strerror(errno));
 
-	if (!debug && !mfs && S_ISCHR(st.st_mode))
+	if (!debug && !mfs && !S_ISCHR(st.st_mode))
 		(void)printf("%s: %s: not a character-special device\n",
 		    progname, special);
 	cp = index(argv[0], '\0') - 1;
