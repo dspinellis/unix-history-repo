@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.24	83/02/20	*/
+/*	if_dmc.c	4.25	83/02/21	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -288,7 +288,7 @@ dmcrint(unit)
 	if (sc->sc_que.c_cc)
 		addr->bsel0 |= DMC_IEI;
 out:
-	dmxint(unit);
+	dmcxint(unit);
 }
 
 /*
