@@ -1,6 +1,6 @@
 # include <time.h>
 
-static char SccsId[] = "@(#)arpadate.c	1.3	%G%";
+static char SccsId[] = "@(#)arpadate.c	1.4	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -19,6 +19,7 @@ static char SccsId[] = "@(#)arpadate.c	1.3	%G%";
 **		calls will overwrite.
 */
 
+char *
 arpadate()
 {
 	register char *ud;	/* the unix date */
@@ -26,6 +27,7 @@ arpadate()
 	extern struct tm *localtime();
 	register char *p;
 	static char b[40];
+	extern char *ctime();
 
 	time(&t);
 	ud = ctime(&t);
