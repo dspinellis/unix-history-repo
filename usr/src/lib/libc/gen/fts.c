@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -912,7 +912,8 @@ fts_padjust(sp, addr)
 	FTSENT *p;
 
 #define	ADJUST(p) {							\
-	(p)->fts_accpath = addr + ((p)->fts_accpath - (p)->fts_path);	\
+	(p)->fts_accpath =						\
+	    (char *)addr + ((p)->fts_accpath - (p)->fts_path);		\
 	(p)->fts_path = addr;						\
 }
 	/* Adjust the current set of children. */
