@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.25	(Berkeley)	%G%
+#	@(#)Makefile	1.26	(Berkeley)	%G%
 #
 CFLAGS=	-O
 CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
@@ -40,12 +40,12 @@ EXOBJ =	APPEND.o SEEK.o TELL.o
 OBJS=	${COBJS} ${SYOBJ} ${EXOBJ}
 
 .c.o:
-	${CC} -p ${CFLAGS} -c $*.c
-	mv $@ tmp.o
-	-ld -X -r -o profiled/$@ tmp.o
+	@${CC} -p ${CFLAGS} -c $*.c
+	@mv $@ tmp.o
+	@-ld -X -r -o profiled/$@ tmp.o
 	${CC} ${CFLAGS} -c $*.c
-	mv $@ tmp.o
-	-ld -x -r -o $@ tmp.o
+	@mv $@ tmp.o
+	@-ld -x -r -o $@ tmp.o
 
 all: libpc libpc_p
 
