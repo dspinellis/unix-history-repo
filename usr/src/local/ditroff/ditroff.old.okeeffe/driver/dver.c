@@ -1,4 +1,4 @@
-/* dver.c	1.5	83/07/08
+/* dver.c	1.6	83/07/09
  *
  * Versatec driver for the new troff
  *
@@ -76,7 +76,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dver.c	1.5	83/07/08";
+char	SccsId[]= "dver.c	1.6	83/07/09";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -322,7 +322,16 @@ register FILE *fp;
 			    drawarc(n, m, n1, m1);
 			    break;
 			case '~':	/* wiggly line */
-			    drawwig(buf+1, fp);
+			case 'g':	/* gremlin spline */
+			    drawwig(buf+1, fp, buf[0] == '~');
+			    break;
+			case 't':	/* line thickness */
+			    sscanf(buf+1, "%d", &n);
+			    drawthick(n);
+			    break;
+			case 's':	/* line style */
+			    sscanf(buf+1, "%d", &n);
+			    drawstyle(n);
 			    break;
 			default:
 			    error(FATAL, "unknown drawing function %s\n", buf);

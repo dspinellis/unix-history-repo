@@ -1,4 +1,4 @@
-/*	dvar.c	1.1	83/07/08
+/*	dvar.c	1.2	83/07/09
  *
  * Varian driver for the new troff
  *
@@ -76,7 +76,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.1	83/07/08";
+char	SccsId[]= "dvar.c	1.2	83/07/09";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -122,9 +122,9 @@ int	lastw;		/* width of last character printed */
 #define	RES		200		/* resolution of the device */
 #define	TRAILER		(10 * RES)	/* position of trailer */
 
-#define RASTER_LENGTH	2048			/* device line length */
+#define RASTER_LENGTH	2112			/* device line length */
 #define BYTES_PER_LINE	(RASTER_LENGTH/8)
-#define NLINES		(11 * RES)		/* 11" long paper */
+#define NLINES		1600			/* device page width */
 #define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)	/* number of chars in picture */
 
 
@@ -322,7 +322,16 @@ register FILE *fp;
 			    drawarc(n, m, n1, m1);
 			    break;
 			case '~':	/* wiggly line */
-			    drawwig(buf+1, fp);
+			case 'g':	/* gremlin spline */
+			    drawwig(buf+1, fp, buf[0] == '~');
+			    break;
+			case 't':	/* line thickness */
+			    sscanf(buf+1, "%d", &n);
+			    drawthick(n);
+			    break;
+			case 's':	/* line style */
+			    sscanf(buf+1, "%d", &n);
+			    drawstyle(n);
 			    break;
 			default:
 			    error(FATAL, "unknown drawing function %s\n", buf);
@@ -927,7 +936,7 @@ getfont()
 
 	fnum = nfontnum;
 	fsize = npsize;
-	sprintf(cbuf, "/usr/lib/vfont/%s.%d",fontname[fnum].name, fsize);
+	sprintf(cbuf, "/usr/lib/vfont/%s.%dr",fontname[fnum].name, fsize);
 	fontd = open(cbuf, OPENREAD);
 	if (fontd == -1) {
 		perror(cbuf);
@@ -1041,16 +1050,16 @@ int code;		/* character to print */
     dis = dispatch + code;
     if (dis->nbytes) {
 	addr = bits + dis->addr;
-	llen = (dis->left + dis->right + 7) / 8;
-	nlines = dis->up + dis->down;
-	if ((i = vpos + dis->down) > maxH) maxH = i;	/* remember page len */
-	scanp = buf0p + (((vpos - dis->up) - 1) * BYTES_PER_LINE
-			+ (hpos - dis->left) / 8);
+	llen = (dis->up + dis->down + 7) >> 3;
+	nlines = dis->right + dis->left;
+	if ((i = hpos + dis->right) > maxH) maxH = i;	/* remember page len */
+	scanp = buf0p + (hpos - dis->left) * BYTES_PER_LINE
+			- (1 + ((dis->down + vpos) >> 3));
 	if (scanp < &buffer[0])
 	    scanp += sizeof buffer;
 	scanp_inc = BYTES_PER_LINE - llen;
-	offset = - ((hpos - dis->left) &07);
-	off8 = offset + 8;
+	off8 = ((dis->down + vpos) &07);
+	offset = off8 - 8;
 	for (i = 0; i < nlines; i++) {
 	    if (scanp >= &buffer[BUFFER_SIZE])
 		scanp -= sizeof buffer;
@@ -1171,9 +1180,10 @@ char *cp;
  * The output array is NLINES x BYTES_PER_LINE pixels.
  */
 point(x, y)
-register int x, y;
+register int x;
+register int y;
 {
-    if ((unsigned) x < RASTER_LENGTH && (unsigned) y < NLINES) {
-	buffer [y * BYTES_PER_LINE + (x >> 3)] |= 1 << (7 - (x & 07));
+    if ((unsigned)(y=RASTER_LENGTH-y) < RASTER_LENGTH && (unsigned)x < NLINES) {
+	buffer [x * BYTES_PER_LINE + (y >> 3)] |= 1 << (7 - (y & 07));
     }
 }
