@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.3 (Berkeley) %G%
+ *	@(#)pmap.h	7.4 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
