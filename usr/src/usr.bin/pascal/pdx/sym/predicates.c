@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)predicates.c 1.2 %G%";
+static char sccsid[] = "@(#)predicates.c 1.3 %G%";
 
 /*
  * The basic tests on a symbol.
@@ -21,14 +21,14 @@ static char sccsid[] = "@(#)predicates.c 1.2 %G%";
 BOOLEAN isparam(s)
 SYM *s;
 {
-	register SYM *t;
+    register SYM *t;
 
-	for (t = s->func; t != NIL; t = t->chain) {
-		if (t == s) {
-			return(TRUE);
-		}
+    for (t = s->func; t != NIL; t = t->chain) {
+	if (t == s) {
+	    return(TRUE);
 	}
-	return(FALSE);
+    }
+    return(FALSE);
 }
 
 /*
@@ -38,7 +38,18 @@ SYM *s;
 BOOLEAN isvarparam(s)
 SYM *s;
 {
-	return (BOOLEAN) s->class == REF;
+    return (BOOLEAN) s->class == REF;
+}
+
+/*
+ * Test if a symbol is a variable (actually any addressible quantity
+ * with do).
+ */
+
+BOOLEAN isvariable(s)
+SYM *s;
+{
+    return s->class == VAR || s->class == FVAR || s->class == REF;
 }
 
 /*
@@ -49,7 +60,7 @@ SYM *s;
 BOOLEAN isblock(s)
 register SYM *s;
 {
-	return(s->class == FUNC || s->class == PROC || s->class == PROG);
+    return(s->class == FUNC || s->class == PROC || s->class == PROG);
 }
 
 /*
@@ -60,7 +71,7 @@ register SYM *s;
 BOOLEAN isbuiltin(s)
 SYM *s;
 {
-	return(s->blkno == 0 && s->class != PROG && s->class != VAR);
+    return(s->blkno == 0 && s->class != PROG && s->class != VAR);
 }
 
 /*
@@ -73,34 +84,34 @@ SYM *s;
 BOOLEAN compatible(t1, t2)
 register SYM *t1, *t2;
 {
-	if (t1 == t2) {
-		return(TRUE);
+    if (t1 == t2) {
+	return(TRUE);
+    }
+    t1 = rtype(t1);
+    t2 = rtype(t2);
+    if (t1->type == t2->type) {
+	if (t1->class == RANGE && t2->class == RANGE) {
+	    return TRUE;
 	}
-	t1 = rtype(t1);
-	t2 = rtype(t2);
-	if (t1->type == t2->type) {
-		if (t1->class == RANGE && t2->class == RANGE) {
-			return TRUE;
-		}
-		if ((t1->class == SCAL || t1->class == CONST) &&
-		  (t2->class == SCAL || t2->class == CONST)) {
-			return TRUE;
-		}
-		if (t1->type == t_char && t1->class == ARRAY && t2->class == ARRAY) {
-			return TRUE;
-		}
+	if ((t1->class == SCAL || t1->class == CONST) &&
+	  (t2->class == SCAL || t2->class == CONST)) {
+	    return TRUE;
 	}
+	if (t1->type == t_char && t1->class == ARRAY && t2->class == ARRAY) {
+	    return TRUE;
+	}
+    }
 /*
  * A kludge here for "nil".  Should be handled better.
  * Opens a pandora's box for integer/pointer compatibility.
  */
-	if (t1->class == RANGE && t2->class == PTR) {
-		return TRUE;
-	}
-	if (t2->class == RANGE && t1->class == PTR) {
-		return TRUE;
-	}
-	return(FALSE);
+    if (t1->class == RANGE && t2->class == PTR) {
+	return TRUE;
+    }
+    if (t2->class == RANGE && t1->class == PTR) {
+	return TRUE;
+    }
+    return(FALSE);
 }
 
 /*
@@ -113,20 +124,20 @@ BOOLEAN should_print(s, f)
 SYM *s;
 SYM *f;
 {
-	SYM *t;
+    SYM *t;
 
-	if (s->func != f || (s->class != VAR && s->class != FVAR)) {
-		return(FALSE);
-	} else if (s->chain != NIL) {
-		return(FALSE);
+    if (s->func != f || (s->class != VAR && s->class != FVAR)) {
+	return(FALSE);
+    } else if (s->chain != NIL) {
+	return(FALSE);
+    } else {
+	t = rtype(s->type);
+	if (t == NIL || t->class == FILET || t->class == SET) {
+	    return(FALSE);
 	} else {
-		t = rtype(s->type);
-		if (t == NIL || t->class == FILET || t->class == SET) {
-			return(FALSE);
-		} else {
-			return(TRUE);
-		}
+	    return(TRUE);
 	}
+    }
 }
 
 /*
@@ -136,14 +147,14 @@ SYM *f;
 BOOLEAN isambiguous(s)
 SYM *s;
 {
-	SYM *t;
+    SYM *t;
 
-	t = st_lookup(symtab, s->symbol);
-	if (t == NIL) {
-		panic("symbol name vanished");
-	}
-	while (t != NIL && (s == t || !streq(t->symbol, s->symbol))) {
-		t = t->next_sym;
-	}
-	return t != NIL;
+    t = st_lookup(symtab, s->symbol);
+    if (t == NIL) {
+	panic("symbol name vanished");
+    }
+    while (t != NIL && (s == t || !streq(t->symbol, s->symbol))) {
+	t = t->next_sym;
+    }
+    return t != NIL;
 }
