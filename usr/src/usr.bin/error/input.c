@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.10 (Berkeley) 84/09/25";
+static	char *sccsid = "@(#)input.c	1.11 (Berkeley) 84/12/11";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -22,6 +22,7 @@ Errorclass	f77();
 Errorclass	pi();
 Errorclass	ri();
 Errorclass	troff();
+Errorclass	mod2();
 /*
  *	Eat all of the lines in the input file, attempting to categorize
  *	them by their various flavors
@@ -57,6 +58,7 @@ eaterrors(r_errorc, r_errorv)
 	   || (( errorclass = f77() ) != C_UNKNOWN)
 	   || ((errorclass = pi() ) != C_UNKNOWN)
 	   || (( errorclass = ri() )!= C_UNKNOWN)
+	   || (( errorclass = mod2() )!= C_UNKNOWN)
 	   || (( errorclass = troff() )!= C_UNKNOWN))
 	) ;
 	else
@@ -479,6 +481,25 @@ Errorclass troff()
 		wordv++;		/*compensate*/
 		currentfilename = wordv[1];
 		language = INTROFF;
+		return(C_TRUE);
+	}
+	return(C_UNKNOWN);
+}
+Errorclass mod2()
+{
+	if (   (strcmp(wordv[1], "!!!") == 0)
+	    && (lastchar(wordv[2]) == ',')	/* file name */
+	    && (strcmp(wordv[3], "line") == 0)
+	    && (isdigit(firstchar(wordv[4])))	/* line number */
+	    && (lastchar(wordv[4]) == ':')	/* line number */
+	){
+		clob_last(wordv[2], '\0');	/* drop last , on file name */
+		clob_last(wordv[4], '\0');	/* drop last : on line number */
+		wordv[3] = wordv[2];		/* file name on top of "line" */
+		wordv += 2;
+		wordc -= 2;
+		currentfilename = wordv[1];
+		language = INMOD2;
 		return(C_TRUE);
 	}
 	return(C_UNKNOWN);

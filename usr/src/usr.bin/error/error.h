@@ -1,4 +1,4 @@
-/*	error.h	1.4	83/08/11	*/
+/*	error.h	1.5	84/12/11	*/
 
 typedef	int	boolean;
 #define	reg	register
@@ -31,6 +31,7 @@ typedef	int	boolean;
 #define	INMAKE	16
 #define	INRI	17
 #define	INTROFF	18
+#define	INMOD2	19
 
 extern	int	language;
 /*
@@ -125,6 +126,8 @@ extern struct lang_desc lang_table[];
 #define	RIOUTCOMMENT	COUTCOMMENT
 #define	TROFFINCOMMENT	".\\\"###"
 #define	TROFFOUTCOMMENT	NEWLINE
+#define	MOD2INCOMMENT	"(*###"
+#define	MOD2OUTCOMMENT	"%%%*)\n"
 /*
  *	Defines and resources for determing if a given line
  *	is to be discarded because it refers to a file not to
