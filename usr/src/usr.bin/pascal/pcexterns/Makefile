@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.7 %G%
+SCCSID = @(#)Makefile 1.8 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -30,18 +30,18 @@ px_header: px_header.c objfmt.h
 pc2: pc2.c
 	${CC} pc2.c -lpc -o tmp
 	${CC} -S pc2.c
-	./tmp pc2.s | as -d2 -o pc2.o
+	./tmp pc2.s | as -o pc2.o
 	${CC} pc2.o -o pc2
 	rm -f pc2.o pc2.s tmp
 
 pc3: pc3.c pc3.h pstab.h
-	${CC} -O -d2 pc3.c -o pc3
+	${CC} -O pc3.c -o pc3
 
 pxref: pxref.p
 	pc -w pxref.p -o pxref
 
 pc: pc.c
-	${CC} -O -d2 -o pc pc.c
+	${CC} -O -o pc pc.c
 
 LIBRARIES = /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
 
