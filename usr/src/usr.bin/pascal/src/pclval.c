@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)pclval.c 1.8 %G%";
+static	char sccsid[] = "@(#)pclval.c 1.9 %G%";
 #endif
 
 #include "whoami.h"
@@ -144,6 +144,14 @@ pclvalue( var , modflag , required )
 		if ( p == NLNIL ) {
 			return NLNIL;
 		}
+		/*
+		 * If we haven't seen enough subscripts, and the next
+		 * qualification isn't array reference, then it's an error.
+		 */
+		if (s && co->tag != T_ARY) {
+			error("Too few subscripts (%d given, %d required)",
+				s, p->value[0]);
+		}
 		switch ( co->tag ) {
 			case T_PTR:
 				/*
@@ -222,6 +230,11 @@ pclvalue( var , modflag , required )
 			default:
 				panic("lval2");
 		}
+	}
+	if (s) {
+		error("Too few subscripts (%d given, %d required)",
+			s, p->type->value[0]);
+		return NLNIL;
 	}
 	if (f) {
 		if ( required == LREQ ) {
