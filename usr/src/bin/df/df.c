@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,8 +35,8 @@ static char sccsid[] = "@(#)df.c	8.1 (Berkeley) %G%";
 #define MT_ALL		(MT(MOUNT_MAXTYPE+1)-1)
 
 /* subject to change */
-#define MT_AMDNFS	(1)	/* XXX automounted NFS FSes return type 0 */
-#define MT_LOCAL	(MT(MOUNT_UFS)|MT(MOUNT_MFS)|MT(MOUNT_LFS))
+#define MT_LOCAL \
+    (MT(MOUNT_UFS)|MT(MOUNT_MFS)|MT(MOUNT_LFS)|MT(MOUNT_MSDOS)|MT(MOUNT_ISOFS))
 #define MT_DEFAULT	MT_ALL
 
 struct typetab {
@@ -46,10 +46,10 @@ struct typetab {
 	"ufs",		MT(MOUNT_UFS),
 	"local",	MT_LOCAL,
 	"all",		MT_ALL,
-	"nfs",		MT(MOUNT_NFS)|MT_AMDNFS,
+	"nfs",		MT(MOUNT_NFS),
 	"mfs",		MT(MOUNT_MFS),
 	"lfs",		MT(MOUNT_LFS),
-	"pc",		MT(MOUNT_PC),
+	"msdos",	MT(MOUNT_MSDOS),
 	"fdesc",	MT(MOUNT_FDESC),
 	"portal",	MT(MOUNT_PORTAL),
 #if 0
@@ -59,8 +59,12 @@ struct typetab {
 	"umap",		MT(MOUNT_UMAP),
 #endif
 	"kernfs",	MT(MOUNT_KERNFS),
+	"procfs",	MT(MOUNT_PROCFS),
+	"afs",		MT(MOUNT_AFS),
+	"isofs",	MT(MOUNT_ISOFS),
+	"cdfs",		MT(MOUNT_ISOFS),
 	"misc",		MT(MOUNT_LOFS)|MT(MOUNT_FDESC)|MT(MOUNT_PORTAL)|
-			MT(MOUNT_NULL)|MT(MOUNT_UMAP)|MT(MOUNT_KERNFS),
+			MT(MOUNT_KERNFS)|MT(MOUNT_PROCFS),
 	(char *)0,	0
 };
 
