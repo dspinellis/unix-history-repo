@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -141,6 +141,7 @@ loginlist()
 }
 
 #define	ARGIGNORE	(char *)0x01
+
 userlist(argv)
 	char **argv;
 {
@@ -149,10 +150,10 @@ userlist(argv)
 	PERSON *nethead;
 	struct utmp user;
 	struct passwd *pw;
-	int fd, dolocal, *index();
+	int fd, dolocal, *used, *index();
 
 	/* pull out all network requests */
-	for (ap = argv, dolocal = 0, nethead = NULL; *ap != NULL; ap++) {
+	for (ap = argv, dolocal = 0, nethead = NULL; *ap; ap++) {
 		if (!index(*ap, '@')) {
 			dolocal = 1;
 			continue;
@@ -167,33 +168,32 @@ userlist(argv)
 	if (!dolocal)
 		goto net;
 
+	if (!(used = (int *)calloc((u_int)(ap - argv), (u_int)sizeof(int)))) {
+		(void)fprintf(stderr, "finger: out of space.\n");
+		exit(1);
+	}
+
 	/*
 	 * traverse the list of possible login names and check the login name
 	 * and real name against the name specified by the user.
 	 */
-	if (mflag)
-		for (ap = argv; *ap != NULL; ap++) {
-			if (*ap == ARGIGNORE)
-				continue;
-			if ((pw = getpwnam(*ap)) == NULL)
-				continue;
-			enter_person(pw);
-			*ap = ARGIGNORE;
-		}
-	else while (pw = getpwent())
-		for (ap = argv; *ap != NULL; ap++) {
-			if (*ap == ARGIGNORE)
-				continue;
-			if (strcasecmp(pw->pw_name, *ap) && !match(pw, *ap))
-				continue;
-			enter_person(pw);
-			*ap = ARGIGNORE;
-			/* don't break, may be listed multiple times */
-		}
+	if (mflag) {
+		for (ap = argv; *ap; ap++)
+			if (*ap != ARGIGNORE && (pw = getpwnam(*ap))) {
+				enter_person(pw);
+				used[ap - argv] = 1;
+			}
+	} else while (pw = getpwent())
+		for (ap = argv; *ap; ap++)
+			if (*ap != ARGIGNORE &&
+			    (!strcasecmp(pw->pw_name, *ap) || match(pw, *ap))) {
+				enter_person(pw);
+				used[ap - argv] = 1;
+			}
 
 	/* list errors */
-	for (ap = argv; *ap != NULL; ap++)
-		if (*ap != ARGIGNORE)
+	for (ap = argv; *ap; ap++)
+		if (*ap != ARGIGNORE && !used[ap - argv])
 			(void)fprintf(stderr,
 			    "finger: %s: no such user.\n", *ap);
 
