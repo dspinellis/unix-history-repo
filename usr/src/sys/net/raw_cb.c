@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.c	6.9 (Berkeley) %G%
+ *	@(#)raw_cb.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,9 +19,6 @@
 #include "route.h"
 #include "raw_cb.h"
 #include "../netinet/in.h"
-#ifdef PUP
-#include "../netpup/pup.h"
-#endif
 
 #include "../vax/mtpr.h"
 
