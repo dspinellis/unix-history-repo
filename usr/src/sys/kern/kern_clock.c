@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.3	%H%	*/
+/*	kern_clock.c	3.4	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,6 +32,13 @@
 #ifdef KPROF
 unsigned short kcount[20000];
 #endif
+
+/*
+ * We handle regular calls to the dh and dz silo input processors
+ * without using timeouts to save a little time.
+ */
+int	rintvl = 4;		/* every 1/15'th of sec check receivers */
+int	rcnt;
 
 clock(pc, ps)
 caddr_t pc;
@@ -82,12 +89,18 @@ caddr_t pc;
 			p2++;
 		}
 	}
+	if (rcnt >= rintvl) {
+		dhtimer();
+		dztimer();
+		rcnt = -1;
+	}
 
 	/*
 	 * lightning bolt time-out
 	 * and time of day
 	 */
 out:
+	++rcnt;
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
 		u.u_vm.vm_idsrss += s;
