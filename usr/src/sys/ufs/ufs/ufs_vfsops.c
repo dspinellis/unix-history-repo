@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.68 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -205,6 +205,9 @@ ufs_free_netcred(rn, w)
 	struct radix_node *rn;
 	caddr_t w;
 {
+	register struct radix_node_head *rnh = (struct radix_node_head *)w;
+
+	(*rnh->rnh_deladdr)(rn->rn_key, rn->rn_mask, rnh);
 	free((caddr_t)rn, M_NETADDR);
 	return (0);
 }
@@ -222,7 +225,8 @@ ufs_free_addrlist(ump)
 
 	for (i = 0; i <= AF_MAX; i++)
 		if (rnh = ump->um_rtable[i]) {
-			(*rnh->rnh_walktree)(rnh, ufs_free_netcred, (caddr_t)0);
+			(*rnh->rnh_walktree)(rnh, ufs_free_netcred,
+			    (caddr_t)rnh);
 			free((caddr_t)rnh, M_RTABLE);
 			ump->um_rtable[i] = 0;
 		}
