@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.35 (Berkeley) %G%
+#	@(#)READ_ME	8.36 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -581,6 +581,32 @@ included.  You can also get a copy from FTP.UU.NET in directory
 /systems/unix/bsd-sources/share/tmac.
 
 
++-----------------+
+| DEBUGGING HOOKS |
++-----------------+
+
+As of 8.6.5, sendmail daemons will catch a SIGUSR1 signal and log
+some debugging output (logged at LOG_DEBUG severity).  The
+information dumped is:
+
+ * The value of the $j macro.
+ * A warning if $j is not in the set $=w.
+ * A list of the open file descriptors.
+ * The contents of the connection cache.
+ * If ruleset 89 is defined, it is evaluated and the results printed.
+
+This allows you to get information regarding the runtime state of the
+daemon on the fly.  This should not be done too frequently, since
+the process of rewriting may lose memory which will not be recovered.
+Also, ruleset 89 may call non-reentrant routines, so there is a small
+non-zero probability that this will cause other problems.  It is
+really only for debugging serious problems.
+
+A typical formulation of ruleset 89 would be:
+
+	R$*		$@ $>0 some test address
+
+
 +-----------------------------+
 | DESCRIPTION OF SOURCE FILES |
 +-----------------------------+
@@ -644,4 +670,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.35, last update %G% 07:25:34)
+(Version 8.36, last update %G% 08:16:53)
