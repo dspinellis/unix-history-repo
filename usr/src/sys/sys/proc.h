@@ -3,10 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.24 (Berkeley) %G%
+ *	@(#)proc.h	7.25 (Berkeley) %G%
  */
 
-#include "vm/vm.h"			/* XXX */
+#ifndef _PROC_H_
+#define	_PROC_H_
+
+#include <machine/proc.h>		/* machine-dependent proc substruct */
 
 /*
  * One structure allocated per session.
@@ -101,7 +104,7 @@ struct	proc {
 	u_char	p_pri;		/* priority, negative is high */
 	u_char	p_usrpri;	/* user-priority based on p_cpu and p_nice */
 	char	p_nice;		/* nice for cpu usage */
-/*	char	p_space; */
+/*	char	p_space1; */
 
 	struct 	pgrp *p_pgrp;	/* pointer to process group */
 	char	p_comm[MAXCOMLEN+1];
@@ -113,11 +116,12 @@ struct	proc {
 	caddr_t	p_addr;		/* kernel virtual address of u-area */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	int	*p_regs;	/* saved registers during syscall/trap */
+	struct	mdproc p_md;	/* any machine-dependent fields */
 
 	u_short	p_xstat;	/* Exit status for wait; also stop signal */
 	u_short	p_dupfd;	/* sideways return value from fdopen XXX */
 	u_short	p_acflag;	/* accounting flags */
-/*	u_short	p_space; */
+/*	short	p_space2; */
 	struct	rusage *p_ru;	/* exit information XXX */
 
 	long	p_spare[4];	/* tmp spares to avoid shifting eproc */
@@ -141,34 +145,40 @@ struct	pcred {
 	int	p_refcnt;		/* number of references */
 };
 
-/* 
- * getkerninfo() proc ops return arrays of augmented proc structures:
- */
-struct kinfo_proc {
-	struct	proc kp_proc;			/* proc structure */
-	struct	eproc {
-		struct	proc *e_paddr;		/* address of proc */
-		struct	session *e_sess;	/* session pointer */
-		struct	pcred e_pcred;		/* process credentials */
-		struct	ucred e_ucred;		/* current credentials */
-		struct	vmspace e_vm;		/* address space */
-		pid_t	e_pgid;			/* process group id */
-		short	e_jobc;			/* job control counter */
-		dev_t	e_tdev;			/* controlling tty dev */
-		pid_t	e_tpgid;		/* tty process group id */
-		struct	session *e_tsess;	/* tty session pointer */
-#define	WMESGLEN	7
-		char	e_wmesg[WMESGLEN+1];	/* wchan message */
-		segsz_t e_xsize;		/* text size */
-		short	e_xrssize;		/* text rss */
-		short	e_xccount;		/* text references */
-		short	e_xswrss;
-		long	e_flag;
-#define	EPROC_CTTY	0x01	/* controlling tty vnode active */
-#define	EPROC_SLEADER	0x02	/* session leader */
-		long	e_spare[7];
-	} kp_eproc;
-};
+/* stat codes */
+#define	SSLEEP	1		/* awaiting an event */
+#define	SWAIT	2		/* (abandoned state) */
+#define	SRUN	3		/* running */
+#define	SIDL	4		/* intermediate state in process creation */
+#define	SZOMB	5		/* intermediate state in process termination */
+#define	SSTOP	6		/* process being traced */
+
+/* flag codes */
+#define	SLOAD	0x0000001	/* in core */
+#define	SSYS	0x0000002	/* swapper or pager process */
+#define	SSINTR	0x0000004	/* sleep is interruptible */
+#define	SCTTY	0x0000008	/* has a controlling terminal */
+#define	SPPWAIT	0x0000010	/* parent is waiting for child to exec/exit */
+#define SEXEC	0x0000020	/* process called exec */
+#define	STIMO	0x0000040	/* timing out during sleep */
+#define	SSEL	0x0000080	/* selecting; wakeup/waiting danger */
+#define	SWEXIT	0x0000100	/* working on exiting */
+#define	SNOCLDSTOP 0x0000200	/* no SIGCHLD when children stop */
+/* the following three should probably be changed into a hold count */
+#define	SLOCK	0x0000400	/* process being swapped out */
+#define	SKEEP	0x0000800	/* another flag to prevent swap out */
+#define	SPHYSIO	0x0001000	/* doing physical i/o */
+#define	STRC	0x0004000	/* process is being traced */
+#define	SWTED	0x0008000	/* another tracing flag */
+/* the following should be moved to machine-dependent areas */
+#define	SOWEUPC	0x0002000	/* owe process an addupc() call at next ast */
+#ifdef HPUXCOMPAT
+#define	SHPUX	0x0010000	/* HP-UX process (HPUXCOMPAT) */
+#else
+#define	SHPUX	0		/* not HP-UX process (HPUXCOMPAT) */
+#endif
+/* not currently in use (never set) */
+#define	SPAGE	0x0020000	/* process in page wait state */
 
 #ifdef KERNEL
 /*
@@ -179,18 +189,23 @@ struct kinfo_proc {
 #define	PID_MAX		30000
 #define	NO_PID		30001
 #define	PIDHASH(pid)	((pid) & pidhashmask)
+
+#define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
+#define	SESSHOLD(s)	((s)->s_count++)
+#define	SESSRELE(s)	{ \
+		if (--(s)->s_count == 0) \
+			FREE(s, M_SESSION); \
+	}
+
 extern	int pidhashmask;		/* in param.c */
 extern	struct proc *pidhash[];		/* in param.c */
 struct	proc *pfind();			/* find process by id */
 extern	struct pgrp *pgrphash[];	/* in param.c */
 struct 	pgrp *pgfind();			/* find process group by id */
-struct	proc *zombproc, *allproc;
+struct	proc *zombproc, *allproc;	/* lists of procs in various states */
 extern	struct proc proc0;		/* process slot for swapper */
 struct	proc *initproc, *pageproc;	/* process slots for init, pager */
-#ifdef notyet
-struct	proc *curproc;			/* current running proc */
-#endif
-					/* lists of procs in various states */
+extern	struct proc *curproc;		/* current running proc */
 extern	int nprocs, maxproc;		/* current and max number of procs */
 
 #define	NQS	32		/* 32 run queues */
@@ -200,50 +215,6 @@ struct	prochd {
 } qs[NQS];
 
 int	whichqs;		/* bit mask summarizing non-empty qs's */
+#endif	/* KERNEL */
 
-#define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
-#define	SESSHOLD(s)	((s)->s_count++)
-#define	SESSRELE(s)	{ \
-		if (--(s)->s_count == 0) \
-			FREE(s, M_SESSION); \
-		}
-#endif
-
-/* stat codes */
-#define	SSLEEP	1		/* awaiting an event */
-#define	SWAIT	2		/* (abandoned state) */
-#define	SRUN	3		/* running */
-#define	SIDL	4		/* intermediate state in process creation */
-#define	SZOMB	5		/* intermediate state in process termination */
-#define	SSTOP	6		/* process being traced */
-
-/* flag codes */
-/* NEED TO CHECK which of these are still used */
-#define	SLOAD	0x0000001	/* in core */
-#define	SSYS	0x0000002	/* swapper or pager process */
-#define	SLOCK	0x0000004	/* process being swapped out */
-#define	SSWAP	0x0000008	/* save area flag */
-#define	STRC	0x0000010	/* process is being traced */
-#define	SWTED	0x0000020	/* another tracing flag */
-#define	SSINTR	0x0000040	/* sleep is interruptible */
-#define	SPAGE	0x0000080	/* process in page wait state */
-#define	SKEEP	0x0000100	/* another flag to prevent swap out */
-/*#define SOMASK	0x0000200	/* restore old mask after taking signal */
-#define	SWEXIT	0x0000400	/* working on exiting */
-#define	SPHYSIO	0x0000800	/* doing physical i/o */
-#define	SPPWAIT	0x0001000	/* parent is waiting for child to exec/exit */
-#define	SVFORK	SPARSYNC	/* process resulted from vfork() XXX */
-/*#define SVFDONE	0x0002000	/* another vfork flag XXX */
-/*#define SNOVM	0x0004000	/* no vm, parent in a vfork() XXX */
-#define	SPAGV	0x0008000	/* init data space on demand, from vnode */
-#define	SSEQL	0x0010000	/* user warned of sequential vm behavior */
-#define	SUANOM	0x0020000	/* user warned of random vm behavior */
-#define	STIMO	0x0040000	/* timing out during sleep */
-#define	SNOCLDSTOP 0x0080000	/* no SIGCHLD when children stop */
-#define	SCTTY	0x0100000	/* has a controlling terminal */
-#define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
-#define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
-#define SEXEC	0x0800000	/* process called exec */
-#define	SHPUX	0x1000000	/* HP-UX process (HPUXCOMPAT) */
-#define	SULOCK	0x2000000	/* locked in core after swap error XXX */
-#define	SPTECHG	0x4000000	/* pte's for process have changed XXX */
+#endif	/* !_PROC_H_ */
