@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.32 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.33 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,6 +14,8 @@
 #include <sys/vnode.h>
 #include <sys/kernel.h>
 #include <sys/syslog.h>
+
+#include <vm/vm.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

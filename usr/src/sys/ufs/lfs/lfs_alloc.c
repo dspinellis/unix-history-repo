@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.41 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,6 +14,8 @@
 #include <sys/syslog.h>
 #include <sys/mount.h>
 #include <sys/malloc.h>
+
+#include <vm/vm.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -92,7 +94,7 @@ printf("Extending ifile: max inum = %d\n", max);
 		++ip->i_blocks;			/* XXX This may not be right. */
 		ip->i_size += fs->lfs_bsize;
 printf("Extending ifile: blocks = %d size = %d\n", ip->i_blocks, ip->i_size);
-		vnode_pager_setsize(vp, ip->i_size);
+		vnode_pager_setsize(vp, (u_long)ip->i_size);
 		vnode_pager_uncache(vp);
 		LFS_UBWRITE(bp);
 	}

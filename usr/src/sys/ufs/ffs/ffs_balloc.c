@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	7.17 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -13,6 +13,8 @@
 #include <sys/proc.h>
 #include <sys/file.h>
 #include <sys/vnode.h>
+
+#include <vm/vm.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>

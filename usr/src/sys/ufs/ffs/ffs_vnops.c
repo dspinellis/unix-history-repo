@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.74 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.75 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -21,6 +21,8 @@
 #include <sys/specdev.h>
 #include <sys/fifo.h>
 #include <sys/malloc.h>
+
+#include <vm/vm.h>
 
 #include <ufs/ufs/lockf.h>
 #include <ufs/ufs/quota.h>
