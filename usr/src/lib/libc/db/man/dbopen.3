@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	8.2 (Berkeley) %G%
+.\"	@(#)dbopen.3	8.3 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -52,6 +52,26 @@ are as specified to the
 routine, however, only the O_CREAT, O_EXCL, O_EXLOCK, O_RDONLY, O_RDWR,
 O_SHLOCK and O_TRUNC flags are meaningful.
 (Note, opening a database file O_WRONLY is not possible.)
+.\"Three additional options may be specified by
+.\".IR or 'ing
+.\"them into the
+.\".I flags
+.\"argument.
+.\".TP
+.\"DB_LOCK
+.\"Do the necessary locking in the database to support concurrent access.
+.\"If concurrent access isn't needed or the database is read-only this
+.\"flag should not be set, as it tends to have an associated performance
+.\"penalty.
+.\".TP
+.\"DB_SHMEM
+.\"Place the underlying memory pool used by the database in shared
+.\"memory.
+.\"Necessary for concurrent access.
+.\".TP
+.\"DB_TXN
+.\"Support transactions in the database.
+.\"The DB_LOCK and DB_SHMEM flags must be set as well.
 .PP
 The
 .I type
