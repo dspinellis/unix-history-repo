@@ -1,4 +1,4 @@
-#	@(#)rc	5.21 (Berkeley) %G%
+#	@(#)rc	5.22 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -68,7 +68,7 @@ mount -a -t nfs >/dev/null 2>&1 &	# XXX shouldn't need background
 rm -f /etc/nologin
 rm -f /var/spool/uucp/LCK.*
 rm -f /var/spool/uucp/STST/*
-(cd /var/run && { rm -rf *; cp /dev/null utmp; chmod 644 utmp; })
+(cd /var/run && { rm -rf -- *; cp /dev/null utmp; chmod 644 utmp; })
 
 echo -n 'starting system logger'
 rm -f /dev/log
@@ -114,7 +114,7 @@ echo clearing /tmp
 # prune quickly with one rm, then use find to clean up /tmp/[lq]*
 # (not needed with mfs /tmp, but doesn't hurt there...)
 (cd /tmp && rm -rf [a-km-pr-zA-Z]* &&
-    find . ! -name . ! -name lost+found ! -name quotas -exec rm -rf {} \;)
+    find . ! -name . ! -name lost+found ! -name quotas -exec rm -rf -- {} \;)
 
 echo 'turning on accounting';	accton /var/account/acct
 
