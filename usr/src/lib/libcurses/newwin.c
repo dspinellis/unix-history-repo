@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.14 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -183,7 +183,7 @@ __makenew(nl, nc, by, bx, sub)
 	return (win);
 }
 
-static void
+void
 __swflags(win)
 	register WINDOW *win;
 {
