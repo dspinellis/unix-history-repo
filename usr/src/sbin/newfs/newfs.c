@@ -1,9 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.4 %G%";
+static char sccsid[] = "@(#)newfs.c	4.5 %G%";
 #endif
 
 /*
- * makefs: friendly front end to mkfs
+ * newfs: friendly front end to mkfs
  */
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -21,6 +21,8 @@ int	ntracks;		/* # tracks/cylinder */
 int	nsectors;		/* # sectors/track */
 int	sectorsize;		/* bytes/sector */
 int	cpg;			/* cylinders/cylinder group */
+int	minfree;		/* free space threshold */
+int	rpm;			/* revolutions/minute of drive */
 
 char	*av[20];		/* argv array and buffers for exec */
 char	a2[20];
@@ -29,6 +31,8 @@ char	a4[20];
 char	a5[20];
 char	a6[20];
 char	a7[20];
+char	a8[20];
+char	a9[20];
 char	device[MAXPATHLEN];
 char	cmd[BUFSIZ];
 
@@ -110,6 +114,25 @@ main(argc, argv)
 					fatal("%s: bad cylinders/group", *argv);
 				goto next;
 
+			case 'm':
+				if (argc < 1)
+					fatal("-m: missing free space %%\n");
+				argc--, argv++;
+				minfree = atoi(*argv);
+				if (minfree < 0 || minfree > 99)
+					fatal("%s: bad free space %%\n",
+						*argv);
+				goto next;
+
+			case 'r':
+				if (argc < 1)
+					fatal("-r: missing revs/minute\n");
+				argc--, argv++;
+				rpm = atoi(*argv);
+				if (rpm < 0)
+					fatal("%s: bad revs/minute\n", *argv);
+				goto next;
+
 			default:
 				fatal("-%c: unknown flag", cp);
 			}
@@ -117,7 +140,7 @@ next:
 		argc--, argv++;
 	}
 	if (argc < 2) {
-		fprintf(stderr, "usage: makefs [ -v ] [ mkfs-options ] %s\n",
+		fprintf(stderr, "usage: newfs [ -v ] [ mkfs-options ] %s\n",
 			"special-device device-type");
 		fprintf(stderr, "where mkfs-options are:\n");
 		fprintf(stderr, "\t-s file system size (sectors)\n");
@@ -125,6 +148,8 @@ next:
 		fprintf(stderr, "\t-f frag size\n");
 		fprintf(stderr, "\t-t tracks/cylinder\n");
 		fprintf(stderr, "\t-c cylinders/group\n");
+		fprintf(stderr, "\t-m minimum free space %%\n");
+		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
 		exit(1);
 	}
@@ -137,7 +162,7 @@ again:
 			special = sprintf(device, "/dev/r%s", special);
 			goto again;
 		}
-		fprintf(stderr, "makefs: "); perror(special);
+		fprintf(stderr, "newfs: "); perror(special);
 		exit(2);
 	}
 	if ((st.st_mode & S_IFMT) != S_IFBLK &&
@@ -183,14 +208,25 @@ again:
 			fatal("%s: no default frag size for `%c' partition",
 				argv[1], *cp);
 	}
+	if (rpm == 0) {
+		rpm = dp->d_rpm;
+		if (rpm < 0)
+			fatal("%s: no default revolutions/minute value",
+				argv[1]);
+	}
+	if (minfree == 0)
+		minfree = 10;
+	if (cpg == 0)
+		cpg = 16;
 	i = 0;
 	av[i++] = sprintf(a2, "%d", fssize);
 	av[i++] = sprintf(a3, "%d", nsectors);
 	av[i++] = sprintf(a4, "%d", ntracks);
 	av[i++] = sprintf(a5, "%d", bsize);
 	av[i++] = sprintf(a6, "%d", fsize);
-	if (cpg != 0)
-		av[i++] = sprintf(a7, "%d", cpg);
+	av[i++] = sprintf(a7, "%d", cpg);
+	av[i++] = sprintf(a8, "%d", minfree);
+	av[i++] = sprintf(a9, "%d", rpm / 60);
 	av[i++] = 0;
 	sprintf(cmd, "/etc/mkfs %s", special);
 	for (i = 0; av[i] != 0; i++) {
@@ -234,31 +270,31 @@ installboot(dev, type)
 	}
 	fd = open(bootblock, 0);
 	if (fd < 0) {
-		fprintf(stderr, "makefs: "); perror(bootblock);
+		fprintf(stderr, "newfs: "); perror(bootblock);
 		exit(1);
 	}
 	if (read(fd, bootimage, DEV_BSIZE) < 0) {
-		fprintf(stderr, "makefs: "); perror(bootblock);
+		fprintf(stderr, "newfs: "); perror(bootblock);
 		exit(2);
 	}
 	close(fd);
 	fd = open(standalonecode, 0);
 	if (fd < 0) {
-		fprintf(stderr, "makefs: "); perror(standalonecode);
+		fprintf(stderr, "newfs: "); perror(standalonecode);
 		exit(1);
 	}
 	if (read(fd, &bootimage[DEV_BSIZE], BBSIZE - DEV_BSIZE) < 0) {
-		fprintf(stderr, "makefs: "); perror(standalonecode);
+		fprintf(stderr, "newfs: "); perror(standalonecode);
 		exit(2);
 	}
 	close(fd);
 	fd = open(dev, 1);
 	if (fd < 0) {
-		fprintf(stderr, "makefs: "); perror(dev);
+		fprintf(stderr, "newfs: "); perror(dev);
 		exit(1);
 	}
 	if (write(fd, bootimage, BBSIZE) != BBSIZE) {
-		fprintf(stderr, "makefs: "); perror(dev);
+		fprintf(stderr, "newfs: "); perror(dev);
 		exit(2);
 	}
 	close(fd);
@@ -269,7 +305,7 @@ fatal(fmt, arg1, arg2)
 	char *fmt;
 {
 
-	fprintf(stderr, "makefs: ");
+	fprintf(stderr, "newfs: ");
 	fprintf(stderr, fmt, arg1, arg2);
 	putc('\n', stderr);
 	exit(10);
