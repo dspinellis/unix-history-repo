@@ -1,0 +1,508 @@
+.TH EMACS 1 "1990 November 13"
+.UC 4
+.SH NAME
+emacs \- GNU project Emacs
+.SH SYNOPSIS
+.B emacs
+[
+.I command-line switches
+] [
+.I file ...
+]
+.br
+.SH DESCRIPTION
+.I GNU Emacs
+is a new version of 
+.I Emacs,
+written by the author of the original (PDP-10) 
+.I Emacs,
+Richard Stallman.  
+Its user functionality encompasses
+everything other 
+.I Emacs 
+editors do, and it is easily extensible since its
+editing commands are written in Lisp.
+.PP
+.I Emacs
+has an extensive interactive help facility,
+but the facility assumes that you know how to manipulate
+.I Emacs
+windows and buffers.
+CTRL-h (backspace
+or CTRL-h) enters the Help facility.  Help Tutorial (CTRL-h t)
+requests an interactive tutorial which can teach beginners the fundamentals
+of 
+.I Emacs 
+in a few minutes.
+Help Apropos (CTRL-h a) helps you
+find a command given its functionality, Help Character (CTRL-h c)
+describes a given character's effect, and Help Function (CTRL-h f)
+describes a given Lisp function specified by name.
+.PP
+.I Emacs's
+Undo can undo several steps of modification to your buffers, so it is
+easy to recover from editing mistakes.
+.PP
+.I GNU Emacs's
+many special packages handle mail reading (RMail) and sending (Mail),
+outline editing (Outline), compiling (Compile), running subshells
+within
+.I Emacs
+windows (Shell), running a Lisp read-eval-print loop
+(Lisp-Interaction-Mode), and automated psychotherapy (Doctor).
+.PP
+There is an extensive reference manual, but
+users of other Emacses
+should have little trouble adapting even
+without a copy.  Users new to
+.I Emacs
+will be able
+to use basic features fairly rapidly by studying the tutorial and
+using the self-documentation features.
+.PP
+.SM Emacs Options
+.PP
+The following options are of general interest:
+.TP 8
+.I file
+Edit
+.I file.
+.TP
+.BI \+ number
+Go to the line specified by
+.I number
+(do not insert a space between the "+" sign and
+the number).
+.TP
+.B \-q
+Do not load an init file.
+.TP
+.BI \-u " user"
+Load
+.I user's
+init file.
+.TP
+.BI \-t " file"
+Use specified
+.I file
+as the terminal instead of using stdin/stdout.
+This must be the first argument specified in the command line.
+.PP
+The following options are lisp-oriented
+(these options are processed in the order encountered):
+.TP 8
+.BI \-f " function"
+Execute the lisp function
+.I function.
+.TP
+.BI \-l " file"
+Load the lisp code in the file
+.I file.
+.PP
+The following options are useful when running
+.I Emacs
+as a batch editor:
+.TP 8
+.BI \-batch " commandfile"
+Edit in batch mode using the commands found in
+.I commandfile.
+The editor will send messages to stdout.
+This option must be the first in the argument list.
+.TP
+.B \-kill
+Exit 
+.I Emacs 
+while in batch mode.
+.\" START DELETING HERE IF YOU'RE NOT USING X
+.PP
+.SM Using Emacs with X
+.PP
+.I Emacs
+has been tailored to work well with the X window system.
+If you run
+.I Emacs
+from under X windows, it will create its own X window to
+display in.  You will probably want to start the editor
+as a background process
+so that you can continue using your original window.
+.PP
+.I Emacs
+can be started with the following X switches:
+.TP 8
+.BI \-rn " name"
+Specifies the program name which should be used when looking up
+defaults in the user's X resources.  This must be the first option
+specified in the command line.
+.TP 8
+.BI \-wn " name"
+Specifies the name which should be assigned to the
+.I Emacs
+window.
+.TP 8
+.B \-r
+Display the
+.I Emacs
+window in reverse video.
+.TP
+.B \-i
+Use the "kitchen sink" bitmap icon when iconifying the
+.I Emacs
+window.
+.TP
+.BI \-font " font, " \-fn " font"
+Set the
+.I Emacs
+window's font to that specified by
+.I font.
+You will find the various
+.I X
+fonts in the
+.I /usr/lib/X11/fonts
+directory.
+Note that
+.I Emacs
+will only accept fixed width fonts.
+Under the X11 Release 4 font-naming conventions, any font with the
+value "m" or "c" in the eleventh field of the font name is a fixed
+width font.  Furthermore, fonts whose name are of the form
+.IR width x height
+are generally fixed width, as is the font
+.IR fixed .
+See
+.IR xlsfonts (1)
+for more information.
+
+When you specify a font, be sure to put a space between the
+switch and the font name.
+.TP
+.BI \-b " pixels"
+Set the
+.I Emacs
+window's border width to the number of pixels specified by
+.I pixels.
+Defaults to one pixel on each side of the window.
+.TP
+.BI \-ib " pixels"
+Set the window's internal border width to the number of pixels specified
+by 
+.I pixels.
+Defaults to one pixel of padding on each side of the window.
+.PP
+.TP 8
+.BI \-w " geometry, " \-geometry " geometry"
+Set the
+.I Emacs
+window's width, height, and position as specified.  The geometry
+specification is in the standard X format; see
+.IR X (1)
+for more information.
+The width and height are specified in characters; the default is 80 by
+24.
+.PP
+.TP 8
+.BI \-fg " color"
+On color displays, sets the color of the text.
+
+See the file
+.I /usr/lib/X11/rgb.txt
+for a list of valid
+color names.
+.TP
+.BI \-bg " color"
+On color displays,
+sets the color of the window's background.
+.TP
+.BI \-bd " color"
+On color displays,
+sets the color of the window's border.
+.TP
+.BI \-cr " color"
+On color displays,
+sets the color of the window's text cursor.
+.TP
+.BI \-ms " color"
+On color displays,
+sets the color of the window's mouse cursor.
+.TP
+.BI \-d " displayname, " \-display " displayname"
+Create the
+.I Emacs
+window on the display specified by
+.IR displayname .
+Must be the first option specified in the command line.
+.TP
+.B \-nw
+Tells
+.I Emacs
+not to use its special interface to X.  If you use this
+switch when invoking
+.I Emacs
+from an
+.IR xterm (1)
+window, display is done in that window.
+This must be the first option specified in the command line.
+.PP
+You can set
+.I X
+default values for your
+.I Emacs
+windows in your
+.I \.Xresources
+file (see
+.IR xrdb (1)).
+Use the following format:
+.IP
+emacs.keyword:value
+.PP
+where
+.I value
+specifies the default value of
+.I keyword.
+.I Emacs
+lets you set default values for the following keywords:
+.TP 8
+.B font (\fPclass\fB Font)
+Sets the window's text font.
+.TP
+.B reverseVideo (\fPclass\fB ReverseVideo)
+If
+.I reverseVideo's
+value is set to
+.I on,
+the window will be displayed in reverse video.
+.TP
+.B bitmapIcon (\fPclass\fB BitmapIcon)
+If
+.I bitmapIcon's
+value is set to
+.I on,
+the window will iconify into the "kitchen sink."
+.TP
+.B borderWidth (\fPclass\fB BorderWidth)
+Sets the window's border width in pixels.
+.TP
+.B internalBorder (\fPclass\fB BorderWidth)
+Sets the window's internal border width in pixels.
+.TP
+.B foreground (\fPclass\fB Foreground)
+For color displays,
+sets the window's text color.
+.TP
+.B background (\fPclass\fB Background)
+For color displays,
+sets the window's background color.
+.TP
+.B borderColor (\fPclass\fB BorderColor)
+For color displays,
+sets the color of the window's border.
+.TP
+.B cursorColor (\fPclass\fB Foreground)
+For color displays,
+sets the color of the window's text cursor.
+.TP
+.B pointerColor (\fPclass\fB Foreground)
+For color displays,
+sets the color of the window's mouse cursor.
+.TP
+.B geometry (\fPclass\fB Geometry)
+Sets the geometry of the
+.I Emacs
+window (as described above).
+.TP
+.B title (\fPclass\fB Title)
+Sets the title of the
+.I Emacs
+window.
+.TP
+.B iconName (\fPclass\fB Title)
+Sets the icon name for the
+.I Emacs
+window icon.
+.PP
+If you try to set color values while using a black and white display,
+the window's characteristics will default as follows:
+the foreground color will be set to black,
+the background color will be set to white,
+the border color will be set to grey,
+and the text and mouse cursors will be set to black.
+.PP
+.SM Using the Mouse 
+.PP
+The following lists the mouse button bindings for the
+.I Emacs
+window under X11.
+
+.in +\w'CTRL-SHIFT-middle'u+4n
+.ta \w'CTRL-SHIFT-middle'u+4n
+.ti -\w'CTRL-SHIFT-middle'u+4n
+MOUSE BUTTON	FUNCTION
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+left	Set point.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+middle	Paste text.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+right	Cut text into X cut buffer.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+SHIFT-middle	Cut text into X cut buffer.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+SHIFT-right	Paste text.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-middle	Cut text into X cut buffer and kill it.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-right	Select this window, then split it into 
+two windows.  Same as typing CTRL-x 2.
+.\" START DELETING HERE IF YOU'RE NOT USING X MENUS
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-left	X buffer menu--hold the buttons and keys
+down, wait for menu to appear, select 
+buffer, and release.  Move mouse out of
+menu and release to cancel.
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-middle	X help menu--pop up index card menu for
+Emacs help.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X MENUS
+.br
+.ti -\w'CTRL-SHIFT-middle'u+4n
+CTRL-SHIFT-right	Select window with mouse, and delete all
+other windows.  Same as typing CTRL-x 1.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X
+.PP
+.SH MANUALS
+You can order printed copies of the GNU Emacs Manual for $15.00/copy
+postpaid from the Free Software Foundation, which develops GNU software
+(contact them for quantity prices on the manual).  Their address is:
+.nf
+    Free Software Foundation
+    675 Mass Ave.
+    Cambridge, MA 02139
+.fi
+Your local Emacs maintainer might also have copies available.  As
+with all software and publications from FSF, everyone is permitted to
+make and distribute copies of the Emacs manual.  The TeX source to the
+manual is also included in the Emacs source distribution.
+.PP
+.SH FILES
+/usr/local/emacs/src - C source files and object files
+
+/usr/local/emacs/lisp - Lisp source files and compiled files
+that define most editing commands.  Some are preloaded;
+others are autoloaded from this directory when used.
+  
+/usr/local/emacs/man - sources for the Emacs reference manual.
+
+/usr/local/emacs/etc - various programs that are used with
+GNU Emacs, and some files of information.
+
+/usr/local/emacs/etc/DOC.* - contains the documentation
+strings for the Lisp primitives and preloaded Lisp functions
+of GNU Emacs.  They are stored here to reduce the size of
+Emacs proper.
+
+/usr/local/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
+.br
+/usr/local/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
+.br
+/usr/local/emacs/etc/GOSDIFF discusses GNU Emacs vs. Gosling Emacs.
+.br
+/usr/local/emacs/etc/SERVICE lists people offering various services
+to assist users of GNU Emacs, including education, troubleshooting,
+porting and customization.
+.br
+These files also have information useful to anyone wishing to write
+programs in the Emacs Lisp extension language, which has not yet been fully
+documented.
+
+/usr/local/emacs/info - files for the Info documentation browser
+(a subsystem of Emacs) to refer to.  Currently not much of Unix
+is documented here, but the complete text of the Emacs reference
+manual is included in a convenient tree structured form.
+
+/usr/local/emacs/lock - holds lock files that are made for all
+files being modified in Emacs, to prevent simultaneous modification
+of one file by two users.
+
+/usr/local/emacs/cpp - the GNU cpp, needed for building Emacs on
+certain versions of Unix where the standard cpp cannot handle long
+names for macros.
+
+/usr/local/emacs/shortnames - facilities for translating long names to
+short names in C code, needed for building Emacs on certain versions
+of Unix where the C compiler cannot handle long names for functions
+or variables.
+
+.\" START DELETING HERE IF YOU'RE NOT USING X
+/usr/lib/X11/rgb.txt - list of valid X color names.
+.\" STOP DELETING HERE IF YOU'RE NOT USING X
+.PP
+.SH BUGS
+There is a mailing list, bug-gnu-emacs@prep.ai.mit.edu on the internet
+(ucbvax!prep.ai.mit.edu!bug-gnu-emacs on UUCPnet), for reporting Emacs
+bugs and fixes.  But before reporting something as a bug, please try
+to be sure that it really is a bug, not a misunderstanding or a
+deliberate feature.  We ask you to read the section ``Reporting Emacs
+Bugs'' near the end of the reference manual (or Info system) for hints
+on how and when to report bugs.  Also, include the version number of
+the Emacs you are running in \fIevery\fR bug report that you send in.
+
+Do not expect a personal answer to a bug report.  The purpose of reporting
+bugs is to get them fixed for everyone in the next release, if possible.
+For personal assistance, look in the SERVICE file (see above) for
+a list of people who offer it.
+
+Please do not send anything but bug reports to this mailing list.
+Send requests to be added to mailing lists to the special list
+info-gnu-emacs-request@prep.ai.mit.edu (or the corresponding UUCP
+address).  For more information about Emacs mailing lists, see the
+file /usr/local/emacs/etc/MAILINGLISTS.  Bugs tend actually to be
+fixed if they can be isolated, so it is in your interest to report
+them in such a way that they can be easily reproduced.
+.PP
+Bugs that I know about are: shell will not work with programs
+running in Raw mode on some Unix versions.
+.SH UNRESTRICTIONS
+.PP
+.I Emacs 
+is free; anyone may redistribute copies of 
+.I Emacs 
+to
+anyone under the terms stated in the 
+.I Emacs 
+General Public License,
+a copy of which accompanies each copy of 
+.I Emacs 
+and which also
+appears in the reference manual.
+.PP
+Copies of
+.I Emacs
+may sometimes be received packaged with distributions of Unix systems,
+but it is never included in the scope of any license covering those
+systems.  Such inclusion violates the terms on which distribution
+is permitted.  In fact, the primary purpose of the General Public
+License is to prohibit anyone from attaching any other restrictions
+to redistribution of 
+.I Emacs.
+.PP
+Richard Stallman encourages you to improve and extend 
+.I Emacs, 
+and urges that
+you contribute your extensions to the GNU library.  Eventually GNU
+(Gnu's Not Unix) will be a complete replacement for Berkeley
+Unix.
+Everyone will be able to use the GNU system for free.
+.SH SEE ALSO
+X(1), xlsfonts(1), xterm(1), xrdb(1)
+.SH AUTHORS
+.PP
+.I Emacs
+was written by Richard Stallman and the Free Software Foundation.
+Joachim Martillo and Robert Krawitz added the X features.
