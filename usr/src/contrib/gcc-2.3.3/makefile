@@ -1,20 +1,28 @@
 #Build for 4.4BSD
 
-all:
-
 # Currently support 'hp300', 'luna68k', 'sparc', 'mips-dec' architectures.
-
-	rm -f tm.h
+all:
 .if ${MACHINE} == "hp300"
-	ln -s config/hp3bsd.h tm.h
+	rm -f aux-output.c; ln -s config/m68k.c aux-output.c
+	rm -f md; ln -s config/m68k.md md
+	rm -f tconfig.h; ln -s config/xm-m68k.h tconfig.h
+	rm -f tm.h; ln -s config/hp3bsd.h tm.h
 .elif ${MACHINE} == "luna68k"
-	ln -s config/luna68k.h tm.h
+	rm -f aux-output.c; ln -s config/m68k.c aux-output.c
+	rm -f md; ln -s config/m68k.md md
+	rm -f tconfig.h; ln -s config/xm-m68k.h tconfig.h
+	rm -f tm.h; ln -s config/luna68k.h tm.h
 .elif ${MACHINE} == "mips"
-	ln -s config/mips-dec-bsd.h tm.h
+	rm -f aux-output.c; ln -s config/mips.c aux-output.c
+	rm -f md; ln -s config/mips.md md
+	rm -f tconfig.h; ln -s config/xm-mips.h tconfig.h
+	rm -f tm.h; ln -s config/mips-dec-bsd.h tm.h
 .elif ${MACHINE} == "sparc"
-	ln -s config/sparcbsd.h tm.h
+	rm -f aux-output.c; ln -s config/sparc.c aux-output.c
+	rm -f md; ln -s config/sparc.md md
+	rm -f tconfig.h; ln -s config/xm-sparc.h tconfig.h
+	rm -f tm.h; ln -s config/sparcbsd.h tm.h
 .endif
-
 	make -f Makefile LANGUAGES="c"
 	make -f Makefile stage1
 	make -f Makefile "CC=stage1/xgcc -Bstage1/" LANGUAGES="c"
