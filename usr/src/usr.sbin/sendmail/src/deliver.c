@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.43	%G%";
+static char SccsId[] = "@(#)deliver.c	3.44	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -579,6 +579,7 @@ putmessage(fp, m)
 	extern char *capitalize();
 	extern char *hvalue();
 	extern bool samefrom();
+	char *of_line;
 	extern char SentDate[];
 
 	/*
@@ -595,18 +596,23 @@ putmessage(fp, m)
 	**  Output all header lines
 	*/
 
+	of_line = hvalue("original-from");
 	for (h = Header; h != NULL; h = h->h_link)
 	{
 		register char *p;
 		char *origfrom = OrigFrom;
+		bool nooutput;
 
+		nooutput = FALSE;
 		if (bitset(H_CHECK|H_ACHECK, h->h_flags) && !bitset(h->h_mflags, m->m_flags))
 		{
 			p = ")><(";		/* can't happen (I hope) */
-			goto checkfrom;
+			nooutput = TRUE;
 		}
+
+		/* use From: line from message if generated is the same */
 		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
-		    strcmp(m->m_from, "$f") == 0)
+		    strcmp(m->m_from, "$f") == 0 && of_line == NULL)
 		{
 			p = origfrom;
 			origfrom = NULL;
@@ -618,18 +624,33 @@ putmessage(fp, m)
 		}
 		else
 			p = h->h_value;
-		if (*p == '\0')
+		if (p == NULL || *p == '\0')
 			continue;
-		fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
-		h->h_flags |= H_USED;
-		anyheader = TRUE;
 
 		/* hack, hack -- output Original-From field if different */
-	checkfrom:
-		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL &&
-		    !samefrom(p, origfrom) && hvalue("original-from") == NULL)
+		if (strcmp(h->h_field, "from") == 0 && origfrom != NULL)
 		{
-			fprintf(fp, "Original-From: %s\n", origfrom);
+			/* output new Original-From line if needed */
+			if (of_line == NULL && !samefrom(p, origfrom))
+			{
+				fprintf(fp, "Original-From: %s\n", origfrom);
+				anyheader = TRUE;
+			}
+			if (of_line != NULL && !nooutput && samefrom(p, of_line))
+			{
+				/* delete Original-From: line if redundant */
+				p = of_line;
+				of_line = NULL;
+			}
+		}
+		else if (strcmp(h->h_field, "original-from") == 0 && of_line == NULL)
+			nooutput = TRUE;
+
+		/* finally, output the header line */
+		if (!nooutput)
+		{
+			fprintf(fp, "%s: %s\n", capitalize(h->h_field), p);
+			h->h_flags |= H_USED;
 			anyheader = TRUE;
 		}
 	}
@@ -671,7 +692,39 @@ samefrom(ifrom, efrom)
 	char *ifrom;
 	char *efrom;
 {
-	return (strcmp(ifrom, efrom) == 0);
+	register char *p;
+	char buf[MAXNAME + 4];
+
+# ifdef DEBUG
+	if (Debug > 7)
+		printf("samefrom(%s,%s)-->", ifrom, efrom);
+# endif DEBUG
+	if (strcmp(ifrom, efrom) == 0)
+		goto success;
+	p = index(ifrom, '@');
+	if (p == NULL)
+		goto failure;
+	*p = '\0';
+	strcpy(buf, ifrom);
+	strcat(buf, " at ");
+	*p++ = '@';
+	strcat(buf, p);
+	if (strcmp(buf, efrom) == 0)
+		goto success;
+
+  failure:
+# ifdef DEBUG
+	if (Debug > 7)
+		printf("FALSE\n");
+# endif DEBUG
+	return (FALSE);
+
+  success:
+# ifdef DEBUG
+	if (Debug > 7)
+		printf("TRUE\n");
+# endif DEBUG
+	return (TRUE);
 }
 /*
 **  MAILFILE -- Send a message to a file.
