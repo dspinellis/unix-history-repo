@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.75 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.76 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -32,14 +32,6 @@
 
 int ufs_chmod __P((struct vnode *, int, struct proc *));
 int ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
-
-enum vtype iftovt_tab[16] = {
-	VNON, VFIFO, VCHR, VNON, VDIR, VNON, VBLK, VNON,
-	VREG, VNON, VLNK, VNON, VSOCK, VNON, VNON, VBAD,
-};
-int	vttoif_tab[9] = {
-	0, IFREG, IFDIR, IFBLK, IFCHR, IFLNK, IFSOCK, IFIFO, IFMT,
-};
 
 #ifdef _NOQUAD
 #define	SETHIGH(q, h)	(q).val[_QUAD_HIGHWORD] = (h)

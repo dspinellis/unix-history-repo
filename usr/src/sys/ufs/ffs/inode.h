@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.21 (Berkeley) %G%
+ *	@(#)inode.h	7.22 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -96,14 +96,6 @@ struct inode {
 /* Convert between inode pointers and vnode pointers. */
 #define VTOI(vp)	((struct inode *)(vp)->v_data)
 #define ITOV(ip)	((ip)->i_vnode)
-
-/* Convert between vnode types and inode formats. */
-extern enum vtype	iftovt_tab[];
-extern int		vttoif_tab[];
-#define IFTOVT(mode)	(iftovt_tab[((mode) & IFMT) >> 12])
-#define VTTOIF(indx)	(vttoif_tab[(int)(indx)])
-
-#define MAKEIMODE(indx, mode)	(int)(VTTOIF(indx) | (mode))
 
 /* Lock and unlock inodes. */
 #ifdef notdef
