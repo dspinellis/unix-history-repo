@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.22 (Berkeley) %G%
+.\"	@(#)op.me	5.23 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 5.22
+Version 5.23
 .sp
 For Sendmail Version 5.133
 .)l
@@ -1750,8 +1750,47 @@ the setting of this option is not relevant;
 however, it is important that it be set properly
 to make error handling work properly.
 .pp
-The option should be inverted;
-the current semantics are more historical than practical.
+This option also allows you to tweak name server options.
+The command line takes a series of flags as documented in
+.i resolver (3)
+(with the leading
+.q RES_
+deleted).
+Each can be preceded by an optional `+' or `\(mi'.
+For example, the line
+.(b
+OITrue +AAONLY \(miDNSRCH
+.)b
+turns on the AAONLY (accept authoritative answers only)
+and turns off the DNSRCH (search the domain path) options.
+Most resolver libraries default DNSRCH, DEFNAMES, and RECURSE
+flags on and all others off.
+Note the use of the initial ``True'' \*-
+this is for compatibility with previous versions of sendmail,
+but is not otherwise necessary.
+.pp
+Version 1 configurations
+turn DNSRCH and DEFNAMES off when doing delivery lookups,
+but leave them on everywhere else.
+Release 6 of
+.i sendmail
+ignores them when doing canonification lookups
+(that is, when using $[ ... $]),
+and always does the search.
+If you don't want to do automatic name extension,
+don't call $[ ... $].
+.pp
+The search rules for $[ ... $] are somewhat different than usual.
+If the name (that is, the ``...'')
+has at least one dot, it always tries the unmodified name first.
+If that fails, it tries the reduced search path,
+and lastly tries the unmodified name
+(but only for names without a dot,
+since names with a dot have already been tried).
+This allows names such as
+``utc.CS''
+to match the site in Czechoslovakia
+rather than the site in your local Computer Science department.
 .sh 2 "Moving the Per-User Forward Files"
 .pp
 Some sites mount each user's home directory
@@ -5069,7 +5108,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.22
+.\"Version 5.23
 .\".ce 0
 .pn 2
 .bp
