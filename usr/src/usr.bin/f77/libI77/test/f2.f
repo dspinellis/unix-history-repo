@@ -1,3 +1,12 @@
+C
+C Copyright (c) 1983 The Regents of the University of California.
+C All rights reserved.
+C
+C %sccs.include.proprietary.f%
+C
+C	@(#)f2.f	5.2 (Berkeley) %G%
+C
+
 C From aho@ Tue Aug 23 13:07:25 1983
 C Date: Tue, 23 Aug 83 13:04:19 PDT
 C From: aho@@ (Alan Hopkins)
