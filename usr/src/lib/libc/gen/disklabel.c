@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.7 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/param.h>
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)disklabel.c	5.6 (Berkeley) %G%";
 #define DKTYPENAMES
 #include <sys/disklabel.h>
 #include <stdio.h>
+#include <strings.h>
 
 static	char *dgetstr();
 
@@ -28,7 +29,6 @@ getdiskbyname(name)
 	register struct partition *pp;
 	char p, max, psize[3], pbsize[3], pfsize[3], poffset[3], ptype[3];
 	char buf[BUFSIZ];
-	int i;
 	u_long *dx;
 
 	if (dgetent(buf, name) <= 0)
@@ -95,7 +95,7 @@ getdiskbyname(name)
 		}
 	}
 	dp->d_npartitions = max + 1 - 'a';
-	strcpy(psize, "dx");
+	(void)strcpy(psize, "dx");
 	dx = dp->d_drivedata;
 	for (p = '0'; p < '0' + NDDATA; p++, dx++) {
 		psize[1] = p;
