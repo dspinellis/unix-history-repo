@@ -3,9 +3,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) 6/18/87
 #
-SUBDIR=	f77.${MACHINE} fpr fsplit
+SUBDIR=	f77.${MACHINE}/f77 f77.${MACHINE}/f77pass1 fpr fsplit
 
 all: FRC
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS}); done
