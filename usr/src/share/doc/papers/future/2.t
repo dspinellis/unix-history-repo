@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.4	(Copyright 1986 M. K. McKusick)	86/12/04
+.\"	@(#)2.t	1.5	(Copyright 1986 M. K. McKusick)	86/12/04
 .NH
 The Future of UNIX at Berkeley
 .PP
@@ -119,11 +119,9 @@ by stacking a terminal processing module on top of a
 networking protocol.
 .PP
 The design of the networking facilities for 4.2BSD took
-a very different approach based on the
-.B socket
-interface.
+a different approach based on the \fBsocket\fP interface.
 This design allows a single system to support multiple sets of networking
-protocols with stream, datagram and other types of access.
+protocols with stream, datagram, and other types of access.
 Protocol modules may deal with multiplexing of data from different connections
 onto a single transport medium.
 .PP
@@ -146,10 +144,9 @@ we cannot use the Release 3 implementation of Streams in the Berkeley system.
 Given that compatibility thus will be difficult,
 we feel we will have complete freedom to make our
 choices based solely on technical merits.
-As a result, our implementation will appear far more like the simpler
-stackable line disciplines than the more complex Release 3 Streams [Chandler86].
+As a result, our implementation will appear far more like the simpler stackable
+line disciplines than the more complex Release 3 Streams [Chandler86].
 A socket interface will be used rather than a character device interface,
 and demultiplexing will be handled internally by the protocols in the kernel.
-However, like Streams,
-the interfaces between kernel protocol modules will follow a uniform
-convention.
+However, like Streams, the interfaces between kernel
+protocol modules will follow a uniform convention.
