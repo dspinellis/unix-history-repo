@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,8 +43,8 @@ OPTION options[] = {
 	"!",		T_NOT,		c_not,		O_ZERO,
 	"(",		T_OPENPAREN,	c_openparen,	O_ZERO,
 	")",		T_CLOSEPAREN,	c_closeparen,	O_ZERO,
-	"a",		T_AND,		(PLAN *(*)())-1,O_NONE|O_OLD,
-	"and",		T_AND,		(PLAN *(*)())-1,O_NONE|O_NEW,
+	"a",		T_AND,		NULL,		O_NONE|O_OLD,
+	"and",		T_AND,		NULL,		O_NONE|O_NEW,
 	"atime",	T_ATIME,	c_atime,	O_ARGV,
 	"ctime",	T_CTIME,	c_ctime,	O_ARGV,
 	"depth",	T_DEPTH,	c_depth,	O_ZERO|O_OLD,
@@ -113,6 +113,9 @@ find_create(argvp)
 	}
 
 	switch(p->flags&O_MASK) {
+	case O_NONE:
+		new = NULL;
+		break;
 	case O_ZERO:
 		new = (p->create)();
 		break;

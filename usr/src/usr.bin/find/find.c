@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -104,7 +104,8 @@ find_formplan(argv)
 	 * plan->next pointer.
 	 */
 	for (plan = NULL; *argv;) {
-		new = find_create(&argv);
+		if (!(new = find_create(&argv)))
+			continue;
 		if (plan == NULL)
 			tail = plan = new;
 		else {
