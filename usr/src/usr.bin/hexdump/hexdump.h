@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hexdump.h	5.2 (Berkeley) %G%
+ *	@(#)hexdump.h	5.3 (Berkeley) %G%
  */
 
 typedef struct _pr {
@@ -56,5 +56,5 @@ typedef struct _fs {			/* format strings */
 
 extern FS *fshead;			/* head of format strings list */
 extern int blocksize;			/* data block size */
-enum _vflag { ALL, DUP, WAIT };		/* -v values */
+enum _vflag { ALL, DUP, FIRST, WAIT };	/* -v values */
 char *emalloc();
