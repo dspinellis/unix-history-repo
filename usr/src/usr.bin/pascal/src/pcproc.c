@@ -1,8 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-#ifndef lint
-static	char sccsid[] = "@(#)pcproc.c 1.21.1.1 %G%";
-#endif
+static	char sccsid[] = "@(#)pcproc.c 1.23 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -57,24 +55,22 @@ int rdxxxx[] = {
  * builtin procedures are handled here.
  */
 pcproc(r)
-	struct tnode *r;	/* T_PCALL */
+	int *r;
 {
 	register struct nl *p;
-	register struct tnode *alv, *al;
-	register op;
+	register int *alv, *al, op;
 	struct nl *filetype, *ap;
-	int argc, typ, fmtspec, strfmt;
-	struct tnode *argv, *file;
+	int argc, *argv, typ, fmtspec, strfmt, stkcnt, *file;
 	char fmt, format[20], *strptr, *cmd;
-	int prec, field, strnglen, fmtstart;
-	char *pu;
-	struct tnode *pua, *pui, *puz;
+	int prec, field, strnglen, fmtlen, fmtstart, pu;
+	int *pua, *pui, *puz;
 	int i, j, k;
 	int itemwidth;
 	char		*readname;
 	struct nl	*tempnlp;
 	long		readtype;
 	struct tmps	soffset;
+	bool		soffset_flag;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -87,24 +83,24 @@ pcproc(r)
 	 * defined and is that of a
 	 * procedure.
 	 */
-	p = lookup(r->pcall_node.proc_id);
-	if (p == NLNIL) {
-		rvlist(r->pcall_node.arg);
+	p = lookup(r[2]);
+	if (p == NIL) {
+		rvlist(r[3]);
 		return;
 	}
 	if (p->class != PROC && p->class != FPROC) {
 		error("Can't call %s, its %s not a procedure", p->symbol, classes[p->class]);
-		rvlist(r->pcall_node.arg);
+		rvlist(r[3]);
 		return;
 	}
-	argv = r->pcall_node.arg;
+	argv = r[3];
 
 	/*
 	 * Call handles user defined
 	 * procedures and functions.
 	 */
 	if (bn != 0) {
-		(void) call(p, argv, PROC, bn);
+		call(p, argv, PROC, bn);
 		return;
 	}
 
@@ -113,7 +109,7 @@ pcproc(r)
 	 * Count the arguments.
 	 */
 	argc = 0;
-	for (al = argv; al != TR_NIL; al = al->list_node.next)
+	for (al = argv; al != NIL; al = al[2])
 		argc++;
 
 	/*
@@ -147,8 +143,8 @@ pcproc(r)
 		putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_FLUSH" );
-		ap = stklval(argv->list_node.list, NOFLAGS);
-		if (ap == NLNIL)
+		ap = stklval(argv[1], NOFLAGS);
+		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
 			error("flush's argument must be a file, not %s", nameof(ap));
@@ -181,23 +177,22 @@ pcproc(r)
 			putleaf( P2ICON , 0 , 0 , P2INT , "_PFLUSH" );
 			putop( P2UNARY P2CALL , P2INT );
 			putdot( filename , line );
-			putRV( (char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 				P2PTR|P2STRTY );
 			putLV( "__err" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
 			putdot( filename , line );
-		} else if (argv != TR_NIL && (al = argv->list_node.list)->tag !=
-					T_WEXP) {
+		} else if (argv != NIL && (al = argv[1])[0] != T_WEXP) {
 			/*
 			 * If there is a first argument which has
 			 * no write widths, then it is potentially
 			 * a file name.
 			 */
 			codeoff();
-			ap = stkrval(argv->list_node.list, NLNIL, (long) RREQ );
+			ap = stkrval(argv[1], NIL , RREQ );
 			codeon();
-			if (ap == NLNIL)
-				argv = argv->list_node.next;
+			if (ap == NIL)
+				argv = argv[2];
 			if (ap != NIL && ap->class == FILET) {
 				/*
 				 * Got "write(f, ...", make
@@ -206,28 +201,28 @@ pcproc(r)
 				 * processing the rest of the
 				 * arguments to write.
 				 */
-				putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_UNIT" );
-				file = argv->list_node.list;
+				file = argv[1];
 				filetype = ap->type;
-				(void) stklval(argv->list_node.list, NOFLAGS);
+				stklval(argv[1], NOFLAGS);
 				putop( P2CALL , P2INT );
 				putop( P2ASSIGN , P2PTR|P2STRTY );
 				putdot( filename , line );
 				/*
 				 * Skip over the first argument
 				 */
-				argv = argv->list_node.next;
+				argv = argv[2];
 				argc--;
 			} else {
 				/*
 				 * Set up for writing on 
 				 * standard output.
 				 */
-				putRV((char *) 0, cbn , CURFILEOFFSET ,
+				putRV( 0, cbn , CURFILEOFFSET ,
 					NLOCAL , P2PTR|P2STRTY );
 				putLV( "_output" , 0 , 0 , NGLOBAL ,
 					P2PTR|P2STRTY );
@@ -236,7 +231,7 @@ pcproc(r)
 				output->nl_flags |= NUSED;
 			}
 		} else {
-			putRV((char *) 0, cbn , CURFILEOFFSET , NLOCAL ,
+			putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
 				P2PTR|P2STRTY );
 			putLV( "_output" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
@@ -247,34 +242,37 @@ pcproc(r)
 		 * Loop and process each
 		 * of the arguments.
 		 */
-		for (; argv != TR_NIL; argv = argv->list_node.next) {
+		for (; argv != NIL; argv = argv[2]) {
+		        soffset_flag = FALSE;
 			/*
 			 * fmtspec indicates the type (CONstant or VARiable)
 			 *	and number (none, WIDTH, and/or PRECision)
 			 *	of the fields in the printf format for this
 			 *	output variable.
+			 * stkcnt is the number of longs pushed on the stack
 			 * fmt is the format output indicator (D, E, F, O, X, S)
 			 * fmtstart = 0 for leading blank; = 1 for no blank
 			 */
 			fmtspec = NIL;
+			stkcnt = 0;
 			fmt = 'D';
 			fmtstart = 1;
-			al = argv->list_node.list;
+			al = argv[1];
 			if (al == NIL)
 				continue;
-			if (al->tag == T_WEXP)
-				alv = al->wexpr_node.expr1;
+			if (al[0] == T_WEXP)
+				alv = al[1];
 			else
 				alv = al;
-			if (alv == TR_NIL)
+			if (alv == NIL)
 				continue;
 			codeoff();
-			ap = stkrval(alv, NLNIL , (long) RREQ );
+			ap = stkrval(alv, NIL , RREQ );
 			codeon();
-			if (ap == NLNIL)
+			if (ap == NIL)
 				continue;
 			typ = classify(ap);
-			if (al->tag == T_WEXP) {
+			if (al[0] == T_WEXP) {
 				/*
 				 * Handle width expressions.
 				 * The basic game here is that width
@@ -285,17 +283,15 @@ pcproc(r)
 				 * the stack and an indirection is
 				 * put into the format string.
 				 */
-				if (al->wexpr_node.expr3 == 
-						(struct tnode *) OCT)
+				if (al[3] == OCT)
 					fmt = 'O';
-				else if (al->wexpr_node.expr3 == 
-						(struct tnode *) HEX)
+				else if (al[3] == HEX)
 					fmt = 'X';
-				else if (al->wexpr_node.expr3 != TR_NIL) {
+				else if (al[3] != NIL) {
 					/*
 					 * Evaluate second format spec
 					 */
-					if ( constval(al->wexpr_node.expr3)
+					if ( constval(al[3])
 					    && isa( con.ctype , "i" ) ) {
 						fmtspec += CONPREC;
 						prec = con.crval;
@@ -320,8 +316,8 @@ pcproc(r)
 				/*
 				 * Evaluate first format spec
 				 */
-				if (al->wexpr_node.expr2 != TR_NIL) {
-					if ( constval(al->wexpr_node.expr2)
+				if (al[2] != NIL) {
+					if ( constval(al[2])
 					    && isa( con.ctype , "i" ) ) {
 						fmtspec += CONWIDTH;
 						field = con.crval;
@@ -355,14 +351,14 @@ pcproc(r)
 				 * to a non-textfile.
 				 */
 				putleaf( P2ICON , 0 , 0
-				    , (int) (ADDTYPE(
+				    , ADDTYPE(
 					ADDTYPE(
 					    ADDTYPE( p2type( filetype )
 						    , P2PTR )
 					    , P2FTN )
-					, P2PTR ))
+					, P2PTR )
 				    , "_FNIL" );
-				(void) stklval(file, NOFLAGS);
+				stklval(file, NOFLAGS);
 				putop( P2CALL
 				    , ADDTYPE( p2type( filetype ) , P2PTR ) );
 				putop( P2UNARY P2MUL , p2type( filetype ) );
@@ -378,15 +374,15 @@ pcproc(r)
 					    /* and fall through */
 				    case TDOUBLE:
 				    case TPTR:
-					ap = rvalue( argv->list_node.list , filetype , RREQ );
+					ap = rvalue( argv[1] , filetype , RREQ );
 					break;
 				    default:
-					ap = rvalue( argv->list_node.list , filetype , LREQ );
+					ap = rvalue( argv[1] , filetype , LREQ );
 					break;
 				}
 				if (ap == NIL)
 					continue;
-				if (incompat(ap, filetype, argv->list_node.list)) {
+				if (incompat(ap, filetype, argv[1])) {
 					cerror("Type mismatch in write to non-text file");
 					continue;
 				}
@@ -407,7 +403,7 @@ pcproc(r)
 					    putstrop(P2STASG,
 						    ADDTYPE(p2type(filetype),
 							    P2PTR),
-						    (int) lwidth(filetype),
+						    lwidth(filetype),
 						    align(filetype));
 					    putdot( filename , line );
 					    break;
@@ -418,7 +414,7 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_PUT" );
-				putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
@@ -519,7 +515,7 @@ pcproc(r)
 				fmtstart = 1 - REALSPC;
 				break;
 			case TSTR:
-				(void) constval( alv );
+				constval( alv );
 				switch ( classify( con.ctype ) ) {
 				    case TCHAR:
 					typ = TCHAR;
@@ -562,21 +558,20 @@ pcproc(r)
 					    putleaf( P2ICON , 0 , 0
 						, ADDTYPE( P2FTN|P2INT , P2PTR )
 						, "_WRITEC" );
-					    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+					    putRV( 0 , cbn , CURFILEOFFSET ,
 						    NLOCAL , P2PTR|P2STRTY );
-					    (void) stkrval( alv , NLNIL , (long) RREQ );
+					    stkrval( alv , NIL , RREQ );
 					    putop( P2LISTOP , P2INT );
 					} else {
 					    putleaf( P2ICON , 0 , 0
 						, ADDTYPE( P2FTN|P2INT , P2PTR )
 						, "_fputc" );
-					    (void) stkrval( alv , NLNIL ,
-							(long) RREQ );
+					    stkrval( alv , NIL , RREQ );
 					}
 					putleaf( P2ICON , 0 , 0
 					    , ADDTYPE( P2FTN | P2INT , P2PTR )
 					    , "_ACTFILE" );
-					putRV((char *) 0, cbn , CURFILEOFFSET ,
+					putRV( 0, cbn , CURFILEOFFSET ,
 						NLOCAL , P2PTR|P2STRTY );
 					putop( P2CALL , P2INT );
 					putop( P2LISTOP , P2INT );
@@ -610,12 +605,12 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITEF" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				    putop( P2LISTOP , P2INT );
@@ -626,7 +621,7 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				}
@@ -641,22 +636,21 @@ pcproc(r)
 					 * or
 					 *	, MAX( width , ... ) ,
 					 */
-				    if ( ( typ == TDOUBLE &&
-						al->wexpr_node.expr3 == TR_NIL )
+				    if ( ( typ == TDOUBLE && al[3] == NIL )
 					|| typ == TSTR ) {
+					soffset_flag = TRUE;
 					soffset = sizes[cbn].curtmps;
-					tempnlp = tmpalloc((long) (sizeof(long)),
+					tempnlp = tmpalloc(sizeof(long),
 						nl+T4INT, REGOK);
-					putRV((char *) 0 , cbn ,
+					putRV( 0 , cbn ,
 					    tempnlp -> value[ NL_OFFS ] ,
 					    tempnlp -> extra_flags , P2INT );
-					ap = stkrval( al->wexpr_node.expr2 ,
-						NLNIL , (long) RREQ );
+					ap = stkrval( al[2] , NIL , RREQ );
 					putop( P2ASSIGN , P2INT );
 					putleaf( P2ICON , 0 , 0
 					    , ADDTYPE( P2FTN | P2INT , P2PTR )
 					    , "_MAX" );
-					putRV((char *) 0 , cbn ,
+					putRV( 0 , cbn ,
 					    tempnlp -> value[ NL_OFFS ] ,
 					    tempnlp -> extra_flags , P2INT );
 				    } else {
@@ -666,10 +660,9 @@ pcproc(r)
 						,ADDTYPE( P2FTN | P2INT, P2PTR )
 						,"_MAX" );
 					}
-					ap = stkrval( al->wexpr_node.expr2,
-						NLNIL , (long) RREQ );
+					ap = stkrval( al[2] , NIL , RREQ );
 				    }
-				    if (ap == NLNIL)
+				    if (ap == NIL)
 					    continue;
 				    if (isnta(ap,"i")) {
 					    error("First write width must be integer, not %s", nameof(ap));
@@ -677,12 +670,12 @@ pcproc(r)
 				    }
 				    switch ( typ ) {
 				    case TDOUBLE:
-					putleaf( P2ICON , REALSPC , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , REALSPC , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
-					putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
 					putop( P2CALL , P2INT );
-					if ( al->wexpr_node.expr3 == TR_NIL ) {
+					if ( al[3] == NIL ) {
 						/*
 						 * finish up the comma op
 						 */
@@ -692,25 +685,24 @@ pcproc(r)
 					    putleaf( P2ICON , 0 , 0
 						, ADDTYPE( P2FTN | P2INT , P2PTR )
 						, "_MAX" );
-					    putRV((char *) 0 , cbn ,
+					    putRV( 0 , cbn ,
 						tempnlp -> value[ NL_OFFS ] ,
 						tempnlp -> extra_flags ,
 						P2INT );
-					    tmpfree(&soffset);
 					    putleaf( P2ICON ,
 						5 + EXPOSIZE + REALSPC ,
-						0 , P2INT , (char *) 0 );
+						0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
-					    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
+					    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putop( P2CALL , P2INT );
 					}
 					putop( P2LISTOP , P2INT );
 					break;
 				    case TSTR:
-					putleaf( P2ICON , strnglen , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
-					putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 					putop( P2LISTOP , P2INT );
 					putop( P2CALL , P2INT );
 					putop( P2COMOP , P2INT );
@@ -718,9 +710,9 @@ pcproc(r)
 					break;
 				    default:
 					if (opt('t')) {
-					    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+					    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
-					    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+					    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putop( P2CALL , P2INT );
 					}
@@ -738,8 +730,7 @@ pcproc(r)
 					    , ADDTYPE( P2FTN | P2INT , P2PTR )
 					    , "_MAX" );
 					}
-					ap = stkrval( al->wexpr_node.expr3 ,
-						NLNIL , (long) RREQ );
+					ap = stkrval( al[3] , NIL , RREQ );
 					if (ap == NIL)
 						continue;
 					if (isnta(ap,"i")) {
@@ -747,9 +738,9 @@ pcproc(r)
 						continue;
 					}
 					if (opt('t')) {
-					    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+					    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
-					    putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+					    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putop( P2CALL , P2INT );
 					}
@@ -762,11 +753,11 @@ pcproc(r)
 				case TPTR:
 				case TCHAR:
 				case TINT:
-				    (void) stkrval( alv , NLNIL , (long) RREQ );
+				    stkrval( alv , NIL , RREQ );
 				    putop( P2LISTOP , P2INT );
 				    break;
 				case TDOUBLE:
-				    ap = stkrval( alv , NLNIL , (long) RREQ );
+				    ap = stkrval( alv , NIL , RREQ );
 				    if (isnta(ap, "d")) {
 					sconv(p2type(ap), P2DOUBLE);
 				    }
@@ -777,11 +768,11 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_NAM" );
-				    ap = stkrval( alv , NLNIL , (long) RREQ );
+				    ap = stkrval( alv , NIL , RREQ );
 				    sprintf( format , PREFIXFORMAT , LABELPREFIX
 					    , listnames( ap ) );
-				    putleaf( P2ICON , 0 , 0 ,
-					(int) (P2PTR | P2CHAR), format );
+				    putleaf( P2ICON , 0 , 0 , P2PTR | P2CHAR
+					    , format );
 				    putop( P2LISTOP , P2INT );
 				    putop( P2CALL , P2INT );
 				    putop( P2LISTOP , P2INT );
@@ -805,52 +796,55 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITES" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
-				    ap = stkrval(alv, NLNIL , (long) RREQ );
+				    ap = stkrval(alv, NIL , RREQ );
 				    putop( P2LISTOP , P2INT );
 				} else {
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_fwrite" );
-				    ap = stkrval(alv, NLNIL , (long) RREQ );
+				    ap = stkrval(alv, NIL , RREQ );
 				}
 				if (strfmt & VARWIDTH) {
 					    /*
 					     *	min, inline expanded as
 					     *	temp < len ? temp : len
 					     */
-					putRV((char *) 0 , cbn ,
+					putRV( 0 , cbn ,
 					    tempnlp -> value[ NL_OFFS ] ,
 					    tempnlp -> extra_flags , P2INT );
-					putleaf( P2ICON , strnglen , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2LT , P2INT );
-					putRV((char *) 0 , cbn ,
+					putRV( 0 , cbn ,
 					    tempnlp -> value[ NL_OFFS ] ,
 					    tempnlp -> extra_flags , P2INT );
-					putleaf( P2ICON , strnglen , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 					putop( P2COLON , P2INT );
 					putop( P2QUEST , P2INT );
-					tmpfree(&soffset);
 				} else {
 					if (   ( fmtspec & SKIP )
 					    && ( strfmt & CONWIDTH ) ) {
 						strnglen = field;
 					}
-					putleaf( P2ICON , strnglen , 0 , P2INT , (char *) 0 );
+					putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 				}
 				putop( P2LISTOP , P2INT );
-				putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
+				putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 				putop( P2LISTOP , P2INT );
 				putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
 				    , "_ACTFILE" );
-				putRV((char *) 0, cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putop( P2LISTOP , P2INT );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
+			}
+			if (soffset_flag) {
+				tmpfree(&soffset);
+				soffset_flag = FALSE;
 			}
 		}
 		/*
@@ -873,17 +867,17 @@ pcproc(r)
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_WRITLN" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
 				} else {
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_fputc" );
-				    putleaf( P2ICON , '\n' , 0 , (int) P2CHAR , (char *) 0 );
+				    putleaf( P2ICON , '\n' , 0 , P2CHAR , 0 );
 				    putleaf( P2ICON , 0 , 0
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_ACTFILE" );
-				    putRV((char *) 0 , cbn , CURFILEOFFSET ,
+				    putRV( 0 , cbn , CURFILEOFFSET ,
 					    NLOCAL , P2PTR|P2STRTY );
 				    putop( P2CALL , P2INT );
 				    putop( P2LISTOP , P2INT );
@@ -907,13 +901,13 @@ pcproc(r)
 		 * for the read and generate
 		 * code to make it the active file.
 		 */
-		if (argv != TR_NIL) {
+		if (argv != NIL) {
 			codeoff();
-			ap = stkrval(argv->list_node.list, NLNIL, (long) RREQ );
+			ap = stkrval(argv[1], NIL , RREQ );
 			codeon();
-			if (ap == NLNIL)
-				argv = argv->list_node.next;
-			if (ap != NLNIL && ap->class == FILET) {
+			if (ap == NIL)
+				argv = argv[2];
+			if (ap != NIL && ap->class == FILET) {
 				/*
 				 * Got "read(f, ...", make
 				 * f the active file, and save
@@ -921,25 +915,25 @@ pcproc(r)
 				 * processing the rest of the
 				 * arguments to read.
 				 */
-				file = argv->list_node.list;
+				file = argv[1];
 				filetype = ap->type;
-				putRV((char *) 0, cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putleaf( P2ICON , 0 , 0 
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_UNIT" );
-				(void) stklval(argv->list_node.list, NOFLAGS);
+				stklval(argv[1], NOFLAGS);
 				putop( P2CALL , P2INT );
 				putop( P2ASSIGN , P2PTR|P2STRTY );
 				putdot( filename , line );
-				argv = argv->list_node.next;
+				argv = argv[2];
 				argc--;
 			} else {
 				/*
 				 * Default is read from
 				 * standard input.
 				 */
-				putRV((char *) 0, cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putLV( "_input" , 0 , 0 , NGLOBAL ,
 					P2PTR|P2STRTY );
@@ -948,7 +942,7 @@ pcproc(r)
 				input->nl_flags |= NUSED;
 			}
 		} else {
-			putRV((char *) 0, cbn , CURFILEOFFSET , NLOCAL ,
+			putRV( 0, cbn , CURFILEOFFSET , NLOCAL ,
 				P2PTR|P2STRTY );
 			putLV( "_input" , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 			putop( P2ASSIGN , P2PTR|P2STRTY );
@@ -959,29 +953,29 @@ pcproc(r)
 		 * Loop and process each
 		 * of the arguments.
 		 */
-		for (; argv != TR_NIL; argv = argv->list_node.next) {
+		for (; argv != NIL; argv = argv[2]) {
 			/*
 			 * Get the address of the target
 			 * on the stack.
 			 */
-			al = argv->list_node.list;
-			if (al == TR_NIL)
+			al = argv[1];
+			if (al == NIL)
 				continue;
-			if (al->tag != T_VAR) {
+			if (al[0] != T_VAR) {
 				error("Arguments to %s must be variables, not expressions", p->symbol);
 				continue;
 			}
 			codeoff();
 			ap = stklval(al, MOD|ASGN|NOUSE);
 			codeon();
-			if (ap == NLNIL)
+			if (ap == NIL)
 				continue;
 			if (filetype != nl+T1CHAR) {
 				/*
 				 * Generalized read, i.e.
 				 * from a non-textfile.
 				 */
-				if (incompat(filetype, ap, argv->list_node.list )) {
+				if (incompat(filetype, ap, argv[1] )) {
 					error("Type mismatch in read from non-text file");
 					continue;
 				}
@@ -993,15 +987,15 @@ pcproc(r)
 					precheck( ap , "_RANG4" , "_RSNG4" );
 				}
 				putleaf( P2ICON , 0 , 0
-				    , (int) (ADDTYPE(
+				    , ADDTYPE(
 					ADDTYPE(
 					    ADDTYPE(
 						p2type( filetype ) , P2PTR )
 					    , P2FTN )
-					, P2PTR ))
+					, P2PTR )
 				    , "_FNIL" );
 				if (file != NIL)
-					(void) stklval(file, NOFLAGS);
+					stklval(file, NOFLAGS);
 				else /* Magic */
 					putRV( "_input" , 0 , 0 , NGLOBAL ,
 						P2PTR | P2STRTY );
@@ -1032,7 +1026,7 @@ pcproc(r)
 				    default:
 					    putstrop(P2STASG,
 						    ADDTYPE(p2type(ap), P2PTR),
-						    (int) lwidth(ap),
+						    lwidth(ap),
 						    align(ap));
 					    putdot( filename , line );
 					    break;
@@ -1043,7 +1037,7 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0 
 					, ADDTYPE( P2FTN | P2INT , P2PTR )
 					, "_GET" );
-				putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+				putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 					P2PTR|P2STRTY );
 				putop( P2CALL , P2INT );
 				putdot( filename , line );
@@ -1089,15 +1083,15 @@ pcproc(r)
 				break;
 			}
 			putleaf( P2ICON , 0 , 0
-				, (int) ADDTYPE( P2FTN | readtype , P2PTR )
+				, ADDTYPE( P2FTN | readtype , P2PTR )
 				, readname );
-			putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 				P2PTR|P2STRTY );
 			if ( op == O_READE ) {
 				sprintf( format , PREFIXFORMAT , LABELPREFIX
 					, listnames( ap ) );
-				putleaf( P2ICON , 0, 0, (int) (P2PTR | P2CHAR),
-					format );
+				putleaf( P2ICON , 0 , 0 , P2PTR | P2CHAR
+					, format );
 				putop( P2LISTOP , P2INT );
 				warning();
 				if (opt('s')) {
@@ -1105,11 +1099,11 @@ pcproc(r)
 				}
 				error("Reading scalars from text files is non-standard");
 			}
-			putop( P2CALL , (int) readtype );
+			putop( P2CALL , readtype );
 			if ( isa( ap , "bcsi" ) ) {
 			    postcheck(ap, readtype==P2INT?nl+T4INT:nl+TDOUBLE);
 			}
-			sconv((int) readtype, p2type(ap));
+			sconv(readtype, p2type(ap));
 			putop( P2ASSIGN , p2type( ap ) );
 			putdot( filename , line );
 		}
@@ -1122,9 +1116,9 @@ pcproc(r)
 			if (filetype != nl+T1CHAR)
 				error("Can't 'readln' a non text file");
 			putleaf( P2ICON , 0 , 0 
-				, (int) ADDTYPE( P2FTN | P2INT , P2PTR )
+				, ADDTYPE( P2FTN | P2INT , P2PTR )
 				, "_READLN" );
-			putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL ,
+			putRV( 0 , cbn , CURFILEOFFSET , NLOCAL ,
 				P2PTR|P2STRTY );
 			putop( P2CALL , P2INT );
 			putdot( filename , line );
@@ -1138,11 +1132,11 @@ pcproc(r)
 			error("%s expects one argument", p->symbol);
 			return;
 		}
-		putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_UNIT" );
-		ap = stklval(argv->list_node.list, NOFLAGS);
-		if (ap == NLNIL)
+		ap = stklval(argv[1], NOFLAGS);
+		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
 			error("Argument to %s must be a file, not %s", p->symbol, nameof(ap));
@@ -1153,7 +1147,7 @@ pcproc(r)
 		putdot( filename , line );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, op == O_GET ? "_GET" : "_PUT" );
-		putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		return;
@@ -1170,8 +1164,8 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , P2INT
 			, op == O_RESET ? "_RESET" : "_REWRITE" );
-		ap = stklval(argv->list_node.list, MOD|NOUSE);
-		if (ap == NLNIL)
+		ap = stklval(argv[1], MOD|NOUSE);
+		if (ap == NIL)
 			return;
 		if (ap->class != FILET) {
 			error("First argument to %s must be a file, not %s", p->symbol, nameof(ap));
@@ -1183,24 +1177,23 @@ pcproc(r)
 			 * is a string name of a
 			 * UNIX (R) file to be associated.
 			 */
-			al = argv->list_node.next;
-			al = (struct tnode *) stkrval(al->list_node.list,
-					NLNIL , (long) RREQ );
-			if (al == TR_NIL)
+			al = argv[2];
+			al = stkrval(al[1], NOFLAGS , RREQ );
+			if (al == NIL)
 				return;
-			if (classify((struct nl *) al) != TSTR) {
-				error("Second argument to %s must be a string, not %s", p->symbol, nameof((struct nl *) al));
+			if (classify(al) != TSTR) {
+				error("Second argument to %s must be a string, not %s", p->symbol, nameof(al));
 				return;
 			}
-			strnglen = width((struct nl *) al);
+			strnglen = width(al);
 		} else {
-			putleaf( P2ICON , 0 , 0 , P2INT , (char *) 0 );
+			putleaf( P2ICON , 0 , 0 , P2INT , 0 );
 			strnglen = 0;
 		}
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , strnglen , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , strnglen , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , text(ap) ? 0: width(ap->type) , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , text(ap) ? 0: width(ap->type) , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
@@ -1212,18 +1205,18 @@ pcproc(r)
 			error("%s expects at least one argument", p->symbol);
 			return;
 		}
-		alv = argv->list_node.list;
+		alv = argv[1];
 		codeoff();
 		ap = stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
 		codeon();
-		if (ap == NLNIL)
+		if (ap == NIL)
 			return;
 		if (ap->class != PTR) {
 			error("(First) argument to %s must be a pointer, not %s", p->symbol, nameof(ap));
 			return;
 		}
 		ap = ap->type;
-		if (ap == NLNIL)
+		if (ap == NIL)
 			return;
 		if (op == O_NEW)
 			cmd = "_NEW";
@@ -1233,26 +1226,26 @@ pcproc(r)
 			else
 				cmd = "_DISPOSE";
 		putleaf( P2ICON, 0, 0, ADDTYPE( P2FTN | P2INT , P2PTR ), cmd);
-		(void) stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
-		argv = argv->list_node.next;
-		if (argv != TR_NIL) {
+		stklval(alv, op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		argv = argv[2];
+		if (argv != NIL) {
 			if (ap->class != RECORD) {
 				error("Record required when specifying variant tags");
 				return;
 			}
-			for (; argv != TR_NIL; argv = argv->list_node.next) {
+			for (; argv != NIL; argv = argv[2]) {
 				if (ap->ptr[NL_VARNT] == NIL) {
 					error("Too many tag fields");
 					return;
 				}
-				if (!isconst(argv->list_node.list)) {
+				if (!isconst(argv[1])) {
 					error("Second and successive arguments to %s must be constants", p->symbol);
 					return;
 				}
-				gconst(argv->list_node.list);
+				gconst(argv[1]);
 				if (con.ctype == NIL)
 					return;
-				if (incompat(con.ctype, (ap->ptr[NL_TAG])->type , TR_NIL )) {
+				if (incompat(con.ctype, (ap->ptr[NL_TAG])->type , NIL )) {
 					cerror("Specified tag constant type clashed with variant case selector type");
 					return;
 				}
@@ -1266,15 +1259,15 @@ pcproc(r)
 				ap = ap->ptr[NL_VTOREC];
 			}
 		}
-		putleaf( P2ICON , width( ap ) , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		if (opt('t') && op == O_NEW) {
 		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			    , "_blkclr" );
-		    (void) stkrval(alv, NLNIL , (long) RREQ );
-		    putleaf( P2ICON , width( ap ) , 0 , P2INT , (char *) 0 );
+		    stkrval(alv, NIL , RREQ );
+		    putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
 		    putop( P2LISTOP , P2INT );
 		    putop( P2CALL , P2INT );
 		    putdot( filename , line );
@@ -1289,7 +1282,7 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, op == O_DATE ? "_DATE" : "_TIME" );
-		ap = stklval(argv->list_node.list, MOD|NOUSE);
+		ap = stklval(argv[1], MOD|NOUSE);
 		if (ap == NIL)
 			return;
 		if (classify(ap) != TSTR || width(ap) != 10) {
@@ -1310,7 +1303,7 @@ pcproc(r)
 
 		putop( P2UNARY P2CALL , P2INT );
 		putdot( filename , line );
-		noreach = TRUE;
+		noreach = 1;
 		return;
 
 	case O_ARGV:
@@ -1320,23 +1313,23 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_ARGV" );
-		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
-		if (ap == NLNIL)
+		ap = stkrval(argv[1], NIL , RREQ );
+		if (ap == NIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("argv's first argument must be an integer, not %s", nameof(ap));
 			return;
 		}
-		al = argv->list_node.next;
-		ap = stklval(al->list_node.list, MOD|NOUSE);
-		if (ap == NLNIL)
+		al = argv[2];
+		ap = stklval(al[1], MOD|NOUSE);
+		if (ap == NIL)
 			return;
 		if (classify(ap) != TSTR) {
 			error("argv's second argument must be a string, not %s", nameof(ap));
 			return;
 		}
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , width( ap ) , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
@@ -1349,8 +1342,8 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_STLIM" );
-		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
-		if (ap == NLNIL)
+		ap = stkrval(argv[1], NIL , RREQ );
+		if (ap == NIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("stlimit's argument must be an integer, not %s", nameof(ap));
@@ -1367,14 +1360,14 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_REMOVE" );
-		ap = stkrval(argv->list_node.list, NLNIL, (long) RREQ );
-		if (ap == NLNIL)
+		ap = stkrval(argv[1], NOFLAGS , RREQ );
+		if (ap == NIL)
 			return;
 		if (classify(ap) != TSTR) {
 			error("remove's argument must be a string, not %s", nameof(ap));
 			return;
 		}
-		putleaf( P2ICON , width( ap ) , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , width( ap ) , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
@@ -1387,16 +1380,16 @@ pcproc(r)
 		}
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_LLIMIT" );
-		ap = stklval(argv->list_node.list, NOFLAGS|NOUSE);
-		if (ap == NLNIL)
+		ap = stklval(argv[1], NOFLAGS|NOUSE);
+		if (ap == NIL)
 			return;
 		if (!text(ap)) {
 			error("linelimit's first argument must be a text file, not %s", nameof(ap));
 			return;
 		}
-		al = argv->list_node.next;
-		ap = stkrval(al->list_node.list, NLNIL , (long) RREQ );
-		if (ap == NLNIL)
+		al = argv[2];
+		ap = stkrval(al[1], NIL , RREQ );
+		if (ap == NIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("linelimit's second argument must be an integer, not %s", nameof(ap));
@@ -1411,11 +1404,11 @@ pcproc(r)
 			error("page expects one argument");
 			return;
 		}
-		putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
+		putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_UNIT" );
-		ap = stklval(argv->list_node.list, NOFLAGS);
-		if (ap == NLNIL)
+		ap = stklval(argv[1], NOFLAGS);
+		if (ap == NIL)
 			return;
 		if (!text(ap)) {
 			error("Argument to page must be a text file, not %s", nameof(ap));
@@ -1428,16 +1421,16 @@ pcproc(r)
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PAGE" );
-		    putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
+		    putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		} else {
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_fputc" );
-		    putleaf( P2ICON , '\f' , 0 , (int) P2CHAR , (char *) 0 );
+		    putleaf( P2ICON , '\f' , 0 , P2CHAR , 0 );
 		    putleaf( P2ICON , 0 , 0
 			, ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_ACTFILE" );
-		    putRV((char *) 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
+		    putRV( 0 , cbn , CURFILEOFFSET , NLOCAL , P2PTR|P2STRTY );
 		    putop( P2CALL , P2INT );
 		    putop( P2LISTOP , P2INT );
 		}
@@ -1458,8 +1451,8 @@ pcproc(r)
 			cmd = "_ASRT";
 		putleaf( P2ICON , 0 , 0
 		    , ADDTYPE( P2FTN | P2INT , P2PTR ) , cmd );
-		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
-		if (ap == NLNIL)
+		ap = stkrval(argv[1], NIL , RREQ );
+		if (ap == NIL)
 			return;
 		if (isnta(ap, "b"))
 			error("Assert expression must be Boolean, not %ss", nameof(ap));
@@ -1468,12 +1461,12 @@ pcproc(r)
 			 * Optional second argument is a string specifying
 			 * why the assertion failed.
 			 */
-			al = argv->list_node.next;
-			al = (struct tnode *) stkrval(al->list_node.list, NLNIL , (long) RREQ );
-			if (al == TR_NIL)
+			al = argv[2];
+			al = stkrval(al[1], NIL , RREQ );
+			if (al == NIL)
 				return;
-			if (classify((struct nl *) al) != TSTR) {
-				error("Second argument to assert must be a string, not %s", nameof((struct nl *) al));
+			if (classify(al) != TSTR) {
+				error("Second argument to assert must be a string, not %s", nameof(al));
 				return;
 			}
 			putop( P2LISTOP , P2INT );
@@ -1490,9 +1483,9 @@ pcproc(r)
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PACK" );
 		pu = "pack(a,i,z)";
-		pua = (al = argv)->list_node.list;
-		pui = (al = al->list_node.next)->list_node.list;
-		puz = (al = al->list_node.next)->list_node.list;
+		pua = (al = argv)[1];
+		pui = (al = al[2])[1];
+		puz = (al = al[2])[1];
 		goto packunp;
 	case O_UNPACK:
 		if (argc != 3) {
@@ -1502,11 +1495,11 @@ pcproc(r)
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_UNPACK" );
 		pu = "unpack(z,a,i)";
-		puz = (al = argv)->list_node.list;
-		pua = (al = al->list_node.next)->list_node.list;
-		pui = (al = al->list_node.next)->list_node.list;
+		puz = (al = argv)[1];
+		pua = (al = al[2])[1];
+		pui = (al = al[2])[1];
 packunp:
-		ap = stkrval(pui, NLNIL , (long) RREQ );
+		ap = stkrval((int *) pui, NLNIL , RREQ );
 		if (ap == NIL)
 			return;
 		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);
@@ -1517,24 +1510,23 @@ packunp:
 			return;
 		}
 		putop( P2LISTOP , P2INT );
-		al = (struct tnode *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
-		if (((struct nl *) al)->class != ARRAY) {
+		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
+		if (al->class != ARRAY) {
 			error("%s requires z to be a packed array, not %s", pu, nameof(ap));
 			return;
 		}
-		if (((struct nl *) al)->type == NIL || 
-			((struct nl *) ap)->type == NIL)
+		if (al->type == NIL || ap->type == NIL)
 			return;
-		if (((struct nl *) al)->type != ((struct nl *) ap)->type) {
+		if (al->type != ap->type) {
 			error("%s requires a and z to be arrays of the same type", pu, nameof(ap));
 			return;
 		}
 		putop( P2LISTOP , P2INT );
-		k = width((struct nl *) al);
+		k = width(al);
 		itemwidth = width(ap->type);
 		ap = ap->chain;
-		al = ((struct tnode *) ((struct nl *) al)->chain);
-		if (ap->chain != NIL || ((struct nl *) al)->chain != NIL) {
+		al = al->chain;
+		if (ap->chain != NIL || al->chain != NIL) {
 			error("%s requires a and z to be single dimension arrays", pu);
 			return;
 		}
@@ -1547,10 +1539,9 @@ packunp:
 		 * j will be v-u+1
 		 */
 		i = ap->range[1] - ap->range[0] + 1;
-		j = ((struct nl *) al)->range[1] - 
-			((struct nl *) al)->range[0] + 1;
+		j = al->range[1] - al->range[0] + 1;
 		if (i < j) {
-			error("%s cannot have more elements in a (%d) than in z (%d)", pu, (char *) j, (char *) i);
+			error("%s cannot have more elements in a (%d) than in z (%d)", pu, j, i);
 			return;
 		}
 		/*
@@ -1558,13 +1549,13 @@ packunp:
 		 */
 		i -= j;
 		j = ap->range[0];
-		putleaf( P2ICON , itemwidth , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , itemwidth , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , j , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , j , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , i , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , i , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , k , 0 , P2INT , (char *) 0 );
+		putleaf( P2ICON , k , 0 , P2INT , 0 );
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
