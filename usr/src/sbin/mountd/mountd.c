@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.2 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -429,12 +429,17 @@ xdr_explist(xdrsp, cp)
 {
 	register struct exportlist *ep;
 	int false = 0;
-	int omask;
+	int omask, putdef;
 
 	omask = sigblock(sigmask(SIGHUP));
 	ep = exphead;
 	while (ep) {
-		if (put_exlist(ep->ex_dirl, xdrsp, ep->ex_defdir))
+		putdef = 0;
+		if (put_exlist(ep->ex_dirl, xdrsp, ep->ex_defdir, &putdef))
+			goto errout;
+		if (ep->ex_defdir && putdef == 0 &&
+			put_exlist(ep->ex_defdir, xdrsp, (struct dirlist *)0,
+			&putdef))
 			goto errout;
 		ep = ep->ex_next;
 	}
@@ -451,10 +456,11 @@ errout:
  * Called from xdr_explist() to traverse the tree and export the
  * directory paths.
  */
-put_exlist(dp, xdrsp, adp)
+put_exlist(dp, xdrsp, adp, putdefp)
 	register struct dirlist *dp;
 	XDR *xdrsp;
 	struct dirlist *adp;
+	int *putdefp;
 {
 	register struct grouplist *grp;
 	register struct hostlist *hp;
@@ -465,15 +471,17 @@ put_exlist(dp, xdrsp, adp)
 	char *strp;
 
 	if (dp) {
-		if (put_exlist(dp->dp_left, xdrsp, adp))
+		if (put_exlist(dp->dp_left, xdrsp, adp, putdefp))
 			return (1);
 		if (!xdr_bool(xdrsp, &true))
 			return (1);
 		strp = dp->dp_dirp;
 		if (!xdr_string(xdrsp, &strp, RPCMNT_PATHLEN))
 			return (1);
-		if (adp && !strcmp(dp->dp_dirp, adp->dp_dirp))
+		if (adp && !strcmp(dp->dp_dirp, adp->dp_dirp)) {
 			gotalldir = 1;
+			*putdefp = 1;
+		}
 		if ((dp->dp_flag & DP_DEFSET) == 0 &&
 		    (gotalldir == 0 || (adp->dp_flag & DP_DEFSET) == 0)) {
 			hp = dp->dp_hosts;
@@ -503,7 +511,7 @@ put_exlist(dp, xdrsp, adp)
 		}
 		if (!xdr_bool(xdrsp, &false))
 			return (1);
-		if (put_exlist(dp->dp_right, xdrsp, adp))
+		if (put_exlist(dp->dp_right, xdrsp, adp, putdefp))
 			return (1);
 	}
 	return (0);
@@ -1381,12 +1389,12 @@ do_mount(ep, grp, exflags, anoncrp, dirp, dirplen, fsb)
 	while (!done) {
 		switch (grp->gr_type) {
 		case GT_HOST:
-			if (addrp)
+			if (addrp) {
 				sin.sin_addr.s_addr = **addrp;
-			else
-				sin.sin_addr.s_addr = INADDR_ANY;
+				args.slen = sizeof(sin);
+			} else
+				args.slen = 0;
 			args.saddr = (struct sockaddr *)&sin;
-			args.slen = sizeof(sin);
 			args.msklen = 0;
 			break;
 		case GT_NET:
