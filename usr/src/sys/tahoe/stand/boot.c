@@ -1,4 +1,11 @@
-/*	boot.c	7.5	90/12/16	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)boot.c	7.6 (Berkeley) %G%
+ */
 
 #include "../include/mtpr.h"
 
