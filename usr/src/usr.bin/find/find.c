@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.2 (Berkeley) %G%";
 /*	find	COMPILE:	cc -o find -s -O -i find.c -lS	*/
 #include <stdio.h>
 #include <sys/types.h>
@@ -170,7 +170,7 @@ struct anode *e3() { /* parse parens and predicates */
 		return(mk(atime, (struct anode *)atoi(b), (struct anode *)s));
 	else if(EQ(a, "-user")) {
 		if((i=getunum("/etc/passwd", b)) == -1) {
-			if(gmatch(b, "[0-9][0-9]*"))
+			if(gmatch(b, "[0-9]*"))
 				return mk(user, (struct anode *)atoi(b), (struct anode *)s);
 			fprintf(stderr, "find: cannot find -user name\n");
 			exit(1);
