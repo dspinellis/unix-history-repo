@@ -1,12 +1,8 @@
-static char *sccsid = "@(#)quot.c	4.1 (Berkeley) %G%";
-/*
- * Disk usage by user
- */
+static char *sccsid = "@(#)quot.c	4.2 (Berkeley) 82/03/29";
 
-char	*dargv[] = {
-	"/dev/rrp3",
-	0
-};
+/*
+ * quot
+ */
 
 #include <stdio.h>
 #include <ctype.h>
@@ -24,6 +20,7 @@ struct	dinode	itab[ITABSZ];
 struct du
 {
 	long	blocks;
+	long	blocks30,blocks60,blocks90;
 	long	nfiles;
 	int	uid;
 	char	*name;
@@ -35,6 +32,8 @@ long	overflow;
 int	nflg;
 int	fflg;
 int	cflg;
+int	vflg;
+long	now;
 
 int	fi;
 unsigned	ino;
@@ -51,6 +50,7 @@ char **argv;
 	register struct passwd *lp;
 	register char **p;
 
+	now = time(0);
 	for(n=0; n<NUID; n++)
 		du[n].uid = n;
 	while((lp=getpwent()) != 0) {
@@ -62,11 +62,8 @@ char **argv;
 		du[n].name = copy(lp->pw_name);
 	}
 	if (argc == 1) {
-		for (p = dargv; *p;) {
-			check(*p++);
-			report();
-		}
-		return(0);
+		fprintf(stderr, "usage: df device ...\n");
+		exit(1);
 	}
 	while (--argc) {
 		argv++;
@@ -77,6 +74,8 @@ char **argv;
 				fflg++;
 			else if (argv[0][1]=='c')
 				cflg++;
+			else if (argv[0][1]=='v')
+				vflg++;
 		} else {
 			check(*argv);
 			report();
@@ -139,6 +138,13 @@ register struct dinode *ip;
 	if (ip->di_uid >= NUID)
 		return;
 	du[ip->di_uid].blocks += (ip->di_size+BSIZE-1)/BSIZE;
+#define	DAY (60 * 60 * 24)	/* seconds per day */
+	if (now - ip->di_atime > 30 * DAY)
+		du[ip->di_uid].blocks30 += (ip->di_size+BSIZE-1)/BSIZE;
+	if (now - ip->di_atime > 60 * DAY)
+		du[ip->di_uid].blocks60 += (ip->di_size+BSIZE-1)/BSIZE;
+	if (now - ip->di_atime > 90 * DAY)
+		du[ip->di_uid].blocks90 += (ip->di_size+BSIZE-1)/BSIZE;
 	du[ip->di_uid].nfiles++;
 	if (nflg) {
 	tryagain:
@@ -214,9 +220,13 @@ report()
 		if (fflg)
 			printf("%5D\t", du[i].nfiles);
 		if (du[i].name)
-			printf("%s\n", du[i].name);
+			printf("%-8.8s", du[i].name);
 		else
-			printf("#%d\n", du[i].uid);
+			printf("#%-8d", du[i].uid);
+		if (vflg)
+			printf("\t%5D\t%5D\t%5D",
+			    du[i].blocks30, du[i].blocks60, du[i].blocks90);
+		printf("\n");
 	}
 }
 
