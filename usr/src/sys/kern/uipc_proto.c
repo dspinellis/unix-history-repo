@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_proto.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_proto.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,7 +18,7 @@
  */
 
 int	uipc_usrreq(), raw_usrreq();
-void	raw_init(),raw_input(),raw_ctlinput();
+void	raw_init(), raw_input(), raw_ctlinput();
 extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
