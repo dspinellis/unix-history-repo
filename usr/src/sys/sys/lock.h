@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.6 (Berkeley) %G%
+ *	@(#)lock.h	8.7 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -113,6 +113,14 @@ struct lock {
 #define LK_HAVE_EXCL	0x00000400	/* exclusive lock obtained */
 #define LK_WAITDRAIN	0x00000800	/* process waiting for lock to drain */
 #define LK_DRAINED	0x00001000	/* lock has been decommissioned */
+/*
+ * Control flags
+ *
+ * Non-persistent external flags.
+ */
+#define LK_INTERLOCK	0x00010000	/* unlock passed simple lock after
+					   getting lk_interlock */
+#define LK_RETRY	0x00020000	/* vn_lock: retry until locked */
 
 /*
  * Lock return status.
@@ -134,11 +142,13 @@ struct lock {
 /*
  * Indicator that no process holds exclusive lock
  */
+#define LK_KERNPROC ((pid_t) -2)
 #define LK_NOPROC ((pid_t) -1)
 
 void	lock_init __P((struct lock *, int prio, char *wmesg, int timo,
 			int flags));
-int	lockmgr __P((__volatile struct lock *, u_int flags, struct proc *));
+int	lockmgr __P((__volatile struct lock *, u_int flags,
+			struct simple_lock *, pid_t pid));
 int	lockstatus __P((struct lock *));
 
 #if NCPUS > 1
