@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.8 %G%";
+static char sccsid[] = "@(#)proc.c 1.9 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -52,6 +52,7 @@ proc(r)
 	int i, j, k;
 	int itemwidth;
 	struct tmps soffset;
+	struct nl	*tempnlp;
 
 #define	CONPREC 4
 #define	VARPREC 8
@@ -493,9 +494,10 @@ proc(r)
 				if ( ( typ == TDOUBLE && fmtspec == VARWIDTH )
 				    || typ == TSTR ) {
 					soffset = sizes[cbn].curtmps;
-					i = tmpalloc(sizeof(long),
+					tempnlp = tmpalloc(sizeof(long),
 						nl+T4INT, REGOK);
-					put(2, O_LV | cbn << 8 + INDX, i);
+					put(2, O_LV | cbn << 8 + INDX, 
+					    tempnlp -> value[ NL_OFFS ] );
 				}
 				ap = stkrval(al[2], NIL , RREQ );
 				if (ap == NIL)
@@ -513,7 +515,8 @@ proc(r)
 					if (fmtspec == VARWIDTH) {
 						fmt = 'e';
 						put(1, O_AS4);
-						put(2, O_RV4 | cbn << 8 + INDX, i);
+						put(2, O_RV4 | cbn << 8 + INDX,
+						    tempnlp -> value[NL_OFFS] );
 #						ifdef DEC11
 						    put(3, O_MAX, 8, 1);
 #						else
@@ -521,7 +524,8 @@ proc(r)
 #						endif DEC11
 						convert(nl+T4INT, INT_TYP);
 						stkcnt += sizeof(int);
-						put(2, O_RV4 | cbn << 8 + INDX, i);
+						put(2, O_RV4 | cbn << 8 + INDX, 
+						    tempnlp->value[NL_OFFS] );
 						fmtspec += VARPREC;
 						tmpfree(&soffset);
 					}
@@ -529,7 +533,8 @@ proc(r)
 					break;
 				case TSTR:
 					put(1, O_AS4);
-					put(2, O_RV4 | cbn << 8 + INDX, i);
+					put(2, O_RV4 | cbn << 8 + INDX, 
+					    tempnlp -> value[ NL_OFFS ] );
 					put(3, O_MAX, strnglen, 0);
 					break;
 				default:
@@ -584,7 +589,8 @@ proc(r)
 				put(1, O_FILE);
 				put(2, CON_INT, 1);
 				if (strfmt & VARWIDTH) {
-					put(2, O_RV4 | cbn << 8 + INDX , i );
+					put(2, O_RV4 | cbn << 8 + INDX , 
+					    tempnlp -> value[ NL_OFFS ] );
 					put(2, O_MIN, strnglen);
 					convert(nl+T4INT, INT_TYP);
 					tmpfree(&soffset);
