@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.5 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,7 +115,7 @@ lfs_flush()
 	lfs_writing = 1;
 	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
 		/* The lock check below is to avoid races with unmount. */
-		if (mp->mnt_stat.f_type == MOUNT_LFS &&
+		if (mp->mnt_stat.f_type == lfs_mount_type &&
 		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_UNMOUNT)) == 0 &&
 		    !((((struct ufsmount *)mp->mnt_data))->ufsmount_u.lfs)->lfs_dirops ) {
 			/*
