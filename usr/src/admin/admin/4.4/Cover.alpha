@@ -1,0 +1,339 @@
+.\" @(#)Cover.alpha	1.1 (Berkeley) %G%
+.LP
+Dear Colleague:
+.sp
+.PP
+We are happy to send you information about our June,
+1992 alpha release of 4.4BSD.
+This release represents our expectations for the final interfaces
+that will be present in 4.4BSD.
+Our goal in making this release available is to get feedback on any
+problems in the design or implementation of the new facilities,
+and to allow adventurous sites to gain experience with
+the new interfaces in 4.4BSD.
+.PP
+This distribution is NOT intended to be used on production systems;
+nor is it intended for sites without enough local expertise
+to find and fix any problems that are encountered.
+It is intended to be used to provide an advance look at some of the
+facilities and interfaces that we will be distributing in 4.4BSD.
+We are interested in getting feedback on the problems that you find 
+and also any compatibility problems that you expect in trying
+to convert your applications to run on this release.
+While we hope that the interfaces in this release will not change
+before the final release of 4.4BSD,
+we will make changes that we feel are necessary to fix problems
+that arise during the alpha release period
+(at least in part based on feedback from this test group).
+Where ever possible, we will minimize changes that will break
+applications ported to this release.
+The code in this distribution may be redistributed and used
+in released products.
+However, you are strongly encouraged to upgrade any code
+that you use from this distribution to the similarly-licensed
+distribution of the 4.4BSD code within one year of its release.
+.PP
+Only limited support will be provided by our group.
+Specifically,
+we cannot provide help with installation
+of this software on other systems.
+We are, of course, interested in getting feedback on problems that you
+encounter in this release.
+.PP
+We are releasing two versions of the software, 4.4BSD and 4.4BSD-Lite.
+The 4.4BSD distribution is available only to sites
+with UNIX/32V\(dg, System III, or System V
+.FS
+\(dgUNIX, UNIX/32V, UNIX System III, and UNIX System V
+are registered trademarks of USL/AT&T in the USA and other countries.
+.FE
+source licenses with USL/AT&T.
+The 4.4BSD-Lite distribution is a subset of 4.4BSD that
+is copyrighted by the University of California
+and others, but may be freely redistributed.
+It is available to anyone and requires no previous license, either from
+USL/AT&T or The Regents of the University of California.
+The license agreement is similar to that of the two BSD
+Networking Releases.
+The 4.4BSD-Lite distribution contains only a few additional programs
+and no additional kernel files from the Second Networking
+release done in June 1991.
+However, it does contain support for several additional architectures
+and has many bug fixes and performance enhancements.
+The distribution includes both software developed at Berkeley
+and also a large amount of software contributed by authors outside
+Berkeley.
+.\" For details, see the attached contributors list.
+.PP
+Because the 4.4BSD-Lite distribution is a partial-source
+distribution only, it is not possible to compile or run this software
+without a pre-existing system that is already installed and running.
+It includes source code and manual pages for the C library
+and about three-fourths of the utilities contained in
+the 4.4BSD distribution.
+.\" An approximate list of the included and excluded utilities is provided
+.\" in the attached utilities list.
+Additionally, the 4.4BSD-Lite distribution includes source code for most
+of the 4.4BSD kernel, including machine support for the six architectures
+described below.
+The kernel source code is not complete for any architecture.
+Specifically, the kernel support for executing files, doing physical I/O,
+managing the buffer cache, handling process tracing and doing accounting
+is not included in 4.4BSD-Lite.
+.PP
+The enclosed information is designed to serve two purposes.  The first
+purpose is to acquaint you with the details of our distribution so you
+can decide whether you would like to receive it.
+The second purpose is to tell you how to obtain our distribution.
+.SH
+What is 4.4BSD?
+.PP
+This software distribution is provided on one 6250bpi 1/2'' 9-track tape
+or one 8mm Exabyte cassette only.
+The 4.4BSD distribution contains complete source;
+it also contains binaries for the HP9000/300 series of workstations.
+The 4.4BSD-Lite distribution contains only the subset of the 4.4BSD
+sources that are unencumbered.
+.PP
+The architectures that are supported include:
+.IP \(bu
+HP 9000/300 68000-based workstations
+.IP \(bu
+Intel 386/486-based machines with ISA/AT or EISA bus only.
+.IP \(bu
+Sony News MIPS-based workstations
+.IP \(bu
+Omron Luna 68000-based workstations
+.IP \(bu
+DECstation 3100 and 5000 MIPS-based workstations
+.IP \(bu
+Sparcstaion I & II SPARC-based workstations
+.LP
+The distribution does
+.B not
+include the machine support for the Tahoe and VAX architectures
+found in previous BSD distributions.
+Our primary development is on the HP9000/300 series machines.
+The other architectures are being developed and supported by
+people outside the university.
+Consequently, we are not able to directly test or maintain these 
+other architectures, so cannot comment on their robustness,
+reliability, or completeness.
+.PP
+The six major new facilities available in the 4.4BSD release are
+a new virtual memory system, 
+a log-structured filesystem,
+expansion of the fast filesystem to support
+files and filesystems that are up to 2^63 bytes in size,
+the addition of ISO/OSI networking support,
+a freely redistributable implementation of NFS, and
+the conversion to and addition of the POSIX.1 facilities.
+The kernel sources have been reorganized to collect all machine-dependent
+files for each architecture under one directory,
+and most of the machine-independent code is now free of code
+conditional on specific machines.
+The user structure and process structure have been reorganized
+to eliminate the statically-mapped user structure and to make most
+of the process resources shareable by multiple processes.
+The kernel has been converted to be compatible with ANSI C,
+including function prototypes for most of the exported functions.
+There are numerous other changes throughout the system.
+.PP
+The new virtual memory implementation is derived from the MACH
+operating system developed at Carnegie-Mellon,
+and was ported to the BSD kernel at the University of Utah.
+The MACH virtual memory system call interface has been replaced with the
+``mmap''-based interface described in the ``Berkeley Software
+Architecture Manual'' (see UNIX Programmer's Manual, 
+Supplementary Documents, PS1:6).
+The interface is similar to the interfaces shipped
+by several commercial vendors such as Sun, Convex Computer Corp.
+and USL/AT&T.
+The integration of the new virtual memory is functionally complete,
+but still has serious performance problems under heavy memory load.
+The internal kernel interfaces have not yet been completed
+and the memory pool and buffer cache have not yet been merged.
+Some of these changes are expected before the release of 4.4BSD.
+.PP
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet*).
+.FS
+*Ethernet is a trademark of the Xerox Corporation.
+.FE
+We also include support for ISO Connection-Oriented Network Service,
+X.25, TP-0.
+The session and presentation layers are provided outside
+the kernel by the ISO development environment (ISODE).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500), and miscellaneous other utilities.
+.PP
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+Although generally similar to Sun's vnode interface,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+The interface has been extended with support for stackable
+filesystems done at UCLA.
+These extensions allow for filesystems to be layered on top of each
+other and allow new vnode operations to be added without requiring
+changes to existing filesystem implementations.
+.PP
+In addition to the local ``fast filesystem'',
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented using only the
+publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+Using an extended protocol, it supports leases to allow a limited
+callback mechanism that greatly reduces the network traffic to
+maintain cache consistency between the server and its clients.
+.PP
+A new log-structured filesystem has been added that provides
+near disk-speed output and fast crash recovery.
+It is still experimental in the alpha release,
+though we hope to have enough experience with it to recommend
+it for production use by the time of the final 4.4BSD release.
+We have also added a memory-based filesystem that runs in
+pageable memory, that allows large temporary filesystems without
+requiring dedicated physical memory.
+.PP
+The quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom login.
+.PP
+The 4.4BSD distribution contains most of the interfaces
+specified in the POSIX.1 system interface standard.
+The biggest area of change is a new terminal driver.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the 4.3BSD terminal driver.
+4.4BSD also adds the POSIX job control interface,
+which is similar to the 4.3BSD job control interface,
+but adds a security model that was missing in the
+4.3BSD job control implementation.
+Other additions include POSIX signals, FIFOs, byte-range file locking,
+and saved user and group identifiers.
+.PP
+There are several new tools and utilities included in this release.
+A new version of make allows much-simplified makefiles for the system software
+and allows compilation for multiple architectures from the same source tree
+(which may be mounted read-only).
+Notable additions to the libraries include functions to traverse a UNIX
+file hierarchy, database interfaces to btree and hashing functions,
+a new, fast implementation of stdio and a radix sort function.
+The additions to the utility suite include greatly enhanced versions of
+programs that display system status information, implementations of
+various tools traditionally found in System V releases and many others.
+.PP
+We have been tracking the POSIX 1003.2 shell and utility work
+and have included prototypes of many of the proposed utilities.
+Because most of the traditional utilities have been replaced to eliminate
+code proprietary to USL/AT&T, you should realize that the utility software
+may not be as stable, reliable or well documented as in traditional Berkeley
+releases.
+In particular, almost the entire manual suite has been rewritten to
+be freely redistributable and, in many instances,
+it does not correctly reflect the current state of the software.
+It is also worth noting that, in rewriting this software, we have generally
+been rewarded with significant performance improvements.
+Most of the libraries and header files have been converted
+to be compliant with ANSI C.
+The default compiler (gcc) is compatible with ANSI C,
+but supports traditional C as a command-line option.
+The system libraries and utilities all compile
+with either ANSI or traditional C.
+.PP
+Work has also progressed in several other areas.
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
+.PP
+The Kerberos (version 4) authentication software has been
+integrated into much of the system (including NFS) to provide
+the first real network authentication on BSD.
+.PP
+This release does include several important structural kernel changes.
+The kernel uses a new internal system call convention;
+the use of global (``u-dot'') variables for parameters and error returns
+has been eliminated,
+and interrupted system calls no longer abort using non-local goto's (longjmp's).
+A new sleep interface separates signal handling from scheduling priority,
+returning characteristic errors to abort or restart the current system call.
+This sleep call also passes a string describing the process state,
+which is used by the ps(1) program.
+The old sleep interface can be used only for non-interruptible sleeps.
+The sleep interface (\fItsleep\fP) can be used at any priority,
+but is only interruptible if the PCATCH flag is set.
+When interrupted, \fItsleep\fP returns EINTR or ERESTART.
+.PP
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include mount entries, file entries,
+user open file descriptors, the process entries, the vnode table,
+the name cache, and the quota structures.
+.SH
+The End of BSD from Berkeley
+.PP
+As you may already have heard, the CSRG is going to go away after the
+final release of 4.4BSD.
+For the following reasons, clearly the CSRG cannot continue
+in its present form.
+.PP
+Funding has become increasingly time-consuming and difficult.
+We are spending more and more of our time obtaining funding,
+time that we would prefer to spend working on BSD.
+As many of you are intimately aware, computer corporations are
+actively seeking ways to reduce discretionary outlays.
+Also, as UNIX vendors have developed their own research groups,
+the work of the CSRG has become less necessary to them.
+Finally, making BSD freely redistributable has resulted
+in fewer distributions sold,
+as other organizations sell our releases for less money.
+.PP
+Support within the University of California has declined as BSD has
+become less widely used internally.
+Victims of our own success, many of the features once found only in
+BSD are now available from every vendor.
+.PP
+The system has become too large and complex for a group of four to
+architect and maintain.
+In particular, losing Mike Karels has made it obvious to us that
+the group is below critical mass for developing and distributing a
+complete UNIX system.
+.PP
+So, we intend are making the 4.4BSD-alpha distribution available now.
+We will spend the summer and some part of the fall cleaning up
+the release and make the final 4.4BSD release available in the fall.
+When the final release happens is mostly dependent on when our
+current funding runs out.
+At that time we will close down the group.
+We would really like to have six months to finish up 4.4BSD.
+The amount of time that we get is largely a function of how many
+of you purchase the alpha distribution.
+So, if you are planning to get 4.4BSD when it comes out, please
+consider buying an alpha distribution with an upgrade option instead.
+That way your money will go to support the final 4.4BSD release.
+.PP
+BSD has always been a community effort, and, as a community effort,
+does not rely on a small group of people in Berkeley to keep it going.
+BSD will not go away, but will live on through the free software and
+commercial efforts of many people.
+We thank you for your support over the years, your funding, and,
+of course, the software you've contributed to make the BSD system
+what it is today!
