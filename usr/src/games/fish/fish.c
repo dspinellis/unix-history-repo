@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fish.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fish.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -101,7 +101,7 @@ usermove()
 	register char **p;
 	char buf[256];
 
-	(void)printf("Your hand is:");
+	(void)printf("\nYour hand is:");
 	printhand(userhand);
 
 	for (;;) {
