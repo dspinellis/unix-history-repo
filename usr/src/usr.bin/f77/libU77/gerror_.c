@@ -1,6 +1,12 @@
 /*
-char id_gerror[] = "@(#)gerror_.c	1.1";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)gerror_.c	5.1	%G%
+ */
+
+/*
  * Return a standard error message in a character string.
  *
  * calling sequence:

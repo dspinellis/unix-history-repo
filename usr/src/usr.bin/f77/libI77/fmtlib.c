@@ -1,6 +1,12 @@
 /*
-char id_fmtlib[] = "@(#)fmtlib.c	1.3";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)fmtlib.c	5.1	%G%
+ */
+
+/*
  * integer to ascii conversion
  *
  * This code has been rearranged to produce optimized runtime code.

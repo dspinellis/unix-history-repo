@@ -1,6 +1,12 @@
 /*
-char id_close[] = "@(#)close.c	1.7";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)close.c	5.1	%G%
+ */
+
+/*
  * f_clos(): f77 file close
  * t_runc(): truncation
  * f_exit(): I/O library exit routines

@@ -1,6 +1,12 @@
 /*
-char id_ltime[] = "@(#)ltime_.c	1.1";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)ltime_.c	5.1	%G%
+ */
+
+/*
  * return broken down time
  *
  * calling sequence:

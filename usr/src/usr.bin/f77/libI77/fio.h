@@ -1,6 +1,12 @@
 /*
-char id_fio[] = "@(#)fio.h	1.3";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)fio.h	5.1 (Berkeley) %G%
+ */
+
+/*
  * f77 file i/o common definitions
  */
 

@@ -1,6 +1,12 @@
 /*
-char id_alarm[] = "@(#)alarm_.c	1.1";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)alarm_.c	5.1	%G%
+ */
+
+/*
  * set an alarm time, arrange for user specified action, and return.
  *
  * calling sequence:

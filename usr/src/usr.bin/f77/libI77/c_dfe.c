@@ -1,6 +1,12 @@
 /*
-char id_c_dfe[] = "@(#)c_dfe.c	1.1";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)c_dfe.c	5.1	%G%
+ */
+
+/*
  * direct formatted external i/o - common read/write routines
  */
 

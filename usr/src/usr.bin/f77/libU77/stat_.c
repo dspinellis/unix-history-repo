@@ -1,6 +1,12 @@
 /*
-char id_stat[] = "@(#)stat_.c	1.3";
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
+ *	@(#)stat_.c	5.1	%G%
+ */
+
+/*
  * get file status
  *
  * calling sequence:
