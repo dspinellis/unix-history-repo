@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -126,7 +126,7 @@ initvar() {
 		vpp = hashvar("PS1=");
 		vps1.next = *vpp;
 		*vpp = &vps1;
-		vps1.text = getuid() ? "PS1=$ " : "PS1=# ";
+		vps1.text = geteuid() ? "PS1=$ " : "PS1=# ";
 		vps1.flags = VSTRFIXED|VTEXTFIXED;
 	}
 }
