@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.31 (Berkeley) %G%
+ *	@(#)sys_process.c	7.32 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -58,7 +58,13 @@ ptrace(curp, uap, retval)
 	register struct proc *p;
 	int error;
 
+	if (uap->req <= 0) {
+		curp->p_flag |= STRC;
+		return (0);
+	}
 	p = pfind(uap->pid);
+	if (p == 0)
+		return (ESRCH);
 	if (uap->req == PT_ATTACH) {
 		/*
 		 * Must be root if the process has used set user or
@@ -86,12 +92,7 @@ ptrace(curp, uap, retval)
 		psignal(p, SIGSTOP);
 		return (0);
 	}
-	if (uap->req <= 0) {
-		curp->p_flag |= STRC;
-		return (0);
-	}
-	if (p == 0 || p->p_stat != SSTOP || p->p_pptr != curp ||
-	    !(p->p_flag & STRC))
+	if (p->p_stat != SSTOP || p->p_pptr != curp || !(p->p_flag & STRC))
 		return (ESRCH);
 	while (ipc.ip_lock)
 		sleep((caddr_t)&ipc, IPCPRI);
