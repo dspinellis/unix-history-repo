@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)comsat.c	5.24 (Berkeley) 2/25/91";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -59,6 +60,7 @@ static char sccsid[] = "@(#)comsat.c	5.24 (Berkeley) 2/25/91";
 #include <ctype.h>
 #include <string.h>
 #include <paths.h>
+#include <pwd.h>
 
 int	debug = 0;
 #define	dsyslog	if (debug) syslog
@@ -238,6 +240,14 @@ jkfprintf(tp, name, offset)
 	register FILE *fi;
 	register int linecnt, charcnt, inheader;
 	char line[BUFSIZ];
+	struct passwd *pw;
+
+	if((pw = getpwnam(name))==NULL) {
+		/* Should not happen */
+		return;
+	}
+	setuid(pw->pw_uid);
+	setgid(pw->pw_gid);
 
 	if ((fi = fopen(name, "r")) == NULL)
 		return;
