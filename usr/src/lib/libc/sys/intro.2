@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	6.11 (Berkeley) %G%
+.\"     @(#)intro.2	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -243,8 +243,11 @@ system or no implementation for it exists.
 .It Er 44 ESOCKTNOSUPPORT Em "Socket type not supported" .
 The support for the socket type has not been configured into the
 system or no implementation for it exists.
-.It Er 45 EOPNOTSUPP Em "Operation not supported on socket" .
-For example, trying to
+.It Er 45 EOPNOTSUPP Em "Operation not supported" .
+The attempted operation is not supported for the type of object referenced.
+Usually this occurs when a file descriptor refers to a file or socket
+that cannot support this operation,
+for example, trying to
 .Em accept
 a connection on a datagram socket.
 .It Er 46 EPFNOSUPPORT Em "Protocol family not supported" .
