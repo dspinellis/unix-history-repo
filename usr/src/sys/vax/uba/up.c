@@ -1,7 +1,12 @@
-#define	UTRACE
+int	trc = -1;
+int	trcw = 0;
+#define	D(i)	if (trc&(1<<i)) { if (trcw&(1<<i)) DELAY(1000); } else
+int	csdel0 = 0;
+int	csdel1 = 1000;
+int	csdel2 = 2000;
 int	asdel = 500;
 int	csdel3 = 100;
-/*	%H%	3.5	%G%	*/
+/*	%H%	3.6	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -255,8 +260,8 @@ register struct buf *bp;
 	(void) spl5();
 	disksort(dp, bp);
 #ifdef UTRACE
-	ttime();
-	trace("upstrat bn %d unit %d\n", bp->b_blkno, unit);
+D(1)	ttime();
+D(2)	trace("upstrat bn %d unit %d\n", bp->b_blkno, unit);
 #endif
 	if (dp->b_active == 0) {
 		(void) upustart(unit);
@@ -283,8 +288,8 @@ register unit;
 	if (unit >= NUP)
 		goto out;
 #ifdef UTRACE
-	ttime();
-	trace("upustart %d active %d", unit, uputab[unit].b_active);
+D(3)	ttime();
+D(4)	trace("upustart %d active %d", unit, uputab[unit].b_active);
 #endif
 	/*
 	 * Whether or not it was before, this unit is no longer busy.
@@ -309,7 +314,7 @@ register unit;
 	 */
 	if ((upaddr->upds & VV) == 0) {
 #ifdef UTRACE
-		trace(" not VV");
+D(5)		trace(" not VV");
 #endif
 		upaddr->upcs1 = IE|DCLR|GO;
 		DELAY(idelay);
@@ -371,7 +376,7 @@ register unit;
 
 search:
 #ifdef UTRACE
-	trace(" search %d@%d to %d@%d", upaddr->updc, (upaddr->upla>>6),
+D(6)	trace(" search %d@%d to %d@%d", upaddr->updc, (upaddr->upla>>6),
 	    cn, sn);
 #endif
 	upaddr->updc = cn;
@@ -386,6 +391,7 @@ search:
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
+	if (csdel0) DELAY(csdel0);
 	goto out;
 
 done:
@@ -395,7 +401,7 @@ done:
 	 * and link us onto the chain of ready disks.
 	 */
 #ifdef UTRACE
-	trace(" done");
+D(7)	trace(" done");
 #endif
 	dp->b_active = 2;
 	dp->b_forw = NULL;
@@ -406,8 +412,9 @@ done:
 	uptab.b_actl = dp;
 
 out:
+	if (csdel1) DELAY(csdel1);
 #ifdef UTRACE
-	trace("\n");
+D(8)	trace("\n");
 #endif
 	return (didie);
 }
@@ -424,9 +431,10 @@ upstart()
 	int dn, sn, tn, cn, cmd;
 
 loop:
+	if (csdel2) DELAY(csdel2);
 #ifdef UTRACE
-	ttime();
-	trace("upstart");
+D(9)	ttime();
+D(10)	trace("upstart");
 #endif
 	/*
 	 * Pick a drive off the queue of ready drives, and
@@ -438,7 +446,7 @@ loop:
 	 */
 	if ((dp = uptab.b_actf) == NULL) {
 #ifdef UTRACE
-		trace("\n");
+D(11)		trace("\n");
 #endif
 		return (0);
 	}
@@ -461,11 +469,11 @@ loop:
 	sn %= NSECT;
 	upaddr = UPADDR;
 #ifdef UTRACE
-	trace(" unit %d", dn);
+D(12)	trace(" unit %d", dn);
 #endif
 	if ((upaddr->upcs2 & 07) != dn) {
 #ifdef UTRACE
-		trace(" select");
+D(13)		trace(" select");
 #endif
 		upaddr->upcs2 = dn;
 		DELAY(sdelay);
@@ -481,7 +489,7 @@ loop:
 	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
 #ifdef UTRACE
-		trace(" !(DPR && MOL)");
+D(14)		trace(" !(DPR && MOL)");
 #endif
 		uptab.b_active = 0;
 		uptab.b_errcnt = 0;
@@ -498,7 +506,7 @@ loop:
 	 */
 	if (uptab.b_errcnt >= 16) {
 #ifdef UTRACE
-		trace(" offset");
+D(15)		trace(" offset");
 #endif
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
@@ -512,7 +520,7 @@ loop:
 	 * returned by ubasetup() for the cs1 register bits 8 and 9.
 	 */
 #ifdef UTRACE
-	trace(" %s %d.%d@%d cnt %d ba %x\n",
+D(16)	trace(" %s %d.%d@%d cnt %d ba %x\n",
 	    (bp->b_flags&B_READ) ? "read" : "write",
 	    cn, tn, sn, bp->b_bcount, up_ubinfo & 0x3ffff);
 #endif
@@ -565,8 +573,8 @@ upintr()
 	int needie = 1;
 
 #ifdef UTRACE
-	ttime();
-	trace("upintr as %d act %d %d %d;", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
+D(17)	ttime();
+D(18)	trace("upintr as %d act %d %d %d;", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
 #endif
 	if (uptab.b_active) {
 		/*
@@ -576,7 +584,7 @@ upintr()
 		 */
 		if ((upaddr->upcs1 & RDY) == 0) {
 #ifdef UTRACE
-			trace(" !RDY");
+D(19)			trace(" !RDY");
 #endif
 			printf("!RDY in upintr: cs1 %o\n", upaddr->upcs1);
 printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
@@ -594,7 +602,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			dk_busy &= ~(1<<(DK_N+unit));
 		if (upaddr->upcs1 & TRE) {
 #ifdef UTRACE
-			trace(" TRE");
+D(20)			trace(" TRE");
 #endif
 			/*
 			 * An error occurred, indeed.  Select this unit
@@ -661,11 +669,11 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 		 */
 		if (uptab.b_active) {
 #ifdef UTRACE
-			trace(" unit %d", unit);
+D(21)			trace(" unit %d", unit);
 #endif
 			if ((upaddr->upcs2 & 07) != unit) {
 #ifdef UTRACE
-				trace(" select");
+D(22)				trace(" select");
 #endif
 				upaddr->upcs2 = unit;
 				DELAY(sdelay);
@@ -674,7 +682,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 				neasycs2++;
 			if (uptab.b_errcnt >= 16) {
 #ifdef UTRACE
-				trace(" rtc");
+D(23)				trace(" rtc");
 #endif
 				upaddr->upcs1 = RTC|GO|IE;
 				DELAY(idelay);
@@ -701,7 +709,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 	else {
 		if (upaddr->upcs1 & TRE) {
 #ifdef UTRACE
-			trace(" TRE");
+D(24)			trace(" TRE");
 #endif
 			upaddr->upcs1 = TRE;
 			DELAY(idelay);
@@ -716,14 +724,14 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 	 * start it if any drives are now ready to transfer.
 	 */
 #ifdef UTRACE
-	trace("\n");
+D(25)	trace("\n");
 #endif
 	for (unit = 0; unit < NUP; unit++)
 		if (as & (1<<unit))
 			if (uputab[unit].b_active == 1) {
 				upaddr->upas = 1<<unit;
 #ifdef UTRACE
-				trace("as clear %d\n", unit);
+D(26)				trace("as clear %d\n", unit);
 #endif
 				if (asdel) DELAY(asdel);
 				if (upustart(unit))
@@ -731,7 +739,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			} else {
 				upaddr->upas = 1<<unit;
 #ifdef UTRACE
-				trace("spurious as clear %d\n", unit);
+D(27)				trace("spurious as clear %d\n", unit);
 #endif
 				DELAY(1000);
 			}
@@ -741,7 +749,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 out:
 	if (needie) {
 #ifdef UTRACE
-		trace("upintr set IE\n");
+D(28)		trace("upintr set IE\n");
 #endif
 		upaddr->upcs1 = IE;
 	}
