@@ -1,0 +1,27 @@
+KVM_GETLOADAVG(3)           BSD Programmer's Manual          KVM_GETLOADAVG(3)
+
+NNAAMMEE
+     kkvvmm__ggeettllooaaddaavvgg - get error message on kvm descriptor
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//rreessoouurrccee..hh>>
+     ##iinncclluuddee <<kkvvmm..hh>>
+
+     _i_n_t
+     kkvvmm__ggeettllooaaddaavvgg(_k_v_m___t _*_k_d, _d_o_u_b_l_e _l_o_a_d_a_v_g_[_], _i_n_t _n_e_l_e_m);
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkvvmm__ggeettllooaaddaavvgg() function returns the number of processes in the sys-
+     tem run queue of the kernel indicated by _k_d, averaged over various peri-
+     ods of time.  Up to _n_e_l_e_m samples are retrieved and assigned to succes-
+     sive elements of _l_o_a_d_a_v_g[]. The system imposes a maximum of 3 samples,
+     representing averages over the last 1, 5, and 15 minutes, respectively.
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the load average was unobtainable, -1 is returned; otherwise, the num-
+     ber of samples actually retrieved is returned.
+
+SSEEEE AALLSSOO
+     uptime(1),  kvm(3),  getloadavg(3)
+
+4.4BSD                           June 4, 1993                                1

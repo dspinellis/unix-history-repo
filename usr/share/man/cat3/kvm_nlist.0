@@ -1,0 +1,37 @@
+KVM_NLIST(3)                BSD Programmer's Manual               KVM_NLIST(3)
+
+NNAAMMEE
+     kkvvmm__nnlliisstt - retrieve symbol table names from a kernel image
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<kkvvmm..hh>>
+     ##iinncclluuddee <<nnlliisstt..hh>>
+
+     _i_n_t
+     kkvvmm__nnlliisstt(_k_v_m___t _*_k_d, _s_t_r_u_c_t _n_l_i_s_t _*_n_l);
+
+DDEESSCCRRIIPPTTIIOONN
+     kkvvmm__nnlliisstt() retrieves the symbol table entries indicated by the name list
+     argument _n_l. This argument points to an array of nlist structures, termi-
+     nated by an entry whose n_name field is NULL (see nlist(3)).  Each symbol
+     is looked up using the n_name field, and if found, the corresponding
+     n_type and n_value fields are filled in.  These fields are set to 0 if
+     the symbol is not found.
+
+     The program kvm_mkdb(8) builds a database from the running kernel's
+     namelist.  If the database matches the opened kernel, kkvvmm__nnlliisstt() uses it
+     to speed lookups.
+
+RREETTUURRNN VVAALLUUEESS
+     The kkvvmm__nnlliisstt() function returns the number of invalid entries found.  If
+     the kernel symbol table was unreadable, -1 is returned.
+
+FFIILLEESS
+     /var/db/kvm_vmunix.db
+
+SSEEEE AALLSSOO
+     kvm(3),  kvm_close(3),  kvm_getargv(3),  kvm_getenvv(3),  kvm_geterr(3),
+     kvm_getprocs(3),  kvm_open(3),  kvm_openfiles(3),  kvm_read(3),
+     kvm_write(3),  kvm_mkdb(8)
+
+4.4BSD                           June 4, 1993                                1
