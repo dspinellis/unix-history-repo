@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)reg.h	5.3 (Berkeley) %G%
+ *	@(#)reg.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -52,6 +52,7 @@
 #define	sESP	(11)
 #define	sSS	(12)
 
+#define	PC	sEIP
 #define	SP	sESP
 #define	PS	sEFLAGS
 #define	R0	sEDX

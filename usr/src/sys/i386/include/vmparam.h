@@ -7,8 +7,9 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)vmparam.h	5.3 (Berkeley) %G%
+ *	@(#)vmparam.h	5.4 (Berkeley) %G%
  */
+
 
 /*
  * Machine dependent constants for 386.
@@ -16,7 +17,7 @@
 
 /*
  * Virtual address space arrangement. On 386, both user and kernel
- * share the address space, not unlike the arrangements on the vax.
+ * share the address space, not unlike the vax.
  * USRTEXT is the start of the user text/data space, while USRSTACK
  * is the top (end) of the user stack. Immediately above the user stack
  * resides the user structure, which is UPAGES long and contains the
@@ -25,7 +26,6 @@
  * region begins with user text and ends with user data.
  * Immediately after the user structure is the kernal address space.
  */
-
 #define	USRTEXT		0
 #define	USRSTACK	0xFDFFE000	/* Sysbase - UPAGES*NBPG */
 #define	BTOPUSRSTACK	(0xFE000-(UPAGES))	/* btop(USRSTACK) */
@@ -69,7 +69,7 @@
 /*
  * Size of User Raw I/O map
  */
-#define	USRIOSIZE 	30
+#define	USRIOSIZE 	300
 
 /*
  * The size of the clock loop.
@@ -168,7 +168,7 @@
 #define	LOTSOFMEM	2
 
 #define	mapin(pte, v, pfnum, prot) \
-	{(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot)); tlbflush(); }
+	{(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot)) ; }
 
 /*
  * Invalidate a cluster (optimized here for standard CLSIZE).
@@ -178,14 +178,8 @@
 #endif
 
 /*
- * inline assembler macros
- */
-
-/*
  * Flush MMU TLB
  */
-
-#define	tlbflush()	asm(" movl %%cr3,%%eax; movl %%eax,%%cr3 " ::: "ax")
 
 #ifndef I386_CR3PAT
 #define	I386_CR3PAT	0x0
@@ -201,6 +195,14 @@
 
 #define load_cr3(s) ({ u_long val; \
 	val = (s) | I386_CR3PAT; \
+	asm ("movl %0,%%eax; movl %%eax,%%cr3" \
+		:  \
+		: "g" (val) \
+		: "ax"); \
+})
+
+#define tlbflush() ({ u_long val; \
+	val = u.u_pcb.pcb_ptd | I386_CR3PAT; \
 	asm ("movl %0,%%eax; movl %%eax,%%cr3" \
 		:  \
 		: "g" (val) \

@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)param.h	5.1 (Berkeley) %G%
+ *	@(#)param.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -15,10 +15,6 @@
  */
 
 #define MACHINE "i386"
-
-#ifndef BYTE_ORDER
-#include <machine/endian.h>
-#endif
 
 #define	NBPG		4096		/* bytes/page */
 #define	PGOFSET		(NBPG-1)	/* byte offset into page */
@@ -45,6 +41,31 @@
 
 #define	UPAGES	2		/* pages of u-area */
 
+/*
+ * Constants related to network buffer management.
+ * MCLBYTES must be no larger than CLBYTES (the software page size), and,
+ * on machines that exchange pages of input or output buffers with mbuf
+ * clusters (MAPPED_MBUFS), MCLBYTES must also be an integral multiple
+ * of the hardware page size.
+ */
+#define	MSIZE		128		/* size of an mbuf */
+#define	MCLBYTES	1024
+#define	MCLSHIFT	10
+#define	MCLOFSET	(MCLBYTES - 1)
+#ifndef NMBCLUSTERS
+#ifdef GATEWAY
+#define	NMBCLUSTERS	512		/* map size, max cluster allocation */
+#else
+#define	NMBCLUSTERS	256		/* map size, max cluster allocation */
+#endif
+#endif
+
+/*
+ * Size of kernel malloc arena in CLBYTES-sized logical pages
+ */ 
+#ifndef NKMEMCLUSTERS
+#define	NKMEMCLUSTERS	(512*1024/CLBYTES)
+#endif
 /*
  * Some macros for units conversion
  */
