@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.7 (Berkeley) %G%
+ *	@(#)union_subr.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -512,11 +512,11 @@ union_freevp(vp)
  * and (tvp) are locked on entry and exit.
  */
 int
-union_copyfile(p, cred, fvp, tvp)
-	struct proc *p;
-	struct ucred *cred;
+union_copyfile(fvp, tvp, cred, p)
 	struct vnode *fvp;
 	struct vnode *tvp;
+	struct ucred *cred;
+	struct proc *p;
 {
 	char *buf;
 	struct uio uio;
@@ -577,6 +577,76 @@ union_copyfile(p, cred, fvp, tvp)
 
 	free(buf, M_TEMP);
 	return (error);
+}
+
+/*
+ * (un) is assumed to be locked on entry and remains
+ * locked on exit.
+ */
+int
+union_copyup(un, docopy, cred, p)
+	struct union_node *un;
+	int docopy;
+	struct ucred *cred;
+	struct proc *p;
+{
+	int error;
+	struct vnode *lvp, *uvp;
+
+	error = union_vn_create(&uvp, un, p);
+	if (error)
+		return (error);
+
+	/* at this point, uppervp is locked */
+	union_newupper(un, uvp);
+	un->un_flags |= UN_ULOCK;
+
+	lvp = un->un_lowervp;
+
+	if (docopy) {
+		/*
+		 * XX - should not ignore errors
+		 * from VOP_CLOSE
+		 */
+		VOP_LOCK(lvp);
+		error = VOP_OPEN(lvp, FREAD, cred, p);
+		if (error == 0) {
+			error = union_copyfile(lvp, uvp, cred, p);
+			VOP_UNLOCK(lvp);
+			(void) VOP_CLOSE(lvp, FREAD);
+		}
+#ifdef UNION_DIAGNOSTIC
+		if (error == 0)
+			uprintf("union: copied up %s\n", un->un_path);
+#endif
+
+	}
+	un->un_flags &= ~UN_ULOCK;
+	VOP_UNLOCK(uvp);
+	union_vn_close(uvp, FWRITE, cred, p);
+	VOP_LOCK(uvp);
+	un->un_flags |= UN_ULOCK;
+
+	/*
+	 * Subsequent IOs will go to the top layer, so
+	 * call close on the lower vnode and open on the
+	 * upper vnode to ensure that the filesystem keeps
+	 * its references counts right.  This doesn't do
+	 * the right thing with (cred) and (FREAD) though.
+	 * Ignoring error returns is not right, either.
+	 */
+	if (error == 0) {
+		int i;
+
+		for (i = 0; i < un->un_openl; i++) {
+			(void) VOP_CLOSE(lvp, FREAD);
+			(void) VOP_OPEN(uvp, FREAD, cred, p);
+		}
+		un->un_openl = 0;
+	}
+
+	return (error);
+
 }
 
 /*
@@ -780,10 +850,11 @@ union_lowervp(vp)
 {
 	struct union_node *un = VTOUNION(vp);
 
-	if (un->un_lowervp && (vp->v_type == un->un_lowervp->v_type)) {
-		if (vget(un->un_lowervp, 0))
-			return (NULLVP);
+	if ((un->un_lowervp != NULLVP) &&
+	    (vp->v_type == un->un_lowervp->v_type)) {
+		if (vget(un->un_lowervp, 0) == 0)
+			return (un->un_lowervp);
 	}
 
-	return (un->un_lowervp);
+	return (NULLVP);
 }
