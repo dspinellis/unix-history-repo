@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.2 82/11/14";
+static char sccsid[] = "@(#)rsh.c	4.3 82/12/25";
 #endif
 
 #include <sys/types.h>
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)rsh.c	4.2 82/11/14";
 #include <errno.h>
 #include <signal.h>
 #include <pwd.h>
+#include <netdb.h>
 
 /*
  * rsh - remote shell
@@ -39,6 +40,7 @@ main(argc, argv0)
 	struct passwd *pwd;
 	int readfrom, ready;
 	int one = 1;
+	struct servent *sp;
 
 	host = rindex(argv[0], '/');
 	if (host)
@@ -93,7 +95,12 @@ another:
 		if (ap[1])
 			*cp++ = ' ';
 	}
-        rem = rcmd(&host, IPPORT_CMDSERVER, pwd->pw_name,
+	sp = getservbyname("shell", "tcp");
+	if (sp == 0) {
+		fprintf(stderr, "rsh: shell/tcp: unknown service\n");
+		exit(1);
+	}
+        rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    user ? user : pwd->pw_name, args, &rfd2);
         if (rem < 0)
                 exit(1);
