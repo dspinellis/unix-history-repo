@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)alloca.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)alloca.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /* like alloc, but automatic automatic free in return */
@@ -17,14 +17,13 @@
 #include "DEFS.h"
 
 ENTRY(alloca)
-	popl	%edx
-
 	popl	%edx		/*  pop return addr */
 	popl	%eax		/*  pop amount to allocate */
 	movl	%esp,%ecx
-	addl	$3,%eax		/*  round up to next word, compensate for arg */
+	addl	$3,%eax		/*  round up to next word */
 	andl	$0xfffffffc,%eax
 	subl	%eax,%esp
+	movl	%esp,%eax	/* base of newly allocated space */
 	pushl	8(%ecx)		/* copy possible saved registers */
 	pushl	4(%ecx)
 	pushl	0(%ecx)
