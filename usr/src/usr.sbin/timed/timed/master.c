@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.14 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -22,8 +22,7 @@ extern u_short sequence;
 
 #ifdef MEASURE
 int header;
-char *fi;
-FILE *fp;
+FILE *fp = NULL;
 #endif
 
 /*
@@ -55,9 +54,10 @@ master()
 	register struct netinfo *ntp;
 
 #ifdef MEASURE
-	fi = "/usr/adm/timed.masterlog";
-	fp = fopen(fi, "w");
-	setlinebuf(fp);
+	if (fp == NULL) {
+		fp = fopen("/usr/adm/timed.masterlog", "w");
+		setlinebuf(fp);
+	}
 #endif
 
 	syslog(LOG_INFO, "This machine is master");
@@ -233,7 +233,10 @@ loop:
 		case TSP_QUIT:
 			/* become slave */
 #ifdef MEASURE
-			(void)fclose(fp);
+			if (fp != NULL) {
+				(void)fclose(fp);
+				fp = NULL;
+			}
 #endif
 			longjmp(jmpenv, 2);
 			break;
