@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.22 (Berkeley) %G%
+ *	@(#)sendmail.h	6.23 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.22		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.23		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -583,7 +583,8 @@ EXTERN char	ErrorMode;	/* error mode, see below */
 #define PRIV_NEEDVRFYHELO	00004	/* insist on HELO for VRFY */
 #define PRIV_NOEXPN		00010	/* disallow EXPN command entirely */
 #define PRIV_NOVRFY		00020	/* disallow VRFY command entirely */
-#define PRIV_GOAWAY		0xffff	/* don't give no info, anyway, anyhow */
+#define PRIV_RESTRMAILQ		01000	/* restrict mailq command */
+#define PRIV_GOAWAY		00777	/* don't give no info, anyway, anyhow */
 
 /* struct defining such things */
 struct prival
