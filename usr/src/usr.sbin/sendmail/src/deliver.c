@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.104		%G%);
+SCCSID(@(#)deliver.c	3.105		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1089,6 +1089,8 @@ commaize(p, tag, fp, oldstyle, m)
 		register char *name;
 		extern char *remotename();
 		char savechar;
+		int commentlevel;
+		bool inquote;
 
 		/*
 		**  Find the end of the name.  New style names
@@ -1104,11 +1106,19 @@ commaize(p, tag, fp, oldstyle, m)
 		name = p;
 
 		/* find end of name */
-		while (*p != '\0' && *p != ',')
+		commentlevel = 0;
+		inquote = FALSE;
+		while (*p != '\0' && (*p != ',' || commentlevel > 0 || inquote))
 		{
 			extern bool isatword();
 			char *oldp;
 
+			if (*p == '(')
+				commentlevel++;
+			else if (*p == ')' && commentlevel > 0)
+				commentlevel--;
+			else if (*p == '"')
+				inquote = !inquote;
 			if (!oldstyle || !isspace(*p))
 			{
 				p++;
