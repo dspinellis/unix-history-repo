@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.38		%G%);
+SCCSID(@(#)readcf.c	3.39		%G%);
 
 /*
 **  READCF -- read control file.
@@ -44,10 +44,6 @@ SCCSID(@(#)readcf.c	3.38		%G%);
 **	Side Effects:
 **		Builds several internal tables.
 */
-
-# define MAXTRUST	10		/* maximum number of trusted users */
-
-char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 
 readcf(cfname, safe)
 	char *cfname;
@@ -626,7 +622,7 @@ setoption(opt, val, safe, sticky)
 		tval = convtime(val);
 	else if (index("gLu", opt) != NULL)
 		ival = atoi(val);
-	else if (index("cfimosv", opt) != NULL)
+	else if (index("acfimosv", opt) != NULL)
 		bval = atobool(val);
 	else if (index("be", opt) != NULL)
 		/* do nothing */ ;
@@ -645,6 +641,10 @@ setoption(opt, val, safe, sticky)
 		AliasFile = val;
 		if (AliasFile[0] == '\0')
 			AliasFile = "aliases";
+		break;
+
+	  case 'a':		/* look for "@:@" in alias file */
+		SafeAlias = bval;
 		break;
 
 	  case 'b':		/* operations mode */

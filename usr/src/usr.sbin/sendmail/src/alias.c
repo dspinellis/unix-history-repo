@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.38		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.39		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.38		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.39		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -177,6 +177,7 @@ initaliases(aliasfile, init)
 		return;
 	}
 
+# ifdef DBM
 	/*
 	**  Check to see that the alias file is complete.
 	**	If not, we will assume that someone died, and it is up
@@ -184,10 +185,10 @@ initaliases(aliasfile, init)
 	*/
 
 	dbminit(aliasfile);
-	for (atcnt = 10; !init && atcnt-- >= 0 && aliaslookup("@") == NULL; )
+	atcnt = 10;
+	while (SafeAlias && !init && atcnt-- >= 0 && aliaslookup("@") == NULL)
 		sleep(30);
 
-# ifdef DBM
 	/*
 	**  See if the DBM version of the file is out of date with
 	**  the text version.  If so, go into 'init' mode automatically.

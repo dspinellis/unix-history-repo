@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.92		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.93		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -36,6 +36,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.92		%G%";
 # define MAXMAILERS	25		/* maximum mailers known to system */
 # define MAXRWSETS	30		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
+# define MAXTRUST	30		/* maximum number of trusted users */
 # define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 /*
 **  Address structure.
@@ -407,6 +408,7 @@ EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
+EXTERN bool	SafeAlias;	/* alias file must have "@:@" to be complete */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
@@ -432,6 +434,7 @@ EXTERN char	*AliasFile;	/* location of alias file */
 EXTERN char	*HelpFile;	/* location of SMTP help file */
 EXTERN char	*StatFile;	/* location of statistics summary */
 EXTERN char	*QueueDir;	/* location of queue directory */
+EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern char	*XcriptFile;	/* template for Transcript [conf.c] */
