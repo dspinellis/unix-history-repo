@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: process.c,v 1.5 84/12/26 10:41:37 linton Exp $";
@@ -31,10 +31,6 @@ static char rcsid[] = "$Header: process.c,v 1.5 84/12/26 10:41:37 linton Exp $";
 #include "coredump.h"
 #include <signal.h>
 #include <errno.h>
-#include <sys/param.h>
-#include <sys/dir.h>
-#include <sys/user.h>
-#include <machine/reg.h>
 #include <sys/stat.h>
 
 #ifndef public
@@ -119,7 +115,9 @@ public process_init()
 	sprintf(buf, "$r%d", i);
 	defregname(identname(buf, false), i);
     }
+#ifdef vax
     defregname(identname("$ap", true), ARGP);
+#endif
     defregname(identname("$fp", true), FRP);
     defregname(identname("$sp", true), STKP);
     defregname(identname("$pc", true), PROGCTR);
@@ -235,6 +233,7 @@ private setsigtrace()
     psigtrace(p, SIGTSTP, false);
     psigtrace(p, SIGCONT, false);
     psigtrace(p, SIGCHLD, false);
+    psigtrace(p, SIGWINCH, false);
 }
 
 /*
@@ -1046,10 +1045,6 @@ private sigs_on()
  * Get process information from user area.
  */
 
-private int rloc[] ={
-    R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, AP, FP, SP, PC
-};
-
 private getinfo(p, status)
 register Process p;
 register int status;
@@ -1180,6 +1175,28 @@ int nbytes;
     byteoff = (nbytes&(~WMASK));
     nbytes -= byteoff;
     bufend = cp + nbytes;
+#ifdef tahoe
+    if (((int)cp)&WMASK) {
+	/*
+	 * Must copy a byte at a time, buffer not word addressable.
+	 */
+	while (cp < bufend) {
+	    if (op == PREAD) {
+		w.pword = fetch(p, seg, newaddr);
+		for (i = 0; i < sizeof(Word); i++)
+		    *cp++ = w.pbyte[i];
+	    } else {
+		for (i = 0; i < sizeof(Word); i++)
+		    w.pbyte[i] = *cp++;
+		store(p, seg, newaddr, w.pword);
+	    }
+	    newaddr += sizeof(Word);
+	}
+    } else {
+    /*
+     * Buffer, word aligned, act normally...
+     */
+#endif
     while (cp < bufend) {
 	if (op == PREAD) {
 	    *((Word *) cp) = fetch(p, seg, newaddr);
@@ -1189,6 +1206,9 @@ int nbytes;
 	cp += sizeof(Word);
 	newaddr += sizeof(Word);
     }
+#ifdef tahoe
+    }
+#endif
     if (byteoff > 0) {
 	w.pword = fetch(p, seg, newaddr);
 	for (i = 0; i < byteoff; i++) {
@@ -1364,6 +1384,7 @@ private String signames[NSIG] = {
     "SEGV", "SYS", "PIPE", "ALRM", "TERM",
     0, "STOP", "TSTP", "CONT", "CHLD",
     "TTIN", "TTOU", "TINT", "XCPU", "XFSZ",
+    "VTALRM", "PROF", "WINCH", "USR1", "USR2"
 };
 
 /*
