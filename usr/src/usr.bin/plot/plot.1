@@ -1,11 +1,14 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\" This module is believed to contain source code proprietary to AT&T.
+.\" Use and redistribution is subject to the Berkeley Software License
+.\" Agreement and your Software Agreement with AT&T (Western Electric).
+.\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)plot.1	6.8 (Berkeley) %G%
+.\"	@(#)plot.1	6.9 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt PLOT 1
 .Os ATT 7th
@@ -14,14 +17,12 @@
 .Nd graphics filters
 .Sh SYNOPSIS
 .Nm plot
-.Oo
 .Op Fl T Ar terminal
 .Op Fl r Ar resolution
-.Oo
 .Ar
 .Sh DESCRIPTION
 These commands read plotting instructions (see
-.Xr plot  5  )
+.Xr plot 5 )
 from the standard input or the specified
 .Ar files  ,
 and in general
@@ -39,67 +40,52 @@ If no
 type is specified, the environment parameter
 .Ev $TERM
 (see
-.Xr environ  7  )
+.Xr environ 7 )
 is used.
 Known
 .Ar terminals
 are:
-.Tw Cm
-.Tp Cm 4013
+.Bl -tag -width indent
+.It Cm 4013
 Tektronix 4013 storage scope.
-.Tp Cx Cm 4014
-.Ws
-.Cx or
-.Ws
-.Cm tek
-.Cx
+.It Cm 4014 No \&or Cm tek
 Tektronix 4014 or 4015 storage scope with Enhanced Graphics Module.
 (Use 4013 for Tektronix 4014 or 4015 without the Enhanced Graphics Module).
-.Tp Cm 450
-DASI Hyterm 450 terminal (Diablo mechanism).
-.Tp Cm 300
-DASI 300 or GSI terminal (Diablo mechanism).
-.Tp Cm 300S
+.It Cm 450
+.Tn DASI
+Hyterm 450 terminal (Diablo mechanism).
+.It Cm 300
+.Tn DASI
+300 or
+.Tn GSI
+terminal (Diablo mechanism).
+.It Cm 300S
 DASI 300S terminal (Diablo mechanism).
-.Tp Cm aed
-AED 512 color graphics terminal.
-.Tp Cx Cm bitgraph
-.Ws
-.Cx or
-.Ws
-.Cm bg
-.Cx
-BBN bitgraph graphics terminal.
-.Tp Cx Cm imagen
-.Ws
-.Cx or
-.Ws
-.Cm ip
-.Cx
+.It Cm aed
+.Tn AED
+512 color graphics terminal.
+.It Cm bitgraph No \&or Cm bg
+.Tn BBN
+bitgraph graphics terminal.
+.It Cm imagen No \&or Cm \&ip
 Imagen laser printer (default 240 dots-per-inch resolution).
-.Tp Cm crt
+.It Cm crt
 Any crt terminal capable of running
 .Xr vi  1  .
-.Tp Cm dumb
+.It Cm dumb
 Dumb terminals without cursor addressing or line printers.
-.Tp Cm vt125
+.It Cm vt125
 DEC vt125 terminal.
-.Tp Cx Cm hp2648
-.Ws
-.Cx or
-.Ws
-.Cm hp
-.Ws
-.Cx or
-.Ws
-.Cm hp8
-.Cx
+.It Xo
+.Cm hp2648 No \&or Cm \&hp
+.No \&or Cm hp8
+.Xc
 Hewlett Packard 2648 graphics terminal.
-.Tp Cm ver
+.It Cm ver
 Versatec D1200A printer-plotter.
-.Tp Cm var
+.It Cm var
 Benson Varian printer-plotter.
-.Tp
+.El
 .Pp
 These versions of
 .Nm plot
@@ -110,30 +96,32 @@ option of
 to send the result directly to the plotter device rather than to
 the standard output.
 .Sh ENVIRONMENT
-.Tw Fl
-.Tp Ev TERM
+.Bl -tag -width Fl
+.It Ev TERM
 Used to determine the terminal type if not given as an argument.
 .Sh FILES
-.Dw /usr/bin/gigiplot
-.Di L
-.Dp Pa /usr/bin/t4013
-.Dp Pa /usr/bin/tek
-.Dp Pa /usr/bin/t450
-.Dp Pa /usr/bin/t300
-.Dp Pa /usr/bin/t300s
-.Dp Pa /usr/bin/aedplot
-.Dp Pa /usr/bin/bgplot
-.Dp Pa /usr/bin/crtplot
-.Dp Pa /usr/bin/dumbplot
-.Dp Pa /usr/bin/gigiplot
-.Dp Pa /usr/bin/hpplot
-.Dp Pa /usr/bin/implot
-.Dp Pa /usr/ucb/lpr
-.Dp
+.Bl -tag -width /usr/bin/gigiplot -compact
+.It Pa /usr/libexec/plot/t4013
+.It Pa /usr/libexec/plot/tek
+.It Pa /usr/libexec/plot/t450
+.It Pa /usr/libexec/plot/t300
+.It Pa /usr/libexec/plot/t300s
+.It Pa /usr/libexec/plot/aedplot
+.It Pa /usr/libexec/plot/bgplot
+.It Pa /usr/libexec/plot/crtplot
+.It Pa /usr/libexec/plot/dumbplot
+.It Pa /usr/libexec/plot/gigiplot
+.It Pa /usr/libexec/plot/hpplot
+.It Pa /usr/libexec/plot/implot
+.It Pa /usr/bin/lpr
+.El
 .Sh SEE ALSO
 .Xr plot 3 ,
 .Xr plot 5 ,
 .Xr lpr 1
 .Sh HISTORY
-.Nm Plot
-appeared in Version 6 AT&T UNIX.
+The
+.Nm plot
+command
+appeared in
+.At v6 .

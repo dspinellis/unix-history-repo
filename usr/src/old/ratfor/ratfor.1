@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)ratfor.1	6.6 (Berkeley) %G%
+.\"	@(#)ratfor.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt RATFOR 1
 .Os ATT 7th
@@ -22,55 +20,58 @@
 converts a rational dialect of Fortran into ordinary irrational Fortran.
 .Nm Ratfor
 provides control flow constructs essentially identical to those in C:
-.Tw Fl
-.Tp statement grouping:
+.Bl -tag -width indent
+.It Statement grouping:
 { statement; statement; statement }
-.Tp decision-making:
-.Ds I
+.It Decision-making:
+.Bd -unfilled -compact
 if (condition) statement { else statement }
 switch (integer value) {
 \tcase integer:	statement
 \t...
 \t[default]: statement
 }
-.De
-.Tp loops:
-.Ds L
+.Ed
+.It Loops:
+.Bd -unfilled -compact
 while (condition) statement
 for (expression; condition; expression) statement
 do limits statement
 repeat statement [until (condition)]
 break
 next
-.De
-.Tp
+.Ed
+.El
 .Pp
-and some syntactic sugar to make programs easier to read and write:
-.Tw Fl
-.Tp free form input:
+And some syntactic sugar to make programs easier to read and write:
+.Bl -tag -width Fl
+.It Free form input:
 multiple statements/line; automatic continuation
-.Tp comments:
+.It Comments:
 # this is a comment
-.Tp translation of relationals:
+.It Translation of relationals:
 >, >=, etc., become .GT., .GE., etc.
-.Tp return (expression)
+.It Return (expression)
 returns expression to caller from function
-.Tp define:
+.It Define:
 define name replacement
-.Tp include:
+.It Include:
 include filename
-.Tp
+.El
 .Pp
 .Nm Ratfor
 is best used with
 .Xr f77  1  .
 .Sh SEE ALSO
 .Xr f77 1
-.br
-B. W. Kernighan and P. J. Plauger,
-.Em Software Tools ,
-Addison-Wesley,
-1976.
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%T "Software Tools"
+.%I Addison-Wesley
+.%D 1976
+.Re
 .Sh HISTORY
 .Nm Ratfor
-appeared in Version 7 AT&T UNIX.
+appeared in
+.At v6 .
