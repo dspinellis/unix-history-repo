@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -14,7 +14,7 @@ SRCS=	ftime.c getpw.c gtty.c stty.c tell.c vlimit.c vtimes.c
 SRCS+=	reset.s
 .endif
 
-MAN3+=	ftime.0 getpw.0 stty.0 times.0 utime.0 vlimit.0 vtimes.0
+MAN3+=	ftime.0 getpw.0 stty.0 vlimit.0 vtimes.0
 
 MLINKS+=stty.3 gtty.3
 
