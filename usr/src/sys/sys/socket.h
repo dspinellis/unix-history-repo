@@ -1,4 +1,4 @@
-/*	socket.h	4.14	82/03/15	*/
+/*	socket.h	4.15	82/05/04	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -83,3 +83,5 @@ struct sockaddr {
 #define	AF_ECMA		8		/* european computer manufacturers */
 #define	AF_DATAKIT	9		/* datakit protocols */
 #define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
+
+#define	AF_MAX		11
