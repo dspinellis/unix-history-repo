@@ -1,4 +1,4 @@
-.\"	@(#)man.7	6.3 (Berkeley) %G%
+.\"	@(#)man.7	6.4 (Berkeley) %G%
 .\"
 .TH MAN 7 ""
 .AT 3
@@ -13,9 +13,8 @@ file ...
 troff  \-man\ 
 file ...
 .SH DESCRIPTION
-These macros are used to lay out pages of this manual.
-A skeleton page may be found in the file 
-/usr/man/man0/xx.
+These macros are used to lay out pages of this manual.  A skeleton page may
+be found in the file /usr/man/man.template.
 .PP
 Any text argument
 .I t
@@ -58,9 +57,9 @@ Change to default type size.
 .SH FILES
 /usr/lib/tmac/tmac.an
 .br
-/usr/man/man0/xx
+/usr/man/man.template
 .SH SEE ALSO
-troff(1), man(1)
+man(1), troff(1)
 .SH BUGS
 Relative indents don't nest.
 .SH REQUESTS
