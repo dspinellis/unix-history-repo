@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -363,6 +363,7 @@ savemail(e)
 static bool	SendBody;
 
 #define MAXRETURNS	6	/* max depth of returning messages */
+#define ERRORFUDGE	100	/* nominal size of error message text */
 
 returntosender(msg, returnq, sendbody, e)
 	char *msg;
@@ -406,9 +407,15 @@ returntosender(msg, returnq, sendbody, e)
 	if (!bitset(EF_OLDSTYLE, e->e_flags))
 		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
+	ee->e_msgsize = e->e_msgsize + ERRORFUDGE;
 	openxscript(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
 	{
+		if (bitset(QDONTSEND, q->q_flags))
+			continue;
+
+		ee->e_nrcpts++;
+
 		if (!DontPruneRoutes && pruneroute(q->q_paddr))
 			parseaddr(q->q_paddr, q, 0, '\0', NULL, e);
 
