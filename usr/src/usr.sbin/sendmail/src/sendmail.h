@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.60		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.61		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -277,7 +277,7 @@ typedef struct symtab	STAB;
 # define ST_ALIAS	4	/* an alias */
 
 # define s_class	s_value.sv_class
-# define s_addr		s_value.sv_addr
+# define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
 

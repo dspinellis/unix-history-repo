@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.65		%G%);
+SCCSID(@(#)main.c	3.66		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -347,8 +347,12 @@ main(argc, argv)
 			break;
 
 		  case 'D':	/* run as a daemon */
+#ifdef DAEMON
 			Daemon = TRUE;
-			/* explicit fall-through */
+#else
+			syserr("Daemon mode not implemented");
+#endif DAEMON
+			break;
 
 		  case 'q':	/* run queue files at intervals */
 # ifdef QUEUE
@@ -426,6 +430,7 @@ main(argc, argv)
 	}
 # endif DEBUG
 
+#ifdef DAEMON
 	/*
 	**  If a daemon, wait for a request.
 	**	getrequests will always return in a child.
@@ -433,6 +438,7 @@ main(argc, argv)
 
 	if (Daemon)
 		getrequests();
+#endif DAEMON
 	
 # ifdef SMTP
 	/*
