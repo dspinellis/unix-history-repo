@@ -12,31 +12,34 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
 #include <net/if.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #define	NSIP
 #include <netns/ns.h>
 #include <netns/ns_if.h>
+#include <netdb.h>
 
 #define EON
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>
 #include <sys/protosw.h>
 
+#include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
-#include <netdb.h>
+#include <stdlib.h>
+#include <string.h>
 
-extern int errno;
 struct	ifreq		ifr, ridreq;
 struct	ifaliasreq	addreq;
 struct	iso_ifreq	iso_ridreq;
