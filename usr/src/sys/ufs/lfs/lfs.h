@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.23 (Berkeley) %G%
+ *	@(#)lfs.h	7.24 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -279,15 +279,9 @@ typedef struct block_info {
 	daddr_t	bi_lbn;			/* logical block w/in file */
 	daddr_t	bi_daddr;		/* disk address of block */
 	time_t	bi_segcreate;		/* origin segment create time */
+	int	bi_version;		/* file version number */
 	void	*bi_bp;			/* data buffer */
 } BLOCK_INFO;
-
-typedef struct inode_info {
-	ino_t	ii_inode;		/* inode # */
-	daddr_t	ii_daddr;		/* disk address of block */
-	time_t	ii_segcreate;		/* origin segment create time */
-	struct dinode *ii_dinode;	/* data buffer */
-} INODE_INFO;
 
 /* In-memory description of a segment about to be written. */
 struct segment {
