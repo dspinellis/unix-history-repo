@@ -1,13 +1,13 @@
 /* 
- * Copyright (c) 1991 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * The Mach Operating System project at Carnegie-Mellon University.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_prot.h	7.3 (Berkeley) %G%
+ *	@(#)vm_prot.h	8.1 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.

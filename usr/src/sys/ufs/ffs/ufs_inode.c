@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1991 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.52 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

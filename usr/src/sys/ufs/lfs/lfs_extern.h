@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.23 (Berkeley) %G%
+ *	@(#)lfs_extern.h	8.1 (Berkeley) %G%
  */
 
 struct fid;

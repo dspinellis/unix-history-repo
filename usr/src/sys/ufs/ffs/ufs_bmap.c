@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1989, 1991 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	7.3 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
