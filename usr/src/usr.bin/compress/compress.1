@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)compress.1	6.10 (Berkeley) %G%
+.\"     @(#)compress.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COMPRESS 1
@@ -19,61 +19,60 @@
 .Nd compress and expand data
 .Sh SYNOPSIS
 .Nm compress
-.Op Fl f
-.Op Fl v
-.Op Fl c
+.Op Fl cfv
 .Op Fl b Ar bits
 .Op Ar
 .Nm uncompress
-.Op Fl f
-.Op Fl v
-.Op Fl c
-.Ar
+.Op Fl cfv
+.Op Ar 
 .Nm zcat
 .Op Ar
 .Sh DESCRIPTION
 .Nm Compress
 reduces the size of the named files using adaptive Lempel-Ziv coding.
-Whenever possible,
-each
+Each
 .Ar file
-is replaced by one with the extension
+is renamed to the same name plus the extension
 .Ar \&.Z ,
-while keeping the same ownership modes, access and modification times.
-If no files are specified, the standard input is compressed to the
-standard output.
-Compressed files can be restored to their original form using
-.Nm uncompress
-or
-.Nm zcat
+while keeping the same ownership, modes, and access and modification
+times.
+If compression would not reduce the size of a
+.Ar file ,
+the file is ignored.
+.Pp
+.Nm Uncompress
+restores the compressed files to their original form, renaming the
+files by deleting the
+.Ar \&.Z
+extension.
+.Pp
+If renaming the files would cause files to be overwritten and the standard
+input device is a terminal, the user is prompted (on the standard error
+output) for confirmation.
+If prompting is not possible or confirmation is not received, the files
+are not overwritten.
+.Pp
+.Nm Zcat
+is an alias for
+.Dq "uncompress -c" .
+.Pp
+If no files are specified, the standard input is compressed or uncompressed
+to the standard output.
+.Pp
+The options are as follows:
 .Bl -tag -width Ds
+.It Fl b
+Specify the
+.Ar bits
+code limit (see below).
+.It Fl c
+Compressed or uncompressed output is written to the standard output.
+No files are modified.
 .It Fl f
 Force compression of
 .Ar file ,
-even if it does not actually shrink
-or the corresponding
-.Ar file.Z
-file already exists.
-Except when run in the background under
-.Pa /bin/sh ,
-if
-.Fl f
-is not given the user is prompted as to whether an existing
-.Ar file.Z
-file should be overwritten.
-.It Fl c
-(``cat'').
-.Nm Compress/uncompress
-writes to the standard output; no files are changed.
-The nondestructive behavior of
-.Nm zcat
-is identical to that of
-.Nm uncompress
-.Fl c .
-.It Fl b
-Specify
-.Ar bits
-code limit (see below).
+even if it is not actually reduced in size.
+Additionally, files are overwritten without prompting for confirmation.
 .It Fl v
 Print the percentage reduction of each file.
 .El
@@ -91,25 +90,24 @@ When code 512 is reached, the algorithm switches to 10-bit codes and
 continues to use more bits until the
 limit specified by the
 .Fl b
-flag is reached (default 16).
+flag is reached (the default is 16).
 .Ar Bits
-must be between 9 and 16.  The default can be changed in the source to allow
-.Nm compress
-to be run on a smaller machine.
+must be between 9 and 16.
 .Pp
 After the
 .Ar bits
-limit is attained,
+limit is reached,
 .Nm compress
-periodically checks the compression ratio.  If it is increasing,
+periodically checks the compression ratio.
+If it is increasing,
 .Nm compress
-continues to use the existing code dictionary.  However,
-if the compression ratio decreases,
+continues to use the existing code dictionary.
+However, if the compression ratio decreases,
 .Nm compress
 discards the table of substrings and rebuilds it from scratch.  This allows
 the algorithm to adapt to the next "block" of the file.
 .Pp
-Note that the
+The
 .Fl b
 flag is omitted for
 .Ar uncompress
@@ -125,90 +123,17 @@ The amount of compression obtained depends on the size of the
 input, the number of
 .Ar bits
 per code, and the distribution of common substrings.
-Typically, text such as source code or English
-is reduced by 50\-60%.
-Compression is generally much better than that achieved by
-Huffman coding (as used in the historical command
-pack),
-or adaptive Huffman coding (as
-used in the historical command
-compact),
-and takes less time to compute.
+Typically, text such as source code or English is reduced by 50\-60%.
+Compression is generally much better than that achieved by Huffman
+coding (as used in the historical command pack), or adaptive Huffman
+coding (as used in the historical command compact), and takes less
+time to compute.
 .Pp
-If an error occurs, exit status is 1;
-if the last file was not compressed because it became larger, the status
-is 2; otherwise the status is 0.
-.Sh DIAGNOSTICS
-.Bl -tag -width flag
-.It "Usage: compress [-fvc] [-b maxbits] [file ...]"
-Invalid options were specified on the command line.
-.It "Missing maxbits"
-Maxbits must follow
-.Fl b .
-.It Ar file : No "not in compressed format"
-The file specified to
-.Ar uncompress
-has not been compressed.
-.It Xo
-.Ar file : No "compressed with"
-.Ar \&xx No "bits, can only handle"
-.Ar \&yy No bits
-.Xc
-.Ar File
-was compressed by a program that could deal with
-more
-.Ar bits
-than the compress code on this machine.
-Recompress the file with smaller
-.Ar bits .
-.It Ar file : No "already has .Z suffix -- no change"
-The file is assumed to be already compressed.
-Rename the file and try again.
-.It Ar file : No "filename too long to tack on .Z"
-The file cannot be compressed because its name is longer than
-12 characters.
-Rename and try again.
-This message does not occur on
-.Bx
-systems.
-.It Ar file No "already exists; do you wish to overwrite (y or n)?"
-Respond "y" if you want the output file to be replaced; "n" if not.
-.It "uncompress: corrupt input"
-A
-.Dv SIGSEGV
-violation was detected which usually means that the input file is
-corrupted.
-.It Compression: Em "xx.xx%"
-Percentage of the input saved by compression.
-(Relevant only for
-.Fl v . )
-.It "-- not a regular file: unchanged"
-When the input file is not a regular file,
-(e.g. a directory), it is
-left unaltered.
-.It "-- has" Ar xx No "other links: unchanged"
-The input file has links; it is left unchanged.  See
-.Xr ln 1
-for more information.
-.It "-- file unchanged"
-No savings is achieved by
-compression.  The input remains virgin.
-.El
-.Sh FILES
-.Bl -tag -width file.Z
-.It Pa file.Z
-compressed file is file.Z
-.El
-.Sh BUGS
-Although compressed files are compatible between machines with large memory,
-.Fl b Ns Ar 12
-should be used for file transfer to architectures with
-a small process data space (64KB or less, as exhibited by the
-.Tn DEC PDP
-series, the Intel 80286, etc.)
-.Pp
-.Nm Compress
-should be more flexible about the existence of the `.Z' suffix.
+The
+.Nm compress
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr zopen 3
 .Sh HISTORY
 The
 .Nm
