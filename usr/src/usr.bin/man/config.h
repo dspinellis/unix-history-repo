@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.h	8.1 (Berkeley) %G%
+ *	@(#)config.h	8.2 (Berkeley) %G%
  */
 
 typedef struct _entry {
@@ -17,6 +17,6 @@ typedef struct _entry {
 extern struct queue_entry head;
 
 ENTRY	*addlist __P((char *));
-void	 config __P((void));
+void	 config __P((char *));
 void	 debug __P((char *));
 ENTRY	*getlist __P((char *));
