@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	4.1 %G%";
+static char sccsid[] = "@(#)boggle.c	4.2 %G%";
 #endif
 
 #include <ctype.h>
@@ -179,7 +179,7 @@ printinst ()
 		printf("'break'.  While entering words, your erase character is only  effective\n");
 		printf("within the current word and your line kill character is ignored.\n");
 		printf("     Advanced players may wish to invoke the program with 1 or 2 +'s as\n");
-		printf("the  first argument.  The first + removes the restriction that postions\n");
+		printf("the  first argument.  The first + removes the restriction that positions\n");
 		printf("can only be used once in each word.  The second + causes a position  to\n");
 		printf("be  considered  adjacent  to itself as well as its (up to) 8 neighbors.\n");
 		printf("Hit any key to begin.\n");
