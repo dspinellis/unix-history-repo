@@ -1,4 +1,4 @@
-%	@(#)psdit.pro	1.3 %G%
+%	@(#)psdit.pro	1.4 %G%
 % lib/psdit.pro -- prolog for psdit (ditroff) files
 % Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
 % last edit: shore Sat Nov 23 20:28:03 1985
@@ -52,7 +52,7 @@
 /p{pop showpage pagesave restore /pagesave save def}def
 /Dt{/Dlinewidth exch def}def 1 Dt
 /Ds{/Ddash exch def}def -1 Ds
-/Di{/Dstipple exch def}def 1 Di
+/i{/Dstipple exch def}def 1 i
 /Dsetlinewidth{2 Dlinewidth mul setlinewidth}def
 /Dsetdash{Ddash 4 eq{[8 12]}{Ddash 16 eq{[32 36]}
  {Ddash 20 eq{[32 12 8 12]}{[]}ifelse}ifelse}ifelse 0 setdash}def
