@@ -1,12 +1,12 @@
 #! /bin/sh
-#	@(#)buildmini	4.1	%G%
+#	@(#)buildmini	4.2	%G%
 #
 miniroot=hp1a
 minitype=eagle
 #
 date
 umount /dev/${miniroot}
-makefs -s 2048 ${miniroot} ${minitype}
+newfs -s 4096 ${miniroot} ${minitype}
 fsck /dev/r${miniroot}
 mount /dev/${miniroot} /mnt
 cd /mnt; sh -x /sys/dist/get
