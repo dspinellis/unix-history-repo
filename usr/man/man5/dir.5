@@ -1,0 +1,63 @@
+.TH DIR 5  "15 January 1983"
+.SH NAME
+dir \- format of directories
+.SH SYNOPSIS
+.B #include <sys/types.h>
+.br
+.B #include <sys/dir.h>
+.SH DESCRIPTION
+A directory behaves exactly like an ordinary file, save that no
+user may write into a directory.
+The fact that a file is a directory is indicated by
+a bit in the flag word of its i-node entry; see
+.IR fs (5).
+The structure of a directory entry as given in the include file is:
+.RS
+.ta 8n +10n +10n
+.PP
+.nf
+/*
+ * This sets the "page size" for directories.
+ * Requirements are DEV_BSIZE <= DIRBLKSIZ <= MINBSIZE with
+ * DIRBLKSIZ a power of two.
+ * Dennis Ritchie feels that directory pages should be atomic
+ * operations to the disk, so we use DEV_BSIZE.
+ */
+#ifdef KERNEL
+#define DIRBLKSIZ DEV_BSIZE
+#else
+#define	DIRBLKSIZ 512
+#endif
+
+/*
+ * This limits the directory name length. Its main constraint
+ * is that it appears twice in the user structure. (u. area)
+ */
+#define MAXNAMLEN 255
+
+struct	direct {
+	u_long	d_ino;
+	short	d_reclen;
+	short	d_namlen;
+	char	d_name[MAXNAMLEN + 1];
+	/* typically shorter */
+};
+
+struct _dirdesc {
+	int	dd_fd;
+	long	dd_loc;
+	long	dd_size;
+	char	dd_buf[DIRBLKSIZ];
+};
+.fi
+.RE
+.PP
+By convention, the first two entries in each directory
+are for `\fB.\fR' and `\fB..\fR'.  The first is an entry for the
+directory itself.  The second is for the parent directory.
+The meaning of `\fB..\fR' is modified for the root directory
+of the master file system
+.RB (\*(lq / \*(rq),
+where `\fB..\fR' has the same meaning as `\fB.\fR'.
+.SH "SEE ALSO"
+fs(5)
