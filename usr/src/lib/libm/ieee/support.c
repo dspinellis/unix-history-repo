@@ -1,20 +1,23 @@
-/* 
+/*
  * Copyright (c) 1985 Regents of the University of California.
- * 
- * Use and reproduction of this software are granted  in  accordance  with
- * the terms and conditions specified in  the  Berkeley  Software  License
- * Agreement (in particular, this entails acknowledgement of the programs'
- * source, and inclusion of this notice) with the additional understanding
- * that  all  recipients  should regard themselves as participants  in  an
- * ongoing  research  project and hence should  feel  obligated  to report
- * their  experiences (good or bad) with these elementary function  codes,
- * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ * All recipients should regard themselves as participants in an ongoing
+ * research project and hence should feel obligated to report their
+ * experiences (good or bad) with these elementary function codes, using
+ * the sendbug(8) program, to the authors.
  */
 
 #ifndef lint
-static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 5.1 (ucb.elefunt) %G%";
-#endif	/* not lint */
+static char sccsid[] = "@(#)support.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /* 
  * Some IEEE standard 754 recommended functions and remainder and sqrt for 
