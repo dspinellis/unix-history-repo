@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.13 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
