@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -668,7 +668,7 @@ setsender(from, e, delimptr, internal)
 				**  We have an alternate address for the sender
 				*/
 
-				pvp = prescan(p, '\0', pvpbuf, NULL);
+				pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL);
 			}
 # endif /* USERDB */
 		}
@@ -719,7 +719,7 @@ setsender(from, e, delimptr, internal)
 	*/
 
 	if (pvp == NULL)
-		pvp = prescan(from, delimchar, pvpbuf, NULL);
+		pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 	{
 		/* don't need to give error -- prescan did that already */
