@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -62,10 +62,12 @@ configure()
 {
 	register struct scsi_device *dp;
 	register struct driver *drp;
+	extern char *cpu_model;
 
 	readidrom((u_char *)&idrom);
 	printf("SONY NET WORK STATION, Model %s, ", idrom.id_model);
 	printf("Machine ID #%d\n", idrom.id_serial);
+	/* strcpy(cpu_model, idrom.id_model); */
 
 	/* print what type of CPU and FPU we have */
 	switch (cpu.cpu.cp_imp) {
