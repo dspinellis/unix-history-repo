@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)prof.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)prof.c	4.4 (Berkeley) %G%";
 #endif
 /*
  * prof
@@ -8,6 +8,7 @@ static	char *sccsid = "@(#)prof.c	4.3 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <a.out.h>
+#include <sys/time.h>
 
 typedef	short UNIT;		/* unit of profiling */
 #define	PCFUDGE		11
@@ -157,9 +158,10 @@ main(argc, argv)
 
 printprof()
 {
-	double time, actime;
+	double time, actime, hz;
 
 	actime = 0;
+	hz = hertz();
 	printf(" %%time  cumsecs  #call  ms/call  name\n");
 	if (!lflg)
 		qsort(nl, nname, sizeof(struct nl), timcmp);
@@ -168,10 +170,10 @@ printprof()
 			continue;
 		time = np->time/totime;
 		actime += np->time;
-		printf("%6.1f%9.2f", 100*time, actime/60);
+		printf("%6.1f%9.2f", 100*time, actime/hz);
 		if (np->ncall != 0)
 			printf("%7ld %8.2f",
-			    np->ncall, np->time/(np->ncall*.06));
+			    np->ncall, (np->time*1000/hz)/np->ncall);
 		else
 			printf("%7.7s %8.8s", "", "");
 		printf("  %s\n", np->name);
@@ -486,6 +488,25 @@ putprof()
 	fwrite(&kp, sizeof (struct cnt), 1, sfile);
 	fwrite(samples, sizeof (unsigned UNIT), nsamples, sfile);
 	fclose(sfile);
+}
+
+/*
+ *	discover the tick frequency of the machine
+ *	if something goes wrong, we return 1.
+ */
+hertz()
+{
+	struct itimerval tim;
+
+	tim.it_interval.tv_sec = 0;
+	tim.it_interval.tv_usec = 1;
+	tim.it_value.tv_sec = 0;
+	tim.it_value.tv_usec = 0;
+	setitimer(ITIMER_REAL, &tim, 0);
+	setitimer(ITIMER_REAL, 0, &tim);
+	if (tim.it_interval.tv_usec < 1)
+		return (1);
+	return (1000000 / tim.it_interval.tv_usec);
 }
 
 min(a, b)
