@@ -1,67 +1,61 @@
-.\"	@(#)fgets.3	6.2 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH GETS 3  ""
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)fgets.3	6.3 (Berkeley) %G%
+.\"
+.TH FGETS 3 ""
 .AT 3
 .SH NAME
-gets, fgets \- get a string from a stream
+fgets - get a line from a stream
 .SH SYNOPSIS
+.nf
 .B #include <stdio.h>
-.PP
-.B char *gets(s)
-.br
-.B char *s;
-.PP
+
 .B char *fgets(s, n, stream)
-.br
 .B char *s;
-.br
-.SM
-.B FILE
-.B *stream;
+.B int n;
+.B FILE *stream;
+.fi
 .SH DESCRIPTION
-.I Gets
-reads a string into
-.I s
-from the standard input stream
-.BR stdin .
-The string is terminated by a newline
-character, which is replaced in
-.I s
-by a null character.
-.I Gets
-returns its argument.
-.PP
-.I Fgets
-reads 
-.IR n \-1
-characters, or up through a newline
-character, whichever comes first,
-from the
+The
+.I fgets
+function reads at most one less than the number of characters specified
+by
+.I n
+from the stream pointed to by
 .I stream
-into the string
+into the array pointed to by
 .IR s .
-The last character read into
+No additional characters are read after a new-line character
+(which is retained) or after end-of-file.
+A null character is written immediately after the last character
+read into the array.
+.PP
+The
+.I fgets
+function returns
 .I s
-is followed by a null character.
-.I Fgets
-returns its first argument.
+if successful.
+If end-of-file is encountered and no characters have been read
+into the array, the contents of the array remain unchanged and
+a null pointer is returned.
+If a read error occurs during the operation, the array contents
+are indeterminate and a null pointer is returned.
 .SH "SEE ALSO"
-puts(3),
-getc(3),
-scanf(3),
-fread(3),
-ferror(3)
-.SH DIAGNOSTICS
-.I Gets
-and
+getc(3), ferror(3) fread(3), scanf(3)
+.SH STANDARDS
+The
 .I fgets
-return the constant pointer 
-.SM
-.B NULL
-upon end of file or error.
-.SH BUGS
-.I Gets
-deletes a newline,
-.I fgets
-keeps it,
-all in the name of backward compatibility.
+function is ANSI C compatible.
