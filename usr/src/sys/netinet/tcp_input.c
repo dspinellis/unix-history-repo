@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.36	81/12/07	*/
+/*	tcp_input.c	1.37	81/12/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -41,10 +41,11 @@ tcp_input(m0)
 COUNT(TCP_INPUT);
 	/*
 	 * Get ip and tcp header together in first mbuf.
+	 * Note: ip leaves ip header in first mbuf.
 	 */
 	m = m0;
 	ti = mtod(m, struct tcpiphdr *);
-	if (ti->ti_len > sizeof (struct ip))
+	if (((struct ip *)ti)->ip_len > sizeof (struct ip))
 		ip_stripoptions((struct ip *)ti, (struct mbuf *)0);
 	if (m->m_len < sizeof (struct tcpiphdr)) {
 		if (m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
@@ -62,7 +63,10 @@ COUNT(TCP_INPUT);
 	if (tcpcksum) {
 		ti->ti_next = ti->ti_prev = 0;
 		ti->ti_x1 = 0;
-		ti->ti_len = htons((u_short)tlen);
+		ti->ti_len = (u_short)tlen;
+#if vax
+		ti->ti_len = htons(ti->ti_len);
+#endif
 		if ((ti->ti_sum = in_cksum(m, len)) != 0xffff) {
 			tcpstat.tcps_badsum++;
 			printf("tcp cksum %x\n", ti->ti_sum);
