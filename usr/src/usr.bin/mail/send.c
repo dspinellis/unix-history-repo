@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.1 %G%";
+static char *SccsId = "@(#)send.c	2.2 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -301,6 +301,7 @@ topdog:
 		goto out;
 	}
 	if (pid == 0) {
+		sigchild();
 #ifdef SIGTSTP
 		if (remote == 0) {
 			sigset(SIGTSTP, SIG_IGN);
@@ -310,7 +311,7 @@ topdog:
 #endif
 		for (i = SIGHUP; i <= SIGQUIT; i++)
 			sigset(i, SIG_IGN);
-		if ((postage = fopen("/crp/kurt/postage", "a")) != NULL) {
+		if ((postage = fopen(POSTAGE, "a")) != NULL) {
 			fprintf(postage, "%s %d %d\n", myname,
 			    count(to), fsize(mtf));
 			fclose(postage);
