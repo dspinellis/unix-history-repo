@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.4 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,9 +51,11 @@ lfs_markv(p, uap, retval)
 	IFILE *ifp;
 	INODE_INFO *inop;
 	struct buf *bp;
+	struct inode *ip;
 	struct lfs *fs;
 	struct mount *mntp;
 	struct vnode *vp;
+	ino_t lastino;
 	daddr_t daddr;
 	u_long bsize;
 	int cnt, error;
@@ -72,21 +74,43 @@ lfs_markv(p, uap, retval)
 	}
 
 	/*
-	 * Mark blocks/inodes dirty.  For blocks, we get the vnode, and check
-	 * to see if the modified or disk address is newer than the cleaner
-	 * thinks.  If so, we're done.  Otherwise, we get the block, from core
-	 * if we have it, otherwise from the cleaner, and write it.  Note that
-	 * errors are mostly ignored.  If we can't get the info, the block is
-	 * probably not all that useful, and hopefully subsequent calls from
-	 * the cleaner will fix everything.
+	 * Mark blocks/inodes dirty.  Note that errors are mostly ignored.  If
+	 * we can't get the info, the block is probably not all that useful,
+	 * and hopefully subsequent calls from the cleaner will fix everything.
 	 */
+	fs = VFSTOUFS(mntp)->um_lfs;
 	bsize = VFSTOUFS(mntp)->um_lfs->lfs_bsize;
-	for (; cnt--; ++blkp) {
-		if (lfs_vget(mntp, blkp->bi_inode, &vp) ||
-		    VTOI(vp)->i_mtime >= blkp->bi_segcreate ||
-		    lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr) ||
-		    daddr != blkp->bi_daddr)
+	for (lastino = LFS_UNUSED_INUM; cnt--; ++blkp) {
+		/*
+		 * Get the IFILE entry (only once) and see if the file still
+		 * exists.
+		 */
+		if (lastino != blkp->bi_inode) {
+			lastino = blkp->bi_inode;
+			LFS_IENTRY(ifp, fs, blkp->bi_inode, bp);
+			daddr = ifp->if_daddr;
+			brelse(bp);
+			if (daddr == LFS_UNUSED_DADDR)
+				continue;
+		}
+
+		/*
+		 * Get the vnode/inode.  If the inode modification time is
+		 * earlier than the segment in which the block was found then
+		 * they have to be valid, skip other checks.
+		 */
+		if (lfs_vget(mntp, blkp->bi_inode, &vp))
 			continue;
+		ip = VTOI(vp);
+		if (ip->i_mtime > blkp->bi_segcreate) {
+			/* Check to see if the block has been replaced. */
+			if (lfs_bmap(vp, blkp->bi_lbn, NULL, &daddr))
+				continue;
+			if (daddr != blkp->bi_daddr)
+				continue;
+		}
+
+		/* Get the block (from core or the cleaner) and write it. */
 		bp = getblk(vp, blkp->bi_lbn, bsize);
 		if (!(bp->b_flags & B_CACHE) &&
 		    (error = copyin(blkp->bi_bp, bp->b_un.b_daddr, bsize))) {
@@ -95,7 +119,6 @@ lfs_markv(p, uap, retval)
 			return (error);
 		}
 		lfs_bwrite(bp);
-		brelse(bp);
 	}
 	free(blkp, M_SEGMENT);
 
@@ -106,11 +129,10 @@ lfs_markv(p, uap, retval)
 		return (error);
 	}
 
-	fs = VFSTOUFS(mntp)->um_lfs;
 	for (; cnt--; ++inop) {
 		LFS_IENTRY(ifp, fs, inop->ii_inode, bp);
 		daddr = ifp->if_daddr;
-		LFS_IRELEASE(fs, bp);
+		brelse(bp);
 		if (daddr != inop->ii_daddr)
 			continue;
 		/*
@@ -131,7 +153,7 @@ lfs_markv(p, uap, retval)
 /*
  * lfs_bmapv:
  *
- * This will fill in the current disk address for arrays of inodes and blocks.
+ * This will fill in the current disk address for arrays of blocks.
  *
  *  0 on success
  * -1/errno is return on error.
@@ -209,12 +231,12 @@ lfs_segclean(p, uap, retval)
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
 	sup->su_flags &= ~SEGUSE_DIRTY;
 	sup->su_nbytes = sup->su_flags & SEGUSE_SUPERBLOCK ? LFS_SBPAD : 0;
-	LFS_IWRITE(fs, bp);
+	LFS_UBWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	++cip->clean;
 	--cip->dirty;
-	LFS_IWRITE(fs, bp);
+	LFS_UBWRITE(bp);
 
 	return (0);
 }
