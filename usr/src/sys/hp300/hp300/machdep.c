@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.2 (Berkeley) %G%
+ *	@(#)machdep.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1126,6 +1126,21 @@ dumpsys()
 
 initcpu()
 {
+#ifdef MAPPEDCOPY
+	extern u_int mappedcopysize;
+
+	/*
+	 * Initialize lower bound for doing copyin/copyout using
+	 * page mapping (if not already set).  We don't do this on
+	 * VAC machines as it loses big time.
+	 */
+	if (mappedcopysize == 0) {
+		if (ectype == EC_VIRT)
+			mappedcopysize = (u_int) -1;
+		else
+			mappedcopysize = NBPG;
+	}
+#endif
 	parityenable();
 #ifdef USELEDS
 	ledinit();
