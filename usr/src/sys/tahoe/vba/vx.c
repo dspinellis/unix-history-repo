@@ -1,4 +1,4 @@
-/*	vx.c	1.8	86/01/23	*/
+/*	vx.c	1.9	86/11/03	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -24,20 +24,11 @@
 #include "proc.h"
 #include "vm.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/vxreg.h"
 #include "../tahoevba/scope.h"
-#include "vbsc.h"
-#if NVBSC > 0
-#include "../tahoebsc/bscio.h"
-#include "../tahoebsc/bsc.h"
-#ifdef BSC_DEBUG
-#include "../tahoebsc/bscdebug.h"
-#endif
-
-char	bscport[NVX*16];
-#endif
 
 #ifdef VX_DEBUG
 long	vxintr4 = 0;
@@ -58,6 +49,9 @@ long	vxdebug = 0;
 #define	UNSquals 2		/* unsolicited interrupt */
 
 struct	tty vx_tty[NVX*16];
+#ifndef lint
+int	nvx = NVX*16;
+#endif
 int	vxstart(), ttrstrt();
 struct	vxcmd *vobtain(), *nextcmd();
 
@@ -136,7 +130,7 @@ vxattach(vi)
 	register struct vba_device *vi;
 {
 
-	vxinit(vi->ui_unit, (long)1);
+	vxinit(vi->ui_unit, 1);
 }
 
 /*
@@ -180,7 +174,7 @@ vxopen(dev, flag)
 	}
 	if (!vcmodem(dev, VMOD_ON))
 		while ((tp->t_state&TS_CARR_ON) == 0)
-			sleep((caddr_t)&tp->t_canq, TTIPRI);
+			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
 	splx(s);
 	return (error);
@@ -201,9 +195,10 @@ vxclose(dev, flag)
 	tp = &vx_tty[unit];
 	s = spl8();
 	(*linesw[tp->t_line].l_close)(tp);
-	if ((tp->t_state & (TS_ISOPEN|TS_HUPCLS)) == (TS_ISOPEN|TS_HUPCLS))
+	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0) {
 		if (!vcmodem(dev, VMOD_OFF))
 			tp->t_state &= ~TS_CARR_ON;
+	}
 	/* wait for the last response */
 	while (tp->t_state&TS_FLUSH)
 		sleep((caddr_t)&tp->t_state, TTOPRI);
@@ -298,7 +293,7 @@ vxrint(vx)
 		}
 		c = sp->data;
 		if ((sp->port&VX_RO) == VX_RO && !overrun) {
-			printf("vx%d: receiver overrun\n", vi->ui_unit);
+			log(LOG_ERR, "vx%d: receiver overrun\n", vi->ui_unit);
 			overrun = 1;
 			continue;
 		}
@@ -339,7 +334,8 @@ vxioctl(dev, cmd, data, flag)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
 	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN)
+		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
+		    cmd == TIOCLBIC || cmd == TIOCLSET)
 			vxparam(dev);
 		return (error);
 	}
@@ -379,18 +375,15 @@ vxcparam(dev, wait)
 	cp->par[1] = unit & 017;	/* port number */
 	cp->par[2] = (tp->t_flags&RAW) ? 0 : tp->t_startc;
 	cp->par[3] = (tp->t_flags&RAW) ? 0 : tp->t_stopc;
-	if (tp->t_flags&(RAW|LITOUT) ||
-	    (tp->t_flags&(EVENP|ODDP)) == (EVENP|ODDP)) {
+	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
 		cp->par[4] = 0xc0;	/* 8 bits of data */
 		cp->par[7] = 0;		/* no parity */
 	} else {
 		cp->par[4] = 0x40;	/* 7 bits of data */
 		if ((tp->t_flags&(EVENP|ODDP)) == ODDP)
 			cp->par[7] = 1;		/* odd parity */
-		else if ((tp->t_flags&(EVENP|ODDP)) == EVENP)
-			cp->par[7] = 3;		/* even parity */
 		else
-			cp->par[7] = 0;		/* no parity */
+			cp->par[7] = 3;		/* even parity */
 	}
 	cp->par[5] = 0x4;			/* 1 stop bit - XXX */
 	cp->par[6] = tp->t_ospeed;
@@ -415,14 +408,7 @@ vxxint(vx, cp)
 
 	vs = &vx_softc[vx];
 	cp = (struct vxcmd *)((long *)cp-1);
-#if NVBSC > 0
-	if (cp->cmd == VXC_MDMCTL1 || cp->cmd == VXC_HUNTMD1 ||
-	    cp->cmd == VXC_LPARAX1) {
-		vrelease(vs, cp);
-		wakeup((caddr_t)cp);
-		return;
-	}
-#endif
+
 	switch (cp->cmd&0xff00) {
 
 	case VXC_LIDENT:	/* initialization complete */
@@ -450,13 +436,6 @@ vxxint(vx, cp)
 	vp = (struct vxmit *)(cp->par + (cp->cmd & 07)*sizeof (struct vxmit));
 	for (; vp >= (struct vxmit *)cp->par; vp--) {
 		tp = tp0 + (vp->line & 017);
-#if NVBSC > 0
-		if (tp->t_line == LDISP) {
-			vrelease(xp, cp);
-			bsctxd(vp->line & 017);
-			return;
-		}
-#endif
 		pvp = vp;
 		tp->t_state &= ~TS_BUSY;
 		if (tp->t_state & TS_FLUSH) {
@@ -517,7 +496,7 @@ vxstart(tp)
 {
 	register short n;
 	register struct vx_softc *vs;
-	register full = 0;
+	register full;
 	int s, port;
 
 	s = spl8();
@@ -540,7 +519,9 @@ vxstart(tp)
 			return (0);
 		}
 		scope_out(3);
-		if ((tp->t_flags&(RAW|LITOUT)) == 0)  
+		if (tp->t_flags & (RAW|LITOUT))
+			full = 0;
+		else
 			full = 0200;
 		if ((n = ndqb(&tp->t_outq, full)) == 0) {
 			if (full) {
@@ -626,22 +607,6 @@ vxinit(vx, wait)
 	case VXT_PVIOCX:
 	case VXT_PVIOCX|VXT_NEW:
 		break;
-#if NVBSC > 0
-	case VX_VIOCB:			/* old f/w bisync */
-	case VX_VIOCB|VXT_NEW: {	/* new f/w bisync */
-		register struct bsc *bp;
-		extern struct bsc bsc[];
-
-		printf("%X: %x%x %s VIOC-B, ", (long)addr, (int)addr->v_ident,
-		    (int)addr->v_fault, vs->vs_vers == VXV_OLD ? "old" : "16k");
-		for (bp = &bsc[0]; bp <= &bsc[NBSC]; bp++)
-			bp->b_devregs = (caddr_t)vs;
-		printf("%d BSC Ports initialized.\n", NBSC);
-		break;
-		if (vs->vs_vers == VXV_NEW && CBSIZE > addr->v_maxxmt)
-			printf("vxinit: Warning CBSIZE > maxxmt\n");
-		break;
-#endif
 	case VXT_VIOCBOP:		/* VIOC-BOP */
 		vs->vs_type = 1;
 		vs->vs_bop = ++vxbbno;
@@ -864,16 +829,8 @@ vackint(vx)
 
 	scope_out(5);
 	vs = &vx_softc[vx];
-	if (vs->vs_type) {	/* Its a BOP */
-#ifdef SNA_DEBUG
-		extern vbrall();
-
-		if (snadebug & SVIOC)
-			printf("vx%d: vack interrupt from BOP\n", vx);
-		vbrall(vx); 	/* Int. from BOP, port 0 */
-#endif
+	if (vs->vs_type)	/* Its a BOP */
 		return;
-	}
 	s = spl8();
 	vp = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
 	cp = &vs->vs_cmds;
@@ -1132,7 +1089,7 @@ vxinreset(vx)
 	 * Send a LIDENT to the vioc and mess with carrier flags
 	 * on parallel printer ports.
 	 */
-	vxinit(vx, (long)0);
+	vxinit(vx, 0);
 	splx(s);
 }
 
@@ -1178,38 +1135,20 @@ vxfnreset(vx, cp)
 			tp->t_state &= ~TS_CARR_ON;
 			vcmodem(tp->t_dev, VMOD_ON);
 			if (tp->t_state&TS_CARR_ON)
-				wakeup((caddr_t)&tp->t_canq);
-			else if (tp->t_state & TS_ISOPEN) {
-				ttyflush(tp, FREAD|FWRITE);
-				if (tp->t_state&TS_FLUSH)
-					wakeup((caddr_t)&tp->t_state);
-				if ((tp->t_flags&NOHANG) == 0) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-				}
-			}
+				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+			else if (tp->t_state & TS_ISOPEN)
+				(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 		}
+#ifdef notdef
 		/*
 		 * If carrier has changed while we were resetting,
 		 * take appropriate action.
 		 */
-#ifdef notdef
 		on = vp->v_dcd & 1<<i;
-		if (on && (tp->t_state&TS_CARR_ON) == 0) {
-			tp->t_state |= TS_CARR_ON;
-			wakeup((caddr_t)&tp->t_canq);
-		} else if (!on && tp->t_state&TS_CARR_ON) {
-			tp->t_state &= ~TS_CARR_ON;
-			if (tp->t_state & TS_ISOPEN) {
-				ttyflush(tp, FREAD|FWRITE);
-				if (tp->t_state&TS_FLUSH)
-					wakeup((caddr_t)&tp->t_state);
-				if ((tp->t_flags&NOHANG) == 0) {
-					gsignal(tp->t_pgrp, SIGHUP);
-					gsignal(tp->t_pgrp, SIGCONT);
-				}
-			}
-		}
+		if (on && (tp->t_state&TS_CARR_ON) == 0)
+			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+		else if (!on && tp->t_state&TS_CARR_ON)
+			(void)(*linesw[tp->t_line].l_modem)(tp, 0);
 #endif
 	}
 	vs->vs_state = VXS_RESET;
@@ -1318,76 +1257,45 @@ vcmintr(vx)
 	kp = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
 	port = kp->v_usdata[0] & 017;
 	tp = &vx_tty[vx*16+port];
-#if NVBSC > 0
-	/*
-	 * Check for change in DSR for BISYNC port.
-	 */
-	if (bscport[vx*16+port]&BISYNC) {
-		if (kp->v_ustat&DSR_CHG) {
-			register struct vx_softc *xp;
-			register struct bsc *bp;
-			extern struct bsc bsc[];
 
-			vs = (struct vx_softc *)tp->t_addr;
-			bp = &bsc[minor(tp->t_dev)] ;
-			bp->b_hlflgs &= ~BSC_DSR ;
-			if (kp->v_ustat & DSR_ON)
-				bp->b_hlflgs |= BSC_DSR ;
-			printf("BSC DSR Chg: %x\n", kp->v_ustat&DSR_CHG);/*XXX*/
-		}
-		return;
-	}
-#endif
-	if ((kp->v_ustat&DCD_ON) && ((tp->t_state&TS_CARR_ON) == 0)) {
-		tp->t_state |= TS_CARR_ON;
-		wakeup((caddr_t)&tp->t_canq);
-		return;
-	}
-	if ((kp->v_ustat&DCD_OFF) && (tp->t_state&TS_CARR_ON)) {
-		tp->t_state &= ~TS_CARR_ON;
-		if (tp->t_state&TS_ISOPEN) {
-			register struct vx_softc *vs;
-			register struct vcmds *cp;
-			register struct vxcmd *cmdp;
+	if (kp->v_ustat & DCD_ON)
+		(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+	else if ((kp->v_ustat & DCD_OFF) &&
+	    (*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
+		register struct vx_softc *vs;
+		register struct vcmds *cp;
+		register struct vxcmd *cmdp;
 
-			ttyflush(tp, FREAD|FWRITE);
-			/* clear all pending trnansmits */
-			vs = &vx_softc[vx];
-			if (tp->t_state&(TS_BUSY|TS_FLUSH) &&
-			    vs->vs_vers == VXV_NEW) {
-				int i, cmdfound = 0;
+		/* clear all pending trnansmits */
+		vs = &vx_softc[vx];
+		if (tp->t_state&(TS_BUSY|TS_FLUSH) &&
+		    vs->vs_vers == VXV_NEW) {
+			int i, cmdfound = 0;
 
-				cp = &vs->vs_cmds;
-				for (i = cp->v_empty; i != cp->v_fill; ) {
-					cmdp = (struct vxcmd *)((long *)cp->cmdbuf[i]-1);
-					if ((cmdp->cmd == VXC_XMITDTA ||
-					    cmdp->cmd == VXC_XMITIMM) &&
-					    ((struct vxmit *)cmdp->par)->line == port) {
-						cmdfound++;
-						cmdp->cmd = VXC_FDTATOX;
-						cmdp->par[1] = port;
-					}
-					if (++i >= VC_CMDBUFL)
-						i = 0;
-				}
-				if (cmdfound)
-					tp->t_state &= ~(TS_BUSY|TS_FLUSH);
-				/* cmd is already in vioc, have to flush it */
-				else {
-					cmdp = vobtain(vs);
+			cp = &vs->vs_cmds;
+			for (i = cp->v_empty; i != cp->v_fill; ) {
+				cmdp = (struct vxcmd *)((long *)cp->cmdbuf[i]-1);
+				if ((cmdp->cmd == VXC_XMITDTA ||
+				    cmdp->cmd == VXC_XMITIMM) &&
+				    ((struct vxmit *)cmdp->par)->line == port) {
+					cmdfound++;
 					cmdp->cmd = VXC_FDTATOX;
 					cmdp->par[1] = port;
-					vcmd(vx, (caddr_t)&cmdp->cmd);
 				}
+				if (++i >= VC_CMDBUFL)
+					i = 0;
 			}
-			if ((tp->t_flags&NOHANG) == 0) {
-				gsignal(tp->t_pgrp, SIGHUP);
-				gsignal(tp->t_pgrp, SIGCONT);
+			if (cmdfound)
+				tp->t_state &= ~(TS_BUSY|TS_FLUSH);
+			/* cmd is already in vioc, have to flush it */
+			else {
+				cmdp = vobtain(vs);
+				cmdp->cmd = VXC_FDTATOX;
+				cmdp->par[1] = port;
+				vcmd(vx, (caddr_t)&cmdp->cmd);
 			}
 		}
-		return;
-	}
-	if ((kp->v_ustat&BRK_CHR) && (tp->t_state&TS_ISOPEN)) {
+	} else if ((kp->v_ustat&BRK_CHR) && (tp->t_state&TS_ISOPEN)) {
 		(*linesw[tp->t_line].l_rint)(tp->t_intrc & 0377, tp);
 		return;
 	}
