@@ -1,4 +1,4 @@
-/*	llib-lc	1.16	85/04/08	*/
+/*	llib-lc	1.17	85/04/09	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -153,6 +153,7 @@ int	atoi(s) char *s; { return 1;   }
 long	atol(s) char *s; { return 1L;   }
 char *	calloc(n,s) unsigned n, s; { static char c[1]; return(c); }
 void	closedir( p ) DIR *p; {}
+	closelog() {}
 int	creat(s, m) char *s; { return(0); }
 char *	crypt(k,s) char *k, *s; { return(""); }
 char *	ctime(c) time_t *c;{ return(""); }
@@ -202,6 +203,7 @@ char *	mktemp(p) char *p; { return(p);}
 	monstartup( l, h) int (*l)(), (*h)(); {;}
 	nlist( f, n) char *f; struct nlist n[]; {;}
 DIR *	opendir( f ) char *f; { return (DIR *)NULL; }
+	openlog(s, f, l) char *s; {}
 	pause() {;}
 	perror(s) char *s; {}
 struct direct *	readdir( p ) DIR *p; { return (struct direct *)NULL; }
@@ -220,6 +222,7 @@ int	setgrent() { return 0; }
 int	setgid(g) { return(0); }
 int	setjmp(e) jmp_buf e; { return(0); }
 	setkey(k) char *k; {}
+int	setlogmask(m) { return(0); }
 int	setpwent() { return 0; }
 long *	setstate( st ) long *st; { return st; }
 int	setuid(u) { return(0); }
@@ -234,6 +237,8 @@ int	strncmp(a, b, n) char *a, *b; { return(1); }
 char *	strncpy(a, b, n) char *a, *b; { return a; }
 int	stty(f, b) struct sgttyb *b; { return(0); }
 	swab( f, t, n) char *f, *t; {;}
+	/* VARARGS2 */
+	syslog(l, f) char *f; {}
 char *	sys_errlist[];
 int	sys_nerr;
 int	system(s) char *s; { return(0); }
