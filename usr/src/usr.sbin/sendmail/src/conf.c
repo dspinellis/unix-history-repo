@@ -17,12 +17,7 @@
 **	Configuration Variables:
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
-**			which can be:
-**			- H_EOH -- this field is equivalent to a blank
-**			  line; i.e., it signifies end of header.
-**			- H_DELETE -- delete this field.
-**			There is also a field pointing to a pointer
-**			that should be set to point to this header.
+**			which are described in sendmail.h.
 **
 **	Notes:
 **		I have tried to put almost all the reasonable
@@ -38,7 +33,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.16	%G%";
+static char SccsId[] = "@(#)conf.c	3.17	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -47,19 +42,32 @@ static char SccsId[] = "@(#)conf.c	3.16	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
+**
+**	Not all of these are actually handled specially by sendmail
+**	at this time.  They are included as placeholders, to let
+**	you know that "someday" I intend to have sendmail do
+**	something with them.
 */
 
 struct hdrinfo	HdrInfo[] =
 {
-	"date",		H_CHECK,		M_NEEDDATE,
-	"from",		H_CHECK,		M_NEEDFROM,
-	"full-name",	H_ACHECK,		M_FULLNAME,
-	"to",		0,			NULL,
-	"cc",		0,			NULL,
-	"subject",	0,			NULL,
-	"message-id",	H_CHECK,		M_MSGID,
-	"message",	H_EOH,			NULL,
-	NULL,		0,			NULL,
+	"date",			H_CHECK,		M_NEEDDATE,
+	"from",			H_CHECK,		M_NEEDFROM,
+	"sender",		0,			0,
+	"full-name",		H_ACHECK,		M_FULLNAME,
+	"to",			0,			0,
+	"cc",			0,			0,
+	"bcc",			0,			0,
+	"message-id",		H_CHECK,		M_MSGID,
+	"message",		H_EOH,			0,
+	"text",			H_EOH,			0,
+	"posted-date",		0,			0,
+	"return-receipt-to",	0,			0,
+	"received-date",	H_CHECK,		M_FINAL,
+	"received-from",	H_CHECK,		M_FINAL,
+	"precedence",		0,			0,
+	"via",			H_FORCE,		0,
+	NULL,			0,			0,
 };
 
 # ifdef V6
@@ -87,7 +95,6 @@ struct hdrinfo	HdrInfo[] =
 **		savemail
 */
 
-# include <sys/types.h>
 # include <sys/stat.h>
 
 char *
@@ -215,7 +222,6 @@ index(s, c)
 **		savemail
 */
 
-# include <sys/types.h>
 # include <sys/stat.h>
 
 char *
