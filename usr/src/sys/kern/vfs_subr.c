@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.21 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.22 (Berkeley) %G%
  */
 
 /*
@@ -258,7 +258,7 @@ newnodes++;
 		vp->v_freelist.tqe_prev = (struct vnode **)0xdeadb;
 		vp->v_lease = NULL;
 		if (vp->v_type != VBAD)
-			VOP_REVOKE(vp, 0);
+			vgone(vp);
 #ifdef DIAGNOSTIC
 		if (vp->v_data)
 			panic("cleaned vnode isn't");
@@ -772,7 +772,7 @@ loop:
 		 * out the vnode data structures and we are done.
 		 */
 		if (vp->v_usecount == 0) {
-			VOP_REVOKE(vp, 0);
+			vgone(vp);
 			continue;
 		}
 		/*
@@ -782,7 +782,7 @@ loop:
 		 */
 		if (flags & FORCECLOSE) {
 			if (vp->v_type != VBLK && vp->v_type != VCHR) {
-				VOP_REVOKE(vp, 0);
+				vgone(vp);
 			} else {
 				vclean(vp, 0);
 				vp->v_op = spec_vnodeop_p;
