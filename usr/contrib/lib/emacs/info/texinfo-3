@@ -1,0 +1,1410 @@
+Info file ../info/texinfo, produced by Makeinfo, -*- Text -*- from
+input file texinfo.texinfo.
+
+This file documents Texinfo, a documentation system that uses a
+single source file to produce both on-line help and a printed manual.
+
+This is edition 1.1 of the Texinfo documentation, and is for the
+Texinfo that is distributed as part of Version 18 of GNU Emacs.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Foundation.
+
+
+
+File: texinfo,  Node: Breaks Blank-Lines Groups,  Prev: Refilling & Noindent,  Up: Formatting Paragraphs
+
+Breaks, Blank Lines and Groups
+==============================
+
+Texinfo has several commands for making blank lines, for forcing
+paragraph and page breaks in the printed manual and for preventing
+text from running from one page to the next.
+
+`@*'
+     Force a line break in the printed manual.  This command has no
+     effect on the Info file.
+
+`@sp'
+     Generate blank lines in both the printed manual and in the Info
+     file.
+
+`@br'
+     Force a paragraph break in the printed manual.  This command has
+     no effect on the Info file.
+
+`@w'
+     Prevent text from being split across two lines in the printed
+     manual.  This command has no effect on the Info file.
+
+`@page'
+     Start a new page in the printed manual.  This command has no
+     effect on the Info file.
+
+`@group'
+     Hold text together that must appear on one printed page.  This
+     command has no effect on the Info file.
+
+`@need'
+     Start a new printed page if required space not on this one. 
+     This command has no effect on the Info file.
+
+* Menu:
+
+* Line Breaks:: Force a line break in the printed manual.
+* Sp::		Generate blank lines.
+* Br::		Force a paragraph break in the printed manual.
+* W::		Prevent a paragraph break in the printed manual.
+* Page::	Start a new page in the printed manual.
+* Group::	Hold text together that must appear on one printed page.
+* Need::	Start a new printed page if required space not on this one.
+
+ 
+
+File: texinfo,  Node: Line Breaks,  Next: Sp,  Prev: Breaks Blank-Lines Groups,  Up: Breaks Blank-Lines Groups
+
+@*
+--
+
+`@*' forces a line break in the printed manual.  It has no effect on
+the Info file output, where line breaks follow those in the source
+file.  If you want a line break at a certain spot in both forms of
+output, break the line there in the source file and put `@*' at the
+end of the line.
+
+
+
+File: texinfo,  Node: Sp,  Next: Br,  Prev: Line Breaks,  Up: Breaks Blank-Lines Groups
+
+@sp
+---
+
+A line containing `@sp N' generates N blank lines of space in either
+the printed manual or the Info file.  For example,
+
+     @sp 2
+
+generates two blank lines.
+
+
+
+File: texinfo,  Node: Br,  Next: W,  Prev: Sp,  Up: Breaks Blank-Lines Groups
+
+@br
+---
+
+In a printed manual, a line containing `@br' forces a paragraph
+break; in the Info file output, it does nothing (not even a blank
+line results from it).
+
+
+
+File: texinfo,  Node: W,  Next: Page,  Prev: Br,  Up: Breaks Blank-Lines Groups
+
+@w
+--
+
+In a printed manual, `@w{TEXT}' outputs TEXT and prohibits line
+breaks within TEXT.  `@w' has no effect on the Info file output; it
+is the same as would result from just TEXT.
+
+
+
+File: texinfo,  Node: Page,  Next: Group,  Prev: W,  Up: Breaks Blank-Lines Groups
+
+@page
+-----
+
+A line containing `@page' starts a new page in a printed manual.  The
+line has no effect on Info files since they are not paginated.
+
+
+
+File: texinfo,  Node: Group,  Next: Need,  Prev: Page,  Up: Breaks Blank-Lines Groups
+
+@group
+------
+
+A line containing `@group' begins an unsplittable vertical group,
+which must appear entirely on one page.  The group is terminated by a
+line containing `@end group'.  These two lines produce no output of
+their own, and in the Info file output they have no effect at all.
+
+If you forget to end a group, you may get strange and unfathomable
+error messages when you run TeX.  This is because TeX keeps trying to
+put the rest of the Texinfo file into the group and error messages do
+not start to get generated until TeX has gone a long way.  It's a
+good rule of thumb to look for a missing `@end group' if you get
+incomprehensible error messages in TeX.
+
+
+
+File: texinfo,  Node: Need,  Prev: Group,  Up: Breaks Blank-Lines Groups
+
+@need
+-----
+
+A line containing `@need N' starts a new page in a printed manual if
+fewer than N mils (thousandths of an inch) remain on the current
+page.  The line has no effect on Info files since they are not
+paginated.
+
+
+
+File: texinfo,  Node: Marking Text,  Next: Conditionals,  Prev: Formatting Paragraphs,  Up: Top
+
+Marking Text Within a Paragraph
+*******************************
+
+In Texinfo, text within a paragraph can be marked in a variety of ways.
+The most important way is to specify whether a word or phrase is a
+definition, a metasyntactic variable, a literal example of a program
+or what not.
+
+In addition, there are special commands for inserting single
+characters  that have special meaning in Texinfo, such as braces, and
+for inserting symbols with special handling, such as dots and
+bullets.  Finally, there are ways to emphasize words.
+
+* Menu:
+
+* Specifying::			Specifying commands, files and so on.
+* Braces Atsigns Periods::	Inserting braces, `@' and periods.
+* Dots Bullets Tex::		Inserting dots, bullets and the TeX logo
+* Emphasis::			Emphasizing text.
+
+ 
+
+File: texinfo,  Node: Specifying,  Next: Braces Atsigns Periods,  Up: Marking Text
+
+Specifying Definitions, Files, Commands etc.
+============================================
+
+Texinfo has a variety of commands for specifying just what kind of
+object a piece of text refers to.  Metasyntactic variables, for
+example, are marked by one @-command and code by another.  Texinfo
+uses this information to determine how to highlight the text.  Since
+the pieces of text are labelled by commands that tell what kind of
+object they are, it is easy to change the way Texinfo formats and
+typesets such text.  For example, code is usually illustrated in a
+typewriter font, but it would be easy to change the way Texinfo
+highlights code to use another font.  This change would not effect
+how metasyntatic variables are highlighted.  If straight typesetting
+commands were used in the body of the file, you would have to check
+every single occurrence to make sure that you were changing code and
+not something else that should not be changed.
+
+In addition, the commands can be used to generate useful information
+from the file, such as lists of functions or file names.  It is
+possible, for example, to write code in Emacs Lisp (or a keyboard
+macro) to insert an index entry after every paragraph that contains
+the text labelled by a specified command.  You could do this to
+construct an index of functions if you had not already made the
+entries.
+
+The commands serve a variety of purposes:
+
+`@code'
+     Indicates text that is a literal example of a piece of a program.
+
+`@samp'
+     Indicates text that is a literal example of a sequence of
+     characters.
+
+`@file'
+     Indicates the name of a file.
+
+`@kbd'
+     Indicates the names of keys on the keyboard or characters you
+     type.
+
+`@key'
+     Used for the conventional name for a key on a keyboard.
+
+`@ctrl'
+     Indicates an ASCII control character.
+
+`@var'
+     Indicates a metasyntactic variable.
+
+`@dfn'
+     Indicates the introductory or defining use of a term.
+
+`@cite'
+     Indicates the name of a book.
+
+* Menu:
+
+* Code::	A literal example of a piece of a program.
+* Samp::	A literal example of a sequence of characters.
+* File::	The name of a file.
+* Kbd::		The names of keys or else characters you type.
+* Key::		The conventional name for a key on a keyboard.
+* Ctrl::	Indicates the ASCII control character.
+* Var::		A variable.
+* Dfn::		The introductory or defining use of a term.
+* Cite::	The name of a book.
+
+ 
+
+File: texinfo,  Node: Code,  Next: Samp,  Up: Specifying
+
+@code
+-----
+
+`@code' is used to indicate text that is a piece of a program which
+consists of entire syntactic tokens.  The text follows, enclosed in
+braces.
+
+For example, `@code' is used for an expression in a program, the name
+of a variable or function used in a program, or a keyword.  `@code'
+is not used for a piece of a token, such as when speaking about the
+characters used in a token; for example, when you are explaining what
+letters or printable symbols can be used in the names of functions. 
+It is also not used for input to programs unless the input is written
+in a language that is like a programming language.  For example, it
+is not used for the single character commands of GNU Emacs although
+it is used for the names of Emacs Lisp functions that the keyboard
+commands invoke.
+
+You should also `@code' for command names in command languages that
+resemble programming languages, such as Texinfo or the shell.  Note,
+however, that `@code' is not used for options such as `-c' when such
+options stand alone.  There is some argument as to whether an entire
+shell command incorporating an option should be written using `@code'
+or `@samp'.
+
+It is an error to alter the case of a word inside an `@code' command.
+This is a particularly insidious error if the language being
+documented is case sensitive.  If the command is `printf', then
+`Printf' is a misspelling.  If you do not like having such a command
+with lower case at the beginning of a sentence, you may wish to
+rearrange the sentence.
+
+In the printed manual, `@code' puts the argument in bold face.  In
+the Info file, it uses `...' quotation.  For example:
+
+     To compare two files, showing text inserted or removed, use @code{diff}.
+
+ produces
+
+     To compare two files, showing text inserted or removed, use
+     `diff'.
+
+
+
+File: texinfo,  Node: Samp,  Next: File,  Prev: Code,  Up: Specifying
+
+@samp
+-----
+
+`@samp' is used to indicate text that is a literal example of a
+sequence of characters in a file, string, pattern, etc.  The text
+follows, enclosed in braces.  The argument appears within `...'
+quotation in both the Info file and the printed manual; in addition,
+it is printed in a fixed-width font.
+
+     To match @samp{foo} at the end of the line, use the regexp @samp{foo$}.
+
+ produces
+
+     To match `foo' at the end of the line, use the regexp `foo$'.
+
+Any time you are referring to single characters, you should use
+`@samp' unless `@kbd' is more appropriate.  Basically, `@samp' is a
+catchall for whatever is not covered by `@code', `@file', `@kbd'.
+
+Punctuation marks that are part of the English text that surrounds
+the strings you are specifying are *never* included within the
+braces.  In the following sentence, for example, the commas and
+period are outside of the braces:
+
+     A symbol name ends in @samp{a}, @samp{b}, or @samp{c}.
+
+ 
+
+File: texinfo,  Node: File,  Next: Kbd,  Prev: Samp,  Up: Specifying
+
+@file
+-----
+
+`@file' is used to indicate text that is the name of a file or
+directory.  Currently, it is equivalent to `@samp' in its effects on
+the output.  For example,
+
+     The @file{.el} files are in 
+     the @file{/gnu/emacs/lisp} directory.
+
+ produces
+
+     The `.el' files are in  the `/gnu/emacs/lisp' directory.
+
+
+
+File: texinfo,  Node: Kbd,  Next: Key,  Prev: File,  Up: Specifying
+
+@kbd
+----
+
+`@kbd' is used much like `@code'.  The difference is that `@kbd' is
+for names of keys on the keyboard, or of characters you can type. 
+For example, to refer to the command `M-a', you would use
+
+     @kbd{M-a}
+
+and to refer to `M-x shell', you would use
+
+     @kbd{M-x shell}
+
+The `@kbd' command has the same effect as `@code' in Info, but may
+produce a different font in a printed manual.
+
+You can embed another @-command inside the braces of a `@kbd'
+command.  This is the way to describe a command that would be
+described more verbosely as "press an `r' and then press the RET key":
+
+     @kbd{r @key{RET}}
+
+This produces: `r RET'
+
+You also use the `@kbd' command if you are spelling out the letters
+you type; for example:
+
+     To give the @code{logout} command, 
+     type the characters @kbd{l o g o u t @key{RET}}.
+
+ This produces
+
+     To give the `logout' command,  type the characters `l o g o u t
+     RET'.
+
+
+
+File: texinfo,  Node: Key,  Next: Ctrl,  Prev: Kbd,  Up: Specifying
+
+@key
+----
+
+`@key' is used for the conventional name for a key on a keyboard, as in
+
+     @key{RET}
+
+Often, `@key' is used within the argument of a `@kbd' command,
+whenever the sequence of characters to be typed includes one or more
+keys that are described by name.
+
+For example, to produce `C-x ESC' you would use
+
+     @kbd{C-x @key{ESC}}
+
+The recommended names to use for keys are in upper case and are
+
+SPC
+     Space.
+
+RET
+     Return.
+
+LFD
+     Linefeed.
+
+TAB
+     Tab.
+
+BS
+     Backspace.
+
+ESC
+     Escape.
+
+DEL
+     Delete.
+
+SFT
+     Shift.
+
+CTL
+     Control.
+
+META
+     Meta.
+
+There are subtleties to handling words like `meta' or `ctrl' which
+are names of shift keys.  When mentioning a character in which the
+shift key is used, such as `Meta-a', use the `@kbd' command alone
+without the `@key' command, but when you are referring to shift key
+in isolation, use the `@key' command.  For example, you would use
+`@kbd{Meta-a}' to produce `Meta-a' and `@key{META}' to produce META.
+
+
+
+File: texinfo,  Node: Ctrl,  Next: Var,  Prev: Key,  Up: Specifying
+
+@ctrl
+-----
+
+`@ctrl' is used to describe an ASCII control character.  The pattern
+of usage is `@ctrl{CH}', where CH is an ASCII character whose
+control-equivalent is wanted.  Thus, you put in an `f' when you want
+to indicate a `control-f'
+
+Thus, to specify `control-f', you would enter
+
+     @ctrl{f}
+
+which produces
+
+     f
+
+In the Info file, this generates the specified control character,
+output literally into the file.  This is done so a user can copy the
+specified control character (along with whatever else he or she
+wants) into another Emacs buffer and use it.  Since the
+`control-h',`control-i', and `control-j' characters are formatting
+characters, they should not be indicated this way.
+
+In a printed manual, this generates text to describe or identify that
+control character: an uparrow followed by the character CH.
+
+
+
+File: texinfo,  Node: Var,  Next: Dfn,  Prev: Ctrl,  Up: Specifying
+
+@var
+----
+
+`@var' is used to indicate metasyntactic variables.  A metasyntactic
+variable is something that stands for another piece of text.  You
+would use a metasyntactic variable in the documentation of a function
+to describe the arguments that are passed to that function.
+
+`@var' is not used for names of particular variables in programming
+languages.  For example, the Texinfo variable `texinfo-tex-command'
+is not a metasyntactic variable.
+
+Its effect in the Info file is to upcase the argument; in the printed
+manual, to italicize it.  Example:
+
+     To delete file @var{filename}, type @code{rm @var{filename}}.
+
+ produces
+
+     To delete file FILENAME, type `rm FILENAME'.
+
+In some documentation styles, metasyntactic variables are shown with
+angle brackets, for example:
+
+     ..., type rm <filename>
+
+
+
+File: texinfo,  Node: Dfn,  Next: Cite,  Prev: Var,  Up: Specifying
+
+@dfn
+----
+
+`@dfn' is used to identify the introductory or defining use of a
+technical term.  The command should be used only in a passage whose
+purpose is to introduce a term which will be used again or which the
+reader ought to know.  Mere passing mention of a term for the first
+time doesn't deserve `@dfn'.  It generates italics in the printed
+manual, and double quotation marks in the Info file.  Example:
+
+     Getting rid of a file is called @dfn{deleting} it.
+
+ produces
+
+     Getting rid of a file is called "deleting" it.
+
+
+
+File: texinfo,  Node: Cite,  Prev: Dfn,  Up: Specifying
+
+@cite
+-----
+
+`@cite' is used for the name of a book.  It produces italics in the
+printed manual, and quotation marks in the Info file.
+
+
+
+File: texinfo,  Node: Braces Atsigns Periods,  Next: Dots Bullets Tex,  Prev: Specifying,  Up: Marking Text
+
+Inserting Braces, `@' and Periods
+=================================
+
+`@' and curly braces are special characters in Texinfo.  This means
+that you have to put an `@' in front of these characters in order to
+insert them into text.
+
+Periods are also special.  Depending on whether the period is inside
+of or at the end of a sentence, less or more space is inserted after
+a period in a typeset manual.  Since it is not always possible for
+Texinfo to determine when a period ends a sentence and when it is
+used in an abbreviation, special commands are needed.  (Usually,
+Texinfo figures out how to handle periods, so you don't have to use
+the special commands; you just enter a period as you would if you
+were using a typewriter, which means you put two spaces after the
+period that ends a sentence and after a colon.)
+
+* Menu:
+
+* Inserting an Atsign::		inserting an atsign.
+* Insert Left Brace::		Inserting a left brace.
+* Insert Colon::		Preventing unintended additional whitespace.
+* Insert Period:: 		Inserting a period that does end a sentence.
+
+ 
+
+File: texinfo,  Node: Inserting An Atsign,  Next: Insert Left Brace,  Up: Braces Atsigns Periods
+
+@@
+--
+
+`@@' stands for a single @ in either printed or Info output.
+
+
+
+File: texinfo,  Node: Insert Left Brace,  Next: Insert Colon,  Prev: Inserting an Atsign,  Up: Braces Atsigns Periods
+
+@{
+--
+
+`@{' stands for a single { in either printed or Info output.
+
+@}
+--
+
+`@}' stands for a single } in either printed or Info output.
+
+
+
+File: texinfo,  Node: Insert Colon,  Next: Insert Period,  Prev: Insert Left Brace,  Up: Braces Atsigns Periods
+
+@:
+--
+
+`@:' is used after a character such as period or colon which normally
+causes TeX to increase the width of the following whitespace, to
+suppress that effect.  For example, it can be used after periods that
+end abbreviations and do not end sentences.  `@:' has no effect on
+the Info file output.
+
+     It displays @code{Foo:}@: at that time.
+
+ produces
+
+     It displays `Foo:' at that time.
+
+The meanings of `@:' and `@.' in Texinfo are designed to work well
+with the Emacs sentence motion commands.  This means they are
+different from their meanings in some other formatting systems that
+use @-commands.
+
+
+
+File: texinfo,  Node: Insert Period,  Prev: Insert Colon,  Up: Braces Atsigns Periods
+
+@.
+--
+
+`@.' stands for a period that really does end a sentence, useful when
+TeX would otherwise assume by its heuristics that that is not so. 
+This happens when there is a single-capital-letter word at the end of
+a sentence: TeX normally guesses that it is an abbreviation.
+
+In the Info file output, `@.' is equivalent to a simple `.'.  The
+Texinfo program preserves the amount of space that you use, so put
+two spaces after a period if you intend it to be the end of a
+sentence (as well as using `@.', if necessary, for the printed
+manual's sake).
+
+     Give it to X. Give it to X@.  Give it to X@.
+
+ produces
+
+     Give it to X. Give it to X.  Give it to X.
+
+
+
+File: texinfo,  Node: Dots Bullets Tex,  Next: Emphasis,  Prev: Braces Atsigns Periods,  Up: Marking Text
+
+Inserting Dots, Bullets and TeX
+===============================
+
+An ellipsis, a line of dots, is typeset differently than a string of
+periods; more whitespace is put between the dots in the ellipsis than
+is put between the periods.  Because of this, a special command is
+used in Texinfo for inserting dots.  Also, the trademark, TeX, is
+typeset in a special fashion and it needs an @-command, as does the
+command for inserting the copyright symbol.  The `@bullet' command is
+special, too.  Each of these commands is followed by a pair of
+braces, `{}', without any whitespace between the name of the command
+and the braces.
+
+* Menu:
+
+* Dots::		Inserting dots.
+* Bullet::		Inserting bullets.
+* Tex::			Inserting the TeX trademark.
+
+ 
+
+File: texinfo,  Node: Dots,  Next: Bullet,  Up: Dots Bullets Tex
+
+@dots{}
+-------
+
+`@dots{}' generates an ellipsis which is three dots in a row,
+appropriately spaced, like this: `...'.  Do not simply write three
+periods in the input file; that would work for the Info file output,
+but would produce the wrong amount of space between the periods in
+the printed manual.
+
+
+
+File: texinfo,  Node: Bullet,  Next: Tex,  Prev: Dots,  Up: Dots Bullets Tex
+
+@bullet{}
+---------
+
+`@bullet{}' generates a large round dot, or the closest possible
+thing to one.
+
+Here is a bullet: *
+
+
+
+File: texinfo,  Node: Tex,  Prev: Bullet,  Up: Dots Bullets Tex
+
+@TeX{}
+------
+
+`@TeX{}' generates `TeX'.  In a printed manual, this is a special
+logo that is different from three ordinary letters.
+
+
+
+File: texinfo,  Node: Emphasis,  Prev: Dots Bullets Tex,  Up: Marking Text
+
+Emphasizing Text
+================
+
+Usually, Texinfo changes the font automatically to mark words in the
+text according to what category the words belong to.  The `@code'
+command, for example, does this.  Most often, this is the best way to
+mark specified words.  However, sometimes you will want to emphasize
+text directly.  Texinfo has two ways to do this: commands that tell
+Texinfo to emphasize the text but leave the method to the program,
+and commands that specify the font to use.  The first method is
+generally the best and it makes it possible to change the style of a
+document without have to re-edit it line by line.
+
+* Menu:
+
+* Emph and Strong::	Emphasizing text.
+* Fonts::		Selecting italic, bold or typewriter fonts.
+
+ 
+
+File: texinfo,  Node: Emph and Strong,  Next: Fonts,  Up: Emphasis
+
+@emph and @strong
+-----------------
+
+`@emph' and `@strong' are two forms of emphasis.  `@strong' is
+stronger.
+
+In printed output, `@emph' produces *italics* and `@strong' produces
+*bold*.
+
+In the Info file, both of these commands put asterisks around the
+argument.
+
+
+
+File: texinfo,  Node: Fonts,  Prev: Emph and Strong,  Up: Emphasis
+
+@i,  @b and @t
+--------------
+
+These three commands specify font changes in the printed manual and
+have no effect in the Info file.  `@i' requests italic font (in some
+versions of TeX, a slanted font is used), `@b' requests bold face,
+and `@t' requests the fixed-width font used by `@kbd'.  All three
+commands apply to an argument that follows, surrounded by braces.
+
+If possible, you should avoid using these three commands.  If you
+find a need to use one, it probably indicates a lack in the Texinfo
+language.
+
+
+
+File: texinfo,  Node: Conditionals,  Next: Printing Hardcopy,  Prev: Marking Text,  Up: Top
+
+Conditionals
+************
+
+You may not always be able to use the same text for both the printed
+manual and the on-line Info file.  In this case, you can use the
+conditional commands to specify which text is for the printed manual
+and which is for the Info file.
+
+`@ifinfo' begins text that should be ignored by TeX when it typesets
+the printed manual.  The text appears only in the Info file.  The
+`@ifinfo' command should appear on a line by itself.  End the
+info-only text with a line containing `@end ifinfo' by itself.  At
+the beginning of a Texinfo file, the Info permissions are contained
+within a region marked by `@ifinfo' and `@end ifinfo'.
+
+Likewise, `@iftex' and `@end iftex' lines delimit text that will not
+appear in the Info file but will appear in the printed manual.
+
+For example,
+
+     @iftex
+     This text will appear only in the printed manual.
+     @end iftex
+     
+     
+     @ifinfo
+     However, this text will appear only in the info manual.
+     @end ifinfo
+
+The preceding example produces the following.  Note how you only see
+one of the two lines, depending on whether you are reading the
+on-line Info version or the printed version of this manual.
+
+However, this text will appear only in the info manual.
+
+The `@titlepage' command is a special variant of `@iftex' that is
+used for making the title and copyright pages of the printed manual.
+
+* Menu:
+
+* Using Tex Commands::		Using commands from regular TeX.
+
+ 
+
+File: texinfo,  Node: Using Tex Commands,  Prev: Conditionals,  Up: Conditionals
+
+Using TeX Commands
+==================
+
+Inside a region delineated by `@iftex' and `@end iftex', you can
+embed ordinary TeX commands.  Info will ignore these commands since
+they are only in that part of the file that is seen by TeX.  The TeX
+commands are the same as any TeX commands except that an `@' replaces
+the `\' used by TeX.  For example, in the `@titlepage' section of a
+Texinfo file, the TeX command `@vskip' is used to format the
+copyright page.
+
+You can enter TeX completely, and use `\' in the TeX commands by
+delineating a region with the `@tex' and `@end tex' commands.  (These
+commands automatically put the region inside of `@iftex' and `@end
+iftex' commands.)  For example,
+
+     @tex
+     Here you would put text with TeX commands;
+     such as $\bigl(x\in A(n)\bigm|x\in B(n)\bigr)$
+     that will appear only  in the printed manual.
+     @end tex
+
+In the Info file, nothing between `@tex' and `@end tex' will appear.
+
+
+
+File: texinfo,  Node: Printing Hardcopy,  Next: Creating an Info File,  Prev: Conditionals,  Up: Top
+
+Printing Hardcopy
+*****************
+
+There are three shell commands for printing a hardcopy of a Texinfo
+file.  One is for formatting the file, the second is for sorting the
+index and the third is for printing the formatted document.  When you
+use the shell commands, you can either work directly in the operating
+system shell or work within a shell inside of GNU Emacs.
+
+The typesetting program TeX is used for formatting a Texinfo file. 
+TeX is a very powerful typesetting program and, if used right, does
+an exceptionally good job.  The @-commands in a Texinfo file are
+translated by a file called `texinfo.tex' into commands that TeX
+understands.  (That is why the beginning of every Texinfo file starts
+with the line that says `\input texinfo'; this command tells TeX to
+use the `texinfo.tex' file in processing the Texinfo file. 
+Customarily, `texinfo.tex' is in a directory called
+`/usr/lib/tex/macros'.) `texinfo-format-buffer' reads the very same
+@-commands in the Texinfo file and processes them differently from
+TeX to make an Info file.
+
+Usually, the TeX formatting command is the shell command `tex'
+followed by the name of the Texinfo file.  The TeX command produces a
+formatted DVI file as well as several auxiliary files containing
+indices, cross references, etc.  The DVI file (for "DeVice
+Independent" file) can be printed on a wide variety of printers.
+
+The TeX formatting command itself does not sort the indices.  This is
+a misfeature of TeX.  Hence, to generate a printed index, you first
+need a sorted index to work from.
+
+TeX outputs raw, unsorted index files under names that obey a
+standard convention.  These names are the name of your main input
+file to TeX, with everything after the first period thrown away, and
+the two letter names of indices added at the end.  For example, the
+raw index output files for the input file `foo.texinfo' would be
+`foo.cp', `foo.vr', `foo.fn', `foo.tp', `foo.pg' and `foo.ky'.  Those
+are exactly the arguments to give to `texindex'.  Or else, you can
+use `??' as "wild-cards" and give the command in this form:
+
+     texindex foo.??
+
+ For each file specified, `texindex' generates a sorted index file
+whose name is made by appending `s' to the input file name.  The
+`@printindex' command knows to look for a file of that name. 
+`texindex' does not alter the raw index output file. After you have
+sorted the indices, you need to rerun the TeX command on the Texinfo
+file.  This regenerates a formatted DVI file with the index entries
+in the correct order.
+
+To summarize, this is a three step process:
+
+  1. Run the TeX command on the Texinfo file.  This generates the
+     formatted DVI file as well as the raw index files with two
+     letter extensions.
+
+  2. Run the shell command `texindex' on the raw index files to sort
+     them.  The arguments to `texindex' are the names of the raw
+     index files.  `texindex' creates sorted index files whose names
+     are the names of the raw index files with an `s' appended.  To
+     cause `texindex' to sort all the raw index files, append `??' to
+     the Texinfo file name in place of the `.texinfo' extension.
+
+  3. Rerun the TeX command on the Texinfo file.  This regenerates a
+     formatted DVI file with the index entries in the correct order. 
+     This second run also makes all the cross references correct as
+     well.  (The tables of contents are always correct.)
+
+You need not run `texindex' after each TeX run.  If you don't, the
+next TeX run will use whatever sorted index files happen to exist
+from the previous use of `texindex'.  This is usually ok while you
+are debugging.
+
+Finally, the document can be printed out with the DVI print command
+(a shell command).  Depending on the system used, the DVI print
+command will be a command such as `lpr -d'.  The DVI print command
+may require a file name without any extension or with a `.dvi'
+extension.
+
+The following commands, for example, sort the indices, format and
+print the ``Bison Manual'' (where `%' is the shell prompt):
+
+     % tex bison.texinfo
+     % texindex bison.??
+     % tex bison.texinfo
+     % lpr -d bison.dvi
+
+(Remember that the words for the shell commands may be different at
+your site; but these are commonly used versions.)
+
+It is often most convenient to give formatting and printing commands
+from a shell within GNU Emacs.  This way, you can easily keep track
+of errors.  To create a shell within Emacs, type `M-x shell'.  In
+this shell, you can format and print the document.  You can switch to
+and from this shell while it is running and do other things.  If you
+are formatting a very long document on a slow machine, this can be
+very convenient; on a VAX 750, for example, formatting often takes 8
+seconds or more per page depending on how loaded the computer is. 
+Faster machines take correspondingly less time.
+
+* Menu:
+
+* Requirements::	Formatting requirements.
+* Compile-Command::	Formatting with the compile command.
+
+ 
+
+File: texinfo,  Node: Requirements,  Next: Compile-Command,  Up: Printing Hardcopy
+
+Formatting Requirements
+=======================
+
+Every Texinfo file that is to be input to TeX must begin with a line
+that looks like
+
+     \input texinfo   @c -*-texinfo-*-
+
+This serves two functions.
+
+  1. When the file is processed by TeX, it loads the macros needed
+     for processing a Texinfo file.
+
+  2. When the file is edited in Emacs, it causes Texinfo mode to be
+     used.
+
+Every Texinfo file must end with a line saying
+
+     @bye
+
+which terminates TeX processing and forces out unfinished pages.
+
+You also have to include two lines that specify the Info file name
+and the title of the printed manual:
+
+     @setfilename NAME-OF-TEXINFO-FILE
+     @settitle NAME OF MANUAL
+
+You might also want to include a line saying
+
+     @setchapternewpage odd
+
+to cause each chapter to start on a fresh odd-numbered page.
+
+By default, TeX typesets pages for printing in an 8.5 by 11 inch
+format.  However, you can direct TeX to typeset a document in a 7 by
+9.25 inch format that is suitable for bound books by inserting the
+following command on a line by itself at the beginning of the Texinfo
+file, before the `@setchapternewpage' command:
+
+     @smallbook
+
+The Free Software Foundation distributes printed copies of the ``GNU
+Emacs Manual'' in this size.
+
+Finally, TeX sometimes is unable to typeset a line without extending
+it into the right margin.  This can occur when TeX comes upon what it
+interprets as a long word that it cannot hyphenate, like a net
+address, or a very long title.  When this happens, TeX prints an
+error message like this:
+
+     Overfull \hbox (20.76302pt too wide)
+
+and gives the line number along with the text of the offending line
+marked at all the places that TeX knows to hyphenate words.  (In TeX
+lines are in `horizontal boxes', hence the term, `hbox'.)
+
+If the Texinfo file has an overfull hbox, you can rewrite the
+sentence so the overfull hbox does not occur or you can decide to
+leave it.  A small excursion into the right margin often does not
+matter and may not even be noticable.  However, unless told
+otherwise, TeX will print a large, ugly, black rectangle beside every
+line that is overfull.  This is so you will notice the location of
+the problem if you are correcting a draft.  To prevent such
+monstrosities from marring your final printout, put the following in
+the beginning of the Texinfo file on lines of their own, before the
+`@setchapternewpage' command:
+
+     @iftex
+     @finalout
+     @end iftex
+
+*Note Titlepage::, for information about creating a title page. 
+*Note Contents::, for information about creating a table of contents.
+
+
+
+File: texinfo,  Node: Compile-Command,  Prev: Requirements,  Up: Printing Hardcopy
+
+Using Local Variables and the Compile Command
+=============================================
+
+Another way to give the TeX formatting command to Texinfo is to put
+that command in a "local variables list" at the end of the Texinfo
+file.  You can then specify the TeX formatting command as a
+`compile-command' and have Emacs run the TeX formatting command by
+giving the command `M-x compile'.  This creates a special shell
+called the `*compilation buffer*'.  For example, at the end of the
+`gdb.texinfo' file, after the `@bye', you would put the following:
+
+     @c Local Variables:
+     @c compile-command: "tex gdb.texinfo"
+     @c End:
+
+This technique is most often used by programmers who compile programs
+this way.
+
+
+
+File: texinfo,  Node: Creating an Info File,  Next: Catching Mistakes,  Prev: Printing Hardcopy,  Up: Top
+
+Creating an On-line Info file
+*****************************
+
+In GNU Emacs, using Texinfo mode, you can see what part or all of a
+Texinfo file will look like in Info by using the keyboard command
+`C-c C-f' (`texinfo-format-region').  This formats a region and
+displays in a temporary buffer called `*Info Region*'; however, this
+command does not turn on Info reading program--it just displays what
+the region will look like.  The `texinfo-format-region' command is
+described more extensively in the chapter on using Texinfo mode. 
+*Note Info on a Region::.
+
+In GNU Emacs, the way to create a working Info file is to visit the
+file and invoke
+
+     `M-x texinfo-format-buffer'
+
+A new buffer is created and the Info file text is generated there. 
+`C-x C-s' will save it under the name specified in the `@setfilename'
+command.
+
+If the Texinfo file has more than 30,000 bytes,
+`texinfo-format-buffer' will automatically create a "tag table" for
+it.  With a tag table, Info can jump to new nodes more quickly than
+it can otherwise.  In addition, if the file has more than 100,000
+bytes in it, `texinfo-format-buffer' will split the file into shorter
+Indirect subfiles of about 50,000 bytes each.  Files are split so
+that Info does not have to make a large buffer to hold the whole of a
+large Info file; instead, Info allocates just enough memory for the
+small, split off file that is needed at the time.  This way, Emacs
+avoids wasting memory when you run Info.  (Before splitting was
+implemented, Info files were always short and "include" files were
+designed as a way to create a single, large printed manual out of the
+smaller Info files. *Note Include Files::, for more information.)
+
+When the file is split, Info itself works through a shortened version
+of the original file that contains the tag table and references to
+the files that were split off.  The split off files are called
+"indirect" files.
+
+The split off files have names that are created by appending `-1',
+`-2', `-3' and so on to the file names specified by the
+`@setfilename' command.  The shortened version of the original file
+continues to have the name specified by `@setfilename'.
+
+At one stage in writing this document, for example, the Info file was
+saved as `test-texinfo' and that file looked like this:
+
+     Info file: test-texinfo,    -*-Text-*-
+     produced by texinfo-format-buffer
+     from file: new-texinfo-manual.texinfo
+     
+     ^_
+     Indirect:
+     test-texinfo-1: 102
+     test-texinfo-2: 50422
+     test-texinfo-3: 101300
+     ^_^L
+     Tag table:
+     (Indirect)
+     Node: overview^?104
+     Node: info file^?1271
+     Node: printed manual^?4853
+     Node: conventions^?6855
+     ...
+
+ (But `test-texinfo' had far more nodes than are shown here.)  Each of
+the split off, indirect files, `test-texinfo-1', `test-texinfo-2',
+and `test-texinfo-3', is listed in this file after the line that says
+`Indirect:'.  The tag table is listed after the line that says `Tag
+table:'.
+
+You cannot run the `M-x Info-validate' node checking command on
+indirect files.  For information on how to prevent files from being
+split and how to validate the structure of the nodes, *note
+Info-Validating a Large File::.
+
+* Menu:
+
+* Installing an Info File::	Putting the Info file in the info directory.
+
+ 
+
+File: texinfo,  Node: Installing an Info File,  Prev: Creating an Info File,  Up: Creating an Info File
+
+Installing an Info file
+=======================
+
+An Info file is usually installed in the GNU Emacs directory called
+`info'.  For Info to work, this directory must contain all the Info
+files, including the split off files.  In addition, the `info'
+directory must have a file that serves as a top level directory for
+the Info system.  This file is called `dir'.
+
+For example, in the `info' directory, the file called `dir' has the
+top level menu for all the Info files in the system.  This file has a
+master menu that looks like this:
+
+     * Menu:
+     
+     * Info:    (info).      Documentation browsing system.
+     * Emacs:   (emacs).     The extensible self-documenting text editor.
+     * Texinfo: (texinfo).   With one source file, make either a printed 
+                             manual using TeX or an Info file using
+                             Texinfo.
+
+ To add a new Info file, just add it to this menu.  For example, if
+you were adding documentation for GDB, you would make the following
+entry:
+
+     * GDB: (gdb).           The source-level C debugger.
+
+ The first item is the menu item name; it is followed by a colon.  The
+second item is the name of the Info file, in parentheses; it is
+followed by a period.  The third part of the entry is the description
+of the item.
+
+The top node of the file, named `top', should have as its parent the
+name of a node in another file, where there is a menu that leads to
+this file.  Specify the file name in parentheses.  If the file is to
+be installed directly in the Info directory file, use `(dir)' as the
+parent of the top node; this is short for `(dir)top', the node `top'
+in the file `dir', which is the main menu of Info.
+
+
+
+File: texinfo,  Node: Catching Mistakes,  Next: Command Syntax,  Prev: Creating an Info File,  Up: Top
+
+Catching Mistakes
+*****************
+
+Besides mistakes with the content of what ever you are describing,
+there are two kinds of mistake you can make with Texinfo:  you can
+make mistakes with @-commands, and you can make mistakes with the
+structure of the nodes and chapters.
+
+There are two tools for catching the first kind of mistake and two
+for catching the second.
+
+For finding problems with @-commands, your best action is to run `M-x
+texinfo-format-region' on regions of your file as you write it.  In
+Texinfo mode, the `texinfo-format-region' command is bound to `C-c
+C-f'.  In addition, you can run TeX on the whole file.
+
+For finding problems with the structure of nodes and chapters, you
+can use `C-c C-s' (`texinfo-show-structure') (and the related `occur'
+command) and you can use the `M-x Info-validate' command.
+
+* Menu:
+
+* Debugging with Info::    	    Catching errors with info formatting.
+* Debugging with Tex::		    Catching errors with TeX formatting.
+* Using texinfo-show-structure::    Using `texinfo-show-structure'
+				    to catch mistakes.
+* Running Info-Validate::	    Checking for unreferenced nodes.
+
+ 
+
+File: texinfo,  Node: Debugging with Info,  Next: Debugging with Tex,  Up: Catching Mistakes
+
+Catching Errors with Info Formatting
+====================================
+
+After you have written part of a Texinfo file, you can use the `M-x
+texinfo-format-region' command to see whether the region formats
+properly.  In Texinfo mode, this command is bound to the keyboard
+command `C-c C-f'.
+
+If you have made a mistake with an @-command, `M-x
+texinfo-format-region' will stop processing at or after the error and
+give an error message.  To see where in the file the error occurred,
+switch to the `*Info Region*' buffer; the cursor will be in a
+position that is after the location of the error.  Also, the text
+will not be formatted after the place the error occurred.
+
+For example, if you accidently end a menu with the command `@end
+menus' with an `s' on the end, instead of with `@end menu', you will
+get an error message that says:
+
+     @end menus is not handled by texinfo.
+
+ The cursor will stop at the point in the file where the error occurs,
+or not long after it.  It will look like this:
+
+     @menu
+     * Using texinfo-show-structure::    Using `texinfo-show-structure'
+                                         to catch mistakes.
+     * Running Info-Validate::           Checking for unreferenced nodes.
+     @end menus
+
+The `texinfo-format-region' command does not always recognize errors.
+For example, no errors were reported when `texinfo-format-region' was
+run on the whole itemized list of which the following is a part:
+
+     name of the Texinfo file as an extension.  The @samp{??} are `wildcards'
+     that cause the shell to substitute all the raw index files.  (@xref{sorting
+     indices), for more information about sorting indices.) @refill
+     @cindex Sorting indices
+     @cindex Indices, sorting
+     
+     @item 
+     @emph{Third}, rerun the @TeX{} command on the Texinfo file.  This
+     regenerates a formatted DVI file with the index entries in the correct
+     order.  This second run also makes all the cross references and table of
+     contents correct as well.
+
+ Instead, `texinfo-format-region' ran without reporting the error, but
+it produced output with very long lines, containing some of the
+original `@cindex' commands mixed in.  (It is not practical to
+display these over long lines here.
+
+However, when `texinfo-format-region' was run on part of the list
+that is shown, it did give an error message, `Search failed: "[{,}"'.
+(This error message is explained in the section on using the Emacs
+Lisp Debugger, *note Using the Emacs Lisp Debugger::.)
+
+Sometimes `texinfo-format-region' will stop long after the original
+error;  this is because it does not discover the problem until then. 
+In this case, you will have to backtrack.
+
+
+
+File: texinfo,  Node: Using the Emacs Lisp Debugger,  Up: Debugging with Info
+
+Using the Emacs Lisp Debugger
+-----------------------------
+
+If an error is especially elusive, you can turn on the Emacs Lisp
+debugger and look at the backtrace; this tells you where in the
+`texinfo-format-region' function the problem occurred.  You can turn
+on the debugger with the command:
+
+     M-x set-variable RET debug-on-error RET t
+
+and turn it off with
+
+     M-x set-variable RET debug-on-error RET nil
+
+Often, when you are using the debugger, it is easier to follow what
+is going on if you use the Emacs Lisp files that are not
+byte-compiled.  The byte-compiled sources send octal numbers to the
+debugger that may look mysterious.  To use the uncompiled source
+files, load `texinfmt.el' and `texinfo.el' with the `M-x load-file'
+command.
+
+The debugger will not catch an error if `texinfo-format-region' does
+not detect one.  In the example shown above, `texinfo-format-region'
+did not find the error when the whole list was formatted, but only
+when part of the list was formatted.  When `texinfo-format-region'
+did not find an error, the debugger did not find one either.
+
+However, when `texinfo-format-region' did report an error, it invoked
+the debugger.  This is the backtrace it produced:
+
+     Signalling: (search-failed "[},]")
+       re-search-forward("[},]")
+       (while ...)
+       (let ...)
+       texinfo-format-parse-args()
+       (let ...)
+       texinfo-format-xref()
+       funcall(texinfo-format-xref)
+       (if ...)
+       (let ...)
+       (if ...)
+       (while ...)
+       texinfo-format-scan()
+       (save-excursion ...)
+       (let ...)
+       texinfo-format-region(103370 103631)
+     * call-interactively(texinfo-format-region)
+
+The backtrace is read from the bottom up.  `texinfo-format-region'
+was called interactively; and it, in turn, called various functions,
+including `texinfo-format-scan', `texinfo-format-xref' and
+`texinfo-format-parse-args'.  Inside the function
+`texinfo-format-parse-args', the function `re-search-forward' was
+called; it was this function that could not find the missing right
+hand brace.
+
+*Note : (emacs)Lisp Debug, for more information.
+
+
+
+File: texinfo,  Node: Debugging with Tex,  Next: Using texinfo-show-structure,  Prev: Debugging with Info,  Up: Catching Mistakes
+
+Catching Errors with TeX Formatting
+===================================
+
+You can also catch mistakes when you format a file with TeX.
+
+Usually, you will want to do this after you have run
+`texinfo-format-buffer' on the same file.  `texinfo-format-buffer' is
+usually faster and sometimes gives error messages that make more
+sense.  *Note Debugging with Info::, for more information.
+
+For example, TeX was run on the same itemized list discussed in the
+section on the use of  `texinfo-format-region' (*note Debugging with
+Info::.); the fragment with the error looked like this:
+
+     name of the texinfo file as an extension.  The @samp{??} are `wildcards'
+     that cause the shell to substitute all the raw index files.  (@xref{sorting
+     indices, for more information about sorting indices.) @refill
+
+This produced the following output, after which TeX stopped:
+
+     Runaway argument?
+     {sorting indices, for more information about sorting indices.) @refill @ETC.
+     ! Paragraph ended before \xref was complete.
+     <to be read again> 
+                        \par 
+     l.27 
+          
+     ?
+
+In this case, TeX produced an accurate and understandable error
+message: `Paragraph ended before \xref was complete.' (Note, however,
+that TeX translated the `@' into a `\'.)  Also, `\par' is an internal
+TeX command of no relevance to Texinfo.)
+
+Unfortunately, TeX is not always so helpful, and sometimes you have
+to be truly a Sherlock Holmes to discover what went wrong.
+
+In any case, if you run into a problem like this, you can do one of
+two things.
+
+  1. You can tell TeX to continue running and to ignore errors  as
+     best it can by typing `r RET' at the  `?' prompt.
+
+     This is often the best thing to do.  However, beware: the one
+     error may produce a cascade of additional error messages as it
+     consequences are felt through the rest of the file.
+
+  2. You can tell TeX to stop this run by typing `x RET'  at the `?'
+     prompt.
+
+Sometimes TeX will format a file without producing error messages
+even though there is a problem.  This usually occurs if a command is
+not ended but TeX is able to continue processing anyhow.  For
+example, if you fail to end an itemized list with the `@end itemize'
+command, TeX will write a DVI file that you can print out.  The only
+error message that TeX will give you is the somewhat mysterious
+comment that
+
+     (\end occurred inside a group at level 1)
+
+However, if you print the DVI file, you will find that the text of
+the file that follows the itemized list is entirely indented as if it
+were part of the last item in the itemized list.  The error message
+is the way TeX says that it expected to find an `@end' command
+somewhere in the file; but that it could not locate where it was
+needed.
+
+Another source of notoriously hard to find errors is a missing `@end
+group' command.  If you ever are stumped by incomprehensible errors,
+look for a missing `@end group' command first.
+
+If you do not have the header lines in the file, TeX may stop in the
+beginning of its run and display output that looks like the following.
+The `*' indicates that TeX is waiting for input.
+
+     This is TeX, Version 2.0 for Berkeley UNIX (preloaded format=plain-cm 
+     87.10.25) (#tz-bar-a02987.tex [1])
+     *
+
+In this case, simply type `\end RET' after the asterisk.  Then put
+the header lines into the Texinfo file and run the TeX command again.
+
+
