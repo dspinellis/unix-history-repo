@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 SUBDIR=	ac accton arp chown chroot config cron diskpart edquota gettable \
 	htable implog implogd inetd kgmon kvm_mkdb lpr mkhosts mkpasswd \
@@ -11,6 +11,8 @@ SUBDIR+=arff bad144 dlmpcc flcopy iostat rxformat
 SUBDIR+=dlmpcc iostat
 .elif ${MACHINE} == "vax"
 SUBDIR+=arff bad144 flcopy iostat rxformat
+.elif ${MACHINE} == "i386"
+SUBDIR+=bad144 
 .endif
 
 .include <bsd.subdir.mk>
