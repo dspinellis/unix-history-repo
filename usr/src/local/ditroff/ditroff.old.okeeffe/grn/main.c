@@ -1,4 +1,4 @@
-/*	main.c	1.6	(Berkeley) 83/08/23
+/*	main.c	1.7	(Berkeley) 83/09/19
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -28,6 +28,35 @@
  *		and versatec printers.  Devices acceptable are:  ver, var, ip.
  *
  *	-p	prompt user for fonts, sizes and thicknesses.
+ *
+ *
+ *		Inside the GS and GE, there are commands similar to command-
+ *	    line options listed above.  At most one command may reside on each
+ *	    line, and each command is followed by a parameter separated by white
+ *	    space.  The commands are as follows, and may be abbreviated down to
+ *	    one character (with exception of "scale" down to "sc") and may be
+ *	    upper or lower case.
+ *
+ *			   1, 2, 3, 4  -  set size 1, 2, 3, or 4 (followed
+ *	roman, italics, bold, special  -  set gremlin's fonts to any other
+ *					  troff font (one or two characters)
+ *			     scale, x  -  scale is IN ADDITION to the global
+ *					  scale factor from the -x option.
+ *		narrow, medium, thick  -  set pixel widths of lines.
+ *				 file  -  set the file name to read the
+ *					  gremlin picture from.
+ *			width, height  -  these two commands override any
+ *					  scaling factor that is in effect,
+ *					  and forces the picture to fit into
+ *					  either the height or width specified,
+ *					  whichever makes the picture smaller.
+ *					  The operand for these two commands is
+ *					  a floating-point number in units of
+ *					  inches
+ *
+ *	Troff number registers used:  g1 through g9.  g1 is the width of the
+ *	picture, and g2 is the height.  g2-g6 save information, g8 and g9 are
+ *	used for text processing and g7 is reserved.
  */
 
 
@@ -35,7 +64,7 @@
 #include "gprint.h"
 #include "dev.h"
 
-extern char *calloc();
+extern char *malloc();
 extern char *rindex();
 
 /* database imports */
@@ -61,7 +90,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.6	83/08/23";
+char	SccsId[] = "main.c	1.7	83/09/19";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -412,14 +441,13 @@ int baseline;
 		PICTURE = DBRead(gfp);			/* read picture file */
 		fclose(gfp);
 		if (DBNullelt(PICTURE))
-		    return;
-					/* if a request is made to make the */
+		    return;		/* if a request is made to make the */
 					/* picture fit into a specific area, */
 					/* set the scale to do that. */
-		temp = (height != 0.0)  ?
-			SCREENtoINCH * (bottompoint - toppoint) / height  : BIG;
-		troffscale = (width != 0.0)  ?
-			SCREENtoINCH * (rightpoint - leftpoint) / width  : BIG;
+		if ((temp = bottompoint - toppoint) < 0.1) temp = 0.1;
+		temp = (height != 0.0) ? height / temp  : BIG;
+		if ((troffscale = rightpoint - leftpoint) < 0.1) troffscale=0.1;
+		troffscale = (width != 0.0) ? width / troffscale  : BIG;
 		if (temp == BIG && troffscale == BIG) {
 		    troffscale = xscale;
 		} else {
@@ -432,16 +460,16 @@ int baseline;
 		xleft = leftpoint * troffscale;		/* picture limits */
 		xright = rightpoint * troffscale;
 					/* save stuff in number registers, */
-					/*   register gw = picture width and */
-					/*   register gh = picture height, */
+					/*   register g1 = picture width and */
+					/*   register g2 = picture height, */
 					/*   set vertical spacing, no fill, */
 					/*   and break (to make sure picture */
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
-		printf(".nr gw %d\n.nr gh %d\n", xright-xleft, ybottom-ytop);
+		printf(".nr g1 %d\n.nr g2 %d\n", xright-xleft, ybottom-ytop);
 		printf(".br\n%s", GScommand);
-		printf(".nr g1 \\n(.f\n.nr g2 \\n(.s\n");
-		printf(".nr g3 \\n(.v\n.nr g4 \\n(.u\n.nf\n.vs 0");
+		printf(".nr g3 \\n(.f\n.nr g4 \\n(.s\n");
+		printf(".nr g5 \\n(.v\n.nr g6 \\n(.u\n.nf\n.vs 0");
 
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
@@ -459,8 +487,8 @@ int baseline;
 					/* then restore everything to the way */
 					/* it was before the .GS */
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
-		printf(".ft \\n(g1\n.ps \\n(g2\n");
-		printf(".vs \\n(g3u\n.if \\n(g4 .fi\n%s", inputline);
+		printf(".ft \\n(g3\n.ps \\n(g4\n");
+		printf(".vs \\n(g5u\n.if \\n(g6 .fi\n%s", inputline);
 	    } else {
 		interpret(inputline);	/* take commands from the input file */
 	    }
@@ -515,7 +543,7 @@ char *line;
     char str2[MAXINLINE];
     register char *chr;
 
-    sscanf(line, "%s%s", &str1[0], &str2[0]);
+    sscanf(line, "%80s%80s", &str1[0], &str2[0]);
     for (chr = &str1[0]; *chr; chr++)		/* convert command to */
 	if(isupper(*chr)) *chr = tolower(*chr);		/* lower case */
     switch (str1[0]) {
@@ -524,28 +552,28 @@ char *line;
 	case '2':	/* font sizes */
 	case '3':
 	case '4':
-	    tsize[str1[0] - '1'] = calloc(strlen(str2) + 1);
+	    tsize[str1[0] - '1'] = malloc(strlen(str2) + 1);
 	    strcpy(tsize[str1[0] - '1'], str2);
 	    break;
 
 	case 'r':	/* roman */
-	    tfont[0] = calloc(strlen(str2) + 1);
+	    tfont[0] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[0], str2);
 	    break;
 
 	case 'i':	/* italics */
-	    tfont[1] = calloc(strlen(str2) + 1);
+	    tfont[1] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[1], str2);
 	    break;
 
 	case 'b':	/* bold */
-	    tfont[2] = calloc(strlen(str2) + 1);
+	    tfont[2] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[2], str2);
 	    break;
 
 	case 's':	/* special */
 	    if (str1[1] == 'c') goto scalecommand;
-	    tfont[3] = calloc(strlen(str2) + 1);
+	    tfont[3] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[3], str2);
 	    break;
 
