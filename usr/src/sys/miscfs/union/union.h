@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	8.3 (Berkeley) %G%
+ *	@(#)union.h	8.4 (Berkeley) %G%
  */
 
 struct union_args {
@@ -52,6 +52,8 @@ struct union_node {
 	int			un_hash;	/* saved un_path hash value */
 	int			un_openl;	/* # of opens on lowervp */
 	unsigned int		un_flags;
+	off_t			un_uppersz;	/* size of upper object */
+	off_t			un_lowersz;	/* size of lower object */
 #ifdef DIAGNOSTIC
 	pid_t			un_pid;
 #endif
@@ -79,6 +81,7 @@ extern void union_removed_upper __P((struct union_node *un));
 extern struct vnode *union_lowervp __P((struct vnode *));
 extern void union_newlower __P((struct union_node *, struct vnode *));
 extern void union_newupper __P((struct union_node *, struct vnode *));
+extern void union_newsize __P((struct vnode *, off_t, off_t));
 
 #define	MOUNTTOUNIONMOUNT(mp) ((struct union_mount *)((mp)->mnt_data))
 #define	VTOUNION(vp) ((struct union_node *)(vp)->v_data)

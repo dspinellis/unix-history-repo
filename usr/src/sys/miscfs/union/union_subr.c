@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.6 (Berkeley) %G%
+ *	@(#)union_subr.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@
 #include <sys/filedesc.h>
 #include <sys/queue.h>
 #include <sys/mount.h>
+#include <vm/vm.h>		/* for vnode_pager_setsize */
 #include <miscfs/union/union.h>
 
 #ifdef DIAGNOSTIC
@@ -127,6 +128,7 @@ union_updatevp(un, uppervp, lowervp)
 			}
 		}
 		un->un_lowervp = lowervp;
+		un->un_lowersz = VNOVAL;
 	}
 
 	if (un->un_uppervp != uppervp) {
@@ -134,6 +136,7 @@ union_updatevp(un, uppervp, lowervp)
 			vrele(un->un_uppervp);
 
 		un->un_uppervp = uppervp;
+		un->un_uppersz = VNOVAL;
 	}
 
 	if (docache && (ohash != nhash)) {
@@ -160,6 +163,47 @@ union_newupper(un, uppervp)
 {
 
 	union_updatevp(un, uppervp, un->un_lowervp);
+}
+
+/*
+ * Keep track of size changes in the underlying vnodes.
+ * If the size changes, then callback to the vm layer
+ * giving priority to the upper layer size.
+ */
+void
+union_newsize(vp, uppersz, lowersz)
+	struct vnode *vp;
+	off_t uppersz, lowersz;
+{
+	struct union_node *un;
+	off_t sz;
+
+	/* only interested in regular files */
+	if (vp->v_type != VREG)
+		return;
+
+	un = VTOUNION(vp);
+	sz = VNOVAL;
+
+	if ((uppersz != VNOVAL) && (un->un_uppersz != uppersz)) {
+		un->un_uppersz = uppersz;
+		if (sz == VNOVAL)
+			sz = un->un_uppersz;
+	}
+
+	if ((lowersz != VNOVAL) && (un->un_lowersz != lowersz)) {
+		un->un_lowersz = lowersz;
+		if (sz == VNOVAL)
+			sz = un->un_lowersz;
+	}
+
+	if (sz != VNOVAL) {
+#ifdef UNION_DIAGNOSTIC
+		printf("union: %s size now %ld\n",
+			uppersz != VNOVAL ? "upper" : "lower", (long) sz);
+#endif
+		vnode_pager_setsize(vp, sz);
+	}
 }
 
 /*
@@ -398,7 +442,9 @@ loop:
 	un = VTOUNION(*vpp);
 	un->un_vnode = *vpp;
 	un->un_uppervp = uppervp;
+	un->un_uppersz = VNOVAL;
 	un->un_lowervp = lowervp;
+	un->un_lowersz = VNOVAL;
 	un->un_openl = 0;
 	un->un_flags = UN_LOCKED;
 	if (un->un_uppervp)
