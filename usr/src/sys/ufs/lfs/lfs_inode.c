@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.16	82/07/01	*/
+/*	lfs_inode.c	4.17	82/07/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -226,6 +226,7 @@ irele(ip)
 			itrunc(ip);
 			mode = ip->i_mode;
 			ip->i_mode = 0;
+			ip->i_rdev = 0;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip, ip->i_number, mode);
 		}
