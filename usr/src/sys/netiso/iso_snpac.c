@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.5 (Berkeley) %G% */
+/*	@(#)iso_snpac.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -795,8 +795,9 @@ struct rtentry	**ret_nrt;
  *					This could be made more efficient by checking 
  *					the existing route before adding a new one.
  */
-snpac_addrt(host, gateway, source, netmask)
-struct iso_addr	*host, *gateway, *source, *netmask;
+snpac_addrt(ifp, host, gateway, netmask)
+struct ifnet *ifp;
+struct iso_addr	*host, *gateway, *netmask;
 {
 	register struct snpa_cache	*sc;
 	register struct iso_addr *r;
@@ -806,13 +807,12 @@ struct iso_addr	*host, *gateway, *source, *netmask;
 		bcopy((caddr_t)host, (caddr_t)&sc->sc_da, sizeof(struct iso_addr));
 		zap_isoaddr(dst, host);
 		zap_isoaddr(gte, gateway);
-		zap_isoaddr(src, source);
 		zap_isoaddr(msk, netmask);
 		if (netmask) {
-			rtredirect(S(dst), S(gte), S(msk), RTF_DONE, S(src), &sc->sc_rt);
+			rtredirect(S(dst), S(gte), S(msk), RTF_DONE, S(gte), &sc->sc_rt);
 		} else
 			rtredirect(S(dst), S(gte), (struct sockaddr *)0,
-									RTF_DONE | RTF_HOST, S(src), &sc->sc_rt);
+									RTF_DONE | RTF_HOST, S(gte), &sc->sc_rt);
 	}
 }
 #endif	ISO

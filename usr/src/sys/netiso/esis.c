@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.4 (Berkeley) %G% */
+/*	@(#)esis.c	7.5 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -375,6 +375,11 @@ register struct mbuf	*m;	/* determine if there remains space */
 	return(1);
 }
 
+#define ESIS_EXTRACT_ADDR(d, b) { d = (struct iso_addr *)(b); b += (1 + *b); \
+	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
+#define ESIS_NEXT_OPTION(b)	{ b += (2 + b[1]); \
+	    if (b > buflim) {esis_stat.es_toosmall++; goto bad;}}
+int ESHonly;
 /*
  
 /*
@@ -395,19 +400,17 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	struct esis_fixed	*pdu = mtod(m, struct esis_fixed *);
 	u_short				ht;		/* holding time */
 	struct iso_addr		*nsap;
-	int					naddr = 0;
+	int					naddr;
 	u_char				*buf = (u_char *)(pdu + 1);
-	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
-	int					optlen, new_entry;
+	u_char				*buflim = pdu->esis_hdr_len + (u_char *)pdu;
+	int					new_entry;
 
 	esis_stat.es_eshrcvd++;
 
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
 
-	if (len > 0) {
-		naddr = *buf++;
-		len--;
-	} else
+	naddr = *buf++;
+	if (buf >= buflim)
 		goto bad;
 
 	IFDEBUG(D_ESISINPUT)
@@ -415,29 +418,23 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	ENDDEBUG
 
 	while (naddr-- > 0) {
-		nsap = (struct iso_addr *)buf;
-		if ((len -=  (optlen = *buf++)) >= 0) {
-			buf += optlen;
-			new_entry = (snpac_look(nsap) == NULL);
+		ESIS_EXTRACT_ADDR(nsap, buf);
+		new_entry = (snpac_look(nsap) == NULL);
 
-			IFDEBUG(D_ESISINPUT)
-				printf("esis_eshinput: nsap %s is %s\n", 
-					clnp_iso_addrp(nsap), new_entry ? "new" : "old");
-			ENDDEBUG
+		IFDEBUG(D_ESISINPUT)
+			printf("esis_eshinput: nsap %s is %s\n", 
+				clnp_iso_addrp(nsap), new_entry ? "new" : "old");
+		ENDDEBUG
 
-			snpac_add(shp->snh_ifp, nsap, shp->snh_shost, 6, SNPA_ES, ht);
-			if (new_entry)
-				esis_shoutput(shp->snh_ifp, 
-					iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
-					esis_holding_time, shp->snh_shost, 6);
-		} else {
-bad:
-			esis_stat.es_toosmall++;
-			break;
-		}
+		snpac_add(shp->snh_ifp, nsap, shp->snh_shost, 6, SNPA_ES, ht);
+		if (new_entry)
+			esis_shoutput(shp->snh_ifp, 
+				iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
+				esis_holding_time, shp->snh_shost, 6);
 	}
-
+bad:
 	m_freem(m);
+	return;
 }
 
 /*
@@ -456,11 +453,11 @@ struct mbuf		*m;	/* esh pdu */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m, struct esis_fixed *);
-	u_short				ht;		/* holding time */
-	struct iso_addr		*nsap;
-	caddr_t				buf = (caddr_t)pdu + sizeof(struct esis_fixed);
-	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
-	int					optlen, new_entry;
+	u_short				ht;					/* holding time */
+	struct iso_addr		*nsap; 				/* Network Entity Title */
+	register u_char		*buf = (u_char *) (pdu + 1);
+	register u_char		*buflim = pdu->esis_hdr_len + (u_char *)pdu;
+	int					new_entry;
 
 	esis_stat.es_ishrcvd++;
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
@@ -468,27 +465,23 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	IFDEBUG(D_ESISINPUT)
 		printf("esis_ishinput: ish: ht %d\n", ht);
 	ENDDEBUG
-
-	nsap = (struct iso_addr *)buf;
-	if ((len -=  (optlen = *buf++)) < 0)
+	if (ESHonly)
 		goto bad;
-	buf += optlen;
 
-	/* process options */
-	while (len > 0) {
-		switch (*buf++) {
+	ESIS_EXTRACT_ADDR(nsap, buf);
+
+	while (buf < buflim) {
+		switch (*buf) {
 		case ESISOVAL_ESCT:
-			if (*buf != 2)
+			if (buf[1] != 2)
 				goto bad;
-			CTOH(buf[0], buf[1], esis_config_time);
+			CTOH(buf[2], buf[3], esis_config_time);
+			break;
+		
+		default:
+			printf("Unknown ISH option: %x\n", *buf);
 		}
-		if ((len -=  (optlen = *buf)) < 0) {
-	bad:
-			esis_stat.es_toosmall++;
-			m_freem(m);
-			return;
-		}
-		buf += 1 + optlen;
+		ESIS_NEXT_OPTION(buf);
 	}
 	new_entry = (snpac_look(nsap) == NULL);
 
@@ -502,7 +495,9 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		esis_shoutput(shp->snh_ifp, 
 			iso_systype & SNPA_ES ? ESIS_ESH : ESIS_ISH,
 			esis_holding_time, shp->snh_shost, 6);
+bad:
 	m_freem(m);
+	return;
 }
 
 /*
@@ -522,59 +517,53 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	struct esis_fixed	*pdu = mtod(m0, struct esis_fixed *);
 	u_short				ht;		/* holding time */
-	register struct iso_addr *da, *net = 0, *netmask = 0, *snpamask = 0;
-	u_char				*buf = (u_char *)(pdu + 1);
-	int					len = pdu->esis_hdr_len - sizeof(struct esis_fixed);
-	int					optlen, bsnpalen;
-	caddr_t				bsnpa;
+	struct iso_addr		*da, *net = 0, *netmask = 0, *snpamask = 0;
+	register struct iso_addr *bsnpa;
+	register u_char		*buf = (u_char *)(pdu + 1);
+	register u_char		*buflim = pdu->esis_hdr_len + (u_char *)pdu;
 
 	esis_stat.es_rdrcvd++;
 
 	/* intermediate systems ignore redirects */
 	if (iso_systype & SNPA_IS)
 		goto bad;
+	if (ESHonly)
+		goto bad;
 
 	CTOH(pdu->esis_ht_msb, pdu->esis_ht_lsb, ht);
-	if (len <= 0)
+	if (buf >= buflim)
 		goto bad;
 
 	/* Extract DA */
-	da = (struct iso_addr *)buf;
-	if ((len -=  (optlen = *buf++)) <= 0)
-		goto bad;
-	buf += optlen;
+	ESIS_EXTRACT_ADDR(da, buf);
 
 	/* Extract better snpa */
-	if ((len -=  (bsnpalen = *buf++)) < 0)
-		goto bad;
-	bsnpa = (caddr_t)buf;
-	buf += optlen;
-	
+	ESIS_EXTRACT_ADDR(bsnpa, buf);
+
 	/* Extract NET if present */
-	if (len) {
-		net = (struct iso_addr *)buf;
-		if ((len -=  (optlen = *buf++)) < 0)
-			goto bad;
-		buf += optlen;
+	if (buf < buflim) {
+		ESIS_EXTRACT_ADDR(net, buf);
 	}
 
 	/* process options */
-	while (len > 0) {
-		switch (*buf++) {
+	while (buf < buflim) {
+		switch (*buf) {
 		case ESISOVAL_SNPAMASK:
 			if (snpamask) /* duplicate */
 				goto bad;
-			snpamask = (struct iso_addr *)buf;
+			snpamask = (struct iso_addr *)(buf + 1);
 			break;
 
 		case ESISOVAL_NETMASK:
 			if (netmask) /* duplicate */
 				goto bad;
-			netmask = (struct iso_addr *)buf;
+			netmask = (struct iso_addr *)(buf + 1);
+			break;
+
+		default:
+			printf("Unknown option in ESIS RD (0x%x)\n", buf[-1]);
 		}
-		if ((len -=  (optlen = *buf)) < 0)
-			goto bad;
-		buf += 1 + optlen;
+		ESIS_NEXT_OPTION(buf);
 	}
 
 	IFDEBUG(D_ESISINPUT)
@@ -591,16 +580,14 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	 *	If the redirect is to an IS, add a route entry towards that
 	 *	IS.
 	 */
-	if ((net == 0) || (snpamask)) {
+	if (net == 0 || net->isoa_len == 0 || snpamask) {
 		/* redirect to an ES */
-		snpac_add(shp->snh_ifp, da, bsnpa, bsnpalen, SNPA_ES, ht);
+		snpac_add(shp->snh_ifp, da,
+				bsnpa->isoa_genaddr, bsnpa->isoa_len, SNPA_ES, ht);
 	} else {
-		struct iso_addr bsnpa_ia;
-
-		snpac_add(shp->snh_ifp, net, bsnpa, bsnpalen, SNPA_IS, ht);
-		bcopy(bsnpa, bsnpa_ia.isoa_genaddr, bsnpa_ia.isoa_len = 1 + bsnpalen);
-		bsnpa_ia.isoa_genaddr[0] = AFI_SNA;
-		snpac_addrt(da, &bsnpa_ia, net, netmask);
+		snpac_add(shp->snh_ifp, net,
+				bsnpa->isoa_genaddr, bsnpa->isoa_len, SNPA_IS, ht);
+		snpac_addrt(shp->snh_ifp, da, net, netmask);
 	}
 bad:
 	m_freem(m0);
