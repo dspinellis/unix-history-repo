@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	7.20 (Berkeley) %G%
+ *	@(#)kern_time.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
