@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fsck.h	5.13 (Berkeley) %G%
+ *	@(#)fsck.h	5.14 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -59,6 +59,8 @@ struct bufarea {
 struct bufarea bufhead;		/* head of list of other blks in filesys */
 struct bufarea sblk;		/* file system superblock */
 struct bufarea cgblk;		/* cylinder group blocks */
+struct bufarea *pdirbp;		/* current directory contents */
+struct bufarea *pbp;		/* current inode block */
 struct bufarea *getdatablk();
 
 #define	dirty(bp)	(bp)->b_dirty = 1
