@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)order.c	1.2 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.3 (Berkeley) %G%";
 # include "mfile2"
 
 int maxargs = { -1 };
@@ -439,7 +439,7 @@ deflab( l ){
 	printf( "L%d:\n", l );
 	}
 
-genargs( p, ptemp ) register NODE *p, *ptemp; {
+genargs( p ) register NODE *p; {
 	register NODE *pasg;
 	register align;
 	register size;
@@ -449,7 +449,7 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 
 	/*  first, do the arguments on the right */
 	while( p->in.op == CM ){
-		genargs( p->in.right, ptemp );
+		genargs( p->in.right );
 		p->in.op = FREE;
 		p = p->in.left;
 		}
@@ -460,7 +460,7 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 		align = p->stn.stalign;
 		if( p->in.left->in.op == ICON ){
 			p->in.op = FREE;
-			p= p->in.left;
+			p = p->in.left;
 			}
 		else {
 			/* make it look beautiful... */
@@ -477,25 +477,14 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 				}
 			}
 
-
- 		ptemp->tn.lval = 0;	/* all moves to (sp) */
-
 		pasg = talloc();
-		pasg->in.op = STASG;
+		pasg->in.op = STARG;
 		pasg->in.rall = NOPREF;
 		pasg->stn.stsize = size;
 		pasg->stn.stalign = align;
-		pasg->in.right = p;
-		pasg->in.left = tcopy( ptemp );
-
-		/* the following line is done only with the knowledge
-		that it will be undone by the STASG node, with the
-		offset (lval) field retained */
-
-		if( p->in.op == OREG ) p->in.op = REG;  /* only for temporaries */
+		pasg->in.left = p;
 
  		order( pasg, FORARG );
-		ptemp->tn.lval += size;
 		return;
 		}
 
