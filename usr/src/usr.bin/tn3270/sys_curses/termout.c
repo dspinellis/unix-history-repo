@@ -51,10 +51,6 @@ extern void EmptyTerminal();
 		terminalCursorAddress:UnLocked? CursorAddress: HighestScreen())
 
 
-#if	defined(unix)
-extern int	tin, tout;		/* file descriptors */
-#endif	/* defined(unix) */
-
 static int terminalCursorAddress = 0;	/* where the cursor is on term */
 static int screenInitd = 0; 		/* the screen has been initialized */
 static int screenStopped = 1;		/* the screen has been stopped */
@@ -74,14 +70,18 @@ int	bellwinup = 0;			/* Are we up with it or not */
 static char *KS, *KE;
 #endif	/* defined(unix) */
 
-#if	defined(unix)
-static int tcflag = -1;			/* transparent mode command flag */
-static int savefd[2];			/* for storing fds during transcom */
-#endif	/* defined(unix) */
 
 #if	defined(SLOWSCREEN)
 static int inHighlightMode = 0;
 #endif	/* defined(SLOWSCREEN) */
+
+/* Variables for transparent mode */
+#if	defined(unix)
+static int tcflag = -1;			/* transparent mode command flag */
+static int savefd[2];			/* for storing fds during transcom */
+extern int	tin, tout;		/* file descriptors */
+#endif	/* defined(unix) */
+
 
 #include "disp_asc.out"
 
@@ -808,3 +808,107 @@ DoTerminalOutput()
 	return(0);		/* more output for future */
     }
 }
+
+/*
+ * The following are defined to handle transparent data.
+ */
+
+void
+TransStop()
+{
+#if	defined(unix)
+    if (tcflag == 0) {
+       tcflag = -1;
+       (void) signal(SIGCHLD, SIG_DFL);
+    } else if (tcflag > 0) {
+       setcommandmode();
+       (void) close(tin);
+       (void) close(tout);
+       tin = savefd[0];
+       tout = savefd[1];
+       setconnmode();
+       tcflag = -1;
+       (void) signal(SIGCHLD, SIG_DFL);
+    }
+#endif	/* defined(unix) */
+    RefreshScreen();
+}
+
+void
+TransOut(buffer, count)
+unsigned char	*buffer;
+int		count;
+{
+#if	defined(unix)
+    extern char *transcom;
+    int inpipefd[2], outpipefd[2], savemode;
+    void aborttc();
+#endif	/* defined(unix) */
+
+    while (DoTerminalOutput() == 0) {
+#if defined(unix)
+	HaveInput = 0;
+#endif /* defined(unix) */
+    }
+#if	defined(unix)
+    if (transcom && tcflag == -1) {
+       while (1) {			  /* go thru once */
+	     if (pipe(outpipefd) < 0) {
+		break;
+	     }
+	     if (pipe(inpipefd) < 0) {
+		break;
+	     }
+	     if ((tcflag = fork()) == 0) {
+		(void) close(outpipefd[1]);
+		(void) close(0);
+		if (dup(outpipefd[0]) < 0) {
+		   exit(1);
+		}
+		(void) close(outpipefd[0]);
+		(void) close(inpipefd[0]);
+		(void) close(1);
+		if (dup(inpipefd[1]) < 0) {
+		   exit(1);
+		}
+		(void) close(inpipefd[1]);
+		if (execl("/bin/csh", "csh", "-c", transcom, (char *) 0)) {
+		    exit(1);
+		}
+	     }
+	     (void) close(inpipefd[1]);
+	     (void) close(outpipefd[0]);
+	     savefd[0] = tin;
+	     savefd[1] = tout;
+	     setcommandmode();
+	     tin = inpipefd[0];
+	     tout = outpipefd[1];
+	     (void) signal(SIGCHLD, aborttc);
+	     setconnmode();
+	     tcflag = 1;
+	     break;
+       }
+       if (tcflag < 1) {
+	  tcflag = 0;
+       }
+    }
+#endif	/* defined(unix) */
+    (void) DataToTerminal(buffer, count);
+}
+
+
+#if	defined(unix)
+static void
+aborttc()
+{
+	int savemode;
+
+	setcommandmode();
+	(void) close(tin);
+	(void) close(tout);
+	tin = savefd[0];
+	tout = savefd[1];
+	setconnmode();
+	tcflag = 0;
+}
+#endif	/* defined(unix) */
