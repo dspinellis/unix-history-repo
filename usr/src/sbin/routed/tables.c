@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -169,7 +169,7 @@ rtadd(dst, gate, metric, state)
 	 * from this host, discard the entry.  This should only
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
-	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
+	if ((rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
 	    rtioctl(ADD, &rt->rt_rt) < 0) {
 		if (errno != EEXIST && gate->sa_family < af_max)
 			syslog(LOG_ERR,
@@ -191,7 +191,7 @@ rtchange(rt, gate, metric)
 	short metric;
 {
 	int add = 0, delete = 0, newgateway = 0;
-	struct rtentry oldroute;
+	struct rtuentry oldroute;
 
 	FIXLEN(gate);
 	FIXLEN(&(rt->rt_router));
@@ -226,7 +226,7 @@ rtchange(rt, gate, metric)
 		if (metric > rt->rt_metric && delete)
 			syslog(LOG_ERR, "%s route to interface %s (timed out)",
 			    add? "changing" : "deleting",
-			    rt->rt_ifp->int_name);
+			    rt->rt_ifp ? rt->rt_ifp->int_name : "?");
 	}
 	if (add) {
 		rt->rt_router = *gate;
@@ -238,8 +238,6 @@ rtchange(rt, gate, metric)
 	rt->rt_state |= RTS_CHANGED;
 	if (newgateway)
 		TRACE_ACTION("CHANGE TO   ", rt);
-	if (install == 0)
-		return;
 #ifndef RTM_ADD
 	if (add && rtioctl(ADD, &rt->rt_rt) < 0)
 		perror("ADD ROUTE");
@@ -271,8 +269,7 @@ rtdelete(rt)
 		syslog(LOG_ERR,
 		    "deleting route to interface %s? (timed out?)",
 		    rt->rt_ifp->int_name);
-	    if (install &&
-		(rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
+	    if ((rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
 					    rtioctl(DELETE, &rt->rt_rt) < 0)
 		    perror("rtdelete");
 	}
@@ -336,9 +333,12 @@ rtinit()
 
 rtioctl(action, ort)
 	int action;
-	struct ortentry *ort;
+	struct rtuentry *ort;
 {
 #ifndef RTM_ADD
+	if (install == 0)
+		return (errno = 0);
+	ort->rtu_rtflags = ort->rtu_flags;
 	switch (action) {
 
 	case ADD:
@@ -364,13 +364,12 @@ rtioctl(action, ort)
 	rtm.rtm_version = RTM_VERSION;
 	rtm.rtm_type = (action == ADD ? RTM_ADD :
 				(action == DELETE ? RTM_DELETE : RTM_CHANGE));
-#undef rt_flags
 #undef rt_dst
-	rtm.rtm_flags = ort->rt_flags;
+	rtm.rtm_flags = ort->rtu_flags;
 	rtm.rtm_seq = ++seqno;
 	rtm.rtm_addrs = RTA_DST|RTA_GATEWAY;
-	bcopy((char *)&ort->rt_dst, (char *)&w.w_dst, sizeof(w.w_dst));
-	bcopy((char *)&ort->rt_gateway, (char *)&w.w_gate, sizeof(w.w_gate));
+	bcopy((char *)&ort->rtu_dst, (char *)&w.w_dst, sizeof(w.w_dst));
+	bcopy((char *)&ort->rtu_router, (char *)&w.w_gate, sizeof(w.w_gate));
 	w.w_dst.sin_family = AF_INET;
 	w.w_dst.sin_len = sizeof(w.w_dst);
 	w.w_gate.sa_family = AF_INET;
@@ -398,6 +397,6 @@ rtioctl(action, ort)
 		rtm.rtm_msglen -= (sizeof(w.w_netmask) - len);
 	}
 	errno = 0;
-	return write(r, (char *)&w, rtm.rtm_msglen);
+	return (install ? write(r, (char *)&w, rtm.rtm_msglen) : (errno = 0));
 #endif  /* RTM_ADD */
 }
