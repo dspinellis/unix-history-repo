@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	5.3 (Berkeley) %G%
+ *	@(#)setjmp.h	5.4 (Berkeley) %G%
  */
 
 #ifndef _SETJMP_H_
