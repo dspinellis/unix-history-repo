@@ -2,7 +2,7 @@ LIB=		g++
 
 # This cruft is necessary due to the way shared library globals are
 # dereferenced.  The libg++ encapsulation of curses makes this necessary.
-LDADD+= -lcurses
+SHARED_LDADD+= -lcurses
 
 CC=		gcc
 
