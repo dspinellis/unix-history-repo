@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -36,10 +36,11 @@ __bt_dump(dbp)
 	char *sep;
 
 	t = dbp->internal;
-	(void)fprintf(stderr, "%s: pgsz %d", 
+	(void)fprintf(stderr, "%s: pgsz %d",
 	    ISSET(t, BTF_INMEM) ? "memory" : "disk", t->bt_psize);
 	if (ISSET(t, BTF_RECNO))
 		(void)fprintf(stderr, " keys %lu", t->bt_nrecs);
+#undef X
 #define	X(flag, name) \
 	if (ISSET(t, flag)) { \
 		(void)fprintf(stderr, "%s%s", sep, name); \
@@ -66,6 +67,41 @@ __bt_dump(dbp)
 }
 
 /*
+ * BT_DMPAGE -- Dump the meta page
+ *
+ * Parameters:
+ *	h:	pointer to the PAGE
+ */
+void
+__bt_dmpage(h)
+	PAGE *h;
+{
+	BTMETA *m;
+	char *sep;
+
+	m = (BTMETA *)h;
+	(void)fprintf(stderr, "magic %lx\n", m->m_magic);
+	(void)fprintf(stderr, "version %lu\n", m->m_version);
+	(void)fprintf(stderr, "psize %lu\n", m->m_psize);
+	(void)fprintf(stderr, "free %lu\n", m->m_free);
+	(void)fprintf(stderr, "nrecs %lu\n", m->m_nrecs);
+	(void)fprintf(stderr, "flags %lu", m->m_flags);
+#undef X
+#define	X(flag, name) \
+	if (m->m_flags & flag) { \
+		(void)fprintf(stderr, "%s%s", sep, name); \
+		sep = ", "; \
+	}
+	if (m->m_flags) {
+		sep = " (";
+		X(BTF_NODUPS,	"NODUPS");
+		X(BTF_RECNO,	"RECNO");
+		(void)fprintf(stderr, ")");
+	}
+	(void)fprintf(stderr, "\nlorder %lu\n", m->m_lorder);
+}
+
+/*
  * BT_DPAGE -- Dump the page
  *
  * Parameters:
@@ -83,6 +119,7 @@ __bt_dpage(h)
 	char *sep;
 
 	(void)fprintf(stderr, "    page %d: (", h->pgno);
+#undef X
 #define	X(flag, name) \
 	if (h->flags & flag) { \
 		(void)fprintf(stderr, "%s%s", sep, name); \
