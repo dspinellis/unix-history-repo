@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.7	%H%	*/
+/*	kern_clock.c	3.8	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -174,7 +174,7 @@ out:
 						pp->p_flag &= ~STIMO;
 						splx(s);
 					} else
-						psignal(pp, SIGCLK);
+						psignal(pp, SIGALRM);
 			if(pp->p_stat==SSLEEP||pp->p_stat==SSTOP)
 				if (pp->p_slptime != 127)
 					pp->p_slptime++;
