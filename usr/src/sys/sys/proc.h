@@ -100,14 +100,17 @@ struct	proc {
 
 	int	p_siglist;		/* Signals arrived but not delivered. */
 
-	long	p_spare[6];		/* pad to 256, avoid shifting eproc. */
+	struct	vnode *p_textvp;	/* Vnode of executable. */
+
+	long	p_spare[5];		/* pad to 256, avoid shifting eproc. */
 
 /* End area that is zeroed on creation. */
 #define	p_endzero	p_startcopy
 
 /* The following fields are all copied upon creation in fork. */
-	sigset_t p_sigmask;	/* Current signal mask. */
 #define	p_startcopy	p_sigmask
+
+	sigset_t p_sigmask;	/* Current signal mask. */
 	sigset_t p_sigignore;	/* Signals being ignored. */
 	sigset_t p_sigcatch;	/* Signals being caught by user. */
 
