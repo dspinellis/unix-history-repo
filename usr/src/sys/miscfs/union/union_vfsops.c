@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -386,7 +386,7 @@ union_statfs(mp, sbp, p)
 	if (error)
 		return (error);
 
-	sbp->f_type = mstat.f_type;
+	sbp->f_type = MOUNT_UNION;
 	sbp->f_flags = mstat.f_flags;
 	sbp->f_bsize = mstat.f_bsize;
 	sbp->f_iosize = mstat.f_iosize;
