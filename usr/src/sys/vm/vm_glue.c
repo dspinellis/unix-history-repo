@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.9 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.10 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -157,11 +157,18 @@ vm_fork(p1, p2, isvfork)
 		shmfork(p1, p2, isvfork);
 #endif
 
+#ifndef	i386
 	/*
 	 * Allocate a wired-down (for now) pcb and kernel stack for the process
 	 */
 	addr = kmem_alloc_pageable(kernel_map, ctob(UPAGES));
 	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
+#else
+/* XXX somehow, on 386, ocassionally pageout removes active, wired down kstack,
+and pagetables, WITHOUT going thru vm_page_unwire! Why this appears to work is
+not yet clear, yet it does... */
+	addr = kmem_alloc(kernel_map, ctob(UPAGES));
+#endif
 	up = (struct user *)addr;
 	p2->p_addr = up;
 
@@ -185,8 +192,7 @@ vm_fork(p1, p2, isvfork)
 	{ u_int addr = UPT_MIN_ADDRESS - UPAGES*NBPG; struct vm_map *vp;
 
 	vp = &p2->p_vmspace->vm_map;
-	(void)vm_map_pageable(vp, addr, 0xfe000000 - addr, TRUE);
-	(void)vm_deallocate(vp, addr, 0xfe000000 - addr);
+	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
 	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
 	(void)vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
 	}
@@ -423,8 +429,10 @@ swapout(p)
 		addr = (vm_offset_t) p->p_addr;
 	}
 #endif
+#ifndef	i386 /* temporary measure till we find spontaineous unwire of kstack */
 	vm_map_pageable(kernel_map, addr, addr+size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
+#endif
 	(void) splhigh();
 	p->p_flag &= ~SLOAD;
 	if (p->p_stat == SRUN)

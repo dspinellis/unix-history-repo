@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	7.5 (Berkeley) %G%
+ *	@(#)vm_page.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -233,6 +233,12 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	first_phys_addr = ptoa(first_page);
 	last_phys_addr  = ptoa(last_page) + PAGE_MASK;
 
+
+#ifdef i386
+	/* XXX - waiting for pmap_bootstrap_malloc() (or somebody like him) */
+	if (first_phys_addr > 0xa0000)
+		panic("vm_page_startup: fell into the hole");
+#endif
 	/*
 	 *	Validate these addresses.
 	 */
@@ -256,7 +262,18 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 		m->busy = FALSE;
 		m->object = NULL;
 		m->phys_addr = pa;
+#ifdef i386
+		if (pmap_isvalidphys(m->phys_addr)) {
+			queue_enter(&vm_page_queue_free, m, vm_page_t, pageq);
+		} else {
+			/* perhaps iomem needs it's own type, or dev pager? */
+			m->fictitious = 1;
+			m->busy = TRUE;
+			vm_stat.free_count--;
+		}
+#else /* i386 */
 		queue_enter(&vm_page_queue_free, m, vm_page_t, pageq);
+#endif /* i386 */
 		m++;
 		pa += PAGE_SIZE;
 	}
