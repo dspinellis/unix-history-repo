@@ -256,6 +256,7 @@ void vm_object_deallocate(object)
 		 */
 
 		if (object->can_persist) {
+#ifdef	DIAGNOSTIC
 			register vm_page_t	p;
 
 			/*
@@ -276,6 +277,7 @@ void vm_object_deallocate(object)
 
 				p = (vm_page_t) queue_next(&p->listq);
 			}
+#endif	/* DIAGNOSTIC */
 
 			queue_enter(&vm_object_cached_list, object,
 				vm_object_t, cached_list);
