@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.11 (Berkeley) %G%";
 
 #include "dump.h"
 #include <sys/file.h>
@@ -29,10 +29,12 @@ inititimes()
 
 	if (idates_in)
 		return;
-	if ((fd = open(increm, FSHLOCK|FRDONLY, 0600)) < 0) {
+	fd = open(increm, O_RDONLY);
+	if (fd < 0) {
 		perror(increm);
 		return;
 	}
+	(void) flock(fd, LOCK_SH);
 	if ((df = fdopen(fd, "r")) == NULL) {
 		nidates = 0;
 		ithead = 0;
@@ -99,10 +101,12 @@ putitime()
 
 	if(uflag == 0)
 		return;
-	if ((fd = open(temp, FCREATE|FEXLOCK|FRDWR, 0600)) < 0) {
+	fd = open(temp, O_RDWR|O_CREAT, 0600);
+	if (fd < 0) {
 		perror(temp);
 		dumpabort();
 	}
+	(void) flock(fd, LOCK_EX);
 	if ((df = fdopen(fd, "w")) == NULL) {
 		perror(temp);
 		dumpabort();
