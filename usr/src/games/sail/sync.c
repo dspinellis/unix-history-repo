@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.4 84/01/27";
+static	char *sccsid = "@(#)sync.c	2.5 84/02/23";
 #endif
 
 #include "externs.h"
+#include <sys/file.h>
+#include <sys/errno.h>
 
 static char sync_buf[BUFSIZE];
 static char *sync_bp = sync_buf;
@@ -43,6 +45,8 @@ sync_exists(game)
 	if (stat(buf, &s) < 0)
 		return 0;
 	if (s.st_mtime < t - 60*60*2) {		/* 2 hours */
+		(void) unlink(buf);
+		(void) sprintf(buf, LF, game);
 		(void) unlink(buf);
 		return 0;
 	} else
@@ -96,24 +100,52 @@ int a, b, c, d;
 	sync_bp--;
 	if (sync_bp >= &sync_buf[sizeof sync_buf])
 		abort();
-	sync_update(type, ship, a, b, c, d);
+	(void) sync_update(type, ship, a, b, c, d);
 }
 
 Sync()
 {
 	int (*sig1)(), (*sig2)();
-	int type, shipnum, isstr, a, b, c, d;
-	char buf[60];
-	register char *p = buf;
 	int n;
+	int type, shipnum, isstr, a, b, c, d;
+	char buf[80];
+	char erred = 0;
+	extern errno;
 
 	sig1 = signal(SIGHUP, SIG_IGN);
 	sig2 = signal(SIGINT, SIG_IGN);
-	for (n = 0; link(sync_file, sync_lock) < 0 && n < 30; n++)
+	for (n = 0; n < 30; n++) {
+#ifdef LOCK_EX
+		if (flock(fileno(sync_fp), LOCK_EX|LOCK_NB) >= 0)
+			break;
+		if (errno != EWOULDBLOCK)
+			return -1;
+#else
+		if (link(sync_file, sync_lock) >= 0)
+			break;
+		if (errno != EEXIST)
+			return -1;
+#endif
 		sleep(2);
+	}
+	if (n >= 30)
+		return -1;
 	(void) fseek(sync_fp, sync_seek, 0);
-	while (fscanf(sync_fp, "%d%d%d", &type, &shipnum, &isstr) != EOF) {
+	for (;;) {
+		switch (fscanf(sync_fp, "%d%d%d", &type, &shipnum, &isstr)) {
+		case 3:
+			break;
+		case EOF:
+			goto out;
+		default:
+			goto bad;
+		}
+		if (shipnum < 0 || shipnum >= cc->vessels)
+			goto bad;
+		if (isstr != 0 && isstr != 1)
+			goto bad;
 		if (isstr) {
+			register char *p;
 			for (p = buf;;) {
 				switch (*p++ = getc(sync_fp)) {
 				case '\n':
@@ -121,6 +153,8 @@ Sync()
 				case EOF:
 					break;
 				default:
+					if (p >= buf + sizeof buf)
+						p--;
 					continue;
 				}
 				break;
@@ -131,19 +165,29 @@ Sync()
 			a = (int)p;
 			b = c = d = 0;
 		} else
-			(void) fscanf(sync_fp, "%d%d%d%d", &a, &b, &c, &d);
-		sync_update(type, SHIP(shipnum), a, b, c, d);
+			if (fscanf(sync_fp, "%d%d%d%d", &a, &b, &c, &d) != 4)
+				goto bad;
+		if (sync_update(type, SHIP(shipnum), a, b, c, d) < 0)
+			goto bad;
 	}
-	if (sync_bp != sync_buf) {
+bad:
+	erred++;
+out:
+	if (!erred && sync_bp != sync_buf) {
 		(void) fseek(sync_fp, 0L, 2);
 		(void) fputs(sync_buf, sync_fp);
 		(void) fflush(sync_fp);
 		sync_bp = sync_buf;
 	}
 	sync_seek = ftell(sync_fp);
+#ifdef LOCK_EX
+	(void) flock(fileno(sync_fp), LOCK_UN);
+#else
 	(void) unlink(sync_lock);
+#endif
 	(void) signal(SIGHUP, sig1);
 	(void) signal(SIGINT, sig2);
+	return erred ? -1 : 0;
 }
 
 sync_update(type, ship, a, b, c, d)
@@ -326,11 +370,16 @@ int a, b, c, d;
 		people++;
 		break;
 	case W_END:
-		(void) strcpy(ship->file->captain, "");
+		*ship->file->captain = 0;
+		ship->file->points = 0;
 		people--;
 		break;
-	default:
-		fprintf(stderr, "sync_update: unknown type %d\n", type);
+	case W_DDEAD:
+		hasdriver = 0;
 		break;
+	default:
+		fprintf(stderr, "sync_update: unknown type %d\r\n", type);
+		return -1;
 	}
+	return 0;
 }
