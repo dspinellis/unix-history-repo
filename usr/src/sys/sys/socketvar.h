@@ -1,4 +1,4 @@
-/*	socketvar.h	4.11	82/01/13	*/
+/*	socketvar.h	4.12	82/01/17	*/
 
 /*
  * Kernel structure per socket.
@@ -29,10 +29,11 @@ struct socket {
 #define	SB_WAIT		0x04		/* someone is waiting for data/space */
 #define	SB_SEL		0x08		/* buffer is selected */
 #define	SB_COLL		0x10		/* collision selecting */
-	/* need something for async wakeup */
 	short	so_timeo;		/* connection timeout */
 	u_short	so_error;		/* error affecting connection */
 	struct	sockaddr so_addr;	/* socket address */
+	short	so_oobmark;		/* chars to oob mark */
+	short	so_pgrp;		/* pgrp for signals */
 };
 
 /*
@@ -45,6 +46,7 @@ struct socket {
 #define	SS_CANTSENDMORE		0x10	/* can't send more data to peer */
 #define	SS_CANTRCVMORE		0x20	/* can't receive more data from peer */
 #define	SS_CONNAWAITING		0x40	/* connections awaiting acceptance */
+#define	SS_RCVATMARK		0x80	/* at mark on input */
 
 /*
  * Macros for sockets and socket buffering.
