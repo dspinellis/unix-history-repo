@@ -1,0 +1,175 @@
+
+! The App-defaults file for Editres.
+
+! The top few items are strictly to make it look `nice', users may
+! modify these as they see fit.
+
+Editres.Geometry:			500x600
+
+*ShapeStyle:				Oval
+*Tree*ShapeStyle:			Rectangle
+
+! The rest of this file are either button names, or important for
+! functionality, modifying these values may cause strange program
+! behavior.
+
+*flash.BorderWidth:			0
+
+! Menu Button Names
+
+*Box*commands.Label:			Commands
+*Box*treeCommands.Label:		Tree
+
+! Menu Entry Names
+
+*SimpleMenu*sendTree.Label:		Get Widget Tree
+*SimpleMenu*refreshTree.Label:		Refresh Current Widget Tree
+*SimpleMenu*dumpTreeToFile.Label:	Dump Widget Tree to a File
+*SimpleMenu*getResourceList.Label:	Show Resource Box
+*SimpleMenu*setValues.Label:		Set Resource
+*SimpleMenu*quit.Label:			Quit
+
+
+*SimpleMenu*showClientWidget.Label:	Select Widget in Client
+*SimpleMenu*selectAll.Label:		Select All
+*SimpleMenu*unselectAll.Label:		Unselect All
+*SimpleMenu*invertAll.Label:		Invert All
+*SimpleMenu*selectChildren.Label:	Select Children
+*SimpleMenu*selectParent.Label:		Select Parent
+*SimpleMenu*selectDescendants.Label:	Select Descendants
+*SimpleMenu*selectAncestors.Label:	Select Ancestors
+*SimpleMenu*showWidgetNames.Label:	Show Widget Names
+*SimpleMenu*showClassNames.Label:	Show Class Names
+*SimpleMenu*showWidgetIDs.Label:	Show Widget IDs
+*SimpleMenu*showWidgetWindows.Label:	Show Widget Windows
+*SimpleMenu*flashActiveWidgets.Label:	Flash Active Widgets
+
+*MenuButton.leftBitmap:			menu10
+
+! For the Top Area
+
+*hPane.orientation:			horizontal
+*hPane.preferredPaneSize:		100
+*hPane.Panner.width:			100
+*hPane.Panner.height:			100
+*hPane.Panner.preferredPaneSize:	100
+*paned*Panner.showGrip:			False
+*paned.box.showGrip:			False
+*paned.hPane.showGrip:			True
+
+! For the Filename popup dialog.
+
+*fileDialog*value:		
+*fileDialog*allowShellResize:		True
+*fileDialog*Text.baseTranslations:	#override \n\
+	<Key>Return:		PopdownFileDialog(okay)
+
+! Resources for the Resource Box.
+
+*resourceBox*resourceLabel.font:			\
+-*-new century schoolbook-bold-r-*-*-20-*-*-*-*-*-*-*
+
+*resourceBox.allowShellResize:				True
+
+*resourceBox*resourceLabel.allowResize:			True
+
+*resourceBox*List.verticalList:				True
+
+*resourceBox*namesAndClasses*BorderWidth:		0
+*resourceBox*star.Label:				*
+*resourceBox*dot.Label:					.
+*resourceBox*single.Label:				Any Widget
+*resourceBox*any.Label:					Any Widget Chain
+
+*resourceBox*namesLabel.Label:				Normal Resources
+*resourceBox*namesLabel.font:				\
+-*-new century schoolbook-bold-r-*-*-17-*-*-*-*-*-*-*
+*resourceBox*constraintLabel.Label:			Constraint Resources
+*resourceBox*constraintLabel.font:			\
+-*-new century schoolbook-bold-r-*-*-17-*-*-*-*-*-*-*
+
+
+*resourceBox*valueLabel.Label:				Enter Resource Value:
+*resourceBox*valueLabel.BorderWidth:			0
+
+*resourceBox*valueForm*preferredPaneSize:		100
+
+*resourceBox*valueText*editType:			edit
+*resourceBox*valueText.Scroll:				WhenNeeded
+*resourceBox*valueText.width:				300
+
+*resourceBox*setFile.Label:				Set Save File
+*resourceBox*save.Label:				Save
+*resourceBox*apply.Label:				Apply
+*resourceBox*saveAndApply.Label:			Save and Apply
+*resourceBox*commandBox.cancel.Label:			Popdown Resource Box
+
+! This gives us an exactly one of many toggle, if toggle is
+! not set in each group the application will probabally core dump.
+
+*namesAndClasses*Toggle.baseTranslations: #override \n\
+	<Btn1Down>,<Btn1Up>:   set() notify()
+    
+
+*commandBox.skipAdjust:				True
+
+! Keyboard Actions for Tree and children of the Tree.
+
+*Tree.baseTranslations:	#override \n\
+	:<Key>space:		Select(nothing) \n\
+	:<Key>w:		Select(widget) \n\
+	:<Key>s:		Select(all) \n\
+	:<Key>i:		Select(invert) \n\
+	:<Key>c:		Select(children) \n\
+	:<Key>d:		Select(descendants) \n\
+	:<Key>p:		Select(parent) \n\
+	:<Key>a:		Select(ancestors) \n\
+	:<Key>N:		Relabel(name) \n\
+	:<Key>C:		Relabel(class) \n\
+	:<Key>I:		Relabel(id) \n\
+	:<Key>W:		Relabel(window) 
+
+*Tree.Toggle.baseTranslations:	#override \n\
+	:<Key>space:		Select(nothing) \n\
+	:<Key>w:		Select(widget) \n\
+	:<Key>s:		Select(all) \n\
+	:<Key>i:		Select(invert) \n\
+	:<Key>c:		Select(children) \n\
+	:<Key>d:		Select(descendants) \n\
+	:<Key>p:		Select(parent) \n\
+	:<Key>a:		Select(ancestors) \n\
+	:<Key>N:		Relabel(name) \n\
+	:<Key>C:		Relabel(class) \n\
+	:<Key>I:		Relabel(id) \n\
+	:<Key>W:		Relabel(window) \n\
+	<Btn2Down>,<Btn2Up>:	Select(nothing) toggle() notify() \n\
+	<Btn3Down>,<Btn3Up>:	Relabel(toggle)
+
+! For the SetValues popup
+
+*setValuesPopup*resizable:		True
+*setValuesPopup*left:			ChainLeft
+*setValuesPopup*right:			ChainLeft
+
+*setValuesPopup*label*Label:		Use <Tab> to Change Fields.
+*setValuesPopup*Label*BorderWidth:	0
+
+*setValuesPopup*resourceLabel.Label:	Resource Name:
+*setValuesPopup*valueLabel.Label:	Value:
+*SimpleMenu*setValuesPopup*setValues.Label:	Apply
+*setValuesPopup*cancel.Label:		Cancel
+
+*setValuesPopup*Text*EditType:		Edit
+*setValuesPopup*Text*resize:		Width
+
+*setValuesPopup*resourceText.baseTranslations: #override \
+  <Key>Return:     	   no-op(RingBell) \n\
+   Ctrl<Key>q,<Key>Tab:    insert-char()    \n\
+   <Btn1Down>:             select-start() SVActiveEntry(Resource) \n\
+   <Key>Tab:               SVActiveEntry(Value)
+
+*setValuesPopup*valueText.baseTranslations: #override \
+   <Key>Return:     	   no-op(RingBell) \n\
+   Ctrl<Key>q,<Key>Tab:    insert-char()     \n\
+   <Btn1Down>:             select-start() SVActiveEntry(Value)\n\
+   <Key>Tab:               SVActiveEntry(Resource)

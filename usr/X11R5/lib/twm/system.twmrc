@@ -1,0 +1,89 @@
+#
+# $XConsortium: system.twmrc,v 1.8 91/04/23 21:10:58 gildea Exp $
+# 
+# Default twm configuration file; needs to be kept small to conserve string
+# space in systems whose compilers don't handle medium-sized strings.
+#
+# Sites should tailor this file, providing any extra title buttons, menus, etc.
+# that may be appropriate for their environment.  For example, if most of the
+# users were accustomed to uwm, the defaults could be set up not to decorate
+# any windows and to use meta-keys.
+#
+
+NoGrabServer
+RestartPreviousState
+DecorateTransients
+TitleFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+ResizeFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+MenuFont "-adobe-helvetica-bold-r-normal--*-120-*-*-*-*-*-*"
+IconFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*-*-*-*"
+IconManagerFont "-adobe-helvetica-bold-r-normal--*-100-*-*-*"
+#ClientBorderWidth
+
+Color
+{
+    BorderColor "slategrey"
+    DefaultBackground "maroon"
+    DefaultForeground "gray85"
+    TitleBackground "maroon"
+    TitleForeground "gray85"
+    MenuBackground "maroon"
+    MenuForeground "gray85"
+    MenuTitleBackground "gray70"
+    MenuTitleForeground "maroon"
+    IconBackground "maroon"
+    IconForeground "gray85"
+    IconBorderColor "gray85"
+    IconManagerBackground "maroon"
+    IconManagerForeground "gray85"
+}
+
+#
+# Define some useful functions for motion-based actions.
+#
+MoveDelta 3
+Function "move-or-lower" { f.move f.deltastop f.lower }
+Function "move-or-raise" { f.move f.deltastop f.raise }
+Function "move-or-iconify" { f.move f.deltastop f.iconify }
+
+#
+# Set some useful bindings.  Sort of uwm-ish, sort of simple-button-ish
+#
+Button1 = : root : f.menu "defops"
+
+Button1 = m : window|icon : f.function "move-or-lower"
+Button2 = m : window|icon : f.iconify
+Button3 = m : window|icon : f.function "move-or-raise"
+
+Button1 = : title : f.function "move-or-raise"
+Button2 = : title : f.raiselower
+
+Button1 = : icon : f.function "move-or-iconify"
+Button2 = : icon : f.iconify
+
+Button1 = : iconmgr : f.iconify
+Button2 = : iconmgr : f.iconify
+
+#
+# And a menus with the usual things
+#
+menu "defops"
+{
+"Twm"	f.title
+"Iconify"	f.iconify
+"Resize"	f.resize
+"Move"		f.move
+"Raise"		f.raise
+"Lower"		f.lower
+""		f.nop
+"Focus"		f.focus
+"Unfocus"	f.unfocus
+"Show Iconmgr"	f.showiconmgr
+"Hide Iconmgr"	f.hideiconmgr
+""		f.nop
+"Kill"		f.destroy
+"Delete"	f.delete
+""		f.nop
+"Restart"	f.restart
+"Exit"		f.quit
+}

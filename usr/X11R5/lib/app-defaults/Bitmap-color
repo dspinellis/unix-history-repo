@@ -1,0 +1,18 @@
+! The App-defaults file for Bitmap.
+
+#include "Bitmap"
+
+*background: medium blue
+*foreground: cyan
+*borderColor: plum
+*frame: deep sky blue
+*highlight: magenta
+*Command.background: purple
+*Toggle.background: purple
+*MenuButton.background: purple
+*Command.foreground: white
+*Toggle.foreground: white
+*MenuButton.foreground: white
+*status.foreground: green
+*Dialog.icon.foreground: pale green
+*bitmap.stippled: off

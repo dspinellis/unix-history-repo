@@ -1,0 +1,28 @@
+*internalBorderWidth: 0
+*showGrip: false
+
+*grid.borderWidth: 0
+
+*quit.Label: Quit
+*prev.Label: Prev Page
+*next.Label: Next Page
+
+*select.Label: Select a character
+*metrics.Label: 
+*select.Justify: center
+*metrics.Justify: center
+*range.Justify: left
+*start.Justify: left
+
+*quit.Translations:  #override \
+		<Btn1Down>,<Btn1Up>: Quit() unset()
+*next.Translations:  #override \
+		<Btn1Down>,<Btn1Up>: Next() unset()
+*prev.Translations:  #override \
+		<Btn1Down>,<Btn1Up>: Prev() unset()
+
+*Translations: #override \n\
+<Key>q: Quit()\n\
+Ctrl <Key>n: Next()\n\
+Ctrl <Key>p: Prev()
+

@@ -1,0 +1,40 @@
+#include "XCalc"
+
+*ti.Command.background:	gray50
+*ti.Command.foreground:	white
+
+*ti.button20.background:	black
+*ti.button20.foreground:	white
+*ti.button25.background:	black
+*ti.button25.foreground:	white
+*ti.button30.background:	black
+*ti.button30.foreground:	white
+*ti.button35.background:	black
+*ti.button35.foreground:	white
+*ti.button40.background:	black
+*ti.button40.foreground:	white
+
+*ti.button22.background:	white
+*ti.button22.foreground:	black
+*ti.button23.background:	white
+*ti.button23.foreground:	black
+*ti.button24.background:	white
+*ti.button24.foreground:	black
+*ti.button27.background:	white
+*ti.button27.foreground:	black
+*ti.button28.background:	white
+*ti.button28.foreground:	black
+*ti.button29.background:	white
+*ti.button29.foreground:	black
+*ti.button32.background:	white
+*ti.button32.foreground:	black
+*ti.button33.background:	white
+*ti.button33.foreground:	black
+*ti.button34.background:	white
+*ti.button34.foreground:	black
+*ti.button37.background:	white
+*ti.button37.foreground:	black
+*ti.button38.background:	white
+*ti.button38.foreground:	black
+*ti.button39.background:	white
+*ti.button39.foreground:	black

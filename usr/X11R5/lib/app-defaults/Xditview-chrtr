@@ -1,0 +1,25 @@
+#include "Xditview"
+*Dvi.fontMap:\
+R	-*-charter-medium-r-normal--*-*-*-*-*-*-iso8859-1\n\
+I	-*-charter-medium-i-normal--*-*-*-*-*-*-iso8859-1\n\
+B	-*-charter-bold-r-normal--*-*-*-*-*-*-iso8859-1\n\
+F	-*-charter-bold-i-normal--*-*-*-*-*-*-iso8859-1\n\
+BI	-*-charter-bold-i-normal--*-*-*-*-*-*-iso8859-1\n\
+C	-*-courier-medium-r-normal--*-*-*-*-*-*-iso8859-1\n\
+CO	-*-courier-medium-o-normal--*-*-*-*-*-*-iso8859-1\n\
+CB	-*-courier-bold-r-normal--*-*-*-*-*-*-iso8859-1\n\
+CF	-*-courier-bold-o-normal--*-*-*-*-*-*-iso8859-1\n\
+H	-*-helvetica-medium-r-normal--*-*-*-*-*-*-iso8859-1\n\
+HO	-*-helvetica-medium-o-normal--*-*-*-*-*-*-iso8859-1\n\
+HB	-*-helvetica-bold-r-normal--*-*-*-*-*-*-iso8859-1\n\
+HF	-*-helvetica-bold-o-normal--*-*-*-*-*-*-iso8859-1\n\
+N	-*-new century schoolbook-medium-r-normal--*-*-*-*-*-*-iso8859-1\n\
+NI	-*-new century schoolbook-medium-i-normal--*-*-*-*-*-*-iso8859-1\n\
+NB	-*-new century schoolbook-bold-r-normal--*-*-*-*-*-*-iso8859-1\n\
+NF	-*-new century schoolbook-bold-i-normal--*-*-*-*-*-*-iso8859-1\n\
+A	-*-charter-medium-r-normal--*-*-*-*-*-*-iso8859-1\n\
+AI	-*-charter-medium-i-normal--*-*-*-*-*-*-iso8859-1\n\
+AB	-*-charter-bold-r-normal--*-*-*-*-*-*-iso8859-1\n\
+AF	-*-charter-bold-i-normal--*-*-*-*-*-*-iso8859-1\n\
+S	-*-symbol-medium-r-normal--*-*-*-*-*-*-adobe-fontspecific\n\
+S2	-*-symbol-medium-r-normal--*-*-*-*-*-*-adobe-fontspecific\n
