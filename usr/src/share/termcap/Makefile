@@ -1,4 +1,4 @@
-# @(#)Makefile	1.8	(Berkeley) %G%
+# @(#)Makefile	1.9	(Berkeley) %G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -9,9 +9,11 @@ DESTDIR =
 termcap: reorder termcap.src
 	ex - termcap.src < reorder
 
-install: termcap
+install: termcap tabset
 	install -o root -m 664 -c termcap ${DESTDIR}/etc/termcap
 	chgrp termcap ${DESTDIR}/etc/termcap
+
+tabset:
 	rm -fr ${DESTDIR}/usr/lib/tabset
 	mkdir ${DESTDIR}/usr/lib/tabset
 	cp tabset/* ${DESTDIR}/usr/lib/tabset
@@ -21,9 +23,14 @@ clean:
 
 installall:
 	cp termcap /etc/termcap
-	rcp termcap arpa:/etc/termcap
-	rcp termcap ernie:/etc/termcap
-	rcp termcap kim:/etc/termcap
-	rcp termcap dali:/etc/termcap
-	rcp termcap calder:/etc/termcap
-	rcp termcap ucbvax:/etc/termcap
+	@for i in arpa ernie kim dali calder ucbvax miro;\
+		do echo $$i;\
+		rcp termcap $$i':'/etc/termcap;\
+		done
+
+tabsetall: tabset
+	@for i in arpa ernie kim dali calder ucbvax miro;\
+		do echo $$i;\
+		rsh $$i /bin/rm -fr /usr/lib/tabset;\
+		rcp -r tabset $$i':'/usr/lib;\
+		done
