@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwdelline.c	3.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwdelline.c	3.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -56,7 +56,9 @@ int row;
 	 */
 	if (visible)
 		wwclreol1(w, w->ww_b.b - 1, w->ww_b.l, deleted);
-	else
+	else {
+		cp += w->ww_b.l;
 		for (i = w->ww_b.nc; --i >= 0;)
 			cp++->c_w = ' ';
+	}
 }
