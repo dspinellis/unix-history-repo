@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.2 (Berkeley) %G%
+ *	@(#)conf.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,14 +18,16 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpopen(),hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl(),hpsize();
+int	hpopen(),hpclose(),hpstrategy();
+int	hpread(),hpwrite(),hpioctl(),hpdump(),hpsize();
 #else
 #define	hpopen		nodev
+#define	hpclose		nodev
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
-#define	hpdump		nodev
 #define	hpioctl		nodev
+#define	hpdump		nodev
 #define	hpsize		0
 #endif
  
@@ -118,12 +120,15 @@ int	mtioctl(),mtdump();
 
 #include "ra.h"
 #if NUDA > 0
-int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump(),udsize();
+int	udopen(),ucclose(),udstrategy(),udread(),udwrite(),udioctl();
+int	udreset(),uddump(),udsize();
 #else
 #define	udopen		nodev
+#define	udclose		nodev
 #define	udstrategy	nodev
 #define	udread		nodev
 #define	udwrite		nodev
+#define	udioctl		nodev
 #define	udreset		nulldev
 #define	uddump		nodev
 #define	udsize		0
@@ -234,38 +239,38 @@ int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	{ hpopen,	nulldev,	hpstrategy,	hpdump,		/*0*/
-	  hpsize,	0 },
-	{ htopen,	htclose,	htstrategy,	htdump,		/*1*/
-	  0,		B_TAPE },
-	{ upopen,	nulldev,	upstrategy,	updump,		/*2*/
-	  upsize,	0 },
-	{ rkopen,	nulldev,	rkstrategy,	rkdump,		/*3*/
-	  rksize,	0 },
+	{ hpopen,	hpclose,	hpstrategy,	hpioctl,	/*0*/
+	  hpdump,	hpsize,		0 },
+	{ htopen,	htclose,	htstrategy,	htioctl,	/*1*/
+	  htdump,	0,		B_TAPE },
+	{ upopen,	nulldev,	upstrategy,	nodev,		/*2*/
+	  updump,	upsize,		0 },
+	{ rkopen,	nulldev,	rkstrategy,	nodev,		/*3*/
+	  rkdump,	rksize,		0 },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
-	  0,		0 },
-	{ tmopen,	tmclose,	tmstrategy,	tmdump,		/*5*/
-	  0,		B_TAPE },
-	{ tsopen,	tsclose,	tsstrategy,	tsdump,		/*6*/
-	  0,		B_TAPE },
-	{ mtopen,	mtclose,	mtstrategy,	mtdump,		/*7*/
-	  0,		B_TAPE },
+	  nodev,	0,		0 },
+	{ tmopen,	tmclose,	tmstrategy,	tmioctl,	/*5*/
+	  tmdump,	0,		B_TAPE },
+	{ tsopen,	tsclose,	tsstrategy,	tsioctl,	/*6*/
+	  tsdump,	0,		B_TAPE },
+	{ mtopen,	mtclose,	mtstrategy,	mtioctl,	/*7*/
+	  mtdump,	0,		B_TAPE },
 	{ tuopen,	tuclose,	tustrategy,	nodev,		/*8*/
-	  0,		B_TAPE },
-	{ udopen,	nulldev,	udstrategy,	uddump,		/*9*/
-	  udsize,	0 },
-	{ utopen,	utclose,	utstrategy,	utdump,		/*10*/
-	  0,		B_TAPE },
-	{ idcopen,	nodev,		idcstrategy,	idcdump,	/*11*/
-	  idcsize,	0 },
+	  nodev,	0,		B_TAPE },
+	{ udopen,	udclose,	udstrategy,	udioctl,	/*9*/
+	  uddump,	udsize,		0 },
+	{ utopen,	utclose,	utstrategy,	utioctl,	/*10*/
+	  utdump,	0,		B_TAPE },
+	{ idcopen,	nodev,		idcstrategy,	nodev,		/*11*/
+	  idcdump,	idcsize,	0 },
 	{ rxopen,	rxclose,	rxstrategy,	nodev,		/*12*/
-	  0,		0 },
+	  nodev,	0,		0 },
 	{ uuopen,	uuclose,	uustrategy,	nodev,		/*13*/
-	  0,		0 },
-	{ rlopen,	nodev,		rlstrategy,	rldump,		/*14*/
-	  rlsize,	0 },
-	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpdump,	/*15*/
-	  0,		B_TAPE },
+	  nodev,	0,		0 },
+	{ rlopen,	nodev,		rlstrategy,	nodev,		/*14*/
+	  rldump,	rlsize,		0 },
+	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpioctl,	/*15*/
+	  tmscpdump,	0,		B_TAPE },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -526,7 +531,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
 	mmselect,	nodev,
-	hpopen,		nulldev,	hpread,		hpwrite,	/*4*/
+	hpopen,		hpclose,	hpread,		hpwrite,	/*4*/
 	hpioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
@@ -541,7 +546,7 @@ struct cdevsw	cdevsw[] =
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
-	udopen,		nulldev,	udread,		udwrite,	/*9*/
+	udopen,		udclose,	udread,		udwrite,	/*9*/
 	nodev,		nodev,		udreset,	0,
 	seltrue,	nodev,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
