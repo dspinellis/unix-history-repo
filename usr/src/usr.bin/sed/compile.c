@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,11 +37,12 @@ static char	 *compile_text __P((void));
 static char	 *compile_tr __P((char *, char **));
 static struct s_command
 		**compile_stream __P((char *, struct s_command **, char *));
-static char	 *duptoeol __P((char *));
+static char	 *duptoeol __P((char *, char *));
 static struct s_command
 		 *findlabel __P((struct s_command *, struct s_command *));
 static void	  fixuplabel __P((struct s_command *, struct s_command *,
 		  	struct s_command *));
+static void	  uselabel __P((struct s_command *));
 
 /*
  * Command specification.  This is used to drive the command parser.
@@ -135,7 +136,7 @@ semicolon:	EATSPACE();
 		}
 		*link = cmd = xmalloc(sizeof(struct s_command));
 		link = &cmd->next;
-		cmd->nonsel = cmd->inrange = 0;
+		cmd->lused = cmd->nonsel = cmd->inrange = 0;
 		/* First parse the addresses */
 		naddr = 0;
 		cmd->a1 = cmd->a2 = NULL;
@@ -217,7 +218,7 @@ nonsel:		/* Now parse the command */
 			EATSPACE();
 			if (*p == '\0')
 				err(COMPILE, "filename expected");
-			cmd->t = duptoeol(p);
+			cmd->t = duptoeol(p, "w command");
 			if (aflag)
 				cmd->u.fd = -1;
 			else if ((cmd->u.fd = open(p, 
@@ -231,7 +232,7 @@ nonsel:		/* Now parse the command */
 			if (*p == '\0')
 				err(COMPILE, "filename expected");
 			else
-				cmd->t = duptoeol(p);
+				cmd->t = duptoeol(p, "read command");
 			break;
 		case BRANCH:			/* b t */
 			p++;
@@ -239,12 +240,12 @@ nonsel:		/* Now parse the command */
 			if (*p == '\0')
 				cmd->t = NULL;
 			else
-				cmd->t = duptoeol(p);
+				cmd->t = duptoeol(p, "branch");
 			break;
 		case LABEL:			/* : */
 			p++;
 			EATSPACE();
-			cmd->t = duptoeol(p);
+			cmd->t = duptoeol(p, "label");
 			if (strlen(p) == 0)
 				err(COMPILE, "empty label");
 			break;
@@ -605,53 +606,40 @@ compile_addr(p, a)
 }
 
 /*
- * Return a copy of all the characters up to \n or \0
+ * duptoeol --
+ *	Return a copy of all the characters up to \n or \0.
  */
 static char *
-duptoeol(s)
+duptoeol(s, ctype)
 	register char *s;
+	char *ctype;
 {
 	size_t len;
+	int ws;
 	char *start;
 
-	for (start = s; *s != '\0' && *s != '\n'; ++s);
+	ws = 0;
+	for (start = s; *s != '\0' && *s != '\n'; ++s)
+		ws = isspace(*s);
 	*s = '\0';
+	if (ws)
+		err(WARNING, "whitespace after %s", ctype);
 	len = s - start + 1;
 	return (memmove(xmalloc(len), start, len));
 }
 
 /*
- * Find the label contained in the command l in the command linked list cp.
- * L is excluded from the search.  Return NULL if not found.
- */
-static struct s_command *
-findlabel(l, cp)
-	struct s_command *l, *cp;
-{
-	struct s_command *r;
-
-	for (; cp; cp = cp->next)
-		if (cp->code == ':' && cp != l && strcmp(l->t, cp->t) == 0)
-			return (cp);
-		else if (cp->code == '{' && (r = findlabel(l, cp->u.c)))
-			return (r);
-	return (NULL);
-}
-
-/*
- * Convert goto label names to addresses.
- * Detect duplicate labels.
- * Set appendnum to the number of a and r commands in the script.
- * Free the memory used by labels in b and t commands (but not by :)
- * Root is a pointer to the script linked list; cp points to the
- * search start.
+ * Convert goto label names to addresses.  Detect unused and duplicate labels.
+ * Set appendnum to the number of a and r commands in the script.  Free the
+ * memory used by labels in b and t commands (but not by :).  Root is a pointer
+ * to the script linked list; cp points to the search start.
+ *
  * TODO: Remove } nodes
  */
 static void
 fixuplabel(root, cp, end)
 	struct s_command *root, *cp, *end;
 {
-	struct s_command *cp2;
 
 	for (; cp != end; cp = cp->next)
 		switch (cp->code) {
@@ -669,13 +657,50 @@ fixuplabel(root, cp, end)
 				cp->u.c = NULL;
 				break;
 			}
-			if ((cp2 = findlabel(cp, root)) == NULL)
+			if ((cp->u.c = findlabel(cp, root)) == NULL)
 				err(COMPILE2, "undefined label '%s'", cp->t);
+			cp->u.c->lused = 1;
 			free(cp->t);
-			cp->u.c = cp2;
 			break;
 		case '{':
 			fixuplabel(root, cp->u.c, cp->next);
 			break;
 		}
+	uselabel(root);
+}
+
+/*
+ * Find the label contained in the command l in the command linked
+ * list cp.  L is excluded from the search.  Return NULL if not found.
+ */
+static struct s_command *
+findlabel(l, cp)
+	struct s_command *l, *cp;
+{
+	struct s_command *r;
+
+	for (; cp; cp = cp->next) {
+		if (cp->code == ':' && cp != l && strcmp(l->t, cp->t) == 0)
+			return (cp);
+		if (cp->code == '{' && (r = findlabel(l, cp->u.c)))
+			return (r);
+	}
+	return (NULL);
+}
+
+/* 
+ * Find any unused labels.  This is because we want to warn the user if they
+ * accidentally put whitespace on a label name causing it be a different label
+ * than they intended.
+ */
+static void
+uselabel(cp)
+	struct s_command *cp;
+{
+	for (; cp; cp = cp->next) {
+		if (cp->code == ':' && cp->lused == 0)
+			err(WARNING, "unused label '%s'", cp->t);
+		if (cp->code == '{')
+			uselabel(cp->u.c);
+	}
 }
