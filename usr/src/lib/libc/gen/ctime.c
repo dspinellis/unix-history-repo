@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -89,25 +89,33 @@ static struct dstab ausdaytab[] = {
 /*
  * The European tables ... based on hearsay
  * Believed correct for:
- *	WE:	Great Britain, Ireland, Portugal
+ *	WE:	Great Britain, Portugal?
  *	ME:	Belgium, Luxembourg, Netherlands, Denmark, Norway,
  *		Austria, Poland, Czechoslovakia, Sweden, Switzerland,
  *		DDR, DBR, France, Spain, Hungary, Italy, Jugoslavia
+ *		Finland (EE timezone, but ME dst rules)
  * Eastern European dst is unknown, we'll make it ME until someone speaks up.
- *	EE:	Bulgaria, Finland, Greece, Rumania, Turkey, Western Russia
+ *	EE:	Bulgaria, Greece, Rumania, Turkey, Western Russia
+ *
+ * Ireland is unpredictable.  (Years when Easter Sunday just happens ...)
+ * Years before 1983 are suspect.
  */
 static struct dstab wedaytab[] = {
-	1983,	86,	303,	/* 1983: end March - end Oct */
-	1984,	86,	303,	/* 1984: end March - end Oct */
-	1985,	86,	303,	/* 1985: end March - end Oct */
-	0,	400,	0,	/* others: no daylight saving at all ??? */
+	1983,	89,	296,	/* 1983: end March - end Oct */
+	0,	89,	303,	/* others: end March - end Oct */
 };
 
 static struct dstab medaytab[] = {
-	1983,	86,	272,	/* 1983: end March - end Sep */
-	1984,	86,	272,	/* 1984: end March - end Sep */
-	1985,	86,	272,	/* 1985: end March - end Sep */
-	0,	400,	0,	/* others: no daylight saving at all ??? */
+	1983,	89,	296,	/* 1983: end March - end Oct */
+	0,	89,	272,	/* others: end March - end Sep */
+};
+
+/*
+ * Canada, same as the US, except no early 70's fluctuations.
+ * Can this really be right ??
+ */
+static struct dstab candaytab[] = {
+	0,	119,	303,	/* all years: end Apr - end Oct */
 };
 
 static struct dayrules {
@@ -121,6 +129,7 @@ static struct dayrules {
 	DST_WET,	1,	wedaytab,	NTH,
 	DST_MET,	1,	medaytab,	NTH,
 	DST_EET,	1,	medaytab,	NTH,	/* XXX */
+	DST_CAN,	1,	candaytab,	NTH,
 	-1,
 };
 
@@ -196,7 +205,7 @@ time_t *tim;
 /*
  * The argument is a 0-origin day number.
  * The value is the day number of the first
- * Sunday on or after the day.
+ * Sunday on or before the day.
  */
 static
 sunday(t, d)
