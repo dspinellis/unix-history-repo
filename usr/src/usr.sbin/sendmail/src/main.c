@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -100,18 +100,7 @@ main(argc, argv, envp)
 	extern bool safefile();
 	extern time_t convtime();
 
-#ifdef SYSTEM5
-	/* Enforce use of local time (null string overrides this) */
-	if (TimeZoneSpec == NULL)
-		unsetenv("TZ");
-	else if (TimeZoneSpec[0] != '\0')
-	{
-		p = xalloc(strlen(TimeZoneSpec) + 4);
-		(void) strcpy(p, "TZ=");
-		(void) strcat(p, TimeZoneSpec);
-		putenv(p);
-	}
-#else
+#ifndef SYSTEM5
 	/* enforce use of kernel-supplied time zone information */
 	unsetenv("TZ");
 #endif
@@ -461,6 +450,19 @@ main(argc, argv, envp)
 	if (OpMode == MD_FREEZE || readconfig)
 		readcf(ConfFile, safecf, CurEnv);
 
+#ifdef SYSTEM5
+	/* Enforce use of local time (null string overrides this) */
+	if (TimeZoneSpec == NULL)
+		unsetenv("TZ");
+	else if (TimeZoneSpec[0] != '\0')
+	{
+		p = xalloc(strlen(TimeZoneSpec) + 4);
+		(void) strcpy(p, "TZ=");
+		(void) strcat(p, TimeZoneSpec);
+		putenv(p);
+	}
+#endif
+
 	if (ConfigLevel > MAXCONFIGLEVEL)
 	{
 		syserr("Warning: .cf version level (%d) exceeds program functionality (%d)",
@@ -649,7 +651,7 @@ main(argc, argv, envp)
 
 	if (queuemode && OpMode != MD_DAEMON && QueueIntvl == 0)
 	{
-		runqueue(FALSE, CurEnv);
+		runqueue(FALSE);
 		finis();
 	}
 # endif QUEUE
@@ -684,7 +686,7 @@ main(argc, argv, envp)
 # ifdef QUEUE
 		if (queuemode)
 		{
-			runqueue(TRUE, CurEnv);
+			runqueue(TRUE);
 			if (OpMode != MD_DAEMON)
 				for (;;)
 					pause();
