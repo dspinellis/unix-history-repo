@@ -1,10 +1,11 @@
 # include <stdio.h>
-# include <sys/param.h>
+# include <sys/types.h>
 # include <sys/stat.h>
-# include <dir.h>
+# include <sys/dir.h>
 # include <errno.h>
 # include <signal.h>
 # include <sysexits.h>
+# include <whoami.h>
 # include <pwd.h>
 
 /*
@@ -92,9 +93,27 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.61.1.2 %G%";
+static char SccsId[] = "@(#)sccs.c	1.65 %G%";
 
 /*******************  Configuration Information  ********************/
+
+/* special defines for local berkeley systems */
+# include <whoami.h>
+
+# ifdef CSVAX
+# define UIDUSER
+# define PROGPATH(name)	"/usr/local/name"
+# endif CSVAX
+
+# ifdef INGVAX
+# define PROGPATH(name)	"/usr/local/name"
+# endif INGVAX
+
+# ifdef CORY
+# define PROGPATH(name)	"/usr/eecs/bin/name"
+# endif CORY
+
+/* end of berkeley systems defines */
 
 # ifndef SCCSPATH
 # define SCCSPATH	"SCCS"	/* pathname in which to find s-files */
@@ -105,7 +124,7 @@ static char SccsId[] = "@(#)sccs.c	1.61.1.2 %G%";
 # endif NOT MYNAME
 
 # ifndef PROGPATH
-# define PROGPATH(name)	"/usr/local/name"	/* place to find binaries */
+# define PROGPATH(name)	"/usr/sccs/name"	/* place to find binaries */
 # endif PROGPATH
 
 /****************  End of Configuration Information  ****************/
@@ -133,6 +152,7 @@ struct sccsprog
 # define SHELL		5	/* call a shell file (like PROG) */
 # define DIFFS		6	/* diff between sccs & file out */
 # define DODIFF		7	/* internal call to diff program */
+# define CREATE		8	/* create new files */
 
 /* bits for sccsflags */
 # define NO_SDOT	0001	/* no s. on front of args */
@@ -181,6 +201,7 @@ struct sccsprog SccsProg[] =
 	"print",	CMACRO,	0,			"prt -e/get -p -m -s",
 	"branch",	CMACRO,	NO_SDOT,
 		"get:ixrc -e -b/delta: -s -n -ybranch-place-holder/get:pl -e -t -g",
+	"create",	CREATE,	NO_SDOT,		NULL,
 	NULL,		-1,	0,			NULL
 };
 
@@ -343,7 +364,7 @@ command(argv, forkflag, arg0)
 {
 	register struct sccsprog *cmd;
 	register char *p;
-	char buf[40];
+	char buf[100];
 	extern struct sccsprog *lookup();
 	char *nav[1000];
 	char **np;
@@ -534,6 +555,33 @@ command(argv, forkflag, arg0)
 		execv(cmd->sccspath, argv);
 		syserr("cannot exec %s", cmd->sccspath);
 		exit(EX_OSERR);
+
+	  case CREATE:		/* create new sccs files */
+		/* skip over flag arguments */
+		for (np = &ap[1]; *np != NULL && **np == '-'; np++)
+			continue;
+		argv = np;
+
+		/* do an admin for each file */
+		p = argv[1];
+		while (*np != NULL)
+		{
+			printf("\n%s:\n", *np);
+			sprintf(buf, "-i%s", *np);
+			ap[0] = buf;
+			argv[0] = tail(*np);
+			argv[1] = NULL;
+			rval = command(ap, TRUE, "admin");
+			argv[1] = p;
+			if (rval == 0)
+			{
+				sprintf(buf, ",%s", tail(*np));
+				if (link(*np, buf) >= 0)
+					unlink(*np);
+			}
+			np++;
+		}
+		break;
 
 	  default:
 		syserr("oper %d", cmd->sccsoper);
@@ -857,10 +905,10 @@ clean(mode, argv)
 	int mode;
 	char **argv;
 {
-	struct direct *dir;
+	struct direct dir;
 	char buf[100];
 	char *bufend;
-	register DIR *dirfd;
+	register FILE *dirfd;
 	register char *basefile;
 	bool gotedit;
 	bool gotpfent;
@@ -924,7 +972,7 @@ clean(mode, argv)
 	strcat(buf, SccsPath);
 	bufend = &buf[strlen(buf)];
 
-	dirfd = opendir(buf);
+	dirfd = fopen(buf, "r");
 	if (dirfd == NULL)
 	{
 		usrerr("cannot open %s", buf);
@@ -938,14 +986,16 @@ clean(mode, argv)
 	*/
 
 	gotedit = FALSE;
-	while (dir = readdir(dirfd)) {
-		if (strncmp(dir->d_name, "s.", 2) != 0)
+	while (fread((char *)&dir, sizeof dir, 1, dirfd) != NULL)
+	{
+		if (dir.d_ino == 0 || strncmp(dir.d_name, "s.", 2) != 0)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
 		strcpy(bufend, "/p.");
 		basefile = bufend + 3;
-		strcpy(basefile, &dir->d_name[2]);
+		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
+		basefile[sizeof dir.d_name - 2] = '\0';
 
 		/*
 		**  open and scan the p-file.
@@ -980,13 +1030,14 @@ clean(mode, argv)
 		/* the s. file exists and no p. file exists -- unlink the g-file */
 		if (mode == CLEANC && !gotpfent)
 		{
-			strcpy(buf, &dir->d_name[2]);
+			strncpy(buf, &dir.d_name[2], sizeof dir.d_name - 2);
+			buf[sizeof dir.d_name - 2] = '\0';
 			unlink(buf);
 		}
 	}
 
 	/* cleanup & report results */
-	closedir(dirfd);
+	fclose(dirfd);
 	if (!gotedit && mode == INFOC)
 	{
 		printf("Nothing being edited");
@@ -1420,7 +1471,12 @@ username()
 	return (pw->pw_name);
 # else
 	extern char *getlogin();
+	extern char *getenv();
+	register char *p;
 
-	return (getlogin());
+	p = getenv("USER");
+	if (p == NULL || p[0] == '\0')
+		p = getlogin();
+	return (p);
 # endif UIDUSER
 }
