@@ -32,9 +32,15 @@ static char sccsid[] = "@(#)krcmd.c	1.3 (Berkeley) 2/10/89";
 
 #include <sys/types.h>
 #include <stdio.h>
-#include <krb.h>
+#include <kerberosIV/krb.h>
 
 #define	SERVICE_NAME	"rcmd"
+
+/*
+ * krcmd: simplified version of Athena's "kcmd"
+ *	returns a socket attached to the destination, -1 or krb error on error 
+ *	if fd2p is non-NULL, another socket is filled in for it
+ */
 
 int
 krcmd(ahost, rport, remuser, cmd, fd2p, realm)
@@ -44,9 +50,9 @@ krcmd(ahost, rport, remuser, cmd, fd2p, realm)
 	int	*fd2p;
 	char	*realm;
 {
-	int		sock = -1, err;
+	int		sock = -1, err = 0;
 	KTEXT_ST	ticket;
-	long authopts = 0L;
+	long		authopts = 0L;
 
 	err = kcmd(
 		&sock,
@@ -59,18 +65,20 @@ krcmd(ahost, rport, remuser, cmd, fd2p, realm)
 		&ticket,
 		SERVICE_NAME,
 		realm,
-		NULL,	/* credentials not used */
-		NULL,	/* key schedule not used */
-		NULL,	/* MSG_DAT not used */
-		NULL,	/* local addr not used */
-		NULL,	/* foreign addr not used */
+		(CREDENTIALS *)  NULL,		/* credentials not used */
+		(bit_64 *) NULL,		/* key schedule not used */
+		(MSG_DAT *) NULL,		/* MSG_DAT not used */
+		(struct sockaddr_in *) NULL,	/* local addr not used */
+		(struct sockaddr_in *) NULL,	/* foreign addr not used */
 		authopts
 	);
 
-	if(err > KSUCCESS && err < MAX_KRB_ERRORS) {
+	if (err > KSUCCESS && err < MAX_KRB_ERRORS) {
 		fprintf(stderr, "krcmd: %s\n", krb_err_txt[err]);
 		return(-1);
 	}
+	if (err < 0)
+		return(-1);
 	return(sock);
 }
 
@@ -106,15 +114,18 @@ krcmd_mutual(ahost, rport, remuser, cmd, fd2p, realm, cred, sched)
 		realm,
 		cred,		/* filled in */
 		sched,		/* filled in */
-		&msg_dat,	/* filled in? */
+		&msg_dat,	/* filled in */
 		&laddr,		/* filled in */
 		&faddr,		/* filled in */
 		authopts
 	);
 
-	if(err > KSUCCESS && err < MAX_KRB_ERRORS) {
+	if (err > KSUCCESS && err < MAX_KRB_ERRORS) {
 		fprintf(stderr, "krcmd_mutual: %s\n", krb_err_txt[err]);
 		return(-1);
 	}
+
+	if (err < 0)
+		return (-1);
 	return(sock);
 }
