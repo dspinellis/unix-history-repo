@@ -1,4 +1,4 @@
-/* in_cksum.c 1.5 81/10/21 */
+/* in_cksum.c 1.6 81/10/26 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"

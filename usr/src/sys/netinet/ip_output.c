@@ -1,4 +1,4 @@
-/* ip_output.c 1.4 81/10/23 */
+/* ip_output.c 1.5 81/10/26 */
 
 #include "../h/param.h"
 #include "../bbnnet/net.h"
