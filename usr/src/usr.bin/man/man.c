@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ extern int errno;
 
 int f_all, f_cat, f_where;
 char *command, *machine, *p_augment, *p_path, *pager, *progname;
+char **arorder, *pathbuf;
 
 main(argc, argv)
 	int argc;
@@ -35,7 +36,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, res;
-	char *section[2], *check_pager(), *getpath();
+	char *section[2], *check_pager(), *getpath(), **getorder(), *tmp;
 
 	progname = "man";
 	while ((ch = getopt(argc, argv, "-acfkM:m:P:w")) != EOF)
@@ -96,10 +97,21 @@ main(argc, argv)
 		section[1] = (char *)NULL;
 	}
 
-	if (!p_path && !(p_path = getenv("MANPATH")) &&
-	    !(p_path = getpath(section)) && !p_augment) {
+	arorder = getorder();
+	if (p_path || (p_path = getenv("MANPATH"))) {
+		char buf[MAXPATHLEN], **av;
+
+		tmp = strtok(p_path, ":"); 
+		while (tmp) {
+			(void)sprintf(buf, "%s/", tmp);
+			for (av = arorder; *av; ++av)
+                		cadd(buf, strlen(buf), *av);
+			tmp = strtok((char *)NULL, ":"); 
+		}
+		p_path = pathbuf;
+	} else if (!(p_path = getpath(section)) && !p_augment) {
 		(void)fprintf(stderr,
-		    "man: no place to search for those manual pages.\n");
+			"man: no place to search for those manual pages.\n");
 		exit(1);
 	}
 

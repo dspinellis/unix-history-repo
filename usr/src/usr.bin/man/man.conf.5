@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)man.conf.5	5.4 (Berkeley) %G%
+.\"	@(#)man.conf.5	5.5 (Berkeley) %G%
 .\"
 .TH MAN.CONF 5 ""
 .SH NAME
@@ -56,7 +56,10 @@ The possible keywords and their meanings are as follows:
 .TP
 _subdir
 The list (in search order) of subdirectories which will be searched in
-any directory named with a trailing slash (``/'') character.
+any directory named with a trailing slash (``/'') character.  This
+list is also used when a path is specified by the MANPATH environment 
+variable or the -M option.
+.
 .TP
 _version
 The version of the configuration file.
