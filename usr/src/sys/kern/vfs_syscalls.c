@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.1 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.113 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -975,14 +975,13 @@ olseek(p, uap, retval)
 /*
  * Check access permissions.
  */
-struct saccess_args {
+struct access_args {
 	char	*fname;
 	int	fmode;
 };
-/* ARGSUSED */
-saccess(p, uap, retval)
+access(p, uap, retval)
 	struct proc *p;
-	register struct saccess_args *uap;
+	register struct access_args *uap;
 	int *retval;
 {
 	register struct ucred *cred = p->p_ucred;
