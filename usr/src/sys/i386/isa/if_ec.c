@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 1991 The Regents of the University of California.
+ * Copyright (c) 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ec.c	7.3 (Berkeley) %G%
+ *	@(#)if_ec.c	7.4 (Berkeley) %G%
  */
+
+
+/* WARNING -- THIS DRIVER DOES NOT WORK YET -- It is merely a sketch */
 
 #include "ec.h"
 #if NEC > 0
@@ -51,7 +54,7 @@ extern	char all_es_snpa[], all_is_snpa[], all_l1is_snpa[], all_l2is_snpa[];
 #include "../net/bpfdesc.h"
 #endif
 
-int	ecdebug = 0;		/* console error messages */
+int	ecdebug = 1;		/* console error messages */
 
 int	ecintr(), ecinit(), ecioctl(), ecstart(), ether_output();
 int	ecattach(), ecprobe(), ecreset(), ecwatchdog();
@@ -113,9 +116,11 @@ ecprobe(id)
 	ec_reset_all();
 	bzero((caddr_t)data, sizeof(data));
 	ec_getnmdata(reg, R_ECID, data);
-	if (bcmp((caddr_t)data, "*3com*", sizeof(data)) != 0) {
-		if (ecdebug)
-			printf("ecprobe: ec%d not matched\n");
+	if (bcmp((caddr_t)data, "*3COM*", sizeof(data)) != 0) {
+		if (ecdebug) {
+			printf("ecprobe: ec%d not matched: %s\n",
+				unit, ether_sprintf(data));
+		}
 		return 0;
 	}
 	ec_getnmdata(reg, R_ETHER, ec->sc_addr);
@@ -125,9 +130,8 @@ ecprobe(id)
 	ec->sc_msize	= msize;
 	ec->sc_device	= (caddr_t) id;
 	ec->sc_ports	= reg;
-	printf("ec%d: hardware address %s, rev info %4.4x%4.4x%4.4x\n",
-		unit, ether_sprintf(ec->sc_addr),
-		0[(u_short *)data], 1[(u_short *)data], 2[(u_short *)data]);
+	printf("ec%d: hardware address %s, rev info %s\n",
+		unit, ether_sprintf(ec->sc_addr), ether_sprintf(data));
 	return 1;
 }
 
@@ -184,10 +188,12 @@ ecreset(unit)
 	ECWR(p, creg, R_LPB);	DELAY(10);
 	if ((ec->sc_if.if_flags & IFF_RUNNING) == 0)
 		return 0;
+	if (ecdebug)
+		printf("ec%dreset\n", unit);
 	ec_meminit(ec);
 	ECWR(p, creg, R_NORST);	DELAY(10);
-	ECWR(p, port_ca, 0);	DELAY(10);
 	hmem->iscp.busy = 1;
+	ECWR(p, port_ca, 0);	DELAY(10);
 	for (timo = TIMO; hmem->iscp.busy; )
 		timo--;
 	if (timo == 0) {
@@ -198,13 +204,13 @@ ecreset(unit)
 	ECWR(p, port_ca, 0);	DELAY(10);
 	for (timo = TIMO; (hmem->scb.status & CU_STATE) == CUS_ACTIVE;)
 		timo--;
-	if (timo == 0 || hmem->scb.status == CUS_IDLE) {
-		printf("ec(%d)reset: setup failed\n");
+	if (timo == 0 || (hmem->scb.status & CU_STATE) != CUS_IDLE) {
+		printf("ec(%d)reset: setup failed\n", unit);
 		return 0;
 	}
-	hmem->scb.command = RU_START;
 	ECWR(p, port_ic, 0);	DELAY(10);
 	ECWR(p, creg, R_NORST|R_IEN);
+	hmem->scb.command = RU_START | (hmem->scb.status & 0xf000);
 	ECWR(p, port_ca, 0);	DELAY(10);
 	ec->sc_if.if_timer = 5;
 	return 0;			/* Keep GCC Happy! */
@@ -395,6 +401,7 @@ again:
 	}
 	goto again;
 }
+int ECC_intr, ECC_rint, ECC_xint, ECC_unready;
 
 ecintr(unit)
 	register int unit;
@@ -409,6 +416,9 @@ ecintr(unit)
 		ecrint(unit);
 	if (stat & CX)
 		ecxint(unit);
+	ECC_intr++;
+	if ((stat & RU_STATE) != RUS_READY)
+		ECC_unready++;
 	UNLATCH_INT;
 }
 
@@ -423,6 +433,7 @@ ecxint(unit)
 	register struct ec_transmit *tmd;
 	int i;
 
+	ECC_rint++;
 	if (ec->sc_txcnt == 0) {
 		ec->sc_xint++;	/* unexpected transmit interrupt */
 		return;
@@ -475,6 +486,7 @@ ecrint(unit)
 	/*
 	 * Out of sync with hardware, should never happen?
 	 */
+	ECC_xint++;
 	if ((rmd->rfd0 & COM0_C) == 0 || (rmd->count & RBD_F) == 0) {
 		ecrerror(unit, "out of sync, resetting");
 		return ecreset(unit);
