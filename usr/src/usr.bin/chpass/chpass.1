@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chpass.1	8.1 (Berkeley) %G%
+.\"     @(#)chpass.1	5.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHPASS 1
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 chpass
 .Op Fl a Ar list
-.Op Fl s Ar shell
+.Op Fl s Ar newshell
 .Op user
 .Sh DESCRIPTION
 .Nm Chpass
@@ -39,7 +39,7 @@ user database fields, although they may be empty.
 The
 .Fl s
 option attempts to change the user's shell to
-.Ar newsh .
+.Ar newshell .
 .El
 .Pp
 Possible display items are as follows:
@@ -50,9 +50,9 @@ user's login name
 .It Password:
 user's encrypted password
 .It Uid:
-user's id
+user's login
 .It Gid:
-user's login group id
+user's login group
 .It Change:
 password change time
 .It Expire:
@@ -97,7 +97,7 @@ entries, and that one by random selection.
 The
 .Ar group
 field is the group that the user will be placed in at login.
-Since this system supports multiple groups (see
+Since BSD supports multiple groups (see
 .Xr groups 1 )
 this field currently has little special meaning.
 This field may be filled in with either a number or a group name (see
