@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.2 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.3 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -44,7 +44,7 @@ ktrgetheader(type)
 	kth->ktr_type = type;
 	microtime(&kth->ktr_time);
 	kth->ktr_pid = u.u_procp->p_pid;
-	bcopy(u.u_comm, kth->ktr_comm, MAXCOMLEN);
+	bcopy(u.u_procp->p_comm, kth->ktr_comm, MAXCOMLEN);
 	return (kth);
 }
 
@@ -75,22 +75,19 @@ ktrsysret(vp, code)
 	struct vnode *vp;
 {
 	struct ktr_header *kth = ktrgetheader(KTR_SYSRET);
-	struct ktr_sysret *ktp;
+	struct ktr_sysret ktp;
 
 	if (kth == NULL)
 		return;
-	MALLOC(ktp, struct ktr_sysret *, sizeof(struct ktr_sysret),
-		M_TEMP , M_WAITOK);
-	ktp->ktr_code = code;
-	ktp->ktr_eosys = u.u_eosys;
-	ktp->ktr_error = u.u_error;
-	ktp->ktr_retval = u.u_r.r_val1;		/* what about val2 ? */
+	ktp.ktr_code = code;
+	ktp.ktr_eosys = u.u_eosys;
+	ktp.ktr_error = u.u_error;
+	ktp.ktr_retval = u.u_r.r_val1;		/* what about val2 ? */
 
-	kth->ktr_buf = (caddr_t)ktp;
+	kth->ktr_buf = (caddr_t)&ktp;
 	kth->ktr_len = sizeof(struct ktr_sysret);
 
 	ktrwrite(vp, kth);
-	FREE(ktp, M_TEMP);
 	FREE(kth, M_TEMP);
 }
 
@@ -144,6 +141,28 @@ done:
 	FREE(ktp, M_TEMP);
 }
 
+ktrpsig(vp, sig, action, mask, code)
+	struct	vnode *vp;
+	sig_t	action;
+{
+	struct ktr_header *kth = ktrgetheader(KTR_PSIG);
+	struct ktr_psig	kp;
+
+	if (kth == NULL)
+		return;
+	kp.signo = (char)sig;
+	kp.action = action;
+	kp.mask = mask;
+	kp.code = code;
+	kth->ktr_buf = (caddr_t)&kp;
+	kth->ktr_len = sizeof (struct ktr_psig);
+
+	ktrwrite(vp, kth);
+	FREE(kth, M_TEMP);
+}
+
+/* Interface and common routines */
+
 /*
  * ktrace system call
  */
@@ -158,8 +177,8 @@ ktrace()
 	register struct vnode *vp = NULL;
 	register struct nameidata *ndp = &u.u_nd;
 	register struct proc *p;
+	register ops = KTROP(uap->ops);
 	struct pgrp *pg;
-	register int ops = uap->ops&0x3;
 	register int facs = uap->facs;
 	register int ret = 0;
 
@@ -190,7 +209,6 @@ ktrace()
 	if (ops == KTROP_CLEARFILE) {
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_tracep == vp) {
-				p->p_flag &= ~SKTR;
 				p->p_tracep = NULL;
 				p->p_traceflag = 0;
 				vrele(vp);
@@ -198,7 +216,6 @@ ktrace()
 		}
 		goto done;
 	}
-
 	/*
 	 * need something to (un)trace
 	 */
@@ -206,7 +223,9 @@ ktrace()
 		u.u_error = EINVAL;
 		goto done;
 	}
-
+	/* 
+	 * doit
+	 */
 	if (uap->pid < 0) {
 		pg = pgfind(-uap->pid);
 		if (pg == NULL) {
@@ -214,7 +233,7 @@ ktrace()
 			goto done;
 		}
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt)
-			if (uap->ops&KTROP_INHERITFLAG)
+			if (uap->ops&KTRFLAG_DESCEND)
 				ret |= ktrsetchildren(p, ops, facs, vp);
 			else 
 				ret |= ktrops(p, ops, facs, vp);
@@ -225,7 +244,7 @@ ktrace()
 			u.u_error = ESRCH;
 			goto done;
 		}
-		if (uap->ops&KTROP_INHERITFLAG)
+		if (ops&KTRFLAG_DESCEND)
 			ret |= ktrsetchildren(p, ops, facs, vp);
 		else
 			ret |= ktrops(p, ops, facs, vp);
@@ -245,7 +264,7 @@ ktrops(p, ops, facs, vp)
 	if (u.u_uid && u.u_uid != p->p_uid)
 		return 0;
 	if (ops == KTROP_SET) {
-		if (p->p_tracep != vp) {
+		if (p->p_tracep != vp) { 
 			/*
 			 * if trace file already in use, relinquish
 			 */
@@ -257,12 +276,13 @@ ktrops(p, ops, facs, vp)
 		p->p_traceflag |= facs;
 	} else {	
 		/* KTROP_CLEAR */
-		if ((p->p_traceflag &= ~facs) == 0) {
+		if (((p->p_traceflag &= ~facs) & ~KTRFAC_INHERIT) == 0) {
+			/* no more tracing */
+			p->p_traceflag = 0;
 			if (p->p_tracep != NULL) {
 				vrele(p->p_tracep);
 				p->p_tracep = NULL;
 			}
-			p->p_flag &= ~SKTR;
 		}
 	}
 
@@ -279,8 +299,7 @@ ktrsetchildren(top, ops, facs, vp)
 
 	p = top;
 	for (;;) {
-		if ((ret |= ktrops(p, ops, facs, vp)) && ops == KTROP_SET)
-			p->p_flag |= SKTR;
+		ret |= ktrops(p, ops, facs, vp);
 		/*
 		 * If this process has children, descend to them next,
 		 * otherwise do any siblings, and if done with this level,
