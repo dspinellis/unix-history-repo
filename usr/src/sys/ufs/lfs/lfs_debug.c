@@ -4,17 +4,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	7.6 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.7 (Berkeley) %G%
  */
 
 #ifdef DEBUG
 #include <sys/param.h>
 #include <sys/namei.h>
 #include <sys/vnode.h>
+#include <sys/mount.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
-
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
 
