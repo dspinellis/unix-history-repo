@@ -1,4 +1,4 @@
-/*	utboot.c	6.1	83/07/29	*/
+/*	utboot.c	6.2	83/09/29	*/
 
 /*
  * VAX tape boot block for distribution tapes
@@ -62,8 +62,8 @@
 	.set	UT_RCOM,0x38
 	.set	UT_SREV,0x1a
 	.set	UT_DCLR,0x8
-	.set	UT_crdy,0x80
-	.set	UT_gapsd,0x2000		/* aka "positioning in progress" */
+	.set	UT_crdy,7		/* bit pos. */
+	.set	UT_gapsd,13		/* bit; aka "positioning in progress" */
 	.set	UTDENS,0x4c0		/* 1600 bpi, PDP-11 format */
 /* local stack variables */
 	.set	tapa,-4		/* desired tape addr */
