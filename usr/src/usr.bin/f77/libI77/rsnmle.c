@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rsnmle.c	5.1	%G%
+ *	@(#)rsnmle.c	5.2	%G%
  */
 
 /*
@@ -18,15 +18,24 @@
 LOCAL char nml_rd[] = "namelist read";
 
 static int ch;
+LOCAL nameflag;
+LOCAL	char var_name[VL+1];
 
 #define SP 1
 #define B  2
 #define AP 4
 #define EX 8
+#define INTG 16
+#define RL 32
+#define LGC 64
+#define IRL 		(INTG | RL | LGC )
 #define isblnk(x)	(ltab[x+1]&B)	/* space, tab, newline */
 #define issep(x)	(ltab[x+1]&SP)	/* space, tab, newline, comma */
 #define isapos(x)	(ltab[x+1]&AP)	/* apost., quote mark */
 #define isexp(x)	(ltab[x+1]&EX)	/* d, e, D, E */
+#define isint(x)	(ltab[x+1]&INTG)	/* 0-9, plus, minus */
+#define isrl(x)		(ltab[x+1]&RL)	/* 0-9, plus,  minus, period */
+#define islgc(x)	(ltab[x+1]&LGC)	/* 0-9, period, t, f, T, F */
 
 #define GETC(x) (x=t_getc())
 #define UNGETC() ungetc(ch,cf)
@@ -38,14 +47,14 @@ int t_getc(), ungetc();
 
 LOCAL char ltab[128+1] =
 {			0, 		/* offset one for EOF */
-/*   0- 15 */	0,0,0,0,0,0,0,0,0,SP|B,SP|B,0,0,0,0,0, /* TAB,NEWLINE */
-/*  16- 31 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*  32- 47 */	SP|B,0,AP,0,0,0,0,AP,0,0,0,0,SP,0,0,0, /* space,",',comma */
-/*  48- 63 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*  64- 79 */	0,0,0,0,EX,EX,0,0,0,0,0,0,0,0,0,0,	/* D,E */
-/*  80- 95 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-/*  96-111 */	0,0,0,0,EX,EX,0,0,0,0,0,0,0,0,0,0,	/* d,e */
-/* 112-127 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+/*   0- 15 */ 0,0,0,0,0,0,0,0,0,SP|B,SP|B,0,0,0,0,0, /* TAB,NEWLINE */
+/*  16- 31 */ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+/*  32- 47 */ SP|B,0,AP,0,0,0,0,AP,0,0,0,RL|INTG,SP,RL|INTG,RL|LGC,0, /* space,",',comma,., */
+/*  48- 63 */ IRL,IRL,IRL,IRL,IRL,IRL,IRL,IRL,IRL,IRL,0,0,0,0,0,0, /* digits */
+/*  64- 79 */ 0,0,0,0,EX,EX,LGC,0,0,0,0,0,0,0,0,0,	/* D,E,F */
+/*  80- 95 */ 0,0,0,0,LGC,0,0,0,0,0,0,0,0,0,0,0,	/* T */
+/*  96-111 */ 0,0,0,0,EX,EX,LGC,0,0,0,0,0,0,0,0,0,	/* d,e,f */
+/* 112-127 */ 0,0,0,0,LGC,0,0,0,0,0,0,0,0,0,0,0		/* t */
 };
 
 s_rsne(a) namelist_arglist *a;
@@ -54,18 +63,14 @@ s_rsne(a) namelist_arglist *a;
 	struct namelistentry *entry;
 	int nelem, vlen, vtype;
 	char *nmlist_nm, *addr;
-	char var_name[VL+1];
 
 	reading = YES;
 	formatted = NAMELIST;
 	fmtbuf = "ext namelist io";
 	if(n=c_le(a,READ)) return(n);
-	l_first = YES;
 	getn = t_getc;
 	ungetn = ungetc;
 	leof = curunit->uend;
-	lcount = 0;
-	ltype = NULL;
 	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, nml_rd)
 
 	/* look for " &namelistname " */
@@ -84,8 +89,10 @@ s_rsne(a) namelist_arglist *a;
 
 	while( GETC(ch) != namelistkey_ )
 	{
+	    UNGETC();
 	    /* get variable name */
-	    if(rd_name(var_name)) goto rderr;
+	    if(!nameflag && rd_name(var_name)) goto rderr;
+
 	    entry = a->namelist->names;
 	    /* loop through namelist entries looking for this variable name */
 	    while( entry->varname[0] != 0 )
@@ -95,12 +102,12 @@ s_rsne(a) namelist_arglist *a;
 	    }
 	    goto rderr;
 got_name:
-	    if( n= get_pars( entry, &addr, &nelem, &vlen, &vtype ))
+	    if( n = get_pars( entry, &addr, &nelem, &vlen, &vtype ))
 							goto rderr_n;
-		/*debug*/printf("var=%s, nelem=%x,vlen=%x,vtype=%x\n",
-		/*debug*/	var_name, nelem, vlen, vtype);
 	    while(isblnk(GETC(ch))) ;
 	    if(ch != '=') goto rderr;
+
+	    nameflag = NO;
 	    if(n = l_read( nelem, addr, vlen, vtype )) 
 		{
 rderr_n:
@@ -111,7 +118,6 @@ rderr_n:
 	    UNGETC();
 	    if(leof) goto rderr;
 	}
-	printf("at end record looking for 'end'\n");
 	/* check for 'end' after '&' or '$'*/
 	if(GETC(ch)!='e' || GETC(ch)!='n' || GETC(ch)!='d' )
 		goto rderr;
@@ -163,7 +169,7 @@ int	*nelem,		/* number of elements to read */
 		case TYCHAR:
 			break;
 		default:
-		    fatal(F_ERSYS,"unknown type in wsnmle");
+		    fatal(F_ERSYS,"unknown type in rsnmle");
 	}
 
 	/* get number of elements */
@@ -202,8 +208,6 @@ int	*nelem,		/* number of elements to read */
 		offset = subs[i] + span[i]*offset;
 	offset -= baseoffset;
 	*nelem = dimptr[1] - offset;
-	printf("get_par: *nelem, dimptr[1], offset, baseoffset = %d %d %d %d\n",
-			*nelem, dimptr[1], offset, baseoffset );
 	if( offset < 0 || offset >= dimptr[1] )
 		return F_ERNMLIST;
 	*addr = *addr + (*vlen)*offset;
@@ -242,7 +246,7 @@ char *ptr;
 	/* read a variable name from the input stream */
 	char *init = ptr-1;
 
-	if(!isalpha(ch)) {
+	if(!isalpha(GETC(ch))) {
 		UNGETC();
 		return(ERROR);
 	}
@@ -289,51 +293,67 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 {	int i,n;
 	double *yy;
 	float *xx;
+
+	lcount = 0;
 	for(i=0;i<number;i++)
 	{
 		if(leof) return EOF;
-		if(l_first)
-		{	l_first = NO;
-			while(isblnk(GETC(ch)));	/* skip blanks */
-			UNGETC();
-		}
-		else if(lcount==0)		/* repeat count == 0 ? */
-		{	ERRNM(t_sep());  /* look for non-blank, allow 1 comma */
-		}
-		if(!lr_comm())
+		if(lcount==0)
 		{
+			ltype = NULL;
+			if(i!=0)
+			{	/* skip to comma */
+				while(isblnk(GETC(ch)));
+				if(leof) return(EOF);
+				if(ch == namelistkey_) 
+				{	UNGETC();
+					return(OK);
+				}
+				if(ch != ',' ) return(F_ERNMLIST);
+			}
 			while(isblnk(GETC(ch)));
+			if(leof) return(EOF);
 			UNGETC();
-			if(ch == namelistkey_ ) return(OK);
+			if(i!=0 && ch == namelistkey_) return(OK);
 
 			switch((int)type)
 			{
 			case TYSHORT:
 			case TYLONG:
+				if(!isint(ch)) return(OK);
+				ERRNM(l_R(1));
+				break;
 			case TYREAL:
 			case TYDREAL:
+				if(!isrl(ch)) return(OK);
 				ERRNM(l_R(1));
 				break;
 			case TYCOMPLEX:
 			case TYDCOMPLEX:
+				if(!isdigit(ch) && ch!='(') return(OK);
 				ERRNM(l_C());
 				break;
 			case TYLOGICAL:
+				if(!islgc(ch)) return(OK);
 				ERRNM(l_L());
+				if(nameflag) return(OK);
 				break;
 			case TYCHAR:
+				if(!isdigit(ch) && !isapos(ch)) return(OK);
 				ERRNM(l_CHAR());
 				break;
 			}
-		}
 		
- 		/* peek at next character;should be separator or namelistkey_ */
- 		GETC(ch); UNGETC();
-		printf("l_read: peek at %c %x\n", ch, ch);
-		if(!issep(ch) && (ch != namelistkey_)) 
+			if(leof) return(EOF);
+ 			/* peek at next character -
+				should be separator or namelistkey_ */
+ 			GETC(ch); UNGETC();
+			if(!issep(ch) && (ch != namelistkey_)) 
 			return( leof?EOF:F_ERNMLIST );
+		}
  
-		if(ltype) switch((int)type)
+		if(!ltype) return(F_ERNMLIST);
+		switch((int)type)
 		{
 		case TYSHORT:
 			ptr->flshort=lx;
@@ -371,20 +391,6 @@ l_read(number,ptr,len,type) ftnint number,type; flex *ptr; ftnlen len;
 		ptr = (flex *)((char *)ptr + len);
 	}
 	if(lcount>0) return F_ERNMLIST;
-	return(OK);
-}
-
-LOCAL
-lr_comm()
-{	int ch;
-	if(lcount) return(lcount);
-	ltype=NULL;
-	while(isblnk(GETC(ch)));
-	UNGETC();
-	if(ch==',')
-	{	lcount=1;
-		return(lcount);
-	}
 	return(OK);
 }
 
@@ -496,7 +502,12 @@ l_C()
 	UNGETC();
 	l_R(0);		/* get real part */
 	ly = lx;
-	if(t_sep()) return(EOF);
+	while(isblnk(GETC(ch)));  /* get comma */
+	if(leof) return(EOF);
+	if(ch!=',') return(F_ERNMLIST);
+	while(isblnk(GETC(ch)));
+	UNGETC();
+	if(leof) return(EOF);
 	l_R(0);		/* get imag part */
 	while(isblnk(GETC(ch)));
 	if(ch!=')') err(errflag,F_ERNMLIST,"no )")
@@ -507,9 +518,24 @@ l_C()
 LOCAL
 l_L()
 {
-	int ch,n;
-	if(n=get_repet()) return(n);		/* get repeat count */
-	if(GETC(ch)=='.') GETC(ch);
+	int n;
+	if(!isdigit(ch) && ch != '.')
+	{
+		if(rd_name(var_name))
+			return(leof?EOF:F_ERNMLIST);
+		while(isblnk(GETC(ch)));
+		if(ch == '=' || ch == '(')
+		{  	/* found a name, not a value */
+			UNGETC();
+			nameflag = YES;
+			return(OK);
+		}
+	}
+	else
+	{
+		if(n=get_repet()) return(n);		/* get repeat count */
+		if(GETC(ch)=='.') GETC(ch);
+	}
 	switch(ch)
 	{
 	case 't':
@@ -521,12 +547,7 @@ l_L()
 		lx=0;
 		break;
 	default:
-		if(issep(ch))
-		{	UNGETC();
-			lx=0;
-			return(OK);
-		}
-		else if(ch==EOF) return(EOF);
+		if(ch==EOF) return(EOF);
 		else	err(errflag,F_ERNMLIST,"logical not T or F");
 	}
 	ltype=TYLOGICAL;
@@ -576,16 +597,4 @@ l_CHAR()
 			return(OK);
 		}
 	}
-}
-
-LOCAL
-t_sep()
-{
-	int ch;
-	while(isblnk(GETC(ch)));
-	if(leof) return(EOF);
-	if(issep(ch)) while(isblnk(GETC(ch)));
-	if(leof) return(EOF);
-	UNGETC();
-	return(OK);
 }
