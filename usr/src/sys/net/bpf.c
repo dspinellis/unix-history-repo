@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bpf.c	7.3 (Berkeley) %G%
+ *	@(#)bpf.c	7.4 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.23 91/01/30 18:22:13 mccanne Exp $";
@@ -921,13 +921,9 @@ catchpacket(d, pkt, pktlen, snaplen, cpfn)
 	 * much.  Otherwise, transfer the whole packet (unless
 	 * we hit the buffer size limit).
 	 */
-	if (snaplen <= pktlen)
-		totlen = snaplen + hdrlen;
-	else {
-		totlen = pktlen + hdrlen;
-		if (totlen > d->bd_bufsize)
-			totlen = d->bd_bufsize;
-	}
+	totlen = hdrlen + MIN(snaplen, pktlen);
+	if (totlen > d->bd_bufsize)
+		totlen = d->bd_bufsize;
 
 	/*
 	 * Round up the end of the previous packet to the next longword.
