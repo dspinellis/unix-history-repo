@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.3";
+char id_sfe[] = "@(#)sfe.c	1.4";
  *
  * sequential formatted external routines
  */
@@ -13,17 +13,20 @@ char id_sfe[] = "@(#)sfe.c	1.3";
 extern int rd_ed(),rd_ned();
 int x_rnew(),x_getc(),x_tab();
 
+char rsfe[] = "read sfe";
+char wsfe[] = "write sfe";
+
 s_rsfe(a) cilist *a; /* start */
 {	int n;
 	reading = YES;
 	if(n=c_sfe(a,READ)) return(n);
-	if(curunit->uwrt) nowreading(curunit);
+	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, rsfe)
 	getn= x_getc;
 	doed= rd_ed;
 	doned= rd_ned;
 	donewrec = dorevert = doend = x_rnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"read sfe")
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,rsfe)
 	fmt_bg();
 	return(OK);
 }
@@ -72,15 +75,15 @@ c_sfe(a,flag) cilist *a; /* check */
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,F_ERUNIT,"sfe");
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,rsfe+5);
 	curunit = p = &units[lunit];
 	if(!p->ufd && (n=fk_open(flag,SEQ,FMT,(ftnint)lunit)) )
-		err(errflag,n,"sfe")
+		err(errflag,n,rsfe+5)
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if(!p->ufmt) err(errflag,F_ERNOFIO,"sfe")
-	if(p->url) err(errflag,F_ERNOSIO,"sfe")
+	if(!p->ufmt) err(errflag,F_ERNOFIO,rsfe+5)
+	if(p->url) err(errflag,F_ERNOSIO,rsfe+5)
 	cursor=recpos=scale=reclen=0;
 	radix = 10;
 	signit = YES;
@@ -101,7 +104,7 @@ s_wsfe(a) cilist *a;	/*start*/
 {	int n;
 	reading = NO;
 	if(n=c_sfe(a,WRITE)) return(n);
-	if(!curunit->uwrt) nowwriting(curunit);
+	if(!curunit->uwrt && ! nowwriting(curunit)) err(errflag, errno, wsfe)
 	curunit->uend = NO;
 	if (curunit->uprnt) putn = pr_put;
 	else putn = x_putc;
@@ -111,7 +114,7 @@ s_wsfe(a) cilist *a;	/*start*/
 	doend = x_wend;
 	dorevert = donewrec = x_wnew;
 	dotab = x_tab;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"write sfe")
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,wsfe)
 	fmt_bg();
 	return(OK);
 }

@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.2";
+char id_lread[] = "@(#)lread.c	1.3";
  *
  * list directed read
  */
@@ -22,7 +22,7 @@ char id_lread[] = "@(#)lread.c	1.2";
 
 #define GETC(x) (x=(*getn)())
 
-char *lrd = "list read";
+char lrd[] = "list read";
 char *lchar;
 double lx,ly;
 int ltype;
@@ -52,7 +52,7 @@ s_rsle(a) cilist *a;	/* start read sequential list external */
 	ungetn = ungetc;
 	leof = curunit->uend;
 	lcount = 0;
-	if(curunit->uwrt) nowreading(curunit);
+	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, lrd)
 	return(OK);
 }
 
