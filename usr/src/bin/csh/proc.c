@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)proc.c	4.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)proc.c	4.16 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -415,15 +415,25 @@ padd(t)
 		}
 		break;
 
+	case TOR:
+	case TAND:
 	case TFIL:
-		padd(t->t_dcar);
-		pads(" | ");
-		padd(t->t_dcdr);
-		return;
-
 	case TLST:
 		padd(t->t_dcar);
-		pads("; ");
+		switch (t->t_dtyp) {
+		case TOR:
+			pads(" || ");
+			break;
+		case TAND:
+			pads(" && ");
+			break;
+		case TFIL:
+			pads(" | ");
+			break;
+		case TLST:
+			pads("; ");
+			break;
+		}
 		padd(t->t_dcdr);
 		return;
 	}
