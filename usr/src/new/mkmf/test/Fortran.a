@@ -1,0 +1,70 @@
+!<arch>
+OFortran        489089322   968   31    100644  940       `
+mkmf: creating Makefile from template /usr/new/lib/p.Makefile
+DEST	      = .
+
+EXTHDRS	      =
+
+HDRS	      = b.h
+
+LDFLAGS	      =
+
+LIBS	      =
+
+LINKER	      = fc
+
+MAKEFILE      = Makefile
+
+OBJS	      = program.o
+
+PRINT	      = pr
+
+PROGRAM	      = a.out
+
+SRCS	      = a.f \
+		program.f
+
+all:		$(PROGRAM)
+
+$(PROGRAM):     $(OBJS) $(LIBS)
+		@echo -n "Loading $(PROGRAM) ... "
+		@$(LINKER) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
+		@echo "done"
+
+clean:;		@rm -f $(OBJS)
+
+depend:;	@mkmf -f $(MAKEFILE) PROGRAM=$(PROGRAM) DEST=$(DEST)
+
+index:;		@ctags -wx $(HDRS) $(SRCS)
+
+install:	$(PROGRAM)
+		@echo Installing $(PROGRAM) in $(DEST)
+		@install -s $(PROGRAM) $(DEST)
+
+print:;		@$(PRINT) $(HDRS) $(SRCS)
+
+program:        $(PROGRAM)
+
+tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
+
+update:		$(DEST)/$(PROGRAM)
+
+$(DEST)/$(PROGRAM): $(SRCS) $(LIBS) $(HDRS) $(EXTHDRS)
+		@make -f $(MAKEFILE) DEST=$(DEST) install
+###
+program.o: a.f defs b.h
+TFortran.sh     489088895   968   31    100755  150       `
+#!/bin/csh -f
+(mkmf LINKER=fc; cat Makefile) |& diff - OFortran
+set diffstatus = $status
+/bin/rm -f Makefile program.f a.f b.h defs
+exit($diffstatus)
+a.f             488831689   851   254   100664  16        `
+	include 'defs'
+b.h             488844294   851   254   100664  16        `
+	include 'defs'
+defs            488831689   851   254   100664  16        `
+{ definitions }
+program.f       488844286   851   254   100664  42        `
+       include 'a.f'
+       include 'b.h'

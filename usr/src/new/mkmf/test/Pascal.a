@@ -1,0 +1,72 @@
+!<arch>
+OPascal         489089489   968   31    100644  931       `
+mkmf: creating Makefile from template /usr/new/lib/p.Makefile
+DEST	      = .
+
+EXTHDRS	      =
+
+HDRS	      = b.h
+
+LDFLAGS	      =
+
+LIBS	      =
+
+LINKER	      = pc
+
+MAKEFILE      = Makefile
+
+OBJS	      = main.o
+
+PRINT	      = pr
+
+PROGRAM	      = a.out
+
+SRCS	      = a.p \
+		main.p
+
+all:		$(PROGRAM)
+
+$(PROGRAM):     $(OBJS) $(LIBS)
+		@echo -n "Loading $(PROGRAM) ... "
+		@$(LINKER) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
+		@echo "done"
+
+clean:;		@rm -f $(OBJS)
+
+depend:;	@mkmf -f $(MAKEFILE) PROGRAM=$(PROGRAM) DEST=$(DEST)
+
+index:;		@ctags -wx $(HDRS) $(SRCS)
+
+install:	$(PROGRAM)
+		@echo Installing $(PROGRAM) in $(DEST)
+		@install -s $(PROGRAM) $(DEST)
+
+print:;		@$(PRINT) $(HDRS) $(SRCS)
+
+program:        $(PROGRAM)
+
+tags:           $(HDRS) $(SRCS); @ctags $(HDRS) $(SRCS)
+
+update:		$(DEST)/$(PROGRAM)
+
+$(DEST)/$(PROGRAM): $(SRCS) $(LIBS) $(HDRS) $(EXTHDRS)
+		@make -f $(MAKEFILE) DEST=$(DEST) install
+###
+main.o: a.p defs b.h
+
+TPascal.sh      489089584   968   31    100755  146       `
+#!/bin/csh -f
+(mkmf LINKER=pc; cat Makefile) |& diff - OPascal
+set diffstatus = $status
+/bin/rm -f Makefile main.p a.p b.h defs
+exit($diffstatus)
+a.p             488831677   851   254   100664  16        `
+#include "defs"
+b.h             488844165   851   254   100664  17        `
+#	include 'defs'
+
+defs            488831677   851   254   100664  16        `
+{ definitions }
+main.p          488844129   851   254   100664  30        `
+#include 'a.p'
+#include 'b.h'
