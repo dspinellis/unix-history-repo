@@ -1,4 +1,4 @@
-/*	route.h	4.5	82/03/30	*/
+/*	route.h	4.6	82/03/30	*/
 
 /*
  * Structure of kernel resident routing
@@ -11,7 +11,7 @@
  *	more statistics -- smooth usage figures
  */
 struct rtentry {
-	u_long	rt_hash[2];		/* [0] for net, [1] for host */
+	u_long	rt_hash;		/* for net or for host */
 	struct	sockaddr rt_dst;	/* match value */
 	struct	sockaddr rt_gateway;	/* who to forward to */
 	short	rt_flags;		/* see below */
@@ -31,6 +31,7 @@ struct route {
  */
 #define	RTF_UP		0x1		/* route useable */
 #define	RTF_DIRECT	0x2		/* destination is a neighbor */
+#define	RTF_HOST	0x4		/* host entry (net otherwise) */
 
 #ifdef KERNEL
 /*
@@ -39,6 +40,7 @@ struct route {
  * containing routing entries.  Dead entries are
  * reclaimed along with mbufs.
  */
-#define	RTHASHSIZ	16
-struct	mbuf *routehash[RTHASHSIZ];
+#define	RTHASHSIZ	7
+struct	mbuf *rthost[RTHASHSIZ];
+struct	mbuf *rtnet[RTHASHSIZ];
 #endif

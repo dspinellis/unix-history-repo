@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.8	82/03/30	*/
+/*	if_dmc.c	4.9	82/03/30	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -184,7 +184,7 @@ COUNT(DMCINIT);
 	/* set up routing table entry */
 	if ((sc->sc_if.if_flags & IFF_ROUTE) == 0) {
 		rtinit(&sc->sc_if.if_addr, &sc->sc_if.if_addr,
-			RTF_DIRECT|RTF_UP);
+			RTF_DIRECT|RTF_HOST|RTF_UP);
 		sc->sc_if.if_flags |= IFF_ROUTE;
 	}
 }
