@@ -1,13 +1,9 @@
 #! /bin/sh
 #
-#	@(#)style.sh	4.2	(Berkeley)	82/11/06
+#	@(#)style.sh	4.3	(Berkeley)	82/11/06
 #
 L=/usr/lib/style
-C=/usr/llc/collect/scatch
-if test -w $C
-then
-echo $HOME $* `date` >>$C 2>/dev/null
-fi
+B=/usr/bin
 echo " " $*
 sflag=-s
 eflag=
@@ -38,4 +34,4 @@ do case $i in
 *) break;;
 esac
 done
-deroff $mflag $mlflag $*^$L/style1^$L/style2^$L/style3 $rflag $rcon $lflag $lcon $sflag $nflag $eflag $Pflag
+$B/deroff $mflag $mlflag $*^$L/style1^$L/style2^$L/style3 $rflag $rcon $lflag $lcon $sflag $nflag $eflag $Pflag
