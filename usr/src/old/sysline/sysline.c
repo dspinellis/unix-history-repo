@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1048,6 +1048,7 @@ touch(name)
  * called when process quits or is killed.
  * it clears the bottom line of the terminal.
  */
+void
 clearbotl()
 {
 	register int fd;

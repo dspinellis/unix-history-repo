@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	6.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	6.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef STANDALONE
@@ -906,6 +906,7 @@ iput(ip, ino)
 /*
  * Notify parent process that the filesystem has created itself successfully.
  */
+void
 started()
 {
 
