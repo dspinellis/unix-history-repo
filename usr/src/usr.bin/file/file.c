@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.17 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.18 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -64,6 +64,7 @@ char **argv;
 		exit(1);
 	}
 	while(argc > 1) {
+		ifile = -1;
 		type(argv[1]);
 		fflush(stdout);
 		argc--;
@@ -82,16 +83,13 @@ char *file;
 	struct stat mbuf;
 	char slink[MAXPATHLEN + 1];
 
-	ifile = -1;
 	if (lstat(file, &mbuf) < 0) {
 		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
-	printf("%s:\t", file);
 	switch (mbuf.st_mode & S_IFMT) {
-
 	case S_IFLNK:
-		printf("symbolic link");
+		printf("%s: symbolic link", file);
 		j = readlink(file, slink, sizeof slink - 1);
 		if (j >= 0) {
 			slink[j] = '\0';
@@ -101,6 +99,7 @@ char *file;
 		return;
 
 	case S_IFDIR:
+		printf("%s: ", file);
 		if (mbuf.st_mode & S_ISVTX)
 			printf("append-only ");
 		printf("directory\n");
@@ -108,13 +107,13 @@ char *file;
 
 	case S_IFCHR:
 	case S_IFBLK:
-		printf("%s special (%d/%d)\n",
+		printf("%s: %s special (%d/%d)\n", file,
 		    (mbuf.st_mode&S_IFMT) == S_IFCHR ? "character" : "block",
 		     major(mbuf.st_rdev), minor(mbuf.st_rdev));
 		return;
 
 	case S_IFSOCK:
-		printf("socket\n");
+		printf("%s: socket\n", file);
 		return;
 	}
 
