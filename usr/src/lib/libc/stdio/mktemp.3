@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mktemp.3	6.5 (Berkeley) %G%
+.\"	@(#)mktemp.3	6.6 (Berkeley) %G%
 .\"
 .TH MKTEMP 3  ""
 .AT 3
@@ -50,11 +50,13 @@ makes the same replacement to the template and creates the template file,
 mode 0600, returning a file descriptor opened for reading and writing.
 This avoids the race between testing for a file's existence and opening it
 for use.
-.PP
+.SH "RETURN VALUE"
 .I Mktemp
 returns a pointer to the template on success and NULL on failure.
 .I Mkstemp
 returns -1 if no suitable file could be created.
+If either call fails an error code is placed in the global location
+.IR errno .
 .SH ERRORS
 .I Mktemp
 and
