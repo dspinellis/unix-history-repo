@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.54 (Berkeley) %G%
+.\"	@(#)op.me	8.55 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.54
+Version 8.55
 .sp
 For Sendmail Version 8.7
 .)l
@@ -214,9 +214,8 @@ old databases are read,
 but when a new database is created it will be in NEWDB format.
 As a nasty hack,
 if you have NEWDB, NDBM, and NIS defined,
-and if the file
-.i /var/yp/Makefile
-exists and is readable,
+and if the alias file name includes the substring
+.q /yp/ ,
 .i sendmail
 will create both new and old versions of the alias file
 during a
@@ -5748,8 +5747,9 @@ If set together with
 NEWDB and NDBM,
 .i sendmail
 will create both DBM and NEWDB files if and only if
-the file /var/yp/Makefile
-exists and is readable.
+an alias file includes the substring
+.q /yp/
+in the name.
 This is intended for compatibility with Sun Microsystems'
 .i mkalias
 program used on YP masters.
@@ -7402,7 +7402,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.54
+.\"Version 8.55
 .\".ce 0
 .bp 2
 .rs
