@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.6 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -1082,6 +1082,7 @@ tmscpstart(um)
 		i = um->um_ubinfo|UBA_HAVEBDP|UBA_CANTWAIT;
 		break;
 	case VAX_730:
+	case VAX_630:
 		i = UBA_CANTWAIT;
 		break;
 	}   /* end switch (cpu) */
