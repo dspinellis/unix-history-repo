@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.24	82/08/22	*/
+/*	uipc_syscalls.c	4.25	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,80 +17,72 @@
 #include "../h/descrip.h"
 #include "../h/uio.h"
 
-ssocreate()
-/*###21 [lint] ssocreate defined( sys_socket.c(21) ), but never used%%%*/
+socket()
 {
 
 }
 
-ssobind()
-/*###26 [lint] ssobind defined( sys_socket.c(26) ), but never used%%%*/
+bind()
 {
 
 }
 
-ssolisten()
-/*###31 [lint] ssolisten defined( sys_socket.c(31) ), but never used%%%*/
+listen()
 {
 
 }
 
-ssoaccept()
-/*###36 [lint] ssoaccept defined( sys_socket.c(36) ), but never used%%%*/
+accept()
 {
 
 }
 
-ssoconnect()
-/*###41 [lint] ssoconnect defined( sys_socket.c(41) ), but never used%%%*/
+connect()
 {
 
 }
 
-ssocreatepair()
-/*###46 [lint] ssocreatepair defined( sys_socket.c(46) ), but never used%%%*/
+socketpair()
 {
 
 }
 
-ssosendto()
-/*###51 [lint] ssosendto defined( sys_socket.c(51) ), but never used%%%*/
+spipe()
 {
 
 }
 
-ssosend()
-/*###56 [lint] ssosend defined( sys_socket.c(56) ), but never used%%%*/
+sendto()
 {
 
 }
 
-ssorecvfrom()
-/*###61 [lint] ssorecvfrom defined( sys_socket.c(61) ), but never used%%%*/
+send()
 {
 
 }
 
-ssorecv()
-/*###66 [lint] ssorecv defined( sys_socket.c(66) ), but never used%%%*/
+recvfrom()
 {
 
 }
 
-ssosendm()
-/*###71 [lint] ssosendm defined( sys_socket.c(71) ), but never used%%%*/
+recv()
 {
 
 }
 
-ssorecvm()
-/*###76 [lint] ssorecvm defined( sys_socket.c(76) ), but never used%%%*/
+sendmsg()
 {
 
 }
 
-ssoshutdown()
-/*###81 [lint] ssoshutdown defined( sys_socket.c(81) ), but never used%%%*/
+recvmsg()
+{
+
+}
+
+shutdown()
 {
 
 }
@@ -109,7 +101,7 @@ static	struct sockproto localproto = { PF_UNIX, 0 };
 /*
  * Pipe system call interface.
  */
-spipe()
+opipe()
 {
 	register struct file *rf, *wf;
 	struct socket *rso, *wso;
@@ -160,7 +152,7 @@ free:
  * set up file descriptor and call internal socket
  * creation routine.
  */
-ssocket()
+osocket()
 {
 	register struct a {
 		int	type;
@@ -196,7 +188,7 @@ bad:
 /*
  * Accept system call interface.
  */
-saccept()
+oaccept()
 {
 	register struct a {
 		int	fdes;
@@ -277,7 +269,7 @@ ret:
  * Connect socket to foreign peer; system call
  * interface.  Copy sa arguments and call internal routine.
  */
-sconnect()
+oconnect()
 {
 	register struct a {
 		int	fdes;
@@ -320,7 +312,7 @@ sconnect()
 /*
  * Send data on socket.
  */
-ssend()
+osend()
 {
 	register struct a {
 		int	fdes;
@@ -359,7 +351,7 @@ ssend()
 /*
  * Receive data on socket.
  */
-sreceive()
+oreceive()
 {
 	register struct a {
 		int	fdes;
