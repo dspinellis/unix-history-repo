@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.5 (Berkeley) %G%
+ *	@(#)termios.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -22,13 +22,6 @@
  */
 #ifndef _TERMIOS_
 #define _TERMIOS_
-
-#ifdef KERNEL
-#include "ioctl.h"
-#else
-#include <sys/ioctl.h>
-#endif
-
 
 /* 
  * Special Control Characters 
@@ -41,10 +34,10 @@
 #define	VEOL		1	/* ICANON */
 #define	VEOL2		2	/* ICANON */
 #define	VERASE		3	/* ICANON */
-#define	VERASE2		18	/* ICANON */
 #define VWERASE 	4	/* ICANON */
 #define VKILL		5	/* ICANON */
 #define	VREPRINT 	6	/* ICANON */
+/*			7	   spare 1 */
 #define VINTR		8	/* ISIG */
 #define VQUIT		9	/* ISIG */
 #define VSUSP		10	/* ISIG */
@@ -56,10 +49,15 @@
 #define	VFLUSH		VFLUSHO	/* for sun */
 #define VMIN		16	/* !ICANON */
 #define VTIME		17	/* !ICANON */
-
-#define	NCC		20	/* two spares */
+#define VINFO		18	/* ISIG */
+/*			19	   spare 2 */
+#define	NCC		20
 
 #define _POSIX_VDISABLE	((unsigned char)'\377')
+
+#ifndef _POSIX_SOURCE
+#define CCEQ(val, c)	(c == val ? val != _POSIX_VDISABLE : 0)
+#endif
 
 /*
  * Input flags - software input processing
@@ -92,6 +90,7 @@
 /*
  * Control flags - hardware control of terminal
  */
+#define	CIGNORE		0x00000001	/* ignore control flags */
 #define CSIZE		0x00000300	/* character size mask */
 #define     CS5		    0x00000000	    /* 5 bits (pseudo) */
 #define     CS6		    0x00000100	    /* 6 bits */
@@ -117,6 +116,7 @@
 #define	ECHOKE		0x00000001	/* visual erase for line kill */
 #define	ECHOE		0x00000002	/* visually erase chars */
 #define	ECHOK		0x00000004	/* echo NL after line kill */
+#define ECHO		0x00000008	/* enable echoing */
 #define	ECHONL		0x00000010	/* echo NL even if ECHO is off */
 #define	ECHOPRT		0x00000020	/* visual erase mode for hardcopy */
 #define ECHOCTL  	0x00000040	/* echo control chars as ^(Char) */
@@ -124,22 +124,22 @@
 #define	ICANON		0x00000100	/* canonicalize input lines */
 #define ALTWERASE	0x00000200	/* use alternate WERASE algorithm */
 #define	IEXTEN		0x00000400	/* enable FLUSHO and LNEXT */
-#ifdef notdef	/* XXX already defined in ioctl.h */
-#define ECHO		0x00000008	/* enable echoing */
 #define	MDMBUF		0x00100000	/* flow control output via Carrier */
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #define FLUSHO		0x00800000	/* output being flushed (state) */
 #define	NOHANG		0x01000000	/* XXX this should go away */
 #define PENDIN		0x20000000	/* retype pending input (state) */
 #define	NOFLSH		0x80000000	/* don't flush after interrupt */
-#endif /*notdef*/
+
+typedef unsigned long	tcflag_t;
+typedef unsigned char	cc_t;
 
 struct termios {
-	unsigned long	c_iflag;	/* input flags */
-	unsigned long	c_oflag;	/* output flags */
-	unsigned long	c_cflag;	/* control flags */
-	unsigned long	c_lflag;	/* local flags */
-	unsigned char	c_cc[NCC];	/* control chars */
+	tcflag_t	c_iflag;	/* input flags */
+	tcflag_t	c_oflag;	/* output flags */
+	tcflag_t	c_cflag;	/* control flags */
+	tcflag_t	c_lflag;	/* local flags */
+	cc_t		c_cc[NCC];	/* control chars */
 	long		c_ispeed;	/* input speed */
 	long		c_ospeed;	/* output speed */
 };
@@ -150,17 +150,38 @@ struct termios {
 #define	TCSANOW		0		/* make change immediate */
 #define	TCSADRAIN	1		/* drain output, then change */
 #define	TCSADFLUSH	2		/* drain output, flush input */
-/*
- * TCSASOFT is a flag which can be or'ed in with a command.
- * If set, only the software processing flags in the termios 
- * structure are altered.  That is, the settings of the cflag and 
- * speeds are ignored.
- */
-#define TCSASOFT	0x80000000	/* but ignore hardware settings */
 
 /*
- * Is c equal to control character val?
+ * Standard speeds
  */
-#define CCEQ(val, c)	((c) == (val) ? (val) != _POSIX_VDISABLE : 0)
+#define B0	0
+#define B50	50
+#define B75	75
+#define B110	110
+#define B134	134
+#define B150	150
+#define B200	200
+#define B300	300
+#define B600	600
+#define B1200	1200
+#define	B1800	1800
+#define B2400	2400
+#define B4800	4800
+#define B9600	9600
+#define B19200	19200
+#define B38400	38400
+#define EXTA	19200
+#define EXTB	38400
+/*
+ * END OF PROTECTED INCLUDE.
+ */
+#endif /* _TERMIOS_ */
 
-#endif _TERMIOS_
+#ifndef _POSIX_SOURCE
+#ifdef KERNEL
+#include "ttydefaults.h"
+#else
+#include <sys/ttydefaults.h>
+#endif
+#endif 
+
