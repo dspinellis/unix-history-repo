@@ -422,6 +422,9 @@ COUNT(ENRINT);
 		goto setup;
 	}
 #endif
+	default:
+		m_freem(m);
+		goto setup;
 	}
 
 	if (IF_QFULL(inq)) {
