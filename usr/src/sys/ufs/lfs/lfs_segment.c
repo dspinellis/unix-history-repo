@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.12 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,7 +64,7 @@ int	 lfs_match_dindir __P((struct lfs *, struct buf *));
 int	 lfs_match_indir __P((struct lfs *, struct buf *));
 int	 lfs_match_tindir __P((struct lfs *, struct buf *));
 struct buf *
-	 lfs_newbuf __P((struct lfs *, struct segment *, daddr_t, size_t));
+	 lfs_newbuf __P((struct lfs *, daddr_t, size_t));
 void	 lfs_newseg __P((struct lfs *));
 void	 lfs_shellsort __P((struct buf **, daddr_t *, register int));
 void	 lfs_updatemeta __P((struct lfs *,
@@ -125,7 +125,7 @@ lfs_vflush(vp)
 	 * the writes we intend to do.
 	 */
 	s = splbio();
-	fs->lfs_iocount = 1;
+	++fs->lfs_iocount;
 	splx(s);
 
 	if (vp->v_dirtyblkhd != NULL)
@@ -142,7 +142,7 @@ lfs_vflush(vp)
 	 */
 	s = splbio();
 	if (--fs->lfs_iocount && (error =
-	    tsleep((caddr_t)&fs->lfs_iocount, PRIBIO + 1, "lfs vflush", 0)))
+	    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs vflush", 0)))
 		return (error);
 	splx(s);
 	vfs_unbusy(mp);
@@ -181,16 +181,15 @@ lfs_segwrite(mp, do_ckp)
 	lfs_initseg(fs, sp);
 
 	/*
-	 * If doing a checkpoint, we keep a cumulative count of the outstanding
-	 * I/O operations.  If the disk drive catches up with us it could go to
-	 * zero before we finish, so we artificially increment it by one until
-	 * we've scheduled all of the writes we intend to do.
+	 * Keep a cumulative count of the outstanding I/O operations.  If the
+	 * disk drive catches up with us it could go to zero before we finish,
+	 * so we artificially increment it by one until we've scheduled all of
+	 * the writes we intend to do.  If not a checkpoint, we never do the
+	 * final decrement, avoiding the wakeup in the callback routine.
 	 */
-	if (do_ckp) {
-		s = splbio();
-		fs->lfs_iocount = 1;
-		splx(s);
-	}
+	s = splbio();
+	++fs->lfs_iocount;
+	splx(s);
 
 loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 		/*
@@ -249,15 +248,16 @@ printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
 	 * moment, the user's process hangs around so we can sleep.
 	 */
+	s = splbio();
+	--fs->lfs_iocount;
 	if (do_ckp) {
-		s = splbio();
-		if (--fs->lfs_iocount &&
-		    (error = tsleep((caddr_t)&fs->lfs_iocount, PRIBIO + 1,
-		      "lfs sync", 0)))
+		if (fs->lfs_iocount && (error =
+		    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs sync", 0)))
 			return (error);
 		splx(s);
 		lfs_writesuper(fs, sp);
-	}
+	} else 
+		splx(s);
 
 	free(sp->bpp, M_SEGMENT);
 	free(sp, M_SEGMENT);
@@ -349,9 +349,9 @@ lfs_writeinode(fs, sp, ip)
 		daddr = fs->lfs_offset;
 		fs->lfs_offset += fsbtodb(fs, 1);
 		sp->ibp = *sp->cbpp++ =
-		    lfs_newbuf(fs, sp, daddr, fs->lfs_bsize);
+		    lfs_newbuf(fs, daddr, fs->lfs_bsize);
 
-		/* Set remaining space counter. */
+		/* Set remaining space counters. */
 		sp->seg_bytes_left -= fs->lfs_bsize;
 		sp->sum_bytes_left -= sizeof(daddr_t);
 		ndx = LFS_SUMMARY_SIZE / sizeof(daddr_t) -
@@ -565,8 +565,8 @@ lfs_initseg(fs, sp)
 	/* Advance to the next segment. */
 	if (!LFS_PARTIAL_FITS(fs)) {
 		/* Wake up any cleaning procs waiting on this file system. */
-		wakeup((caddr_t)&fs->lfs_nextseg);
-		wakeup((caddr_t)&lfs_allclean_wakeup);
+		wakeup(&fs->lfs_nextseg);
+		wakeup(&lfs_allclean_wakeup);
 
 		lfs_newseg(fs);
 		fs->lfs_offset = fs->lfs_curseg;
@@ -594,7 +594,7 @@ lfs_initseg(fs, sp)
 
 	/* Get a new buffer for SEGSUM and enter it into the buffer list. */
 	sp->cbpp = sp->bpp;
-	*sp->cbpp = lfs_newbuf(fs, sp, fs->lfs_offset, LFS_SUMMARY_SIZE);
+	*sp->cbpp = lfs_newbuf(fs, fs->lfs_offset, LFS_SUMMARY_SIZE);
 	sp->segsum = (*sp->cbpp)->b_un.b_addr;
 	++sp->cbpp;
 	fs->lfs_offset += LFS_SUMMARY_SIZE / DEV_BSIZE;
@@ -666,13 +666,14 @@ lfs_writeseg(fs, sp)
 	struct lfs *fs;
 	struct segment *sp;
 {
-	struct buf **bpp, *bp;
+	struct buf **bpp, *bp, *cbp;
 	SEGUSE *sup;
 	SEGSUM *ssp;
 	dev_t i_dev;
 	u_long *datap, *dp;
-	void *pmeta;
-	int flags, i, nblocks, s, (*strategy)__P((struct buf *));
+	size_t size;
+	int ch_per_blk, i, nblocks, num, s, (*strategy)__P((struct buf *));
+	char *p;
 
 #ifdef VERBOSE
 	printf("lfs_writeseg\n");
@@ -698,39 +699,58 @@ lfs_writeseg(fs, sp)
 	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
 	free(datap, M_SEGMENT);
 
-	/*
-	 * When we gathered the blocks for I/O we did not mark them busy or
-	 * remove them from the freelist.  As we do this, turn off the B_LOCKED
-	 * bit so the future brelse will put them on the LRU list, and add the
-	 * B_CALL flags if we're doing a checkpoint so we can count I/O's.  LFS
-	 * requires that the super blocks (on checkpoint) be written after all
-	 * the segment data.
-	 */
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
 	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op->vop_strategy;
 
-	s = splbio();
-	if (sp->seg_flags & SEGM_CKP) {
-		fs->lfs_iocount += nblocks;
- 		flags = B_ASYNC | B_BUSY | B_CALL;
-	} else
-		flags = B_ASYNC | B_BUSY;
-	for (bpp = sp->bpp, i = nblocks; i--;) {
-		bp = *bpp++;
-		bp->b_flags |= flags;
-		bp->b_flags &=
-		    ~(B_DONE | B_ERROR | B_READ | B_DELWRI | B_LOCKED);
-		bp->b_dev = i_dev;
-		bp->b_iodone = lfs_callback;
-		if (!(bp->b_flags & B_NOCACHE)) {
-			bremfree(bp);
-			reassignbuf(bp, bp->b_vp);
-		}
-	}
-	splx(s);
+	/*
+	 * When we simply write the blocks we lose a rotation for every block
+	 * written.  To avoid this problem, we allocate memory in chunks, copy
+	 * the buffers into the chunk and write the chunk.  56K was chosen as
+	 * some driver/controllers can't handle unsigned 16 bit transfers.
+	 * When the data is copied to the chunk, turn off the the B_LOCKED bit
+	 * and brelse the buffer (which will move them to the LRU list).  Add
+	 * the B_CALL flag to the buffer header so we can count I/O's for the
+	 * checkpoints and so we can release the allocated memory.
+	 *
+	 * XXX
+	 * This should be removed if the new virtual memory system allows us to
+	 * easily make the buffers contiguous in kernel memory and if that's
+	 * fast enough.
+	 */
+#define	LFS_CHUNKSIZE	(56 * 1024)
+	ch_per_blk = LFS_CHUNKSIZE / fs->lfs_bsize;
+	for (bpp = sp->bpp, i = nblocks; i;) {
+		num = ch_per_blk;
+		if (num > i)
+			num = i;
+		i -= num;
+		size = num * fs->lfs_bsize;
 
-	for (bpp = sp->bpp, i = nblocks; i--;)
-		(strategy)(*bpp++);
+		cbp = lfs_newbuf(fs, (*bpp)->b_blkno, 0);
+		cbp->b_dev = i_dev;
+		cbp->b_flags = B_ASYNC | B_BUSY | B_CALL;
+		cbp->b_iodone = lfs_callback;
+		cbp->b_saveaddr = cbp->b_un.b_addr;
+		cbp->b_un.b_addr = malloc(size, M_SEGMENT, M_WAITOK);
+
+		s = splbio();
+		++fs->lfs_iocount;
+		for (p = cbp->b_un.b_addr; num--;) {
+			bp = *bpp++;
+			bcopy(bp->b_un.b_addr, p, bp->b_bcount);
+			p += bp->b_bcount;
+			bp->b_flags &=
+			    ~(B_DONE | B_ERROR | B_READ | B_DELWRI | B_LOCKED);
+			if (!(bp->b_flags & B_NOCACHE)) {
+				bremfree(bp);
+				reassignbuf(bp, bp->b_vp);
+			}
+			brelse(bp);
+		}
+		splx(s);
+		cbp->b_bcount = p - cbp->b_un.b_addr;
+		(strategy)(cbp);
+	}
 
 	/* Update the segment usage information. */
 	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
@@ -758,7 +778,7 @@ lfs_writesuper(fs, sp)
 
 	/* Checksum the superblock and copy it into a buffer. */
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
-	bp = lfs_newbuf(fs, sp, fs->lfs_sboffs[0], LFS_SBPAD);
+	bp = lfs_newbuf(fs, fs->lfs_sboffs[0], LFS_SBPAD);
 	*bp->b_un.b_lfs = *fs;
 
 	/* Write the first superblock (wait). */
@@ -824,9 +844,8 @@ lfs_match_tindir(fs, bp)
  * Allocate a new buffer header.
  */
 struct buf *
-lfs_newbuf(fs, sp, daddr, size)
+lfs_newbuf(fs, daddr, size)
 	struct lfs *fs;
-	struct segment *sp;
 	daddr_t daddr;
 	size_t size;
 {
@@ -843,8 +862,10 @@ lfs_newbuf(fs, sp, daddr, size)
 	bp->b_blkno = daddr;
 	bp->b_error = 0;
 	bp->b_resid = 0;
-	allocbuf(bp, size);
+	if (size)
+		allocbuf(bp, size);
 	bp->b_flags |= B_NOCACHE;
+	bp->b_saveaddr = NULL;
 	binshash(bp, &bfreelist[BQ_AGE]);
 	return (bp);
 }
@@ -861,8 +882,12 @@ lfs_callback(bp)
 		panic("lfs_callback: zero iocount\n");
 #endif
 	if (--fs->lfs_iocount == 0)
-		wakeup((caddr_t)&fs->lfs_iocount);
+		wakeup(&fs->lfs_iocount);
 
+	if (bp->b_saveaddr) {
+		free(bp->b_un.b_addr, M_SEGMENT);
+		bp->b_un.b_addr = bp->b_saveaddr;
+	}
 	brelse(bp);
 }
 
