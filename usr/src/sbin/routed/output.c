@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -80,7 +80,8 @@ again:
 		 * Don't resend the information
 		 * on the network from which it was received.
 		 */
-		if (ifp && rt->rt_ifp == ifp)
+		if (ifp && rt->rt_ifp == ifp &&
+		    (rt->rt_state & RTS_INTERFACE) == 0)
 			continue;
 		if (rt->rt_state & RTS_EXTERNAL)
 			continue;
