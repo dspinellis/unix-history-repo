@@ -1,6 +1,6 @@
-.\"	@(#)plot.3	5.1 (Berkeley) %G%
+.\"	@(#)plot.3	6.1 (Berkeley) %G%
 .\"
-.TH PLOT 3X  "19 January 1983"
+.TH PLOT 3 ""
 .AT 3
 .SH NAME
 plot: openpl, erase, label, line, circle, arc, move, cont, point, linemod, space, closepl \- graphics interface
@@ -77,7 +77,35 @@ DASI 450 terminal
 .br
 .ns
 .TP
+.B \-l4013
+Tektronix 4013 terminal
+.br
+.ns
+.TP
 .B \-l4014
-Tektronix 4014 terminal
+Tektronix 4014 and 4015 terminals with the Enhanced Graphics Module (Use
+.B \-l4013
+for 4014's or 4015's without the Enhanced Graphics Module)
+.PP
+On many devices, it is necessary to pause after
+.IR erase (),
+otherwise plotting commands are lost.
+The pause is normally done by the tty driver if at login time,
+.I tset
+found a
+.I df
+field in the
+.IR termcap (5)
+entry for the terminal.
+If a pause is needed but not automatically being generated,
+add
+.RS
+.nf
+flush(stdout);
+sleep(1);
+.fi
+.RE
+after each
+.IR erase ().
 .SH "SEE ALSO"
-plot(5), plot(1G), graph(1G)
+plot(5), plot(1G), plot(3F), graph(1G)
