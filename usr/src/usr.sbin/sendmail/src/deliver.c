@@ -978,7 +978,7 @@ deliver(firstto, editfcn)
 		if (curhost == NULL || curhost[0] == '\0')
 		{
 			syserr("null host signature for %s", pv[1]);
-			rcode = EX_OSERR;
+			rcode = EX_CONFIG;
 			goto give_up;
 		}
 
