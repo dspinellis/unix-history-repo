@@ -35,7 +35,7 @@
 .ds Pu \fR[.,:;(\^)[\^]\fR]
 .ds rA \fR\s10
 .ds rT \f(CO\s10
-.ds sH \fB\s9
+.ds sH \fB\s10
 .ds sY \fB\s10
 .ds sX \fR\s10
 .ds tN \fR\s10
@@ -55,12 +55,12 @@
 .\" .nr Hm .5i is for troff
 .nr Hm .5i
 .nr Fm .5i
-.nr ll 5.5i
-.ll 5.5i
-.nr lt 5.5i
-.lt 5.5i
-.nr po 1.56i
-.po 1.56i
+.nr ll 6.5i
+.ll 6.5i
+.nr lt 6.5i
+.lt 6.5i
+.nr po 1i
+.po 1.i
 .nr dV .5v
 ..
 .ds <= \(<=
@@ -73,6 +73,17 @@
 .ds sR \(aa
 .ds sL \(ga
 .ds q \&"
+.\" Math stuff
+.ds Pi \(*p
+.ds Ne \(!=
+.ds Le \(<=
+.ds Ge \(>=
+.ds Lt <
+.ds Gt >
+.ds Pm \(+-
+.ds If \(if
+.ds Na \fINaN\fP
+.ds Ba \fR\&|\fP
 .\"
 .nr gX 0
 .de hK
@@ -86,8 +97,12 @@
 .\}
 .wh 0 hM
 .wh -1.25i fM
-.if \\n(gX==1 .bp
-.if \\n(gX==0 'bp
+.\" .tm Here is gX == \\n(gX
+.ie \\n(gX==1 \{\
+.	rm n1
+.	bp
+.\}
+.el 'bp
 .nr % 1
 .nr gX 0
 .em lM
@@ -132,33 +147,47 @@
 . 	nr fV \\n(.$
 . 	fV
 .\}
-.nr aP+1
+.nr aP \\n(aP+1
 .aW \\n(aP
-.nr aP-1
+.nr aP \\n(aP-1
 .if \\n(sW>2 .Li
 .if \\n(sW<=2 \{\
 .\" Db on
-.	aY
-.	ds A1 Li
-.	ds A2 \\$1
-.	ds A3 \\$2
-.	ds A4 \\$3
-.	ds A5 \\$4
-.	ds A6 \\$5
-.	ds A7 \\$6
-.	ds A8 \\$7
-.	ds A9 \\$8
-. 	nr fV \\n(.$+1
-.	fV
+.	if (\\n(aP>0) \{\
+.		ds A\\n(aP Li
+.		nr aP \\n(aP -1
+.	\}		
+.	if (\\n(aP==0) \{\
+.		rm C0 C1 C2 C3 C4 C5 C6 C7 C8 C9
+.		rm S1 S2 S3 S4 S5 S6 S7 S8 S9
+.		rn A8 A9
+.		rn A7 A8
+.		rn A6 A7
+.		rn A5 A6
+.		rn A4 A5
+.		rn A3 A4
+.		rn A2 A3
+.		rn A1 A2
+.		ds A1 Li
+.	 	nr fV \\n(aC+1
+.		nr aC 0
+.		fV
+.	\}
 .	ds qL \&\\*(sL
 .	ds qR \&\\*(sR
 .	En
 .\" Db off
 .\}
 ..
+.\" NS Sh macro - Section Headers
+.\" NS nS register - Section Header SYNOPSIS flag 
+.\" NS nF register - Section Header FILES flag 
+.\" NS nA register - Section Header SEE ALSO flag 
+.\" NS nT register - Section Header STANDARDS flag 
 .de Sh
 .nr nS 0
 .nr sE 0
+.nr iS 0
 'ad
 .ie "\\$1"NAME" \{\
 .       hK
@@ -168,15 +197,27 @@
 .       nr nS 0
 .       nr nA 0
 .       nr nF 0
+.       nr nT 0
+.       nr nY 0
 .       if "\\$1"SYNOPSIS" \{\
 .		na
 .		nr nS 1
+.	\}
+.       if "\\$1"DESCRIPTION" \{\
+.		nr fY 0
+.		nr fZ 0
+.		nr fB 0
+.		nr Fb 0
+.		ds Fb
 .	\}
 .       if "\\$1"SEE" \{\
 .               nr nA 1
 .               na
 .       \}
 .       if "\\$1"FILES" .nr nF 1
+.       if "\\$1"STANDARDS" .nr nT 1
+.       if "\\$1"AUTHORS" .nr nY 1
+.	if "\\$1"SEE" .nr sE 1
 .       in 0
 .       nr aN 0
 .\}
@@ -189,6 +230,5 @@
 \&\\*(sH\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6 \|\\$7 \|\\$8 \|\\$9
 \&\fP\s0\&
 .in \\n(.iu+\\n(Tiu
-.if "\\$1"SEE" .nr sE 1
 .ns
 ..
