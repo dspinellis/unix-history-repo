@@ -35,9 +35,11 @@ options		FIFO		# POSIX fifo support (in all filesystems)
 options		FFS,QUOTA	# fast filesystem with user and group quotas
 options		MFS		# memory-based filesystem
 options		NFS		# Sun NFS-compatible filesystem
-options		LOFS		# Loop-back filesystem
+options		"CD9660"	# ISO 9660 (CDROM) filesystem
+options		UNION		# Union filesystem
 options		KERNFS		# kernel data-structure filesystem
 options		FDESC		# user file descriptor filesystem
+options		PROCFS		# /proc filesystem
 #options	UMAPFS		# uid/gid remapping filesystem
 #options	NULLFS		# null layer filesystem
 #options	LFS		# Log-based filesystem (still experimental)
