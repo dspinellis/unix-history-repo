@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_input.c	7.19 (Berkeley) 5/25/91
- *	$Id: ip_input.c,v 1.6 1993/11/25 01:35:08 wollman Exp $
+ *	$Id: ip_input.c,v 1.7 1993/12/19 00:52:43 wollman Exp $
  */
 
 #include "param.h"
@@ -79,6 +79,9 @@ static	struct ip_srcrt {
 } ip_srcrt;
 
 extern	int if_index;
+#ifdef DIAGNOSTIC
+extern  int ipprintfs;
+#endif
 
 /*
  * IP initialization: fill in IP protocol switch table.
