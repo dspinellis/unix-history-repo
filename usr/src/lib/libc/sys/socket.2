@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)socket.2	6.2 (Berkeley) %G%
+.\"	@(#)socket.2	6.3 (Berkeley) %G%
 .\"
 .TH SOCKET 2 ""
 .UC 5
@@ -35,7 +35,7 @@ The currently understood formats are
 .ta 1.25i 1.75i
 AF_UNIX	(UNIX path names),
 AF_INET	(ARPA Internet addresses),
-AF_PUP	(Xerox PUP-I Internet addresses), and
+AF_NS	(Xerox Network Systems addresses), and
 AF_IMPLINK	(IMP \*(lqhost at IMP\*(rq addresses).
 .fi
 .RE
@@ -61,10 +61,16 @@ transmission mechanism.
 A SOCK_DGRAM socket supports
 datagrams (connectionless, unreliable messages of
 a fixed (typically small) maximum length).
+A SOCK_SEQPACKET socket may provide a sequenced, reliable,
+two-way connection-based data transmission path for datagrams
+of fixed maximum length; a consumer may be required to read
+an entire packet with each read system call.
+This facility is protocol specific, and presently implemented
+only for AF_NS.
 SOCK_RAW sockets provide access to internal network interfaces.
 The types SOCK_RAW,
 which is available only to the super-user, and
-SOCK_SEQPACKET and SOCK_RDM, which are planned,
+SOCK_RDM, which is planned,
 but not yet implemented, are not described here.
 .PP
 The
@@ -121,6 +127,13 @@ idle connection for a extended period (e.g. 5 minutes).
 A SIGPIPE signal is raised if a process sends
 on a broken stream; this causes naive processes,
 which do not handle the signal, to exit.
+.PP
+SOCK_SEQPACKET sockets employ the same system calls
+as SOCK_STREAM sockets.  The only difference
+is that 
+.IR read (2)
+calls will return only the amount of data requested,
+and any remaining in the arriving packet will be discarded.
 .PP
 SOCK_DGRAM and SOCK_RAW
 sockets allow sending of datagrams to correspondents
