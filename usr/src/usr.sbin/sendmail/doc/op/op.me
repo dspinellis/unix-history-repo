@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.15'DRAFT'Last Mod %G%'
+.fo 'Version 3.16'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.15
+Version 3.16
 .)l
 .sp
 .(l F
@@ -1471,6 +1471,8 @@ These can either be defined directly in the configuration file
 or read in from another file.
 Classes may be given names
 from the set of upper case letters.
+Lower case letters and special characters
+are reserved for system use.
 .pp
 The syntax is:
 .(b F
@@ -1537,6 +1539,7 @@ Sender	A rewriting set for sender addresses
 Recipient	A rewriting set for recipient addresses
 Argv	An argument vector to pass to this mailer
 Eol	The end-of-line string for this mailer
+Maxsize	The maximum message length to this mailer
 .)b
 Only the first character of the field name is checked.
 .sh 3 "H \*- define header"
@@ -1917,6 +1920,13 @@ The
 (\c
 .b $| )
 clause may be omitted.
+.sh 3 "Special classes"
+.pp
+The class
+.b $=w
+is set to be the set of all names
+this host is known by.
+This can be used to delete local hostnames.
 .sh 3 "The left hand side"
 .pp
 The left hand side of rewriting rules contains a pattern.
@@ -2141,8 +2151,13 @@ It is typically used
 to translate internal to external form.
 .sh 3 "Mailer flags etc."
 .pp
-There are a number of flags that may be associated with each mailer.
+There are a number of flags that may be associated with each mailer,
+each identified by a letter of the alphabet.
+Many of them are assigned semantics internally.
 These are detailed in Appendix C.
+Any other flags may be used freely
+to conditionally assign headers to messages
+destined for particular mailers.
 .sh 3 "The \*(lqerror\*(rq mailer"
 .pp
 The mailer with the special name
@@ -2676,9 +2691,9 @@ to connect to.
 For example,
 the specifications:
 .(b
-.ta \w'Mlocal 'u +\w'/bin/mail 'u +\w'rlsAmn 'u +\w'10 'u +\w'20 'u
-Mlocal	/bin/mail	rlsm	10	20	mail \-d $u
-Mether	[IPC]	meC	11	21	IPC $h
+.ta \w'Mlocal, 'u +\w'P=/bin/mail, 'u +\w'F=rlsm, 'u +\w'S=10, 'u +\w'R=20, 'u
+Mlocal,	P=/bin/mail,	F=rlsm	S=10,	R=20,	A=mail \-d $u
+Mether,	P=[IPC],	F=meC,	S=11,	R=21,	A=IPC $h, M=100000
 .)b
 specifies a mailer to do local delivery
 and a mailer for ethernet delivery.
@@ -2718,6 +2733,7 @@ should be appended to any receiver name
 without a domain;
 sender addresses should be processed by ruleset eleven
 and recipient addresses by ruleset twenty-one.
+There is a 100,000 byte limit on messages passed through this mailer.
 .++ A
 .+c "COMMAND LINE FLAGS"
 .ba 0
@@ -3541,6 +3557,7 @@ checkcompat(to)
 	if (MsgSize > 50000 && to->q_mailer != LocalMailer)
 	{
 		usrerr("Message too large for non-local delivery");
+		NoReturn = TRUE;
 		return (FALSE);
 	}
 	return (TRUE);
@@ -3549,6 +3566,10 @@ checkcompat(to)
 .)b
 This would reject messages greater than 50000 bytes
 unless they were local.
+The
+.i NoReturn
+flag can be sent to supress the return of the actual body
+of the message in the error return.
 The actual use of this routine is highly dependent on the
 implementation,
 and use should be limited.
@@ -3630,7 +3651,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.15
+Version 3.16
 .sp 2
 .sz 14
 DRAFT
