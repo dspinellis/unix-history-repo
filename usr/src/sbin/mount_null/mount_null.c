@@ -1,28 +1,42 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
- * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * Jan-Simon Pendry.
  *
  * %sccs.include.redist.c%
- *
- *	@(#)mount_null.c	8.4 (Berkeley) %G%
  */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1992, 1993, 1994\n\
+	The Regents of the University of California.  All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)mount_null.c	8.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <miscfs/nullfs/null.h>
 
-#include <errno.h>
+#include <err.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 
-static int subdir __P((const char *, const char *));
-void usage __P((void));
+#include "mntopts.h"
+
+struct mntopt mopts[] = {
+	MOPT_STDOPTS,
+	{ NULL }
+};
+
+int	subdir __P((const char *, const char *));
+void	usage __P((void));
 
 int
 main(argc, argv)
@@ -34,10 +48,10 @@ main(argc, argv)
 	char target[MAXPATHLEN];
 
 	mntflags = 0;
-	while ((ch = getopt(argc, argv, "F:")) != EOF)
+	while ((ch = getopt(argc, argv, "o:")) != EOF)
 		switch(ch) {
-		case 'F':
-			mntflags = atoi(optarg);
+		case 'o':
+			getmntopts(optarg, mopts, &mntflags);
 			break;
 		case '?':
 		default:
@@ -49,29 +63,21 @@ main(argc, argv)
 	if (argc != 2)
 		usage();
 
-	if (realpath(argv[0], target) == 0) {
-		(void)fprintf(stderr, "mount_null: %s: %s\n",
-				target, strerror(errno));
-		exit(1);
-	}
+	if (realpath(argv[0], target) == 0)
+		err(1, "%s", target);
 
-	if (subdir(target, argv[1]) || subdir(argv[1], target)) {
-		(void)fprintf(stderr,
-			"mount_null: %s (%s) and %s are not distinct paths\n",
-				argv[0], target, argv[1]);
-		exit(1);
-	}
+	if (subdir(target, argv[1]) || subdir(argv[1], target))
+		errx(1, "%s (%s) and %s are not distinct paths",
+		    argv[0], target, argv[1]);
 
 	args.target = target;
 
-	if (mount(MOUNT_NULL, argv[1], mntflags, &args)) {
-		(void)fprintf(stderr, "mount_null: %s\n", strerror(errno));
-		exit(1);
-	}
+	if (mount(MOUNT_NULL, argv[1], mntflags, &args))
+		err(1, NULL);
 	exit(0);
 }
 
-static int
+int
 subdir(p, dir)
 	const char *p;
 	const char *dir;
@@ -92,6 +98,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: mount_null [ -F fsoptions ] target_fs mount_point\n");
+		"usage: mount_null [-o options] target_fs mount_point\n");
 	exit(1);
 }

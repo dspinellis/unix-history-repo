@@ -1,5 +1,5 @@
 .\"
-.\" Copyright (c) 1992, 1993
+.\" Copyright (c) 1992, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\" All rights reserved.
 .\"
@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_lofs.8	8.1 (Berkeley) %G%
+.\"	@(#)mount_lofs.8	8.2 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -19,8 +19,9 @@
 .Nd mount a virtual copy of an existing filesystem sub-tree
 .Sh SYNOPSIS
 .Nm mount_lofs
-.Op Fl F Ar fsoptions
-.Ar target mount-point
+.Op Fl o Ar options
+.Ar target
+.Ar mount-point
 .Sh DESCRIPTION
 The
 .Nm mount_lofs
@@ -37,6 +38,18 @@ may be mounted on the virtual copy without affecting the original.
 A different device number for the virtual copy is returned by
 .Xr stat 2 ,
 but in other respects it is indistinguishable from the original.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl o
+Options are specified with a
+.Fl o
+flag followed by a comma separated string of options.
+See the
+.Xr mount 8
+man page for possible options and their meanings.
+.Sh SEE ALSO
+.Xr mount 8
 .Sh HISTORY
 The
 .Nm mount_lofs
