@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.30 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -93,7 +93,7 @@ __bt_open(fname, flags, mode, openinfo)
 		 * transfer size.
 		 */
 		if (b.psize &&
-		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET ||
+		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET + 1 ||
 		    b.psize & sizeof(indx_t) - 1))
 			goto einval;
 
@@ -217,7 +217,7 @@ __bt_open(fname, flags, mode, openinfo)
 		}
 		if (m.m_magic != BTREEMAGIC || m.m_version != BTREEVERSION)
 			goto eftype;
-		if (m.m_psize < MINPSIZE || m.m_psize > MAX_PAGE_OFFSET ||
+		if (m.m_psize < MINPSIZE || m.m_psize > MAX_PAGE_OFFSET + 1 ||
 		    m.m_psize & sizeof(indx_t) - 1)
 			goto eftype;
 		if (m.m_flags & ~SAVEMETA)
@@ -235,8 +235,8 @@ __bt_open(fname, flags, mode, openinfo)
 			b.psize = sb.st_blksize;
 			if (b.psize < MINPSIZE)
 				b.psize = MINPSIZE;
-			if (b.psize > MAX_PAGE_OFFSET)
-				b.psize = MAX_PAGE_OFFSET;
+			if (b.psize > MAX_PAGE_OFFSET + 1)
+				b.psize = MAX_PAGE_OFFSET + 1;
 		}
 
 		/* Set flag if duplicates permitted. */
