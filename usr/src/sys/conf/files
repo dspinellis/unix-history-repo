@@ -22,9 +22,16 @@ netinet/tcp_subr.c	optional inet
 netinet/tcp_timer.c	optional inet
 netinet/tcp_usrreq.c	optional inet
 netinet/udp_usrreq.c	optional inet
-netpup/pup.c		optional pup
-netpup/pup_proto.c	optional pup
-netpup/raw_pup.c	optional pup
+netns/idp_usrreq.c	optional ns
+netns/ns.c		optional ns
+netns/ns_error.c	optional ns
+netns/ns_ip.c		optional ns
+netns/ns_input.c	optional ns
+netns/ns_output.c	optional ns
+netns/ns_pcb.c		optional ns
+netns/ns_proto.c	optional ns
+netns/spp_debug.c	optional ns
+netns/spp_usrreq.c	optional ns
 sys/init_main.c		standard
 sys/init_sysent.c	standard
 sys/kern_acct.c		standard
@@ -66,12 +73,10 @@ sys/ufs_alloc.c		standard
 sys/ufs_bio.c		standard
 sys/ufs_bmap.c		standard
 sys/ufs_dsort.c		standard
-sys/ufs_efs.c		optional efs device-driver
 sys/ufs_fio.c		standard
 sys/ufs_inode.c		standard
 sys/ufs_mount.c		standard
 sys/ufs_namei.c		standard
-sys/ufs_nd.c		optional nd device-driver
 sys/ufs_subr.c		standard
 sys/ufs_syscalls.c	standard
 sys/ufs_tables.c	standard
