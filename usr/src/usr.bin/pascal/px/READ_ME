@@ -1,4 +1,4 @@
-# @(#)READ_ME	5.3 (Berkeley) %G%
+# @(#)READ_ME	8.1 (Berkeley) %G%
 
    This directory contains the source code for the Version 7 VAX
 interpreter for Pascal. Following standard convensions, the makefile
