@@ -36,6 +36,14 @@
 #
 #	@(#)updatedb.csh	5.1 (Berkeley) 4/2/91
 #
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00132
+# --------------------         -----   ----------------------
+#
+# 04 Apr 93	Geoff Rehmet		Modified to remove the -T option
+#					from all of the sort calls
+#
 
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/libexec		# for subprograms
@@ -58,11 +66,11 @@ set errs = $TMPDIR/locate.errs.$$
 # find ${SRCHPATHS} -print | \
 find ${SRCHPATHS} ! -fstype local -a -prune -o -print | \
 	tr '/' '\001' | \
-	(sort -T /var/tmp -f; echo $status > $errs) | tr '\001' '/' > $filelist
+	(sort -f; echo $status > $errs) | tr '\001' '/' > $filelist
 
 $LIBDIR/locate.bigram < $filelist | \
-	(sort -T /var/tmp; echo $status >> $errs) | \
-	uniq -c | sort -T /var/tmp -nr | \
+	(sort ; echo $status >> $errs) | \
+	uniq -c | sort -nr | \
 	awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
 # code the file list
