@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.63		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.64		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -246,6 +246,10 @@ extern struct rewrite	*RewriteRules[];
 # define CANONNET	'\025'	/* canonical net, next token */
 # define CANONHOST	'\026'	/* canonical host, next token */
 # define CANONUSER	'\027'	/* canonical user, next N tokens */
+
+# define CONDIF		'\030'	/* conditional if-then */
+# define CONDELSE	'\031'	/* conditional else */
+# define CONDFI		'\032'	/* conditional fi */
 
 
 
