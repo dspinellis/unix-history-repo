@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.c	7.8 (Berkeley) %G%
+ *	@(#)if.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,6 +30,7 @@
 
 #include "if.h"
 #include "af.h"
+#include "if_dl.h"
 
 #include "ether.h"
 
@@ -67,6 +68,7 @@ ifubareset(uban)
 }
 #endif
 
+int if_index = 0;
 /*
  * Attach an interface to the
  * list of "active" interfaces.
@@ -75,10 +77,46 @@ if_attach(ifp)
 	struct ifnet *ifp;
 {
 	register struct ifnet **p = &ifnet;
+	unsigned socksize, ifasize;
+	int namelen, unitlen;
+	char workbuf[16];
+	register struct sockaddr_dl *sdl;
+	register struct ifaddr *ifa;
 
 	while (*p)
 		p = &((*p)->if_next);
 	*p = ifp;
+	ifp->if_index = ++if_index;
+	/* create a link level name for this device */
+	sprint_d(workbuf, ifp->if_unit);
+	namelen = strlen(ifp->if_name);
+	unitlen = strlen(workbuf);
+#define _offsetof(t, m) ((int)((caddr_t)&((t *)0)->m))
+	socksize = _offsetof(struct sockaddr_dl, sdl_data[0]) +
+			       unitlen + namelen + ifp->if_addrlen;
+#define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
+	socksize = ROUNDUP(socksize);
+	ifasize = sizeof(*ifa) + 2 * socksize;
+	ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK);
+	if (ifa == 0)
+		return;
+	bzero((caddr_t)ifa, ifasize);
+	sdl = (struct sockaddr_dl *)(ifa + 1);
+	ifa->ifa_addr = (struct sockaddr *)sdl;
+	ifa->ifa_ifp = ifp;
+	sdl->sdl_len = socksize;
+	sdl->sdl_family = AF_LINK;
+	bcopy(ifp->if_name, sdl->sdl_data, namelen);
+	bcopy((caddr_t)workbuf, namelen + (caddr_t)sdl->sdl_data, unitlen);
+	sdl->sdl_nlen = (namelen += unitlen);
+	sdl->sdl_index = ifp->if_index;
+	sdl = (struct sockaddr_dl *)(socksize + (caddr_t)sdl);
+	ifa->ifa_netmask = (struct sockaddr *)sdl;
+	sdl->sdl_len = socksize - ifp->if_addrlen;
+	while (namelen != 0)
+		sdl->sdl_data[--namelen] = 0xff;
+	ifa->ifa_next = ifp->if_addrlist;
+	ifp->if_addrlist = ifa;
 }
 
 /*
@@ -467,4 +505,23 @@ ifconf(cmd, data)
 	}
 	ifc->ifc_len -= space;
 	return (error);
+}
+
+static sprint_d(cp, n)
+register char *cp;
+u_short n;
+{
+	register int q, m;
+	do {
+	    if (n >= 10000) m = 10000;
+		else if (n >= 1000) m = 1000;
+		else if (n >= 100) m = 100;
+		else if (n >= 10) m = 10;
+		else m = 1;
+	    q = n / m;
+	    n -= m * q;
+	    if (q > 9) q = 10; /* For crays with more than 100K interfaces */
+	    *cp++ = "0123456789Z"[q];
+	} while (n > 0);
+	*cp++ = 0;
 }
