@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.54		%G%);
+SCCSID(@(#)parseaddr.c	3.55		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -71,6 +71,7 @@ parse(addr, a, copyf)
 	**	Ruleset 0 does basic parsing.  It must resolve.
 	*/
 
+	rewrite(pvp, 3);
 	rewrite(pvp, 0);
 
 	/*
@@ -887,7 +888,6 @@ printaddr(a, follow)
 		printf("%x=", a);
 		(void) fflush(stdout);
 		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
-		       a->q_mailer->m_mno, a->q_mailer->m_name, a->q_host, a->q_user);
 		for (i = indent; i > 0; i--)
 			printf("\t");
 		printf("\tnext=%x, flags=%o, rmailer %d, alias=%x, sibling=%x, child=%x\n",
@@ -939,7 +939,7 @@ remotename(name, m, senderaddress)
 	register char **pvp;
 	char *fancy;
 	extern char *macvalue();
-	char *oldg = macvalue('g');
+	char *oldg = macvalue('g', CurEnv);
 	static char buf[MAXNAME];
 	char lbuf[MAXNAME];
 	extern char **prescan();
@@ -951,21 +951,47 @@ remotename(name, m, senderaddress)
 # endif DEBUG
 
 	/*
-	**  First put this address into canonical form.
-	**	First turn it into a macro.
-	**	Then run it through ruleset 1 or 2, depending on whether
-	**		it is a sender or a recipient address.
-	**	If the mailer defines a rewriting set, run it through
-	**		there next.
+	**  Do a heuristic crack of this name to extract any comment info.
+	**	This will leave the name as a comment and a $g macro.
 	*/
 
-	/* save away the extraneous pretty stuff */
 	fancy = crackaddr(name);
 
-	/* now run through ruleset four */
+	/*
+	**  Turn the name into canonical form.
+	**	Normally this will be RFC 822 style, i.e., "user@domain".
+	**	If this only resolves to "user", and the "C" flag is
+	**	specified in the sending mailer, then the sender's
+	**	domain will be appended.
+	*/
+
 	pvp = prescan(name, '\0');
 	if (pvp == NULL)
 		return (name);
+	rewrite(pvp, 3);
+	if (CurEnv->e_fromdomain != NULL)
+	{
+		/* append from domain to this address */
+		register char **pxp = pvp;
+
+		while (*pxp != NULL && strcmp(*pxp, "@") != 0)
+			pxp++;
+		if (*pxp == NULL)
+		{
+			register char **qxq = CurEnv->e_fromdomain;
+
+			while (*qxq != NULL)
+				*pxp++ = *qxq++;
+		}
+	}
+
+	/*
+	**  Now do more specific rewriting.
+	**	Rewrite using ruleset 1 or 2 depending on whether this is
+	**		a sender address or not.
+	**	Then run it through any receiving-mailer-specific rulesets.
+	*/
+
 	if (senderaddress)
 	{
 		rewrite(pvp, 1);
@@ -979,7 +1005,10 @@ remotename(name, m, senderaddress)
 			rewrite(pvp, m->m_r_rwset);
 	}
 
-	/* now add any comment info we had before back */
+	/*
+	**  Now restore the comment information we had at the beginning.
+	*/
+
 	cataddr(pvp, lbuf, sizeof lbuf);
 	define('g', lbuf);
 	expand(fancy, buf, &buf[sizeof buf - 1], CurEnv);
@@ -995,8 +1024,7 @@ remotename(name, m, senderaddress)
 **  CANONNAME -- make name canonical
 **
 **	This is used for SMTP and misc. printing.  Given a print
-**	address, it strips out comments, etc., and puts on exactly
-**	one set of brackets.
+**	address, it strips out comments, etc.
 **
 **	Parameters:
 **		name -- the name to make canonical.

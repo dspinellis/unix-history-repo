@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.86		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.87		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -58,7 +58,6 @@ struct address
 	char		*q_user;	/* user name */
 	char		*q_host;	/* host name */
 	struct mailer	*q_mailer;	/* mailer to use */
-	short		q_rmailer;	/* real mailer (before mapping) */
 	u_short		q_flags;	/* status flags, see below */
 	short		q_uid;		/* user-id of receiver (if known) */
 	short		q_gid;		/* group-id of receiver (if known) */
@@ -118,6 +117,7 @@ typedef struct mailer	MAILER;
 # define M_NEEDFROM	000000400L	/* need arpa-style From: line */
 # define M_NEEDDATE	000001000L	/* need arpa-style Date: line */
 # define M_MSGID	000002000L	/* need Message-Id: field */
+# define M_CANONICAL	000004000L	/* make addresses canonical "u@dom" */
 # define M_USR_UPPER	000010000L	/* preserve user case distinction */
 # define M_HST_UPPER	000020000L	/* preserve host case distinction */
 # define M_FULLNAME	000040000L	/* want Full-Name field */
@@ -193,6 +193,7 @@ struct envelope
 	char		*e_to;		/* the target person */
 	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
+	char		**e_fromdomain;	/* the domain part of the sender */
 	ADDRESS		*e_returnto;	/* place to return the message to */
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
 	ADDRESS		*e_errorqueue;	/* the queue for error responses */

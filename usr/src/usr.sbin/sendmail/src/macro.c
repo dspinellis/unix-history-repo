@@ -1,7 +1,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)macro.c	3.16		%G%);
+SCCSID(@(#)macro.c	3.17		%G%);
 
 /*
 **  EXPAND -- macro expand a string using $x escapes.
@@ -44,6 +44,7 @@ expand2(s, buf, buflim, e)
 	register char *xp = xbuf;
 	bool skipping;		/* set if conditionally skipping output */
 	bool gotone = FALSE;	/* set if any expansion done */
+	extern char *macvalue();
 
 # ifdef DEBUG
 	if (tTd(35, 4))
@@ -72,7 +73,7 @@ expand2(s, buf, buflim, e)
 		{
 		  case CONDIF:		/* see if var set */
 			c = *++s;
-			skipping = e->e_macro[c] == NULL;
+			skipping = macvalue(c, e) == NULL;
 			continue;
 
 		  case CONDELSE:	/* change state of skipping */
@@ -85,7 +86,7 @@ expand2(s, buf, buflim, e)
 
 		  case '$':		/* macro interpolation */
 			c = *++s;
-			q = e->e_macro[c & 0177];
+			q = macvalue(c & 0177, e);
 			if (q == NULL && c != '$')
 				continue;
 			gotone = TRUE;
@@ -217,8 +218,18 @@ define(n, v)
 */
 
 char *
-macvalue(n)
+macvalue(n, e)
 	char n;
+	register ENVELOPE *e;
 {
-	return (CurEnv->e_macro[n & 0177]);
+	n &= 0177;
+	while (e != NULL)
+	{
+		register char *p = e->e_macro[n];
+
+		if (p != NULL)
+			return (p);
+		e = e->e_parent;
+	}
+	return (NULL);
 }

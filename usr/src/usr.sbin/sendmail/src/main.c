@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.112		%G%);
+SCCSID(@(#)main.c	3.113		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -717,7 +717,6 @@ setfrom(from, realname)
 	char frombuf[MAXNAME];
 	extern char **prescan();
 	extern char *index();
-	extern char *macvalue();
 
 	if (realname == NULL)
 		realname = CurEnv->e_from.q_paddr;
@@ -786,9 +785,21 @@ setfrom(from, realname)
 		syserr("cannot prescan from (%s)", from);
 		finis();
 	}
+	rewrite(pvp, 3);
 	rewrite(pvp, 1);
 	cataddr(pvp, frombuf, sizeof frombuf);
 	define('f', newstr(frombuf));
+
+	/* save the domain spec if this mailer wants it */
+	if (bitset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
+	{
+		extern char **copyplist();
+
+		while (*pvp != NULL && strcmp(*pvp, "@") != 0)
+			pvp++;
+		if (*pvp != NULL)
+			CurEnv->e_fromdomain = copyplist(pvp, TRUE);
+	}
 }
 /*
 **  FINIS -- Clean up and exit.
@@ -967,7 +978,7 @@ setsender(from)
 
 	/* if the user has given fullname already, don't redefine */
 	if (FullName == NULL)
-		FullName = macvalue('x');
+		FullName = macvalue('x', CurEnv);
 
 	/* extract full name from passwd file */
 	if (!nofullname && (FullName == NULL || FullName[0] == '\0') &&
@@ -1053,10 +1064,10 @@ initsys()
 	define('t', tbuf);
 	(void) strcpy(dbuf, ctime(&now));
 	*index(dbuf, '\n') = '\0';
-	if (macvalue('d') == NULL)
+	if (macvalue('d', CurEnv) == NULL)
 		define('d', dbuf);
 	p = newstr(arpadate(dbuf));
-	if (macvalue('a') == NULL)
+	if (macvalue('a', CurEnv) == NULL)
 		define('a', p);
 	define('b', p);
 
@@ -1064,7 +1075,7 @@ initsys()
 	define('v', Version);
 
 	/* tty name */
-	if (macvalue('y') == NULL)
+	if (macvalue('y', CurEnv) == NULL)
 	{
 		p = ttyname(2);
 		if (p != NULL)
@@ -1151,21 +1162,12 @@ ENVELOPE *
 newenvelope(e)
 	register ENVELOPE *e;
 {
-	bmove((char *) CurEnv, (char *) e, sizeof *e);
-	e->e_header = NULL;
-	e->e_queueup = FALSE;
-	e->e_dontqueue = FALSE;
-	e->e_oldstyle = FALSE;
-	e->e_sendreceipt = FALSE;
-	e->e_receiptto = NULL;
-	e->e_to = NULL;
-	e->e_sendqueue = NULL;
-	e->e_errorqueue = NULL;
+	clear((char *) e, sizeof *e);
+	bmove(&CurEnv->e_from, &e->e_from, sizeof e->e_from);
 	e->e_parent = CurEnv;
-	e->e_df = NULL;
-	e->e_qf = NULL;
-	e->e_id = NULL;
 	e->e_ctime = curtime();
+	e->e_puthdr = CurEnv->e_puthdr;
+	e->e_putbody = CurEnv->e_putbody;
 
 	return (e);
 }

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.112		%G%);
+SCCSID(@(#)deliver.c	3.113		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -608,7 +608,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # ifdef DEBUG
 	if (tTd(11, 1))
 	{
-		printf("openmailer:\n");
+		printf("openmailer:");
 		printav(pvp);
 	}
 # endif DEBUG
@@ -917,7 +917,7 @@ putfromline(fp, m)
 	if (bitset(M_UGLYUUCP, m->m_flags))
 	{
 		extern char *macvalue();
-		char *sys = macvalue('g');
+		char *sys = macvalue('g', CurEnv);
 		char *bang = index(sys, '!');
 
 		if (bang == NULL)
@@ -957,7 +957,6 @@ putheader(fp, m, e)
 	register HDR *h;
 	extern char *arpadate();
 	extern char *capitalize();
-	extern char *hvalue();
 	extern bool samefrom();
 	char obuf[MAXLINE];
 	register char *obp;
