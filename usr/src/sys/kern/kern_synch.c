@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.7	85/05/27	*/
+/*	kern_synch.c	6.8	85/06/02	*/
 
 #include "../machine/pte.h"
 
@@ -168,6 +168,10 @@ sleep(chan, pri)
 		*qp->sq_tailp = rp;
 	*(qp->sq_tailp = &rp->p_link) = 0;
 	if (pri > PZERO) {
+		/*
+		 * If we stop in issig(), wakeup may already have happened
+		 * when we return (rp->p_wchan will then be 0).
+		 */
 		if (ISSIG(rp)) {
 			if (rp->p_wchan)
 				unsleep(rp);
@@ -246,13 +250,13 @@ restart:
 		if (p->p_wchan==chan) {
 			p->p_wchan = 0;
 			*q = p->p_link;
-			if (p->p_slptime > 1)
-				updatepri(p);
 			if (qp->sq_tailp == &p->p_link)
 				qp->sq_tailp = q;
 			p->p_slptime = 0;
 			if (p->p_stat == SSLEEP) {
 				/* OPTIMIZED INLINE EXPANSION OF setrun(p) */
+				if (p->p_slptime > 1)
+					updatepri(p);
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
