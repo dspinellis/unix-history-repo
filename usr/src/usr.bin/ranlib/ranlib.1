@@ -1,4 +1,4 @@
-.\"	@(#)ranlib.1	6.1 (Berkeley) %G%
+.\"	@(#)ranlib.1	6.2 (Berkeley) %G%
 .\"
 .TH RANLIB 1 ""
 .AT 3
@@ -6,7 +6,9 @@
 ranlib \- convert archives to random libraries
 .SH SYNOPSIS
 .B ranlib
-archive ...
+[
+.B \-t
+] archive ...
 .SH DESCRIPTION
 .I Ranlib
 converts each
@@ -14,15 +16,29 @@ converts each
 to a form which the loader can load more rapidly.
 .I Ranlib
 does this by adding a table of contents called 
-.B _.SYMDEF
+.B __.SYMDEF
 to the beginning of the archive.
 .I Ranlib
 uses 
 .IR ar (1)
 to reconstruct the archive, so that sufficient temporary file space must
 be available in the file system which contains the current directory.
+.PP
+If given the
+.B \-t
+option,
+ranlib only "touches" the archives and does not modify them.
+This is useful after copying an archive
+or using the
+.B \-t
+option of
+.IR make (1)
+in order to avoid having
+.IR ld (1)
+complain about
+an \*(lqout of date\*(rq symbol table.
 .SH "SEE ALSO"
-ld(1), ar(1), lorder(1)
+ld(1), ar(1), lorder(1), make(1)
 .SH BUGS
 Because generation of a library by
 .I ar
