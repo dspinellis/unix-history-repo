@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.6 (Berkeley) %G%
+#	@(#)Makefile	4.1 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet

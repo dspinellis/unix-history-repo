@@ -1,24 +1,33 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ *	Copyright (c) 1984-1987 by the Regents of the
+ *	University of California and by Gregory Glenn Minshall.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that this notice is preserved and that due credit is given
- * to the University of California at Berkeley. The name of the University
- * may not be used to endorse or promote products derived from this
- * software without specific prior written permission. This software
- * is provided ``as is'' without express or implied warranty.
+ *	Permission to use, copy, modify, and distribute these
+ *	programs and their documentation for any purpose and
+ *	without fee is hereby granted, provided that this
+ *	copyright and permission appear on all copies and
+ *	supporting documentation, the name of the Regents of
+ *	the University of California not be used in advertising
+ *	or publicity pertaining to distribution of the programs
+ *	without specific prior permission, and notice be given in
+ *	supporting documentation that copying and distribution is
+ *	by permission of the Regents of the University of California
+ *	and by Gregory Glenn Minshall.  Neither the Regents of the
+ *	University of California nor Gregory Glenn Minshall make
+ *	representations about the suitability of this software
+ *	for any purpose.  It is provided "as is" without
+ *	express or implied warranty.
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+static char copyright[] =
+"@(#) Copyright (c) 1984-1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif /* not lint */
+#endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	6.9 (Berkeley) %G%";
-#endif /* not lint */
+static char sccsid[] = "@(#)telnet.c	1.18.1.1 (Berkeley) %G%";
+#endif	/* not lint */
 
 /*
  * User telnet program, modified for use by tn3270.c.
@@ -70,11 +79,6 @@ void	setcommandmode(), command();	/* forward declarations */
 #endif	/* !defined(TN3270) */
 
 #include <sys/types.h>
-
-#if     defined(pyr)
-#define fd_set fdset_t
-#endif  /* defined(pyr) */
- 
 #include <sys/socket.h>
 
 #include <netinet/in.h>
@@ -207,8 +211,7 @@ static int
 	ISend,		/* trying to send network data in */
 	debug = 0,
 	crmod,
-	netdata,	/* Print out network data flow */
-	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
+	netdata,
 	noasynch = 0,	/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
 	telnetport = 1;
@@ -630,8 +633,6 @@ static char
     termLiteralNextChar,
     termQuitChar;
 
-static char
-    savedInState, savedOutState;
 
 /*
  * MSDOS doesn't have anyway of deciding whether a full-edited line
@@ -832,47 +833,12 @@ void
 CtrlCInterrupt()
 {
     if (!MODE_COMMAND_LINE(globalmode)) {
-	char far *Bios_Break = (char far *) (((long)0x40<<16)|0x71);
-
-	*Bios_Break = 0;
 	ctrlCCount++;		/* XXX */
 	signal(SIGINT, CtrlCInterrupt);
     } else {
 	closeallsockets();
 	exit(1);
     }
-}
-
-int
-dosbinary(fd, onoff)
-int	fd;
-int	onoff;
-{
-    union REGS regs;
-    int oldstate;
-
-    /* Get old stuff */
-    regs.h.ah = 0x44;
-    regs.h.al = 0;
-    regs.x.bx = fd;
-    intdos(&regs, &regs);
-    oldstate = regs.h.dl&(1<<5);		/* Save state */
-
-    /* Set correct bits in new mode */
-    regs.h.dh = 0;
-    if (onoff) {
-	regs.h.dl |= 1<<5;
-    } else {
-	regs.h.dl &= ~(1<<5);
-    }
-
-    /* Set in new mode */
-    regs.h.ah = 0x44;
-    regs.h.al = 1;
-    regs.x.bx = fd;
-    intdos(&regs, &regs);
-
-    return oldstate;
 }
 
 /*
@@ -925,11 +891,9 @@ register int f;
 	if (setmode(fileno(stdout), O_TEXT) == -1) {
 	    ExitPerror("setmode (text)", 1);
 	}
-	(void) dosbinary(fileno(stdout), 0);
 	if (setmode(fileno(stdin), O_TEXT) == -1) {
 	    ExitPerror("setmode (text)", 1);
 	}
-	(void) dosbinary(fileno(stdin), 0);
     } else {
 	signal(SIGINT, CtrlCInterrupt);
 	if ((old_1b_segment|old_1b_offset) == 0) {
@@ -947,24 +911,11 @@ register int f;
 	    segregs.ds = FP_SEG(foo_subr);
 	    intdosx(&inregs, &inregs, &segregs);
 	}
-	if (MODE_LOCAL_CHARS(f)) {
-	    if (setmode(fileno(stdout), O_TEXT) == -1) {
-		ExitPerror("setmode (text)", 1);
-	    }
-	    (void) dosbinary(fileno(stdout), 0);
-	    if (setmode(fileno(stdin), O_TEXT) == -1) {
-		ExitPerror("setmode (text)", 1);
-	    }
-	    (void) dosbinary(fileno(stdin), 0);
-	} else {
-	    if (setmode(fileno(stdout), O_BINARY) == -1) {
-		ExitPerror("setmode (binary)", 1);
-	    }
-	    (void) dosbinary(fileno(stdout), 1);
-	    if (setmode(fileno(stdin), O_BINARY) == -1) {
-		ExitPerror("setmode (binary)", 1);
-	    }
-	    (void) dosbinary(fileno(stdin), 1);
+	if (setmode(fileno(stdout), O_BINARY) == -1) {
+	    ExitPerror("setmode (binary)", 1);
+	}
+	if (setmode(fileno(stdin), O_BINARY) == -1) {
+	    ExitPerror("setmode (binary)", 1);
 	}
     }
 }
@@ -996,8 +947,6 @@ int	count;
 static void
 TerminalSaveState()				/* MSDOS */
 {
-    savedInState = dosbinary(fileno(stdin), 0);
-    savedOutState = dosbinary(fileno(stdout), 0);
 }
 
 int
@@ -1010,8 +959,6 @@ TerminalSpecialChars(c)			/* MSDOS */
 static void
 TerminalRestoreState()				/* MSDOS */
 {
-    (void) dosbinary(fileno(stdin), savedInState);
-    (void) dosbinary(fileno(stdout), savedOutState);
 }
 
 
@@ -1371,10 +1318,10 @@ int	length;			/* length of suboption data */
 	    case TELQUAL_IS:
 		{
 		    char tmpbuf[sizeof subbuffer];
-		    int minlen = min(length-4, sizeof tmpbuf-1);
+		    int minlen = min(length, sizeof tmpbuf);
 
 		    memcpy(tmpbuf, pointer+2, minlen);
-		    tmpbuf[minlen] = 0;
+		    tmpbuf[minlen-1] = 0;
 		    fprintf(NetTrace, "is %s.\n", tmpbuf);
 		}
 		break;
@@ -1848,8 +1795,6 @@ wontoption(option, reply)
 
 	default:
 		fmt = dont;
-		hisopts[option] = 0;
-		break;
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
@@ -1998,7 +1943,6 @@ SetIn3270()
 	    Init3270();		/* Initialize 3270 functions */
 	    /* initialize terminal key mapping */
 	    InitTerminal();	/* Start terminal going */
-	    LocalClearScreen();	/* Make sure the screen is clear */
 	    setconnmode();
 	}
     } else {
@@ -2068,7 +2012,7 @@ telrcv()
 		     * \n; since we must turn off CRMOD to get proper
 		     * input, the mapping is done here (sigh).
 		     */
-	    if ((c == '\r') && !hisopts[TELOPT_BINARY]) {
+	    if (c == '\r') {
 		if (scc > 0) {
 		    c = *sbp&0xff;
 		    if (c == 0) {
@@ -2527,15 +2471,9 @@ int	block;			/* should we block in the select ? */
     if (TTYBYTES()) {
 	FD_SET(tout, &obits);
     }
-#if	defined(TN3270)
     if ((tcc == 0) && NETROOM() && (shell_active == 0)) {
 	FD_SET(tin, &ibits);
     }
-#else	/* defined(TN3270) */
-    if ((tcc == 0) && NETROOM()) {
-	FD_SET(tin, &ibits);
-    }
-#endif	/* defined(TN3270) */
 #endif	/* !defined(MSDOS) */
 #   if !defined(TN3270)
     if (TTYROOM()) {
@@ -2758,39 +2696,29 @@ int	block;			/* should we block in the select ? */
 			break;
 		    }
 		}
-		if (!myopts[TELOPT_BINARY]) {
-		    switch (c) {
-		    case '\n':
-			    /*
-			     * If we are in CRMOD mode (\r ==> \n)
-			     * on our local machine, then probably
-			     * a newline (unix) is CRLF (TELNET).
-			     */
-			if (MODE_LOCAL_CHARS(globalmode)) {
-			    NETADD('\r');
-			}
-			NETADD('\n');
-			flushline = 1;
-			break;
-		    case '\r':
-			if (!crlf) {
-			    NET2ADD('\r', '\0');
-			} else {
-			    NET2ADD('\r', '\n');
-			}
-			flushline = 1;
-			break;
-		    case IAC:
-			NET2ADD(IAC, IAC);
-			break;
-		    default:
-			NETADD(c);
-			break;
+		switch (c) {
+		case '\n':
+			/*
+			 * If we are in CRMOD mode (\r ==> \n)
+			 * on our local machine, then probably
+			 * a newline (unix) is CRLF (TELNET).
+			 */
+		    if (MODE_LOCAL_CHARS(globalmode)) {
+			NETADD('\r');
 		    }
-		} else if (c == IAC) {
+		    NETADD('\n');
+		    flushline = 1;
+		    break;
+		case '\r':
+		    NET2ADD('\r', '\0');
+		    flushline = 1;
+		    break;
+		case IAC:
 		    NET2ADD(IAC, IAC);
-		} else {
+		    break;
+		default:
 		    NETADD(c);
+		    break;
 		}
 	    }
 #   if defined(TN3270)
@@ -2798,7 +2726,7 @@ int	block;			/* should we block in the select ? */
     }
 #   endif /* defined(TN3270) */
 
-    if ((!MODE_LINE(globalmode) || flushline || myopts[TELOPT_BINARY]) &&
+    if ((!MODE_LINE(globalmode) || flushline) &&
 	FD_ISSET(net, &obits) && (NETBYTES() > 0)) {
 	FD_CLR(net, &obits);
 	returnValue = netflush();
@@ -3118,18 +3046,6 @@ togdebug()
 
 
 static int
-togcrlf()
-{
-    if (crlf) {
-	printf("Will send carriage returns as telnet <CR><LF>.\n");
-    } else {
-	printf("Will send carriage returns as telnet <CR><NUL>.\n");
-    }
-    return 1;
-}
-
-
-static int
 togbinary()
 {
     donebinarytoggle = 1;
@@ -3187,13 +3103,7 @@ static struct togglelist Togglelist[] = {
 	    togbinary,
 		1,
 		    0,
-			0 },
-    { "crlf",
-	"toggle sending carriage returns as telnet <CR><LF>",
-	    togcrlf,
-		1,
-		    &crlf,
-			0 },
+			"send and receive network data in binary mode" },
     { "crmod",
 	"toggle mapping of received carriage returns",
 	    0,
@@ -3297,10 +3207,8 @@ char	*argv[];
 	} else {
 	    if (c->variable) {
 		*c->variable = !*c->variable;		/* invert it */
-		if (c->actionexplanation) {
-		    printf("%s %s.\n", *c->variable? "Will" : "Won't",
+		printf("%s %s.\n", *c->variable? "Will" : "Won't",
 							c->actionexplanation);
-		}
 	    }
 	    if (c->handler) {
 		retval &= (*c->handler)(c);
@@ -3973,13 +3881,9 @@ command(top)
 	    longjmp(toplevel, 1);
 	    /*NOTREACHED*/
 	}
-#if	defined(TN3270)
 	if (shell_active == 0) {
 	    setconnmode();
 	}
-#else	/* defined(TN3270) */
-	setconnmode();
-#endif	/* defined(TN3270) */
     }
 }
 

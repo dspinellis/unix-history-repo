@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map3270.c	3.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)map3270.c	4.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	This program reads a description file, somewhat like /etc/termcap,

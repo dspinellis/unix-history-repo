@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ebc_disp.h	3.3 (Berkeley) %G%
+ *	@(#)ebc_disp.h	4.1 (Berkeley) %G%
  */
 
 extern unsigned char

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termin.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)termin.c	4.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /* this takes characters from the keyboard, and produces 3270 keystroke
