@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -616,6 +616,7 @@ telrcv()
 
 		case TS_CR:
 			state = TS_DATA;
+			/* Strip off \n or \0 after a \r */
 			if ((c == 0) || (c == '\n')) {
 				break;
 			}
@@ -629,19 +630,18 @@ telrcv()
 			if (inter > 0)
 				break;
 			/*
-			 * We map \r\n ==> \n, since \r\n says
+			 * We now map \r\n ==> \r for pragmatic reasons.
+			 * Many client implementations send \r\n when
+			 * the user hits the CarriageReturn key.
+			 *
+			 * We USED to map \r\n ==> \n, since \r\n says
 			 * that we want to be in column 1 of the next
 			 * printable line, and \n is the standard
 			 * unix way of saying that (\r is only good
 			 * if CRMOD is set, which it normally is).
 			 */
 			if ((c == '\r') && (hisopts[TELOPT_BINARY] == OPT_NO)) {
-				if ((ncc > 0) && ('\n' == *netip)) {
-					netip++; ncc--;
-					c = '\n';
-				} else {
-					state = TS_CR;
-				}
+				state = TS_CR;
 			}
 			*pfrontp++ = c;
 			break;
