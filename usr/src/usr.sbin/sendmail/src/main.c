@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.69 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.70 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -846,8 +846,12 @@ main(argc, argv, envp)
 			for (j = '\0'; j <= '\177'; j++)
 				if (bitnset(j, m->m_flags))
 					(void) putchar(j);
-			printf(" E=");
+			printf("L=%d E=", m->m_linelimit);
 			xputs(m->m_eol);
+			if (m->m_defcharset != NULL)
+				printf(" C=%s", m->m_defcharset);
+			if (m->m_mtstype != NULL)
+				printf(" T=%s", m->m_mtstype);
 			if (m->m_argv != NULL)
 			{
 				char **a = m->m_argv;

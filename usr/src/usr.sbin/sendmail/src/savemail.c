@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -761,9 +761,11 @@ errbody(mci, e, separator, flags)
 		putline(buf, mci);
 
 		/* Received-From: shows where we got this message from */
-		expand("Received-From: \201_", buf, &buf[sizeof buf - 1],
-				e->e_parent);
-		putline(buf, mci);
+		if (RealHostName != NULL)
+		{
+			(void) sprintf(buf, "Received-From: %s", RealHostName);
+			putline(buf, mci);
+		}
 
 		/* Arrival-Date: -- when it arrived here */
 		(void) sprintf(buf, "Arrival-Date: %s",
@@ -802,6 +804,8 @@ errbody(mci, e, separator, flags)
 			strcpy(buf, "Status: ");
 			if (q->q_status != NULL)
 				strcat(buf, q->q_status);
+			else if (q->q_fstatus != NULL)
+				strcat(buf, q->q_fstatus);
 			else if (bitset(QBADADDR, q->q_flags))
 				strcat(buf, "500");
 			else if (bitset(QQUEUEUP, q->q_flags))
@@ -835,25 +839,37 @@ errbody(mci, e, separator, flags)
 				putline(buf, mci);
 			}
 
-			/* Original-Rcpt: -- passed from on high */
+			/* Original-Recipient: -- passed from on high */
 			if (q->q_orcpt != NULL)
 			{
-				(void) sprintf(buf, "Original-Rcpt: %s",
+				(void) sprintf(buf, "Original-Recipient: %s",
 					q->q_orcpt);
 				putline(buf, mci);
 			}
 
-			/* Final-Rcpt: -- if through alias */
+			/* Final-Recipient: -- if through alias */
 			if (q->q_alias != NULL)
 			{
-				(void) sprintf(buf, "Final-Rcpt: %s",
+				(void) sprintf(buf, "Final-Recipient: %s",
 					q->q_paddr);
 				putline(buf, mci);
 			}
 
 			/* Final-Status: -- same as Status?  XXX */
+			if (q->q_fstatus != NULL && q->q_status != NULL)
+			{
+				(void) sprintf(buf, "Final-Status: %s",
+					q->q_fstatus);
+				putline(buf, mci);
+			}
 
 			/* Remote-MTS-Type: -- always INET?  XXX */
+			if (q->q_mailer->m_mtstype != NULL)
+			{
+				(void) sprintf(buf, "Remote-MTS-Type: %s",
+					q->q_mailer->m_mtstype);
+				putline(buf, mci);
+			}
 
 			/* Remote-MTA: -- who was I talking to? */
 			if (q->q_statmta != NULL)
@@ -863,9 +879,21 @@ errbody(mci, e, separator, flags)
 				putline(buf, mci);
 			}
 
-			/* Remote-Rcpt: -- same as Final-Rcpt?  XXX */
+			/* Remote-Recipient: -- same as Final-Recipient?  XXX */
+			if (strcmp(q->q_user, q->q_paddr) != 0)
+			{
+				(void) sprintf(buf, "Remote-Recipient: %s",
+					q->q_user);
+				putline(buf, mci);
+			}
 
-			/* Remote-Status: -- same as Final-Status?  XXX */
+			/* Remote-Status: -- return code from remote mailer */
+			if (q->q_rstatus != NULL)
+			{
+				(void) sprintf(buf, "Remote-Status: %s",
+					q->q_rstatus);
+				putline(buf, mci);
+			}
 		}
 	}
 

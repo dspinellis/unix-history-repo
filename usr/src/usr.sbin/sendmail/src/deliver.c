@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.113 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.114 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2700,8 +2700,8 @@ setstatus(a, msg)
 {
 	char buf[MAXLINE];
 
-	if (a->q_status != NULL)
-		free(a->q_status);
+	if (a->q_rstatus != NULL)
+		free(a->q_rstatus);
 	if (strlen(msg) > 4)
 	{
 		register char *p, *q;
@@ -2732,5 +2732,5 @@ setstatus(a, msg)
 		*p++ = '\0';
 		msg = buf;
 	}
-	a->q_status = newstr(msg);
+	a->q_rstatus = newstr(msg);
 }
