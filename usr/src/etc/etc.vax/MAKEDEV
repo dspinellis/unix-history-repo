@@ -1,8 +1,8 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.14	%G%
+#	@(#)MAKEDEV	4.15	%G%
 #
 # Device "make" file.  Valid arguments:
-#	std	standard devices (for 730 must be followed by tu0 & tu1)
+#	std	standard devices
 #	local	configuration specific devices
 # Tapes:
 #	ht*	massbus tm03 & tu??
