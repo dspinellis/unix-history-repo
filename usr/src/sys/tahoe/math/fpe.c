@@ -1,4 +1,4 @@
-/*	fpe.c	1.2	89/05/05	*/
+/*	fpe.c	1.3	90/06/21	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -62,6 +62,7 @@ fpemulate(hfsreg, acc_most, acc_least, dbl, op_most, op_least, opcode, pc, psl)
 	int type;			/* opcode type, FLOAT or DOUBLE */
 	union { float ff; int fi; } f_res;
 	union { double dd; int di[2]; } d_res;
+	int error = 0;
 
 #ifdef lint
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
@@ -78,7 +79,7 @@ fpemulate(hfsreg, acc_most, acc_least, dbl, op_most, op_least, opcode, pc, psl)
 	}
 	if (fp >= &fpetab[NFPETAB]) {
 		opcode = DIV0_EXC;	/* generate SIGILL - XXX */
-		return;
+		return (0);
 	}
 	switch (type) {
 
@@ -106,24 +107,22 @@ fpemulate(hfsreg, acc_most, acc_least, dbl, op_most, op_least, opcode, pc, psl)
 		if (locr0[PS] & PSL_IV)   {  /* overflow enabled? */
 #endif
 			opcode = OVF_EXC;
-			u.u_error = (hfs & HFS_DOM) ? EDOM : ERANGE;
-			return;
+			return ((hfs & HFS_DOM) ? EDOM : ERANGE);
 #ifdef notdef
 		}
 #endif
 	} else if (hfs & HFS_UNDF) {
 		if (locr0[PS] &  PSL_FU) {  /* underflow enabled? */
 			opcode = UNDF_EXC;
-			u.u_error = (hfs & HFS_DOM) ? EDOM : ERANGE;
-			return;
+			return ((hfs & HFS_DOM) ? EDOM : ERANGE);
 		} 
 	} else if (hfs & HFS_DIVZ) {
 		opcode = DIV0_EXC;
-		return;
+		return (0);
 	} else if (hfs & HFS_DOM)
-		u.u_error = EDOM;
+		error = EDOM;
 	else if (hfs & HFS_RANGE)
-		u.u_error = ERANGE;
+		error = ERANGE;
 	switch (type) {
 
 	case DOUBLE:
@@ -143,4 +142,5 @@ fpemulate(hfsreg, acc_most, acc_least, dbl, op_most, op_least, opcode, pc, psl)
 		break;
 	}
 	opcode = 0;
+	return (error);
 }
