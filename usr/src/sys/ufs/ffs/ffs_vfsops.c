@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.17 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -255,7 +255,7 @@ ffs_reload(mountp, cred, p)
 	struct inode *ip;
 	struct csum *space;
 	struct buf *bp;
-	struct fs *fs;
+	struct fs *fs, *newfs;
 	struct partinfo dpart;
 	int i, blks, size, error;
 
@@ -276,16 +276,16 @@ ffs_reload(mountp, cred, p)
 		size = dpart.disklab->d_secsize;
 	if (error = bread(devvp, (daddr_t)(SBOFF / size), SBSIZE, NOCRED, &bp))
 		return (error);
-	fs = (struct fs *)bp->b_data;
-	if (fs->fs_magic != FS_MAGIC || fs->fs_bsize > MAXBSIZE ||
-	    fs->fs_bsize < sizeof(struct fs)) {
+	newfs = (struct fs *)bp->b_data;
+	if (newfs->fs_magic != FS_MAGIC || newfs->fs_bsize > MAXBSIZE ||
+	    newfs->fs_bsize < sizeof(struct fs)) {
 		brelse(bp);
 		return (EIO);		/* XXX needs translation */
 	}
 	fs = VFSTOUFS(mountp)->um_fs;
-	bcopy(&fs->fs_csp[0], &((struct fs *)bp->b_data)->fs_csp[0],
-	    sizeof(fs->fs_csp));
-	bcopy(bp->b_data, fs, (u_int)fs->fs_sbsize);
+	bcopy(&fs->fs_csp[0], &newfs->fs_csp[0], sizeof(fs->fs_csp));
+	newfs->fs_maxcluster = fs->fs_maxcluster;
+	bcopy(newfs, fs, (u_int)fs->fs_sbsize);
 	if (fs->fs_sbsize < SBSIZE)
 		bp->b_flags |= B_INVAL;
 	brelse(bp);
