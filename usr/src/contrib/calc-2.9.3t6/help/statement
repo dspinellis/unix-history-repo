@@ -1,0 +1,273 @@
+Statements
+
+	Statements are very much like C statements.  Most statements act
+	identically to those in C, but there are minor differences and
+	some additions.  The following is a list of the statement types,
+	with explanation of the non-C statements.  In this list, upper
+	case words identify the keywords which are actually in lower case.
+	Statements are generally terminated with semicolons, except if the
+	statement is the compound one formed by matching braces.  Various
+	expressions are optional and may be omitted (as in RETURN).
+
+
+	NOTE: Calc commands are in lower case.   UPPER case is used below
+	      for emphasis only, and should be considered in lower case.
+
+
+	IF (expr) statement
+	IF (expr) statement ELSE statement
+	FOR (optionalexpr ; optionalexpr ; optionalexpr) statement
+	WHILE (expr) statement
+	DO statement WHILE (expr)
+	CONTINUE
+	BREAK
+	GOTO label
+		These all work like in normal C.
+
+	RETURN optionalexpr
+		This returns a value from a function.  Functions always
+		have a return value, even if this statement is not used.
+		If no return statement is executed, or if no expression
+		is specified in the return statement, then the return
+		value from the function is the null type.
+
+	SWITCH (expr) { caseclauses }
+		Switch statements work similarly to C, except for the
+		following.  A switch can be done on any type of value,
+		and the case statements can be of any type of values.
+		The case statements can also be expressions calculated
+		at runtime.  The calculator compares the switch value
+		with each case statement in the order specified, and
+		selects the first case which matches.  The default case
+		is the exception, and only matches once all other cases
+		have been tested.
+
+	{ statements }
+		This is a normal list of statements, each one ended by
+		a semicolon.  Unlike the C language, no declarations are
+		permitted within an inner-level compound statement.
+		Declarations are only permitted at the beginning of a
+		function definition, or at the beginning of an expression
+		sequence.
+
+	MAT variable [dimension] [dimension] ...
+	MAT variable [dimension, dimension, ...]
+	MAT variable [] = { value, ... }
+		This creates a matrix variable with the specified dimensions.
+		Matrices can have from 1 to 4 dimensions.  When specifying
+		multiple dimensions, you can use either the standard C syntax,
+		or else you can use commas for separating the dimensions.
+		For example, the following two statements are equivalent,
+		and so will create the same two dimensional matrix:
+
+			mat foo[3][6];
+			mat foo[3,6];
+
+		By default, each dimension is indexed starting at zero,
+		as in normal C, and contains the specified number of
+		elements.  However, this can be changed if a colon is
+		used to separate two values.  If this is done, then the
+		two values become the lower and upper bounds for indexing.
+		This is convenient, for example, to create matrices whose
+		first row and column begin at 1.  Examples of matrix
+		definitions are:
+
+			mat x[3]	one dimension, bounds are 0-2
+			mat foo[4][5]	two dimensions, bounds are 0-3 and 0-4
+			mat a[-7:7]	one dimension, bounds are (-7)-7
+			mat s[1:9,1:9]	two dimensions, bounds are 1-9 and 1-9
+
+		Note that the MAT statement is not a declaration, but is
+		executed at runtime.  Within a function, the specified
+		variable must already be defined, and is just converted to
+		a matrix of the specified size, and all elements are set
+		to the value of zero.  For convenience, at the top level
+		command level, the MAT command automatically defines a
+		global variable of the specified name if necessary.
+
+		Since the MAT statement is executed, the bounds on the
+		matrix can be full expressions, and so matrices can be
+		dynamically allocated.  For example:
+
+			size = 20;
+			mat data[size*2];
+
+		allocates a matrix which can be indexed from 0 to 39.
+
+		Initial values for the elements of a matrix can be specified
+		by following the bounds information with an equals sign and
+		then a list of values enclosed in a pair of braces.  Even if
+		the matrix has more than one dimension, the elements must be
+		specified as a linear list.  If too few values are specified,
+		the remaining values are set to zero.  If too many values are
+		specified, a runtime error will result.  Examples of some
+		initializations are:
+
+			mat table1[5] = {77, 44, 22};
+			mat table2[2,2] = {1, 2, 3, 4};
+
+		When an initialization is done, the bounds of the matrix
+		can optionally be left out of the square brackets, and the
+		correct bounds (zero based) will be set.  This can only be
+		done for one-dimensional matrices.  An example of this is:
+
+			mat fred[] = {99, 98, 97};
+
+		The MAT statement can also be used in declarations to set
+		variables as being matrices from the beginning.  For example:
+
+			local mat temp[5];
+			static mat strtable[] = {"hi", "there", "folks");
+
+	OBJ type { elementnames } optionalvariables
+	OBJ type variable
+
+		These create a new object type, or create one or more
+		variables of the specified type.  For this calculator,
+		an object is just a structure which is implicitly acted
+		on by user defined routines.  The user defined routines
+		implement common operations for the object, such as plus
+		and minus, multiply and divide, comparison and printing.
+		The calculator will automatically call these routines in
+		order to perform many operations.
+	
+		To create an object type, the data elements used in
+		implementing the object are specified within a pair
+		of braces, separated with commas.  For example, to
+		define an object will will represent points in 3-space,
+		whose elements are the three coordinate values, the
+		following could be used:
+	
+			obj point {x, y, z};
+	
+		This defines an object type called point, whose elements
+		have the names x, y, and z.  The elements are accessed
+		similarly to structure element accesses, by using a period.
+		For example, given a variable 'v' which is a point object,
+		the three coordinates of the point can be referenced by:
+
+			v.x
+			v.y
+			v.z
+
+		A particular object type can only be defined once, and
+		is global throughout all functions.  However, different
+		object types can be used at the same time.
+
+		In order to create variables of an object type, they
+		can either be named after the right brace of the object
+		creation statement, or else can be defined later with
+		another obj statement.  To create two points using the
+		second (and most common) method, the following is used:
+
+			obj point p1, p2;	
+
+		This statement is executed, and is not a declaration.
+		Thus within a function, the variables p1 and p2 must have
+		been previously defined, and are just changed to be the
+		new object type.  For convenience, at the top level command
+		level, object variables are automatically defined as being
+		global when necessary.
+
+		Initial values for an object can be specified by following
+		the variable name by an equals sign and a list of values
+		enclosed in a pair of braces.  For example:
+
+			obj point pt = {5, 6};
+
+		The OBJ statement can also be used in declarations to set
+		variables as being objects from the beginning.  If multiple
+		variables are specified, then each one is defined as the
+		specified object type.  Examples of declarations are:
+
+			local obj point temp1;
+			static obj point temp2 = {4, 3};
+			global obj point p1, p2, p3;
+
+	EXIT string
+	QUIT string
+
+		This command is used in two cases.  At the top command
+		line level, quit will exit from the calculator.  This
+		is the normal way to leave the calculator.  In any other
+		use, quit will abort the current calculation as if an
+		error had occurred.  If a string is given, then the string
+		is printed as the reason for quitting, otherwise a general
+		quit message is printed.  The routine name and line number
+		which executed the quit is also printed in either case.
+
+		Quit is useful when a routine detects invalid arguments,
+		in order to stop a calculation cleanly.  For example,
+		for a square root routine, an error can be given if the
+		supplied parameter was a negative number, as in:
+
+			define mysqrt(n)
+			{
+				if (n < 0)
+					quit "Negative argument";
+				...
+			}
+
+		Exit is an alias for quit.
+
+
+	PRINT exprs
+
+		For interactive expression evaluation, the values of all
+		typed-in expressions are automatically displayed to the
+		user.  However, within a function or loop, the printing of
+		results must be done explicitly.  This can be done using
+		the 'printf' or 'fprintf' functions, as in standard C, or
+		else by using the built-in 'print' statement.  The advantage
+		of the print statement is that a format string is not needed.
+		Instead, the given values are simply printed with zero or one
+		spaces between each value.
+
+		Print accepts a list of expressions, separated either by
+		commas or colons.  Each expression is evaluated in order
+		and printed, with no other output, except for the following
+		special cases.  The comma which separates expressions prints
+		a single space, and a newline is printed after the last
+		expression unless the statement ends with a colon.  As
+		examples:
+
+			print 3, 4;		prints "3 4" and newline.
+			print 5:;		prints "5" with no newline.
+			print 'a' : 'b' , 'c';	prints "ab c" and newline.
+			print;			prints a newline.
+
+		For numeric values, the format of the number depends on the
+		current "mode" configuration parameter.  The initial mode
+		is to print real numbers, but it can be changed to other
+		modes such as exponential, decimal fractions, or hex.
+
+		If a matrix or list is printed, then the elements contained
+		within the matrix or list will also be printed, up to the
+		maximum number specified by the "maxprint" configuration
+		parameter.  If an element is also a matrix or a list, then
+		their values are not recursively printed.  Objects are printed
+		using their user-defined routine.  Printing a file value
+		prints the name of the file that was opened.
+
+
+	SHOW item
+
+		This command displays some information.
+		The following is a list of the various items:
+
+			builtins	built in functions
+			globals		global variables
+			functions	user-defined functions
+			objfuncs	possible object functions
+			memory		memory usage
+
+		Singular forms of item may also be used.  The following 
+		statement are the same:
+
+			show builtins
+			show builtin
+	
+
+	Also see the help topic:
+
+		command         top level commands

@@ -1,0 +1,352 @@
+	USING THE ARBITRARY PRECISION ROUTINES IN A C PROGRAM
+
+
+Part of the calc release consists of an arbitrary precision math library.
+This library is used by the calc program to perform its own calculations.
+If you wish, you can ignore the calc program entirely and call the arbitrary
+precision math routines from your own C programs.
+
+The library is called libmath.a, and provides routines to handle arbitrary
+precision arithmetic with integers, rational numbers, or complex numbers.
+There are also many numeric functions such as factorial and gcd, along
+with some transcendental functions such as sin and exp.
+
+-------------
+INCLUDE FILES
+-------------
+
+To use any of these routines in your own programs, you need to include the
+appropriate include file.  These include files are:
+
+	zmath.h		(for integer arithmetic)
+	qmath.h		(for rational arithmetic)
+	cmath.h		(for complex number arithmetic)
+
+You never need to include more than one of the above files, even if you wish
+to use more than one type of arithmetic, since qmath.h automatically includes
+zmath.h, and cmath.h automatically includes qmath.h.
+
+The prototypes for the available routines are listed in the above include
+files.  Some of these routines are meant for internal use, and so aren't
+convenient for outside use.  So you should read the source for a routine
+to see if it really does what you think it does.  I won't guarantee that
+obscure internal routines won't change or disappear in future releases!
+
+When calc is installed, all of the include files needed to build
+libcalc.a along with the library itself (and the lint library
+llib-lcalc.ln, if made) are installed into ${LIBDIR}.
+
+External programgs may want to compile with:
+	
+	-I${LIBDIR} -L${LIBDIR} -lcalc
+
+--------------
+ERROR HANDLING
+--------------
+
+You program MUST provide a function called math_error.  This is called by
+the math routines on an error condition, such as malloc failures or a
+division by zero.  The routine is called in the manner of printf, with a
+format string and optional arguments.  (However, none of the low level math
+routines currently uses formatting, so if you are lazy you can simply use
+the first argument as a simple error string.)  For example, one of the
+error calls you might expect to receive is:
+
+	math_error("Division by zero");
+
+Your program can handle errors in basically one of two ways.  Firstly, it
+can simply print the error message and then exit.  Secondly, you can make
+use of setjmp and longjmp in your program.  Use setjmp at some appropriate
+level in your program, and use longjmp in the math_error routine to return
+to that level and so recover from the error.  This is what the calc program
+does.
+
+---------------
+OUTPUT ROUTINES
+---------------
+
+The output from the routines in the library normally goes to stdout.  You
+can divert that output to either another FILE handle, or else to a string.
+Read the routines in zio.c to see what is available.  Diversions can be
+nested.
+
+You use math_setfp to divert output to another FILE handle.  Calling
+math_setfp with stdout restores output to stdout.
+
+Use math_divertio to begin diverting output into a string.  Calling
+math_getdivertedio will then return a string containing the output, and
+clears the diversion.  The string is reallocated as necessary, but since
+it is in memory, there are obviously limits on the amount of data that can
+be diverted into it.  The string needs freeing when you are done with it.
+
+Calling math_cleardiversions will clear all the diversions to strings, and
+is useful on an error condition to restore output to a known state.  You
+should also call math_setfp on errors if you had changed that.
+
+If you wish to mix your own output with numeric output from the math routines,
+then you can call math_chr, math_str, math_fill, math_fmt, or math_flush.
+These routines output single characters, output null-terminated strings,
+output strings with space filling, output formatted strings like printf, and
+flush the output.  Output from these routines is diverted as described above.
+
+You can change the default output mode by calling math_setmode, and you can
+change the default number of digits printed by calling math_setdigits.  These
+routines return the previous values.  The possible modes are described in
+zmath.h.
+
+--------------
+USING INTEGERS
+--------------
+
+The arbitrary precision integer routines define a structure called a ZVALUE.
+This is defined in zmath.h.  A ZVALUE contains a pointer to an array of
+integers, the length of the array, and a sign flag.  The array is allocated
+using malloc, so you need to free this array when you are done with a
+ZVALUE.  To do this, you should call zfree with the ZVALUE as an argument
+(or call freeh with the pointer as an argument) and never try to free the
+array yourself using free.  The reason for this is that sometimes the pointer
+points to one of two statically allocated arrays which should NOT be freed.
+
+The ZVALUE structures are passed to routines by value, and are returned
+through pointers.  For example, to multiply two small integers together,
+you could do the following:
+
+	ZVALUE	z1, z2, z3;
+
+	itoz(3L, &z1);
+	itoz(4L, &z2);
+	zmul(z1, z2, &z3);
+
+Use zcopy to copy one ZVALUE to another.  There is no sharing of arrays
+between different ZVALUEs even if they have the same value, so you MUST
+use this routine.  Simply assigning one value into another will cause
+problems when one of the copies is freed.  However, the special ZVALUE
+values _zero_ and _one_ CAN be assigned to variables directly, since their
+values of 0 and 1 are so common that special checks are made for them.
+
+For initial values besides 0 or 1, you need to call itoz to convert a long
+value into a ZVALUE, as shown in the above example.  Or alternatively,
+for larger numbers you can use the atoz routine to convert a string which
+represents a number into a ZVALUE.  The string can be in decimal, octal,
+hex, or binary according to the leading digits.
+
+Always make sure you free a ZVALUE when you are done with it or when you
+are about to overwrite an old ZVALUE with another value by passing its
+address to a routine as a destination value, otherwise memory will be
+lost.  The following shows an example of the correct way to free memory
+over a long sequence of operations.
+
+	ZVALUE z1, z2, z3;
+
+	z1 = _one_;
+	atoz("12345678987654321", &z2);
+	zadd(z1, z2, &z3);
+	zfree(z1);
+	zfree(z2);
+	zsquare(z3, &z1);
+	zfree(z3);
+	itoz(17L, &z2);
+	zsub(z1, z2, &z3);
+	zfree(z1);
+	zfree(z2);
+	zfree(z3);
+
+There are some quick checks you can make on integers.  For example, whether
+or not they are zero, negative, even, and so on.  These are all macros
+defined in zmath.h, and should be used instead of checking the parts of the
+ZVALUE yourself.  Examples of such checks are:
+
+	ziseven(z)	(number is even)
+	zisodd(z)	(number is odd)
+	ziszero(z)	(number is zero)
+	zisneg(z)	(number is negative)
+	zispos(z)	(number is positive)
+	zisunit(z)	(number is 1 or -1)
+	zisone(z)	(number is 1)
+
+There are two types of comparisons you can make on ZVALUEs.  This is whether
+or not they are equal, or the ordering on size of the numbers.  The zcmp
+function tests whether two ZVALUEs are equal, returning TRUE if they differ.
+The zrel function tests the relative sizes of two ZVALUEs, returning -1 if
+the first one is smaller, 0 if they are the same, and 1 if the first one
+is larger.
+
+---------------
+USING FRACTIONS
+---------------
+
+The arbitrary precision fractional routines define a structure called NUMBER.
+This is defined in qmath.h.  A NUMBER contains two ZVALUEs for the numerator
+and denominator of a fraction, and a count of the number of uses there are
+for this NUMBER.  The numerator and denominator are always in lowest terms,
+and the sign of the number is contained in the numerator.  The denominator
+is always positive.  If the NUMBER is an integer, the denominator has the
+value 1.
+
+Unlike ZVALUEs, NUMBERs are passed using pointers, and pointers to them are
+returned by functions.  So the basic type for using fractions is not really
+(NUMBER), but is (NUMBER *).  NUMBERs are allocated using the qalloc routine.
+This returns a pointer to a number which has the value 1.  Because of the
+special property of a ZVALUE of 1, the numerator and denominator of this
+returned value can simply be overwritten with new ZVALUEs without needing
+to free them first.  The following illustrates this:
+
+	NUMBER *q;
+
+	q = qalloc();
+	itoz(55L, &q->num);
+
+A better way to create NUMBERs with particular values is to use the itoq,
+iitoq, or atoq functions.  Using itoq makes a long value into a NUMBER,
+using iitoq makes a pair of longs into the numerator and denominator of a
+NUMBER (reducing them first if needed), and atoq converts a string representing
+a number into the corresponding NUMBER.  The atoq function accepts input in
+integral, fractional, real, or exponential formats.  Examples of allocating
+numbers are:
+
+	NUMBER *q1, *q2, *q3;
+
+	q1 = itoq(66L);
+	q2 = iitoq(2L, 3L);
+	q3 = atoq("456.78");
+
+Also unlike ZVALUEs, NUMBERs are quickly copied.  This is because they contain
+a link count, which is the number of pointers there are to the NUMBER.  The
+qlink macro is used to copy a pointer to a NUMBER, and simply increments
+the link count and returns the same pointer.  Since it is a macro, the
+argument should not be a function call, but a real pointer variable.  The
+qcopy routine will actually make a new copy of a NUMBER, with a new link
+count of 1.  This is not usually needed.
+
+NUMBERs are deleted using the qfree routine.  This decrements the link count
+in the NUMBER, and if it reaches zero, then it will deallocate both of
+the ZVALUEs contained within the NUMBER, and then puts the NUMBER structure
+onto a free list for quick reuse.  The following is an example of allocating
+NUMBERs, copying them, adding them, and finally deleting them again.
+
+	NUMBER *q1, *q2, *q3;
+
+	q1 = itoq(111L);
+	q2 = qlink(q1);
+	q3 = qadd(q1, q2);
+	qfree(q1);
+	qfree(q2);
+	qfree(q3);
+
+Because of the passing of pointers and the ability to copy numbers easily,
+you might wish to use the rational number routines even for integral
+calculations.  They might be slightly slower than the raw integral routines,
+but are more convenient to program with.
+
+The prototypes for the fractional routines are defined in qmath.h.
+Many of the definitions for integer functions parallel the ones defined
+in zmath.h.  But there are also functions used only for fractions.
+Examples of these are qnum to return the numerator, qden to return the
+denominator, qint to return the integer part of, qfrac to return the
+fractional part of, and qinv to invert a fraction.
+
+There are some transcendental functions in the library, such as sin and cos.
+These cannot be evaluated exactly as fractions.  Therefore, they accept
+another argument which tells how accurate you want the result.  This is an
+"epsilon" value, and the returned value will be within that quantity of
+the correct value.  This is usually an absolute difference, but for some
+functions (such as exp), this is a relative difference.  For example, to
+calculate sin(0.5) to 100 decimal places, you could do:
+
+	NUMBER *q, *ans, *epsilon;
+
+	q = atoq("0.5");
+	epsilon = atoq("1e-100");
+	ans = qsin(q, epsilon);
+
+There are many convenience macros similar to the ones for ZVALUEs which can
+give quick information about NUMBERs.  In addition, there are some new ones
+applicable to fractions.  These are all defined in qmath.h.  Some of these
+macros are:
+
+	qiszero(q)	(number is zero)
+	qisneg(q)	(number is negative)
+	qispos(q)	(number is positive)
+	qisint(q)	(number is an integer)
+	qisfrac(q)	(number is fractional)
+	qisunit(q)	(number is 1 or -1)
+	qisone(q)	(number is 1)
+
+The comparisons for NUMBERs are similar to the ones for ZVALUEs.  You use the
+qcmp and qrel functions.
+
+There are four predefined values for fractions.  You should qlink them when
+you want to use them.  These are _qzero_, _qone_, _qnegone_, and _qonehalf_.
+These have the values 0, 1, -1, and 1/2.  An example of using them is:
+
+	NUMBER *q1, *q2;
+
+	q1 = qlink(&_qonehalf_);
+	q2 = qlink(&_qone_);
+
+---------------------
+USING COMPLEX NUMBERS
+---------------------
+
+The arbitrary precision complex arithmetic routines define a structure
+called COMPLEX.  This is defined in cmath.h.  This contains two NUMBERs
+for the real and imaginary parts of a complex number, and a count of the
+number of links there are to this COMPLEX number.
+
+The complex number routines work similarly to the fractional routines.
+You can allocate a COMPLEX structure using comalloc (NOT calloc!).
+You can construct a COMPLEX number with desired real and imaginary
+fractional parts using qqtoc.  You can copy COMPLEX values using clink
+which increments the link count.  And you free a COMPLEX value using cfree.
+The following example illustrates this:
+
+	NUMBER *q1, *q2;
+	COMPLEX *c1, *c2, *c3;
+
+	q1 = itoq(3L);
+	q2 = itoq(4L);
+	c1 = qqtoc(q1, q2);
+	qfree(q1);
+	qfree(q2);
+	c2 = clink(c1);
+	c3 = cmul(c1, c2);
+	cfree(c1);
+	cfree(c2);
+	cfree(c3);
+
+As a shortcut, when you want to manipulate a COMPLEX value by a real value,
+you can use the caddq, csubq, cmulq, and cdivq routines.  These accept one
+COMPLEX value and one NUMBER value, and produce a COMPLEX value.
+
+There is no direct routine to convert a string value into a COMPLEX value.
+But you can do this yourself by converting two strings into two NUMBERS,
+and then using the qqtoc routine.
+
+COMPLEX values are always returned from these routines.  To split out the
+real and imaginary parts into normal NUMBERs, you can simply qlink the
+two components, as shown in the following example:
+
+	COMPLEX *c;
+	NUMBER *rp, *ip;
+
+	c = calloc();
+	rp = qlink(c->real);
+	ip = qlink(c->imag);
+
+There are many macros for checking quick things about complex numbers,
+similar to the ZVALUE and NUMBER macros.  In addition, there are some
+only used for complex numbers.  Examples of macros are:
+
+	cisreal(c)	(number is real)
+	cisimag(c)	(number is pure imaginary)
+	ciszero(c)	(number is zero)
+	cisrunit(c)	(number is 1 or -1)
+	cisiunit(c)	(number is i or -i)
+	cisunit(c)	(number is 1, -1, i, or -i)
+
+There is only one comparison you can make for COMPLEX values, and that is
+for equality.  The ccmp function returns TRUE if two complex numbers differ.
+
+There are three predefined values for complex numbers.  You should clink
+them when you want to use them.  They are _czero_, _cone_, and _conei_.
+These have the values 0, 1, and i.

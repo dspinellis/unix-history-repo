@@ -1,0 +1,55 @@
+Quick introduction
+
+	This is an interactive calculator which provides for easy large
+	numeric calculations, but which also can be easily programmed
+	for difficult or long calculations.  It can accept a command line
+	argument, in which case it executes that single command and exits.
+	Otherwise, it enters interactive mode.  In this mode, it accepts
+	commands one at a time, processes them, and displays the answers.
+	In the simplest case, commands are simply expressions which are
+	evaluated.  For example, the following line can be input:
+
+		3 * (4 + 1)
+
+	and the calculator will print 15.
+
+	The special '.' symbol (called dot), represents the result of the
+	last command expression, if any.  This is of great use when a series
+	of partial results are calculated, or when the output mode is changed
+	and the last result needs to be redisplayed.  For example, the above
+	result can be doubled by typing:
+
+		. * 2
+
+	and the calculator will print 30.
+
+	For more complex calculations, variables can be used to save the
+	intermediate results.  For example, the result of adding 7 to the
+	previous result can be saved by typing:
+
+		old = . + 7
+
+	Functions can be used in expressions.  There are a great number of
+	pre-defined functions.  For example, the following will calculate
+	the factorial of the value of 'old':
+
+		fact(old)
+
+	and the calculator prints 13763753091226345046315979581580902400000000.
+	Notice that numbers can be very large. (There is a practical limit
+	of several thousand digits before calculations become too slow.)
+
+	The calculator can calculate transcendental functions, and accept and
+	display numbers in real or exponential format. For example, typing:
+
+		config("display", 50)
+		epsilon(1e-50)
+		sin(1)
+
+	prints "~.84147098480789650665250232163029899962256306079837".
+
+	The calculator also knows about complex numbers, so that typing:
+
+		(2+3i) * (4-3i)
+
+	prints "17+6i".

@@ -1,0 +1,61 @@
+Command history
+
+	There is a command line editor and history mechanism built
+	into calc, which is active when stdin is a terminal.  When
+	stdin is not a terminal, then the command line editor is
+	disabled.
+
+	Lines of input to calc are always terminated by the return
+	(or enter) key.  When the return key is typed, then the current
+	line is executed and is also saved into a command history list
+	for future recall.
+
+	Before the return key is typed, the current line can be edited
+	using emacs-like editing commands.  As examples, ^A moves to
+	the beginning of the line, ^F moves forwards through the line,
+	backspace removes characters from the line, and ^K kills the
+	rest of the line.
+
+	Previously entered commands can be recalled by using the history
+	list.  The history list functions in a LRU manner, with no
+	duplicated lines.  This means that the most recently entered
+	lines are always at the end of the history list where they are
+	easiest to recall.
+
+	Typing <esc>h lists all of the commands in the command history
+	and numbers the lines.  The most recently executed line is always
+	number 1, the next most recent number 2, and so on.  The numbering
+	for a particular command therefore changes as lines are entered.
+
+	Typing a number at the beginning of a line followed by <esc>g
+	will recall that numbered line.  So that for example, 2<esc>g
+	will recall the second most recent line that was entered.
+
+	The ^P and ^N keys move up and down the lines in the history list.
+	If they attempt to go off the top or bottom of the list, then a
+	blank line is shown to indicate this, and then they wrap around
+	to the other end of the list.
+
+	Typing a string followed by a ^R will search backwards through
+	the history and recall the most recent command which begins
+	with that string.
+
+	Typing ^O inserts the current line at the end of the history list
+	without executing it, and starts a new line.  This is useful to
+	rearrange old history lines to become recent, or to save a partially
+	completed command so that another command can be typed ahead of it.
+
+	If your terminal has arrow keys which generate escape sequences
+	of a particular kind (<esc>[A and so on), then you can use
+	those arrow keys in place of the ^B, ^F, ^P, and ^N keys.
+
+	The actual keys used for editing are defined in a bindings file,
+	usually called /usr/local/lib/calc/bindings.  Changing the entries 
+	in this file will change the key bindings used for editing.  If the 
+	file is not readable, then a message will be output and command
+	line editing is disabled.  In this case you can only edit each
+	line as provided by the terminal driver in the operating system.
+
+	A shell command can be executed by typing '!cmd', where cmd
+	is the command to execute.  If cmd is not given, then a shell
+	command level is started.

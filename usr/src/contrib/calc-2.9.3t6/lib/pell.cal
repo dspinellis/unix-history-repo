@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Solve Pell's equation; Returns the solution X to: X^2 - D * Y^2 = 1.
+ * Type the solution to pells equation for a particular D.
+ */
+
+define pell(D)
+{
+	local X, Y;
+
+	X = pellx(D);
+	if (isnull(X)) {
+		print "D=":D:" is square";
+		return;
+	}
+	Y = isqrt((X^2 - 1) / D);
+	print X : "^2 - " : D : "*" : Y : "^2 = " : X^2 - D*Y^2;
+}
+
+
+/*
+ * Function to solve Pell's equation
+ * Returns the solution X to:
+ *	X^2 - D * Y^2 = 1
+ */
+define pellx(D)
+{
+	local R, Rp, U, Up, V, Vp, A, T, Q1, Q2, n;
+	local mat ans[2,2];
+	local mat tmp[2,2];
+
+	R = isqrt(D);
+	Vp = D - R^2;
+	if (Vp == 0)
+		return;
+	Rp = R + R;
+	U = Rp;
+	Up = U;
+	V = 1;
+	A = 0;
+	n = 0;
+	ans[0,0] = 1;
+	ans[1,1] = 1;
+	tmp[0,1] = 1;
+	tmp[1,0] = 1;
+	do {
+		T = V;
+		V = A * (Up - U) + Vp;
+		Vp = T;
+		A = U // V;
+		Up = U;
+		U = Rp - U % V;
+		tmp[0,0] = A;
+		ans *= tmp;
+		n++;
+	} while (A != Rp);
+	Q2 = ans[[1]];
+	Q1 = isqrt(Q2^2 * D + 1);
+	if (isodd(n)) {
+		T = Q1^2 + D * Q2^2;
+		Q2 = Q1 * Q2 * 2;
+		Q1 = T;
+	}
+	return Q1;
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "pell(D) defined";
+    print "pellx(D) defined";
+}
