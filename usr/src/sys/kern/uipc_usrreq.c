@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.6	84/07/26	*/
+/*	uipc_usrreq.c	6.7	84/08/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -11,6 +11,7 @@
 #include "../h/un.h"
 #include "../h/inode.h"
 #include "../h/file.h"
+#include "../h/stat.h"
 
 /*
  * Unix communications domain.
@@ -197,10 +198,14 @@ uipc_usrreq(so, req, m, nam, rights)
 	case PRU_CONTROL:
 		return (EOPNOTSUPP);
 
-	case PRU_SENSE:
-		error = EOPNOTSUPP;
-		break;
 /* END UNIMPLEMENTED HOOKS */
+	case PRU_SENSE:
+		((struct stat *) m)->st_blksize = so->so_snd.sb_hiwat;
+		if (so->so_type == SOCK_STREAM && unp->unp_conn != 0) {
+			so2 = unp->unp_conn->unp_socket;
+			((struct stat *) m)->st_blksize += so2->so_rcv.sb_cc;
+		}
+		return (0);
 
 	case PRU_RCVOOB:
 		return (EOPNOTSUPP);
@@ -226,9 +231,18 @@ release:
 	return (error);
 }
 
-/* SHOULD BE PIPSIZ and 0 */
-int	unp_sendspace = 1024*2;
-int	unp_recvspace = 1024*2 + sizeof(struct sockaddr);
+/*
+ * We assign all buffering for stream sockets to the source,
+ * as that is where the flow control is implemented.
+ * Datagram sockets really use the sendspace as the maximum datagram size,
+ * and don't really want to reserve the sendspace.  Their recvspace should
+ * be large enough for at least one max-size datagram plus address.
+ */
+#define	PIPSIZ	4096
+int	unpst_sendspace = PIPSIZ;
+int	unpst_recvspace = 0;
+int	unpdg_sendspace = 2*1024;	/* really max datagram size */
+int	unpdg_recvspace = 4*1024;
 
 unp_attach(so)
 	struct socket *so;
@@ -237,7 +251,16 @@ unp_attach(so)
 	register struct unpcb *unp;
 	int error;
 	
-	error = soreserve(so, unp_sendspace, unp_recvspace);
+	switch (so->so_type) {
+
+	case SOCK_STREAM:
+		error = soreserve(so, unpst_sendspace, unpst_recvspace);
+		break;
+
+	case SOCK_DGRAM:
+		error = soreserve(so, unpdg_sendspace, unpdg_recvspace);
+		break;
+	}
 	if (error)
 		return (error);
 	m = m_getclr(M_DONTWAIT, MT_PCB);
