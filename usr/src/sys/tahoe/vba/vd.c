@@ -1,9 +1,9 @@
-/*	vd.c	1.8	86/01/23	*/
+/*	vd.c	1.9	86/07/16	*/
 
-#include "fsd.h"
+#include "dk.h"
 #if NVD > 0
 /*
- * VDDC - Versabus SMD/ESMD driver.
+ * VDDC - Versabus SMD/SMDE driver.
  */
 #ifdef VDDCPERF
 #define	DOSCOPE
@@ -17,7 +17,7 @@
 #include "cmap.h"
 #include "conf.h"
 #include "dir.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "map.h"
 #include "systm.h"
 #include "user.h"
@@ -37,8 +37,6 @@
 #define VDUNIT(x)	(minor(x) >> 3)
 #define FILSYS(x)	(minor(x) & 0x07)
 #define PHYS(x)		(vtoph((struct proc *)0, (unsigned)(x)))
-#define TRUE		1
-#define	FALSE		0
 
 #define CTLR_ERROR	1
 #define DRIVE_ERROR	2
@@ -49,10 +47,10 @@
 #define b_daddr	b_error
 
 struct	vba_ctlr *vdminfo[NVD];
-struct  vba_device *vddinfo[NFSD];
+struct  vba_device *vddinfo[NDK];
 int	vdprobe(), vdslave(), vdattach(), vddgo();
 struct	vba_driver vddriver =
-    { vdprobe, vdslave, vdattach, vddgo, vddcaddr, "smd/fsd",
+    { vdprobe, vdslave, vdattach, vddgo, vddcaddr, "dk",
       vddinfo, "vd", vdminfo };
 
 /*
@@ -91,7 +89,7 @@ typedef struct {
 } ctlr_tab;
 
 ctlr_tab vdctlr_info[NVD];
-unit_tab vdunit_info[NFSD];
+unit_tab vdunit_info[NDK];
 
 /*
  * See if the controller is really there; if so, initialize it.
@@ -157,7 +155,7 @@ vdslave(vi, addr)
 
 	if (!ci->initdone) {
 		printf("vd%d: %s controller\n", vi->ui_ctlr,
-		    ci->ctlr_type == SMDCTLR ? "smd" : "xsmd");
+		    ci->ctlr_type == SMDCTLR ? "smd" : "smde");
 		if (vdnotrailer(addr, vi->ui_ctlr, vi->ui_slave, INIT, 10) &
 		    HRDERR) {
 			printf("vd%d: init error\n", vi->ui_ctlr);
@@ -206,7 +204,7 @@ vdslave(vi, addr)
 		 * If reached here, a drive which is not defined in the 
 		 * 'vdst' tables is connected. Cannot set it's type.
 		 */
-		printf("vd%d: unknown drive type\n", vi->ui_unit);
+		printf("dk%d: unknown drive type\n", vi->ui_unit);
 		return (0);
 	}
 	ui->drive_type = type;
@@ -214,7 +212,6 @@ vdslave(vi, addr)
 	ui->sec_per_blk = DEV_BSIZE / ui->info.secsize;
 	vi->ui_type = type;
  	vi->ui_dk = 1;
-	vddriver.ud_dname = ui->info.type_name;
 	return (1);
 }
 
@@ -332,6 +329,7 @@ vdattach(vi)
 		uq->b_forw = &ui->xfer_queue;
 		start_queue->b_back = &ui->xfer_queue;
 	}
+	printf("dk%d: %s\n", vi->ui_unit, fs->type_name);
 	/*
 	 * (60 / rpm) / (number of sectors per track * (bytes per sector / 2))
 	 */
@@ -723,7 +721,7 @@ vdread(dev, uio)
 	register int unit = VDUNIT(dev);
 	register unit_tab *ui = &vdunit_info[unit];
 
-	if (unit >= NFSD)
+	if (unit >= NDK)
 		return (ENXIO);
 	return (physio(vdstrategy, &ui->raw_q_element, dev, B_READ,
 	    minphys, uio));
@@ -736,7 +734,7 @@ vdwrite(dev, uio)
 	register int unit = VDUNIT(dev);
 	register unit_tab *ui = &vdunit_info[unit];
 
-	if (unit >= NFSD)
+	if (unit >= NDK)
 		return (ENXIO);
 	return (physio(vdstrategy, &ui->raw_q_element, dev, B_WRITE,
 	    minphys, uio));
