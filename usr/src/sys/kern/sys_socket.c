@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_socket.c	7.8 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,10 +48,11 @@ soo_write(fp, uio, cred)
 		uio, (struct mbuf *)0, (struct mbuf *)0, 0));
 }
 
-soo_ioctl(fp, cmd, data)
+soo_ioctl(fp, cmd, data, p)
 	struct file *fp;
 	int cmd;
 	register caddr_t data;
+	struct proc *p;
 {
 	register struct socket *so = (struct socket *)fp->f_data;
 
@@ -98,16 +99,17 @@ soo_ioctl(fp, cmd, data)
 	 * different entry since a socket's unnecessary
 	 */
 	if (IOCGROUP(cmd) == 'i')
-		return (ifioctl(so, cmd, data));
+		return (ifioctl(so, cmd, data, p));
 	if (IOCGROUP(cmd) == 'r')
-		return (rtioctl(cmd, data));
+		return (rtioctl(cmd, data, p));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
 	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
-soo_select(fp, which)
+soo_select(fp, which, p)
 	struct file *fp;
 	int which;
+	struct proc *p;
 {
 	register struct socket *so = (struct socket *)fp->f_data;
 	register int s = splnet();
@@ -119,7 +121,7 @@ soo_select(fp, which)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv);
+		sbselqueue(&so->so_rcv, p);
 		break;
 
 	case FWRITE:
@@ -127,7 +129,7 @@ soo_select(fp, which)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_snd);
+		sbselqueue(&so->so_snd, p);
 		break;
 
 	case 0:
@@ -136,14 +138,13 @@ soo_select(fp, which)
 			splx(s);
 			return (1);
 		}
-		sbselqueue(&so->so_rcv);
+		sbselqueue(&so->so_rcv, p);
 		break;
 	}
 	splx(s);
 	return (0);
 }
 
-/*ARGSUSED*/
 soo_stat(so, ub)
 	register struct socket *so;
 	register struct stat *ub;

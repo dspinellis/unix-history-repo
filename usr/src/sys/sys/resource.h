@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resource.h	7.4 (Berkeley) %G%
+ *	@(#)resource.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _RESOURCE_H_
@@ -57,8 +57,11 @@ struct	rusage {
 #define	RLIMIT_STACK	3		/* stack size */
 #define	RLIMIT_CORE	4		/* core file size */
 #define	RLIMIT_RSS	5		/* resident set size */
+#define	RLIMIT_MEMLOCK	6		/* locked-in-memory address space */
+#define	RLIMIT_NPROC	7		/* number of processes */
+#define	RLIMIT_OFILE	8		/* number of open files */
 
-#define	RLIM_NLIMITS	6		/* number of resource limits */
+#define	RLIM_NLIMITS	9		/* number of resource limits */
 
 #define	RLIM_INFINITY	0x7fffffff
 
@@ -67,4 +70,16 @@ struct rlimit {
 	long	rlim_max;		/* maximum value for rlim_cur */
 };
 
+#ifndef KERNEL
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	getpriority __P((int, int));
+int	getrlimit __P((int, struct rlimit *));
+int	getrusage __P((int, struct rusage *));
+int	setpriority __P((int, int, int));
+int	setrlimit __P((int, const struct rlimit *));
+__END_DECLS
+
+#endif	/* !KERNEL */
 #endif	/* !_RESOURCE_H_ */

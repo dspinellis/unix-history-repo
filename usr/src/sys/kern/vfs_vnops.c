@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.26 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,11 +31,13 @@ struct 	fileops vnops =
  * Common code for vnode open operations.
  * Check permissions, and call the VOP_OPEN or VOP_CREATE routine.
  */
-vn_open(ndp, fmode, cmode)
+vn_open(ndp, p, fmode, cmode)
 	register struct nameidata *ndp;
+	struct proc *p;
 	int fmode, cmode;
 {
 	register struct vnode *vp;
+	register struct ucred *cred = p->p_ucred;
 	struct vattr vat;
 	struct vattr *vap = &vat;
 	int error;
@@ -44,7 +46,7 @@ vn_open(ndp, fmode, cmode)
 		ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
 		if ((fmode & FEXCL) == 0)
 			ndp->ni_nameiop |= FOLLOW;
-		if (error = namei(ndp))
+		if (error = namei(ndp, p))
 			return (error);
 		if (ndp->ni_vp == NULL) {
 			VATTR_NULL(vap);
@@ -69,7 +71,7 @@ vn_open(ndp, fmode, cmode)
 		}
 	} else {
 		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
-		if (error = namei(ndp))
+		if (error = namei(ndp, p))
 			return (error);
 		vp = ndp->ni_vp;
 	}
@@ -79,7 +81,7 @@ vn_open(ndp, fmode, cmode)
 	}
 	if ((fmode & FCREAT) == 0) {
 		if (fmode & FREAD) {
-			if (error = VOP_ACCESS(vp, VREAD, ndp->ni_cred))
+			if (error = VOP_ACCESS(vp, VREAD, cred))
 				goto bad;
 		}
 		if (fmode & (FWRITE|FTRUNC)) {
@@ -88,18 +90,18 @@ vn_open(ndp, fmode, cmode)
 				goto bad;
 			}
 			if ((error = vn_writechk(vp)) ||
-			    (error = VOP_ACCESS(vp, VWRITE, ndp->ni_cred)))
+			    (error = VOP_ACCESS(vp, VWRITE, cred)))
 				goto bad;
 		}
 	}
 	if (fmode & FTRUNC) {
 		VATTR_NULL(vap);
 		vap->va_size = 0;
-		if (error = VOP_SETATTR(vp, vap, ndp->ni_cred))
+		if (error = VOP_SETATTR(vp, vap, cred))
 			goto bad;
 	}
 	VOP_UNLOCK(vp);
-	error = VOP_OPEN(vp, fmode, ndp->ni_cred);
+	error = VOP_OPEN(vp, fmode, cred);
 	if (error)
 		vrele(vp);
 	return (error);
@@ -230,12 +232,13 @@ vn_stat(vp, sb)
 	register struct stat *sb;
 {
 	struct vattr vattr;
+	struct proc *p = curproc;		/* XXX */
 	register struct vattr *vap;
 	int error;
 	u_short mode;
 
 	vap = &vattr;
-	error = VOP_GETATTR(vp, vap, u.u_cred);
+	error = VOP_GETATTR(vp, vap, p->p_ucred);
 	if (error)
 		return (error);
 	/*
@@ -297,6 +300,7 @@ vn_ioctl(fp, com, data)
 	caddr_t data;
 {
 	register struct vnode *vp = ((struct vnode *)fp->f_data);
+	struct proc *p = curproc;		/* XXX */
 	struct vattr vattr;
 	int error;
 
@@ -305,7 +309,7 @@ vn_ioctl(fp, com, data)
 	case VREG:
 	case VDIR:
 		if (com == FIONREAD) {
-			if (error = VOP_GETATTR(vp, &vattr, u.u_cred))
+			if (error = VOP_GETATTR(vp, &vattr, p->p_ucred))
 				return (error);
 			*(off_t *)data = vattr.va_size - fp->f_offset;
 			return (0);
@@ -320,9 +324,9 @@ vn_ioctl(fp, com, data)
 	case VFIFO:
 	case VCHR:
 	case VBLK:
-		error = VOP_IOCTL(vp, com, data, fp->f_flag, u.u_cred);
+		error = VOP_IOCTL(vp, com, data, fp->f_flag, p->p_ucred);
 		if (error == 0 && com == TIOCSCTTY) {
-			u.u_procp->p_session->s_ttyvp = vp;
+			p->p_session->s_ttyvp = vp;
 			VREF(vp);
 		}
 		return (error);
@@ -336,8 +340,10 @@ vn_select(fp, which)
 	struct file *fp;
 	int which;
 {
+	struct proc *p = curproc;		/* XXX */
+
 	return (VOP_SELECT(((struct vnode *)fp->f_data), which, fp->f_flag,
-		u.u_cred));
+		p->p_ucred));
 }
 
 /*
@@ -379,23 +385,5 @@ vn_fhtovp(fhp, lockflag, vpp)
 		return (ESTALE);
 	if (!lockflag)
 		VOP_UNLOCK(*vpp);
-	return (0);
-}
-
-/*
- * Noop
- */
-vfs_noop()
-{
-
-	return (ENXIO);
-}
-
-/*
- * Null op
- */
-vfs_nullop()
-{
-
 	return (0);
 }

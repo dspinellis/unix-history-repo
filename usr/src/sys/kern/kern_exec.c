@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exec.c	7.35 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,22 +25,19 @@
 #include "ktrace.h"
 
 #include "machine/reg.h"
-#include "machine/psl.h"
-#include "machine/mtpr.h"
 
 #include "mman.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
-#include "../vm/vm_kern.h"
-#include "../vm/vm_pager.h"
+#include "vm/vm.h"
+#include "vm/vm_param.h"
+#include "vm/vm_map.h"
+#include "vm/vm_kern.h"
+#include "vm/vm_pager.h"
 
 #ifdef HPUXCOMPAT
 #include "hp300/hpux/hpux_exec.h"
 #endif
 
-/*
- * exec system call, with and without environments.
- */
+#ifdef COMPAT_43
 execv(p, uap, retval)
 	struct proc *p;
 	struct args {
@@ -54,7 +51,11 @@ execv(p, uap, retval)
 	uap->envp = NULL;
 	return (execve(p, uap, retval));
 }
+#endif
 
+/*
+ * exec system call
+ */
 /* ARGSUSED */
 execve(p, uap, retval)
 	register struct proc *p;
@@ -65,8 +66,8 @@ execve(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct ucred *cred = u.u_cred;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct ucred *cred = p->p_ucred;
+	register struct nameidata *ndp;
 	register struct filedesc *fdp = p->p_fd;
 	int na, ne, ucp, ap, cc;
 	register char *cp;
@@ -75,6 +76,8 @@ execve(p, uap, retval)
 	int indir, uid, gid;
 	char *sharg;
 	struct vnode *vp;
+	int resid, error, flags = 0;
+	vm_offset_t execargs;
 	struct vattr vattr;
 	char cfname[MAXCOMLEN + 1];
 	char cfarg[MAXINTERP];
@@ -88,17 +91,17 @@ execve(p, uap, retval)
 #ifdef HPUXCOMPAT
 	struct hpux_exec hhead;
 #endif
-	int resid, error, flags = 0;
-	vm_offset_t execargs;
+	struct nameidata nd;
 #ifdef SECSIZE
 	extern long argdbsize;			/* XXX */
 #endif SECSIZE
 
+	ndp = &nd;
   start:
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp))
+	if (error = namei(ndp, p))
 		return (error);
 	vp = ndp->ni_vp;
 	indir = 0;
@@ -271,7 +274,7 @@ execve(p, uap, retval)
 		vput(vp);
 		ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 		ndp->ni_segflg = UIO_SYSSPACE;
-		if (error = namei(ndp))
+		if (error = namei(ndp, p))
 			return (error);
 		vp = ndp->ni_vp;
 		if (error = VOP_GETATTR(vp, &vattr, cred))
@@ -367,7 +370,7 @@ execve(p, uap, retval)
 	 */
 	ucp = USRSTACK - sizeof(u.u_pcb.pcb_sigc) - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
-	u.u_ar0[SP] = ap;
+	p->p_regs[SP] = ap;
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
 	cp = (char *) execargs;
@@ -401,6 +404,8 @@ execve(p, uap, retval)
 			(void) closef(OFILE(fdp, nc));
 			OFILE(fdp, nc) = NULL;
 			OFILEFLAGS(fdp, nc) = 0;
+			if (nc < fdp->fd_freefile)
+				fdp->fd_freefile = nc;
 		}
 		OFILEFLAGS(fdp, nc) &= ~UF_MAPPED;
 	}
@@ -416,7 +421,7 @@ execve(p, uap, retval)
 	/*
 	 * Remember file name for accounting.
 	 */
-	u.u_acflag &= ~AFORK;
+	p->p_acflag &= ~AFORK;
 	if (indir)
 		bcopy((caddr_t)cfname, (caddr_t)p->p_comm, MAXCOMLEN);
 	else {
@@ -444,12 +449,12 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	int flags, nargc, uid, gid;
 {
 	segsz_t ts, ds, ss;
-	register struct ucred *cred = u.u_cred;
+	register struct ucred *cred = p->p_ucred;
 	off_t toff;
 	int error = 0;
 	vm_offset_t addr;
 	vm_size_t size;
-	vm_map_t map = VM_MAP_NULL;
+	struct vmspace *vm = p->p_vmspace;
 
 #ifdef HPUXCOMPAT
 	if (ep->a_mid == MID_HPUX) {
@@ -486,20 +491,18 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
 	ss = clrnd(SSIZE + btoc(nargc + sizeof(u.u_pcb.pcb_sigc)));
 #ifdef SYSVSHM
-	if (p->p_shm)
+	if (vm->vm_shm)
 		shmexit(p);
 #endif
-	map = p->p_map;
-	(void) vm_map_remove(map, vm_map_min(map), vm_map_max(map));
+	(void) vm_map_remove(&vm->vm_map, vm_map_min(&vm->vm_map),
+	    vm_map_max(&vm->vm_map));
 	/*
-	 * XXX preserve synchronization semantics of vfork
+	 * If parent is waiting for us to exec or exit,
+	 * SPPWAIT will be set; clear it and wakeup parent.
 	 */
-	if (p->p_flag & SVFORK) {
-		p->p_flag &= ~SVFORK;
-		wakeup((caddr_t)p);
-		while ((p->p_flag & SVFDONE) == 0)
-			sleep((caddr_t)p, PZERO - 1);
-		p->p_flag &= ~SVFDONE;
+	if (p->p_flag & SPPWAIT) {
+		p->p_flag &= ~SPPWAIT;
+		wakeup((caddr_t) p->p_pptr);
 	}
 #ifdef hp300
 	u.u_pcb.pcb_flags &= ~(PCB_AST|PCB_HPUXMMAP|PCB_HPUXBIN);
@@ -512,41 +515,37 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 	p->p_flag &= ~(SPAGV|SSEQL|SUANOM|SHPUX);
 	p->p_flag |= flags | SEXEC;
 	addr = VM_MIN_ADDRESS;
-	if (vm_allocate(map, &addr, round_page(ctob(ts + ds)), FALSE)) {
+	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts + ds)), FALSE)) {
 		uprintf("Cannot allocate text+data space\n");
 		error = ENOMEM;			/* XXX */
 		goto badmap;
 	}
 	size = round_page(MAXSSIZ);		/* XXX */
 	addr = trunc_page(VM_MAX_ADDRESS - size);
-	if (vm_allocate(map, &addr, size, FALSE)) {
+	if (vm_allocate(&vm->vm_map, &addr, size, FALSE)) {
 		uprintf("Cannot allocate stack space\n");
 		error = ENOMEM;			/* XXX */
 		goto badmap;
 	}
-	u.u_maxsaddr = (caddr_t)addr;
-	u.u_taddr = (caddr_t)VM_MIN_ADDRESS;
-	u.u_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
+	vm->vm_maxsaddr = (caddr_t)addr;
+	vm->vm_taddr = (caddr_t)VM_MIN_ADDRESS;
+	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
 
 	if ((flags & SPAGV) == 0)
-		(void) vn_rdwr(UIO_READ, vp,
-			u.u_daddr,
-			(int)ep->a_data,
-			(off_t)(toff + ep->a_text),
-			UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED), cred, (int *)0);
+		(void) vn_rdwr(UIO_READ, vp, vm->vm_daddr, (int) ep->a_data,
+			(off_t)(toff + ep->a_text), UIO_USERSPACE,
+			(IO_UNIT|IO_NODELOCKED), cred, (int *)0);
 	/*
 	 * Read in text segment if necessary (0410), and read-protect it.
 	 */
 	if ((flags & SPAGV) == 0) {
 		if (ep->a_text > 0) {
-			error = vn_rdwr(UIO_READ, vp,
-					u.u_taddr, (int)ep->a_text, toff,
-					UIO_USERSPACE, (IO_UNIT|IO_NODELOCKED),
-					cred, (int *)0);
-			(void) vm_map_protect(map,
-					VM_MIN_ADDRESS,
-					VM_MIN_ADDRESS+trunc_page(ep->a_text),
-					VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+			error = vn_rdwr(UIO_READ, vp, vm->vm_taddr,
+				(int)ep->a_text, toff, UIO_USERSPACE,
+				(IO_UNIT|IO_NODELOCKED), cred, (int *)0);
+			(void) vm_map_protect(&vm->vm_map, VM_MIN_ADDRESS,
+				VM_MIN_ADDRESS + trunc_page(ep->a_text),
+				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 		}
 	} else {
 		/*
@@ -554,17 +553,15 @@ getxfile(p, vp, ep, flags, nargc, uid, gid)
 		 */
 		addr = VM_MIN_ADDRESS;
 		size = round_page(ep->a_text + ep->a_data);
-		error = vm_mmap(map, &addr, size, VM_PROT_ALL,
-				MAP_FILE|MAP_COPY|MAP_FIXED,
-				(caddr_t)vp, (vm_offset_t)toff);
-		(void) vm_map_protect(map, addr,
-				addr+trunc_page(ep->a_text),
-				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
+			MAP_FILE|MAP_COPY|MAP_FIXED,
+			(caddr_t)vp, (vm_offset_t)toff);
+		(void) vm_map_protect(&vm->vm_map, addr,
+			addr + trunc_page(ep->a_text),
+			VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 	}
 badmap:
 	if (error) {
-		if (map != VM_MAP_NULL)
-			vm_deallocate(map, vm_map_min(map), vm_map_max(map));
 		printf("pid %d: VM allocation failure\n", p->p_pid);
 		uprintf("sorry, pid %d was killed in exec: VM allocation\n",
 			p->p_pid);
@@ -578,7 +575,7 @@ badmap:
 	 */
 	if ((p->p_flag&STRC)==0) {
 		if (uid != cred->cr_uid || gid != cred->cr_gid) {
-			u.u_cred = cred = crcopy(cred);
+			p->p_ucred = cred = crcopy(cred);
 			/*
 			 * If process is being ktraced, turn off - unless
 			 * root set it.
@@ -591,15 +588,14 @@ badmap:
 		}
 		cred->cr_uid = uid;
 		cred->cr_gid = gid;
-		p->p_uid = uid;
 	} else
 		psignal(p, SIGTRAP);
-	p->p_svuid = p->p_uid;
-	p->p_svgid = cred->cr_gid;
-	u.u_tsize = ts;
-	u.u_dsize = ds;
-	u.u_ssize = ss;
-	u.u_prof.pr_scale = 0;
+	p->p_cred->p_svuid = cred->cr_uid;
+	p->p_cred->p_svgid = cred->cr_gid;
+	vm->vm_tsize = ts;
+	vm->vm_dsize = ds;
+	vm->vm_ssize = ss;
+	p->p_stats->p_prof.pr_scale = 0;
 #if defined(tahoe)
 	u.u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif

@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.22 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -340,10 +340,12 @@ unp_bind(unp, nam)
 {
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct vnode *vp;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct nameidata *ndp;
 	struct vattr vattr;
 	int error;
+	struct nameidata nd;
 
+	ndp = &nd;
 	ndp->ni_dirp = soun->sun_path;
 	if (unp->unp_vnode != NULL)
 		return (EINVAL);
@@ -355,7 +357,7 @@ unp_bind(unp, nam)
 /* SHOULD BE ABLE TO ADOPT EXISTING AND wakeup() ALA FIFO's */
 	ndp->ni_nameiop = CREATE | FOLLOW | LOCKPARENT;
 	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp))
+	if (error = namei(ndp, curproc)) 		/* XXX */
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
@@ -387,10 +389,12 @@ unp_connect(so, nam)
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct vnode *vp;
 	register struct socket *so2, *so3;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct nameidata *ndp;
 	struct unpcb *unp2, *unp3;
 	int error;
+	struct nameidata nd;
 
+	ndp = &nd;
 	ndp->ni_dirp = soun->sun_path;
 	if (nam->m_data + nam->m_len == &nam->m_dat[MLEN]) {	/* XXX */
 		if (*(mtod(nam, caddr_t) + nam->m_len - 1) != 0)
@@ -399,14 +403,14 @@ unp_connect(so, nam)
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_SYSSPACE;
-	if (error = namei(ndp))
+	if (error = namei(ndp, curproc))		/* XXX */
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VSOCK) {
 		error = ENOTSOCK;
 		goto bad;
 	}
-	if (error = VOP_ACCESS(vp, VWRITE, ndp->ni_cred))
+	if (error = VOP_ACCESS(vp, VWRITE, curproc->p_ucred))
 		goto bad;
 	so2 = vp->v_socket;
 	if (so2 == 0) {
@@ -548,7 +552,7 @@ unp_drain()
 unp_externalize(rights)
 	struct mbuf *rights;
 {
-	struct filedesc *fdp = u.u_procp->p_fd;		/* XXX */
+	struct proc *p = curproc;		/* XXX */
 	register int i;
 	register struct cmsghdr *cm = mtod(rights, struct cmsghdr *);
 	register struct file **rp = (struct file **)(cm + 1);
@@ -556,7 +560,7 @@ unp_externalize(rights)
 	int newfds = (cm->cmsg_len - sizeof(*cm)) / sizeof (int);
 	int f;
 
-	if (newfds > ufavail(fdp)) {
+	if (fdavail(p, newfds)) {
 		for (i = 0; i < newfds; i++) {
 			fp = *rp;
 			unp_discard(fp);
@@ -565,10 +569,10 @@ unp_externalize(rights)
 		return (EMSGSIZE);
 	}
 	for (i = 0; i < newfds; i++) {
-		if (ufalloc(fdp, 0, &f))
+		if (fdalloc(p, 0, &f))
 			panic("unp_externalize");
 		fp = *rp;
-		OFILE(fdp, f) = fp;
+		OFILE(p->p_fd, f) = fp;
 		fp->f_msgcount--;
 		unp_rights--;
 		*(int *)rp++ = f;
@@ -579,7 +583,7 @@ unp_externalize(rights)
 unp_internalize(control)
 	struct mbuf *control;
 {
-	struct filedesc *fdp = u.u_procp->p_fd;		/* XXX */
+	struct filedesc *fdp = curproc->p_fd;		/* XXX */
 	register struct cmsghdr *cm = mtod(control, struct cmsghdr *);
 	register struct file **rp;
 	register struct file *fp;
@@ -593,7 +597,7 @@ unp_internalize(control)
 	rp = (struct file **)(cm + 1);
 	for (i = 0; i < oldfds; i++) {
 		fd = *(int *)rp++;
-		if ((unsigned)fd >= fdp->fd_maxfiles || OFILE(fdp, fd) == NULL)
+		if ((unsigned)fd >= fdp->fd_nfiles || OFILE(fdp, fd) == NULL)
 			return (EBADF);
 	}
 	rp = (struct file **)(cm + 1);

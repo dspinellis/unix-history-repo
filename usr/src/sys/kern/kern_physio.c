@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_physio.c	7.16 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,6 +44,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 {
 	register struct iovec *iov;
 	register int requested, done;
+	register struct proc *p = curproc;
 	char *a;
 	int s, allocbuf = 0, error = 0;
 	struct buf *getswbuf();
@@ -171,7 +172,7 @@ freeswbuf(bp)
 	if (bswlist.b_flags & B_WANTED) {
 		bswlist.b_flags &= ~B_WANTED;
 		wakeup((caddr_t)&bswlist);
-		wakeup((caddr_t)&proc[2]);
+		wakeup((caddr_t)pageproc);
 	}
 	splx(s);
 }

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.11 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -107,7 +107,7 @@ shmget(p, uap, retval)
 	int *retval;
 {
 	register struct shmid_ds *shp;
-	register struct ucred *cred = u.u_cred;
+	register struct ucred *cred = p->p_ucred;
 	register int i;
 	int error, size, rval = 0;
 	register struct shmhandle *shmh;
@@ -201,7 +201,7 @@ shmctl(p, uap, retval)
 	int *retval;
 {
 	register struct shmid_ds *shp;
-	register struct ucred *cred = u.u_cred;
+	register struct ucred *cred = p->p_ucred;
 	struct shmid_ds sbuf;
 	int error;
 
@@ -280,12 +280,12 @@ shmat(p, uap, retval)
 	 * Allocate descriptors now (before validity check)
 	 * in case malloc() blocks.
 	 */
-	shmd = (struct shmdesc *)p->p_shm;
+	shmd = (struct shmdesc *)p->p_vmspace->vm_shm;
 	size = shminfo.shmseg * sizeof(struct shmdesc);
 	if (shmd == NULL) {
 		shmd = (struct shmdesc *)malloc(size, M_SHM, M_WAITOK);
 		bzero((caddr_t)shmd, size);
-		p->p_shm = (caddr_t)shmd;
+		p->p_vmspace->vm_shm = (caddr_t)shmd;
 	}
 	if (error = shmvalid(uap->shmid))
 		return (error);
@@ -293,7 +293,7 @@ shmat(p, uap, retval)
 	if (shp->shm_handle == NULL)
 		panic("shmat NULL handle");
 	if (error = ipcaccess(&shp->shm_perm,
-			(uap->shmflg&SHM_RDONLY) ? IPC_R : IPC_R|IPC_W, u.u_cred))
+	    (uap->shmflg&SHM_RDONLY) ? IPC_R : IPC_R|IPC_W, p->p_ucred))
 		return (error);
 	uva = uap->shmaddr;
 	if (uva && ((int)uva & (SHMLBA-1))) {
@@ -321,8 +321,8 @@ shmat(p, uap, retval)
 		flags |= MAP_FIXED;
 	else
 		uva = (caddr_t)0x1000000;	/* XXX */
-	error = vm_mmap(p->p_map, &uva, (vm_size_t)size, prot, flags,
-			((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
+	error = vm_mmap(p->p_vmspace->vm_map, &uva, (vm_size_t)size, prot,
+	    flags, ((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
 		return(error);
 	shmd->shmd_uva = (vm_offset_t)uva;
@@ -351,7 +351,7 @@ shmdt(p, uap, retval)
 	register struct shmdesc *shmd;
 	register int i;
 
-	shmd = (struct shmdesc *)p->p_shm;
+	shmd = (struct shmdesc *)p->p_vmspace->vm_shm;
 	for (i = 0; i < shminfo.shmseg; i++, shmd++)
 		if (shmd->shmd_uva &&
 		    shmd->shmd_uva == (vm_offset_t)uap->shmaddr)
@@ -362,8 +362,8 @@ shmdt(p, uap, retval)
 	shmsegs[shmd->shmd_id % SHMMMNI].shm_lpid = p->p_pid;
 }
 
-shmfork(rip, rpp, isvfork)
-	struct proc *rip, *rpp;
+shmfork(p1, p2, isvfork)
+	struct proc *p1, *p2;
 	int isvfork;
 {
 	register struct shmdesc *shmd;
@@ -374,8 +374,8 @@ shmfork(rip, rpp, isvfork)
 	 */
 	size = shminfo.shmseg * sizeof(struct shmdesc);
 	shmd = (struct shmdesc *)malloc(size, M_SHM, M_WAITOK);
-	bcopy((caddr_t)rip->p_shm, (caddr_t)shmd, size);
-	rpp->p_shm = (caddr_t)shmd;
+	bcopy((caddr_t)p1->p_vmspace->vm_shm, (caddr_t)shmd, size);
+	p2->p_vmspace->vm_shm = (caddr_t)shmd;
 	/*
 	 * Increment reference counts
 	 */
@@ -390,12 +390,12 @@ shmexit(p)
 	register struct shmdesc *shmd;
 	register int i;
 
-	shmd = (struct shmdesc *)p->p_shm;
+	shmd = (struct shmdesc *)p->p_vmspace->vm_shm;
 	for (i = 0; i < shminfo.shmseg; i++, shmd++)
 		if (shmd->shmd_uva)
 			shmufree(p, shmd);
-	free((caddr_t)p->p_shm, M_SHM);
-	p->p_shm = NULL;
+	free((caddr_t)p->p_vmspace->vm_shm, M_SHM);
+	p->p_vmspace->vm_shm = NULL;
 }
 
 shmvalid(id)
@@ -422,7 +422,7 @@ shmufree(p, shmd)
 	register struct shmid_ds *shp;
 
 	shp = &shmsegs[shmd->shmd_id % SHMMMNI];
-	(void) vm_deallocate(p->p_map, shmd->shmd_uva,
+	(void) vm_deallocate(p->p_vmspace->vm_map, shmd->shmd_uva,
 			     ctob(clrnd(btoc(shp->shm_segsz))));
 	shmd->shmd_id = 0;
 	shmd->shmd_uva = 0;

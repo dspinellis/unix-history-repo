@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1991 Regents of the University of California.
+ * All rights reserved. 
  *
- *	@(#)kern_subr.c	7.4 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)kern_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,9 +107,9 @@ strcat(src, append)
 {
 
 	for (; *src; ++src)
-		/* void */;
+		;
 	while (*src++ = *append++)
-		/* void */;
+		;
 }
 
 strcpy(to, from)
@@ -116,7 +117,7 @@ strcpy(to, from)
 {
 
 	for (; *from = *to; ++from, ++to)
-		/* void */;
+		;
 }
 
 strncpy(to, from, cnt)
@@ -125,11 +126,11 @@ strncpy(to, from, cnt)
 {
 
 	for (; cnt && (*to = *from); --cnt, ++from, ++to)
-		/* void */;
+		;
 	*to = '\0';
 }
 
-#ifndef lint	/* unused except by ct.c, other oddities */
+#ifndef lint	/* unused except by ct.c, other oddities XXX */
 /*
  * Get next character written in by user from uio.
  */
@@ -158,7 +159,7 @@ again:
 		break;
 
 	case UIO_SYSSPACE:
-		c = *iov->iov_base & 0377;
+		c = *(u_char *) iov->iov_base;
 		break;
 
 	case UIO_USERISPACE:
@@ -171,6 +172,6 @@ again:
 	iov->iov_len--;
 	uio->uio_resid--;
 	uio->uio_offset++;
-	return (c & 0377);
+	return (c);
 }
 #endif /* notdef */

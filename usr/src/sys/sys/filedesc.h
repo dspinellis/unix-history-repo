@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)filedesc.h	7.2 (Berkeley) %G%
+ *	@(#)filedesc.h	7.3 (Berkeley) %G%
  */
 
 #ifndef _FILEDESC_H_
@@ -17,29 +17,24 @@
  * A process is initially started out with NDFILE worth of
  * descriptors, selected to be enough for typical applications
  * based on the historic limit of 20 open files. Additional
- * descriptors may be allocated up to a system defined limit
- * defined by the global variable nofile; the initial value
- * of nofile is set to NOFILE. The initial expansion is set to
- * NDEXTENT; each time it runs out it is doubled until nofile
- * is reached. NDEXTENT should be selected to be the biggest
- * multiple of OFILESIZE (see below) that will fit in a
- * power-of-two sized piece of memory.
+ * descriptors may be allocated up to a process' resource limit.
+ * The initial expansion is set to NOEXTENT; each time it runs out,
+ * it is doubled until the resource limit is reached. NOEXTENT should
+ * be selected to be the biggest multiple of OFILESIZE (see below)
+ * that will fit in a power-of-two sized piece of memory.
  */
-#define NDFILE		20
-#define NDEXTENT	25
+#define NOEXTENT	25		/* 125 bytes in 128-byte alloc. */ 
 
 struct filedesc {
+	struct	file **fd_ofiles;	/* file structures for open files */
+	char	*fd_ofileflags;		/* per-process open file flags */
 	struct	vnode *fd_cdir;		/* current directory */
 	struct	vnode *fd_rdir;		/* root directory */
+	int	fd_nfiles;		/* number of open files allocated */
+	int	fd_lastfile;		/* high-water mark of fd_ofiles */
+	int	fd_freefile;		/* approx. next free file */
 	u_short	fd_cmask;		/* mask for file creation */
 	u_short	fd_refcnt;		/* reference count */
-	short	fd_lastfile;		/* high-water mark of fd_ofile */
-	short	fd_maxfiles;		/* maximum number of open files */
-	struct	file *fd_ofile[NDFILE];	/* file structures for open files */
-	struct	file **fd_moreofiles;	/* the rest of the open files */
-	char	fd_ofileflags[NDFILE];	/* per-process open file flags */
-	char	*fd_moreofileflags;	/* the rest of the open file flags */
-	long	fd_spare;		/* unused to round up to power of two */
 };
 
 /*
@@ -51,27 +46,13 @@ struct filedesc {
 /*
  * Data structure access macros.
  */
-#if !defined(vax) && !defined(tahoe)
-#define OFILE(fd, indx) ((indx) < NDFILE ? \
-	(fd)->fd_ofile[indx] : \
-	(fd)->fd_moreofiles[(indx) - NDFILE])
-#define OFILEFLAGS(fd, indx) ((indx) < NDFILE ? \
-	(fd)->fd_ofileflags[indx] : \
-	(fd)->fd_moreofileflags[(indx) - NDFILE])
+#define OFILE(fd, indx)	((fd)->fd_ofiles[indx])
+#define OFILEFLAGS(fd, indx) ((fd)->fd_ofileflags[indx])
 #define OFILESIZE (sizeof(struct file *) + sizeof(char))
-#else
-/* PCC cannot handle above as lvalues */
-struct file **ofilefunc();
-char *ofileflagsfunc();
-#define OFILE(fd, indx) *ofilefunc(fd, indx)
-#define OFILEFLAGS(fd, indx) *ofileflagsfunc(fd, indx)
-#define OFILESIZE (sizeof(struct file *) + sizeof(char))
-#endif
 
 /*
  * Kernel global variables and routines.
  */
-extern struct filedesc *fddup();
-extern int nofile;
+extern struct filedesc *fdcopy();
 
 #endif /* !_FILEDESC_H_ */

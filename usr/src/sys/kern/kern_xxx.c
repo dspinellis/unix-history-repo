@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_xxx.c	7.15 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,7 +63,7 @@ sethostname(p, uap, retval)
 {
 	int error;
 
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	if (uap->len > sizeof (hostname) - 1)
 		return (EINVAL);

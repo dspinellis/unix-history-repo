@@ -1,45 +1,41 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989, 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.26 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.27 (Berkeley) %G%
  */
 
+#define	SIGPROP		/* include signal properties table */
 #include "param.h"
-#include "systm.h"
-#include "user.h"
+/*#include "signalvar.h" */
+#include "user.h"		/* XXX */
 #include "vnode.h"
 #include "proc.h"
+#include "kinfo_proc.h"
+#include "systm.h"
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
 #include "seg.h"
 #include "acct.h"
-#include "uio.h"
 #include "file.h"
 #include "kernel.h"
 #include "wait.h"
 #include "ktrace.h"
 
-#include "machine/reg.h"
-#include "machine/psl.h"
-#include "machine/mtpr.h"
 #include "../vm/vm_param.h"
 
-#define	ttystopsigmask	(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU))
-#define	stopsigmask	(sigmask(SIGSTOP)|ttystopsigmask)
-#define defaultignmask	(sigmask(SIGCONT)|sigmask(SIGIO)|sigmask(SIGURG)| \
-			sigmask(SIGCHLD)|sigmask(SIGWINCH)|sigmask(SIGINFO))
-
 /*
- * Can process p send the signal signo to process q?
+ * Can process p, with pcred pc, send the signal signo to process q?
  */
-#define CANSIGNAL(p, q, signo) \
-	((p)->p_uid == 0 || \
-	    (p)->p_ruid == (q)->p_ruid || (p)->p_uid == (q)->p_ruid || \
-	    (p)->p_ruid == (q)->p_uid || (p)->p_uid == (q)->p_uid || \
+#define CANSIGNAL(p, pc, q, signo) \
+	((pc)->pc_ucred->cr_uid == 0 || \
+	    (pc)->p_ruid == (q)->p_cred->p_ruid || \
+	    (pc)->pc_ucred->cr_uid == (q)->p_cred->p_ruid || \
+	    (pc)->p_ruid == (q)->p_ucred->cr_uid || \
+	    (pc)->pc_ucred->cr_uid == (q)->p_ucred->cr_uid || \
 	    ((signo) == SIGCONT && (q)->p_session == (p)->p_session))
 
 /* ARGSUSED */
@@ -54,6 +50,7 @@ sigaction(p, uap, retval)
 {
 	struct sigaction vec;
 	register struct sigaction *sa;
+	register struct sigacts *ps = p->p_sigacts;
 	register int sig;
 	int bit, error;
 
@@ -62,13 +59,13 @@ sigaction(p, uap, retval)
 		return (EINVAL);
 	sa = &vec;
 	if (uap->osa) {
-		sa->sa_handler = u.u_signal[sig];
-		sa->sa_mask = u.u_sigmask[sig];
+		sa->sa_handler = ps->ps_sigact[sig];
+		sa->sa_mask = ps->ps_catchmask[sig];
 		bit = sigmask(sig);
 		sa->sa_flags = 0;
-		if ((u.u_sigonstack & bit) != 0)
+		if ((ps->ps_sigonstack & bit) != 0)
 			sa->sa_flags |= SA_ONSTACK;
-		if ((u.u_sigintr & bit) == 0)
+		if ((ps->ps_sigintr & bit) == 0)
 			sa->sa_flags |= SA_RESTART;
 		if (p->p_flag & SNOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
@@ -90,6 +87,7 @@ setsigvec(p, sig, sa)
 	int sig;
 	register struct sigaction *sa;
 {
+	register struct sigacts *ps = p->p_sigacts;
 	register int bit;
 
 	bit = sigmask(sig);
@@ -97,16 +95,16 @@ setsigvec(p, sig, sa)
 	 * Change setting atomically.
 	 */
 	(void) splhigh();
-	u.u_signal[sig] = sa->sa_handler;
-	u.u_sigmask[sig] = sa->sa_mask &~ sigcantmask;
+	ps->ps_sigact[sig] = sa->sa_handler;
+	ps->ps_catchmask[sig] = sa->sa_mask &~ sigcantmask;
 	if ((sa->sa_flags & SA_RESTART) == 0)
-		u.u_sigintr |= bit;
+		ps->ps_sigintr |= bit;
 	else
-		u.u_sigintr &= ~bit;
+		ps->ps_sigintr &= ~bit;
 	if (sa->sa_flags & SA_ONSTACK)
-		u.u_sigonstack |= bit;
+		ps->ps_sigonstack |= bit;
 	else
-		u.u_sigonstack &= ~bit;
+		ps->ps_sigonstack &= ~bit;
 	if (sig == SIGCHLD) {
 		if (sa->sa_flags & SA_NOCLDSTOP)
 			p->p_flag |= SNOCLDSTOP;
@@ -120,7 +118,7 @@ setsigvec(p, sig, sa)
 	 * as we have to restart the process.
 	 */
 	if (sa->sa_handler == SIG_IGN ||
-	   (bit & defaultignmask && sa->sa_handler == SIG_DFL)) {
+	    (sigprop[sig] & SA_IGNORE && sa->sa_handler == SIG_DFL)) {
 		p->p_sig &= ~bit;		/* never to be seen again */
 		if (sig != SIGCONT)
 			p->p_sigignore |= bit;	/* easier in psignal */
@@ -139,19 +137,25 @@ setsigvec(p, sig, sa)
  * Initialize signal state for process 0;
  * set to ignore signals that are ignored by default.
  */
+void
 siginit(p)
 	struct proc *p;
 {
+	register int i;
 
-	p->p_sigignore = defaultignmask &~ sigmask(SIGCONT);
+	for (i = 0; i < NSIG; i++)
+		if (sigprop[i] & SA_IGNORE && i != SIGCONT)
+			p->p_sigignore |= sigmask(i);
 }
 
 /*
  * Reset signals for an exec of the specified process.
  */
+void
 execsigs(p)
 	register struct proc *p;
 {
+	register struct sigacts *ps = p->p_sigacts;
 	register int nc, mask;
 
 	/*
@@ -163,20 +167,20 @@ execsigs(p)
 		nc = ffs((long)p->p_sigcatch);
 		mask = sigmask(nc);
 		p->p_sigcatch &= ~mask;
-		if (mask & defaultignmask) {
+		if (sigprop[nc] & SA_IGNORE) {
 			if (nc != SIGCONT)
 				p->p_sigignore |= mask;
 			p->p_sig &= ~mask;
 		}
-		u.u_signal[nc] = SIG_DFL;
+		ps->ps_sigact[nc] = SIG_DFL;
 	}
 	/*
 	 * Reset stack state to the user stack.
 	 * Clear set of signals caught on the signal stack.
 	 */
-	u.u_onstack = 0;
-	u.u_sigsp = 0;
-	u.u_sigonstack = 0;
+	ps->ps_onstack = 0;
+	ps->ps_sigsp = 0;
+	ps->ps_sigonstack = 0;
 }
 
 /*
@@ -245,6 +249,7 @@ osigvec(p, uap, retval)
 	int *retval;
 {
 	struct sigvec vec;
+	register struct sigacts *ps = p->p_sigacts;
 	register struct sigvec *sv;
 	register int sig;
 	int bit, error;
@@ -254,13 +259,13 @@ osigvec(p, uap, retval)
 		return (EINVAL);
 	sv = &vec;
 	if (uap->osv) {
-		*(sig_t *)&sv->sv_handler = u.u_signal[sig];
-		sv->sv_mask = u.u_sigmask[sig];
+		*(sig_t *)&sv->sv_handler = ps->ps_sigact[sig];
+		sv->sv_mask = ps->ps_catchmask[sig];
 		bit = sigmask(sig);
 		sv->sv_flags = 0;
-		if ((u.u_sigonstack & bit) != 0)
+		if ((ps->ps_sigonstack & bit) != 0)
 			sv->sv_flags |= SV_ONSTACK;
-		if ((u.u_sigintr & bit) != 0)
+		if ((ps->ps_sigintr & bit) != 0)
 			sv->sv_flags |= SV_INTERRUPT;
 		if (p->p_flag & SNOCLDSTOP)
 			sv->sv_flags |= SA_NOCLDSTOP;
@@ -322,18 +327,19 @@ sigsuspend(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct sigacts *ps = p->p_sigacts;
 
 	/*
 	 * When returning from sigpause, we want
 	 * the old mask to be restored after the
 	 * signal handler has finished.  Thus, we
 	 * save it here and mark the proc structure
-	 * to indicate this (should be in u.).
+	 * to indicate this (should be in sigacts).
 	 */
-	u.u_oldmask = p->p_sigmask;
-	p->p_flag |= SOMASK;
+	ps->ps_oldmask = p->p_sigmask;
+	ps->ps_flags |= SA_OLDMASK;
 	p->p_sigmask = uap->mask &~ sigcantmask;
-	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
+	(void) tsleep((caddr_t) ps, PPAUSE|PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
 	return (EINTR);
 }
@@ -350,12 +356,12 @@ sigstack(p, uap, retval)
 	struct sigstack ss;
 	int error = 0;
 
-	if (uap->oss && (error = copyout((caddr_t)&u.u_sigstack,
+	if (uap->oss && (error = copyout((caddr_t)&p->p_sigacts->ps_sigstack,
 	    (caddr_t)uap->oss, sizeof (struct sigstack))))
 		return (error);
 	if (uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
 	    sizeof (ss))) == 0)
-		u.u_sigstack = ss;
+		p->p_sigacts->ps_sigstack = ss;
 	return (error);
 }
 
@@ -369,6 +375,7 @@ kill(cp, uap, retval)
 	int *retval;
 {
 	register struct proc *p;
+	register struct pcred *pc = cp->p_cred;
 
 	if ((unsigned) uap->signo >= NSIG)
 		return (EINVAL);
@@ -377,7 +384,7 @@ kill(cp, uap, retval)
 		p = pfind(uap->pid);
 		if (p == 0)
 			return (ESRCH);
-		if (!CANSIGNAL(cp, p, uap->signo))
+		if (!CANSIGNAL(cp, pc, p, uap->signo))
 			return (EPERM);
 		if (uap->signo)
 			psignal(p, uap->signo);
@@ -420,18 +427,19 @@ killpg1(cp, signo, pgid, all)
 	int signo, pgid, all;
 {
 	register struct proc *p;
+	register struct pcred *pc = cp->p_cred;
 	struct pgrp *pgrp;
-	int f = 0;
+	int nfound = 0;
 	
 	if (all)	
 		/* 
 		 * broadcast 
 		 */
 		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_ppid == 0 || p->p_flag&SSYS || 
-			    p == u.u_procp || !CANSIGNAL(cp, p, signo))
+			if (p->p_pid <= 1 || p->p_flag&SSYS || 
+			    p == cp || !CANSIGNAL(cp, pc, p, signo))
 				continue;
-			f++;
+			nfound++;
 			if (signo)
 				psignal(p, signo);
 		}
@@ -440,22 +448,22 @@ killpg1(cp, signo, pgid, all)
 			/* 
 			 * zero pgid means send to my process group.
 			 */
-			pgrp = u.u_procp->p_pgrp;
+			pgrp = cp->p_pgrp;
 		else {
 			pgrp = pgfind(pgid);
 			if (pgrp == NULL)
 				return (ESRCH);
 		}
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
-			if (p->p_ppid == 0 || p->p_flag&SSYS ||
-			    !CANSIGNAL(cp, p, signo))
+			if (p->p_pid <= 1 || p->p_flag&SSYS ||
+			    !CANSIGNAL(cp, pc, p, signo))
 				continue;
-			f++;
+			nfound++;
 			if (signo)
 				psignal(p, signo);
 		}
 	}
-	return (f ? 0 : ESRCH);
+	return (nfound ? 0 : ESRCH);
 }
 
 /*
@@ -463,7 +471,9 @@ killpg1(cp, signo, pgid, all)
  * all processes with 'pgid' as
  * process group.
  */
+void
 gsignal(pgid, sig)
+	int pgid, sig;
 {
 	struct pgrp *pgrp;
 
@@ -476,8 +486,10 @@ gsignal(pgid, sig)
  * If checktty is 1, limit to members which have a controlling
  * terminal.
  */
+void
 pgsignal(pgrp, sig, checkctty)
 	struct pgrp *pgrp;
+	int sig, checkctty;
 {
 	register struct proc *p;
 
@@ -492,38 +504,41 @@ pgsignal(pgrp, sig, checkctty)
  * If it will be caught immediately, deliver it with correct code.
  * Otherwise, post it normally.
  */
-trapsignal(sig, code)
+void
+trapsignal(p, sig, code)
+	struct proc *p;
 	register int sig;
 	unsigned code;
 {
-	register struct proc *p = u.u_procp;	/* XXX */
+	register struct sigacts *ps = p->p_sigacts;
 	int mask;
 
 	mask = sigmask(sig);
 	if ((p->p_flag & STRC) == 0 && (p->p_sigcatch & mask) != 0 &&
 	    (p->p_sigmask & mask) == 0) {
-		u.u_ru.ru_nsignals++;
+		p->p_stats->p_ru.ru_nsignals++;
 #ifdef KTRACE
 		if (KTRPOINT(p, KTR_PSIG))
-			ktrpsig(p->p_tracep, sig, u.u_signal[sig], 
+			ktrpsig(p->p_tracep, sig, ps->ps_sigact[sig], 
 				p->p_sigmask, code);
 #endif
 #if	defined(i386)
-		sendsig(u.u_signal[sig], sig, p->p_sigmask, code, 0x100);
+		sendsig(ps->ps_sigact[sig], sig, p->p_sigmask, code, 0x100);
 #else
-		sendsig(u.u_signal[sig], sig, p->p_sigmask, code);
+		sendsig(ps->ps_sigact[sig], sig, p->p_sigmask, code);
 #endif
-		p->p_sigmask |= u.u_sigmask[sig] | mask;
+		p->p_sigmask |= ps->ps_catchmask[sig] | mask;
 	} else {
-		u.u_code = code;	/* XXX for core dump/debugger */
+		ps->ps_code = code;	/* XXX for core dump/debugger */
 		psignal(p, sig);
 	}
 }
 
 /*
  * Send the specified signal to the specified process.
- * Most signals do not do anything directly to a process;
- * they set a flag that asks the process to do something to itself.
+ * If the signal has an action, the action is usually performed
+ * by the target process rather than the caller; we simply add
+ * the signal to the set of pending signals for the process.
  * Exceptions:
  *   o When a stop signal is sent to a sleeping process that takes the default
  *     action, the process is stopped without awakening it.
@@ -531,17 +546,19 @@ trapsignal(sig, code)
  *     regardless of the signal action (eg, blocked or ignored).
  * Other ignored signals are discarded immediately.
  */
+void
 psignal(p, sig)
 	register struct proc *p;
 	register int sig;
 {
-	register int s;
+	register int s, prop;
 	register sig_t action;
 	int mask;
 
 	if ((unsigned)sig >= NSIG || sig == 0)
 		panic("psignal sig");
 	mask = sigmask(sig);
+	prop = sigprop[sig];
 
 	/*
 	 * If proc is traced, always give parent a chance.
@@ -565,38 +582,25 @@ psignal(p, sig)
 		else
 			action = SIG_DFL;
 	}
-	switch (sig) {
 
-	case SIGTERM:
-		if ((p->p_flag&STRC) || action != SIG_DFL)
-			break;
-		/* FALLTHROUGH */
+	if (p->p_nice > NZERO && (sig == SIGKILL ||
+	    sig == SIGTERM && (p->p_flag&STRC || action != SIG_DFL)))
+		p->p_nice = NZERO;
 
-	case SIGKILL:
-		if (p->p_nice > NZERO)
-			p->p_nice = NZERO;
-		break;
-
-	case SIGCONT:
+	if (prop & SA_CONT)
 		p->p_sig &= ~stopsigmask;
-		break;
 
-	case SIGTSTP:
-	case SIGTTIN:
-	case SIGTTOU:
+	if (prop & SA_STOP) {
 		/*
 		 * If sending a tty stop signal to a member of an orphaned
 		 * process group, discard the signal here if the action
 		 * is default; don't stop the process below if sleeping,
 		 * and don't clear any pending SIGCONT.
 		 */
-		if (p->p_pgrp->pg_jobc == 0 && action == SIG_DFL)
+		if (prop & SA_TTYSTOP && p->p_pgrp->pg_jobc == 0 &&
+		    action == SIG_DFL)
 		        return;
-		/* FALLTHROUGH */
-
-	case SIGSTOP:
-		p->p_sig &= ~sigmask(SIGCONT);
-		break;
+		p->p_sig &= ~contsigmask;
 	}
 	p->p_sig |= mask;
 
@@ -604,7 +608,7 @@ psignal(p, sig)
 	 * Defer further processing for signals which are held,
 	 * except that stopped processes must be continued by SIGCONT.
 	 */
-	if (action == SIG_HOLD && (sig != SIGCONT || p->p_stat != SSTOP))
+	if (action == SIG_HOLD && ((prop & SA_CONT) == 0 || p->p_stat != SSTOP))
 		return;
 	s = splhigh();
 	switch (p->p_stat) {
@@ -631,14 +635,14 @@ psignal(p, sig)
 		 * All other (caught or default) signals
 		 * cause the process to run.
 		 */
-		if (mask & stopsigmask) {
+		if (prop & SA_STOP) {
 			if (action != SIG_DFL)
 				goto runfast;
 			/*
-			 * If a child in vfork(), stopping could
-			 * cause deadlock.
+			 * If a child holding parent blocked,
+			 * stopping could cause deadlock.
 			 */
-			if (p->p_flag&SVFORK)
+			if (p->p_flag&SPPWAIT)
 				goto out;
 			p->p_sig &= ~mask;
 			p->p_xstat = sig;
@@ -657,15 +661,14 @@ psignal(p, sig)
 		 */
 		if (p->p_flag&STRC)
 			goto out;
-		switch (sig) {
 
-		case SIGKILL:
-			/*
-			 * Kill signal always sets processes running.
-			 */
+		/*
+		 * Kill signal always sets processes running.
+		 */
+		if (sig == SIGKILL)
 			goto runfast;
 
-		case SIGCONT:
+		if (prop & SA_CONT) {
 			/*
 			 * If SIGCONT is default (or ignored), we continue
 			 * the process but don't leave the signal in p_sig,
@@ -684,30 +687,26 @@ psignal(p, sig)
 				goto run;
 			p->p_stat = SSLEEP;
 			goto out;
+		}
 
-		case SIGSTOP:
-		case SIGTSTP:
-		case SIGTTIN:
-		case SIGTTOU:
+		if (prop & SA_STOP) {
 			/*
 			 * Already stopped, don't need to stop again.
 			 * (If we did the shell could get confused.)
 			 */
 			p->p_sig &= ~mask;		/* take it away */
 			goto out;
-
-		default:
-			/*
-			 * If process is sleeping interruptibly, then
-			 * simulate a wakeup so that when it is continued,
-			 * it will be made runnable and can look at the signal.
-			 * But don't setrun the process, leave it stopped.
-			 */
-			if (p->p_wchan && p->p_flag & SSINTR)
-				unsleep(p);
-			goto out;
 		}
-		/*NOTREACHED*/
+
+		/*
+		 * If process is sleeping interruptibly, then
+		 * simulate a wakeup so that when it is continued,
+		 * it will be made runnable and can look at the signal.
+		 * But don't setrun the process, leave it stopped.
+		 */
+		if (p->p_wchan && p->p_flag & SSINTR)
+			unsleep(p);
+		goto out;
 
 	default:
 		/*
@@ -715,7 +714,7 @@ psignal(p, sig)
 		 * other than kicking ourselves if we are running.
 		 * It will either never be noticed, or noticed very soon.
 		 */
-		if (p == u.u_procp && !noproc)
+		if (p == curproc && !noproc)
 			aston();
 		goto out;
 	}
@@ -738,23 +737,28 @@ out:
  * or cause termination, should interrupt current syscall),
  * return the signal number.  Stop signals with default action
  * are processed immediately, then cleared; they aren't returned.
- * This is asked at least once each time a process enters the
- * system (though this can usually be done without actually
- * calling issig by checking the pending signal masks.)
+ * This is checked after each entry to the system for a syscall
+ * or trap (though this can usually be done without actually calling
+ * issig by checking the pending signal masks in the CURSIG macro.)
+ * The normal call sequence is
+ *
+ *	while (sig = CURSIG(curproc))
+ *		psig(sig);
  */
-issig()
+issig(p)
+	register struct proc *p;
 {
-	register struct proc *p = u.u_procp;		/* XXX */
-	register int sig, mask;
+	register int sig, mask, prop;
 
 	for (;;) {
 		mask = p->p_sig &~ p->p_sigmask;
-		if (p->p_flag&SVFORK)
+		if (p->p_flag&SPPWAIT)
 			mask &= ~stopsigmask;
 		if (mask == 0)	 	/* no signal to send */
 			return (0);
 		sig = ffs((long)mask);
 		mask = sigmask(sig);
+		prop = sigprop[sig];
 		/*
 		 * We should see pending but ignored signals
 		 * only if STRC was on when they were posted.
@@ -763,7 +767,7 @@ issig()
 			p->p_sig &= ~mask;
 			continue;
 		}
-		if (p->p_flag&STRC && (p->p_flag&SVFORK) == 0) {
+		if (p->p_flag&STRC && (p->p_flag&SPPWAIT) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -809,13 +813,13 @@ issig()
 		 * Return the signal's number, or fall through
 		 * to clear it from the pending mask.
 		 */
-		switch ((int)u.u_signal[sig]) {
+		switch ((int)p->p_sigacts->ps_sigact[sig]) {
 
 		case SIG_DFL:
 			/*
 			 * Don't take default actions on system processes.
 			 */
-			if (p->p_ppid == 0)
+			if (p->p_pid <= 1)
 				break;		/* == ignore */
 			/*
 			 * If there is a pending stop signal to process
@@ -824,10 +828,10 @@ issig()
 			 * if process is member of an orphaned
 			 * process group, ignore tty stop signals.
 			 */
-			if (mask & stopsigmask) {
+			if (prop & SA_STOP) {
 				if (p->p_flag&STRC ||
 		    		    (p->p_pgrp->pg_jobc == 0 &&
-				    mask & ttystopsigmask))
+				    prop & SA_TTYSTOP))
 					break;	/* == ignore */
 				p->p_xstat = sig;
 				stop(p);
@@ -835,7 +839,7 @@ issig()
 					psignal(p->p_pptr, SIGCHLD);
 				swtch();
 				break;
-			} else if (mask & defaultignmask) {
+			} else if (prop & SA_IGNORE) {
 				/*
 				 * Except for SIGCONT, shouldn't get here.
 				 * Default action is to ignore; drop it.
@@ -851,7 +855,7 @@ issig()
 			 * to take action on an ignored signal other
 			 * than SIGCONT, unless process is traced.
 			 */
-			if (sig != SIGCONT && (p->p_flag&STRC) == 0)
+			if ((prop & SA_CONT) == 0 && (p->p_flag&STRC) == 0)
 				printf("issig\n");
 			break;		/* == ignore */
 
@@ -883,11 +887,10 @@ stop(p)
 }
 
 /*
- * Perform the action specified by the current signal.
- * The usual sequence is:
- *	if (sig = CURSIG(p))
- *		psig(sig);
+ * Take the action for the specified signal
+ * from the current set of pending signals.
  */
+void
 #if defined(i386)
 psig(sig, flags)
 #else
@@ -895,109 +898,110 @@ psig(sig)
 #endif
 	register int sig;
 {
-	register struct proc *p = u.u_procp;
-	int mask, returnmask;
+	register struct proc *p = curproc;
+	register struct sigacts *ps = p->p_sigacts;
 	register sig_t action;
+	int mask, returnmask;
 
-	do {
 #ifdef DIAGNOSTIC
-		if (sig == 0)
-			panic("psig");
+	if (sig == 0)
+		panic("psig");
 #endif
-		mask = sigmask(sig);
-		p->p_sig &= ~mask;
-		action = u.u_signal[sig];
+	mask = sigmask(sig);
+	p->p_sig &= ~mask;
+	action = ps->ps_sigact[sig];
 #ifdef KTRACE
-		if (KTRPOINT(p, KTR_PSIG))
-			ktrpsig(p->p_tracep, sig, action, p->p_flag & SOMASK ?
-				u.u_oldmask : p->p_sigmask, 0);
+	if (KTRPOINT(p, KTR_PSIG))
+		ktrpsig(p->p_tracep, sig, action, ps->ps_flags & SA_OLDMASK ?
+		    ps->ps_oldmask : p->p_sigmask, 0);
 #endif
-		if (action != SIG_DFL) {
-#ifdef DIAGNOSTIC
-			if (action == SIG_IGN || (p->p_sigmask & mask))
-				panic("psig action");
-#endif
-			/*
-			 * Set the new mask value and also defer further
-			 * occurences of this signal.
-			 *
-			 * Special case: user has done a sigpause.  Here the
-			 * current mask is not of interest, but rather the
-			 * mask from before the sigpause is what we want
-			 * restored after the signal processing is completed.
-			 */
-			(void) splhigh();
-			if (p->p_flag & SOMASK) {
-				returnmask = u.u_oldmask;
-				p->p_flag &= ~SOMASK;
-			} else
-				returnmask = p->p_sigmask;
-			p->p_sigmask |= u.u_sigmask[sig] | mask;
-			(void) spl0();
-			u.u_ru.ru_nsignals++;
-#if	defined(i386)
-			sendsig(action, sig, returnmask, 0, flags);
-#else
-			sendsig(action, sig, returnmask, 0);
-#endif
-			continue;
-		}
-		u.u_acflag |= AXSIG;
-		switch (sig) {
-
-		case SIGILL:
-		case SIGIOT:
-		case SIGBUS:
-		case SIGQUIT:
-		case SIGTRAP:
-		case SIGEMT:
-		case SIGFPE:
-		case SIGSEGV:
-		case SIGSYS:
-			u.u_sig = sig;
-			if (core() == 0)
+	if (action == SIG_DFL) {
+		/*
+		 * Default action, where the default is to kill
+		 * the process.  (Other cases were ignored above.)
+		 * Mark the accounting record with the signal termination.
+		 * If dumping core, save the signal number for the debugger.
+		 */
+		p->p_acflag |= AXSIG;
+		if (sigprop[sig] & SA_CORE) {
+			ps->ps_sig = sig;
+			if (coredump(p) == 0)
 				sig |= WCOREFLAG;
 		}
 		exit(p, W_EXITCODE(0, sig));
 		/* NOTREACHED */
-	} while (sig = CURSIG(p));
+	} else {
+		/*
+		 * If we get here, the signal must be caught.
+		 */
+#ifdef DIAGNOSTIC
+		if (action == SIG_IGN || (p->p_sigmask & mask))
+			panic("psig action");
+#endif
+		/*
+		 * Set the new mask value and also defer further
+		 * occurences of this signal.
+		 *
+		 * Special case: user has done a sigpause.  Here the
+		 * current mask is not of interest, but rather the
+		 * mask from before the sigpause is what we want
+		 * restored after the signal processing is completed.
+		 */
+		(void) splhigh();
+		if (ps->ps_flags & SA_OLDMASK) {
+			returnmask = ps->ps_oldmask;
+			ps->ps_flags &= ~SA_OLDMASK;
+		} else
+			returnmask = p->p_sigmask;
+		p->p_sigmask |= ps->ps_catchmask[sig] | mask;
+		(void) spl0();
+		p->p_stats->p_ru.ru_nsignals++;
+#if	defined(i386)
+		sendsig(action, sig, returnmask, 0, flags);
+#else
+		sendsig(action, sig, returnmask, 0);
+#endif
+	}
 }
 
 /*
- * Create a core image on the file "core".
- * It writes UPAGES block of the
- * user.h area followed by the entire
- * data+stack segments.
+ * Create a core dump.
+ * The file name should probably be "core.progname"
+ * (or "mos.progname", or "dram.progname", or ...).
+ * Core dumps aren't created if the process 
  */
-core()
+coredump(p)
+	register struct proc *p;
 {
 	register struct vnode *vp;
-	register struct proc *p = u.u_procp;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct pcred *pcred = p->p_cred;
+	register struct ucred *cred = pcred->pc_ucred;
+	register struct vmspace *vm = p->p_vmspace;
 	struct vattr vattr;
 	int error;
+	struct nameidata nd;
 
-	if (p->p_svuid != p->p_ruid || p->p_svgid != p->p_rgid)
+	if (pcred->p_svuid != pcred->p_ruid ||
+	    pcred->p_svgid != pcred->p_rgid)
 		return (EFAULT);
-	if (ctob(UPAGES + u.u_dsize + u.u_ssize) >=
-	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
+	if (ctob(UPAGES + vm->vm_dsize + vm->vm_ssize) >=
+	    p->p_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
-	ndp->ni_segflg = UIO_SYSSPACE;
-	ndp->ni_dirp = "core";
-	if (error = vn_open(ndp, FCREAT|FWRITE, 0644))
+	nd.ni_segflg = UIO_SYSSPACE;
+	nd.ni_dirp = "core";
+	if (error = vn_open(&nd, p, FCREAT|FWRITE, 0644))
 		return (error);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	VOP_LOCK(vp);
-	if (vp->v_type != VREG ||
-	    VOP_GETATTR(vp, &vattr, u.u_cred) ||
+	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred) ||
 	    vattr.va_nlink != 1) {
 		vput(vp);
 		return (EFAULT);
 	}
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
-	VOP_SETATTR(vp, &vattr, u.u_cred);
-	u.u_acflag |= ACORE;
+	VOP_SETATTR(vp, &vattr, cred);
+	p->p_acflag |= ACORE;
 #ifdef HPUXCOMPAT
 	/*
 	 * BLETCH!  If we loaded from an HPUX format binary file
@@ -1005,21 +1009,21 @@ core()
 	 * HPUX debuggers can grok it.
 	 */
 	if (u.u_pcb.pcb_flags & PCB_HPUXBIN)
-		error = hpuxdumpu(vp, ndp->ni_cred);
+		error = hpuxdumpu(vp, cred);
 	else
 #endif
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
-	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
+	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, cred, (int *)0);
 	if (error == 0)
-		error = vn_rdwr(UIO_WRITE, vp, u.u_daddr,
-		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
-		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
+		error = vn_rdwr(UIO_WRITE, vp, vm->vm_daddr,
+		    (int)ctob(vm->vm_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
+		    IO_NODELOCKED|IO_UNIT, cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
-		    trunc_page(USRSTACK - ctob(u.u_ssize)),
-		    round_page(ctob(u.u_ssize)),
-		    (off_t)ctob(UPAGES) + ctob(u.u_dsize), UIO_USERSPACE,
-		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
+		    trunc_page(USRSTACK - ctob(vm->vm_ssize)),
+		    round_page(ctob(vm->vm_ssize)),
+		    (off_t)ctob(UPAGES) + ctob(vm->vm_dsize), UIO_USERSPACE,
+		    IO_NODELOCKED|IO_UNIT, cred, (int *)0);
 	vput(vp);
 	return (error);
 }
