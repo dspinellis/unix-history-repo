@@ -13,12 +13,14 @@ D COMPLANG Journal of Computer Languages
 D COMPSUR ACM Computing Surveys
 D I&C Information and Control
 D IBMJRD IBM Journal of Research and Development
+D IBMSJ IBM Systems Journal
 D IEEETSE IEEE Transactions on Software Engineering
 D IEEETC IEEE Transactions on Computers
 D IJCIS International Journal of Computer and Information Sciences
 D IPL Information Processing Letters
 D JACM Journal of the ACM
 D JCSS Journal of Computer and System Sciences
+D MATHST Mathematics Systems Theory
 D NMATH Numerical Mathematics
 D SIAMJC Siam Journal on Computing
 D SIAMJNA Siam Journal on Numerical Analysis
@@ -37,42 +39,52 @@ D TOPLAS ACM Transactions on Programming Languages and Systems
 D PROC Proceedings
 D CONF Conference
 D SYMP Symposium
-D ASPLOS82 PROC of the SYMP on Architectural Support for Programming Langauges and Operating Systems\
-%C Palo Alto, California\
-%D MAR 1982
-D CCC79 PROC of the SIGPLAN 1979 SYMP on Compiler Construction\
-%C Denver, Colorado\
-%D AUG 1979
-D CCC82 PROC of the SIGPLAN 1982 SYMP on Compiler Construction\
-%C Boston, Massachusetts
-%D JUN 1982
-D CCC84 PROC of the SIGPLAN 1984 SYMP on Compiler Construction\
-%C Montreal, Quebec
-%D JUN 1984
-D PLISS83 PROC SIGPLAN 1983 SYMP on Programming Language Issues in Software Systems\
-%C San Francisco, California\
-%D JUN 1983
+D ASPLOS82 PROC of the SYMP on Architectural Support for Programming Languages and Operating Systems, SIGPLAN\
+%C Palo Alto, CA\
+%D MAR 1982\
+%V 17\
+%N 4
+D CCC79 PROC of the SI\&GPLAN 1979 SYMP on Compiler Construction, SIGPLAN\
+%C Denver, CO\
+%D AUG 1979\
+%V 14\
+%N 8
+D CCC82 PROC of the SI\&GPLAN 1982 SYMP on Compiler Construction, SIGPLAN\
+%C Boston, MA\
+%D JUN 1982\
+%V 17\
+%N 6
+D CCC84 PROC of the SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
+%C Montreal, Quebec\
+%D JUN 1984\
+%V 19\
+%N 6
+D PLISS83 PROC SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
+%C San Francisco, CA\
+%D JUN 1983\
+%V 18\
+%N 6
 D POPL ACM SYMP on Principles of Programming Languages
 D POPL5 CONF Record of the Fifth POPL\
-%C Tucson, Arizona\
+%C Tucson, AZ\
 %D JAN 1978
 D POPL6 CONF Record of the Sixth POPL\
-%C San Antonio, Texas\
+%C San Antonio, TX\
 %D JAN 1979
 D POPL7 CONF Record of the Seventh POPL\
-%C Las Vegas, Nevada\
+%C Las Vegas, NV\
 %D JAN 1980
 D POPL8 CONF Record of the Eighth POPL\
-%C Williamsburg, Virginia\
+%C Williamsburg, VA\
 %D JAN 1981
 D POPL9 CONF Record of the Ninth POPL\
-%C Albuquerque, New Mexico\
+%C Albuquerque, NM\
 %D JAN 1982
 D POPL10 CONF Record of the Tenth POPL\
-%C Las Vegas, Nevada\
+%C Austin, TX\
 %D JAN 1983
 D POPL11 CONF Record of the Eleventh POPL\
-%C Salt Lake City, Utah\
+%C Salt Lake City, UT\
 %D JAN 1984
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
@@ -80,6 +92,14 @@ D SOSP SYMP on Operating System Principles
 D ICSE International CONF on Software Engineering
 D JICAI Joint International CONF on Artificial Intelligence
 D HICSS Hawaii International CONF on System Science
+D ADA80 PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIGPLAN\
+%D DEC 1980\
+%C Boston, MA\
+%V 15\
+%N 11
+D FJCC Fall Joint Computer Conference
+D JER3 PROC Third Jerusalem CONF on Information Technology
+D WJCC PROC Western Joint Computer CONF
 #
 #  publishers
 #
@@ -102,10 +122,40 @@ D DEC December
 #
 #  miscellaneous
 #
-D DEPT Department
-D UNIV University
 D TR Technical Report
-D UATR UNIV of Arizona TR
-D DCS  DEPT of Computer Science
-D CSD Computer Science DEPT
 D DISS Dissertation
+#
+# Short Places
+#
+D CORP Corporation
+D UNIV University
+D UATR UNIV of Arizona TR
+D DCS DEPT of Computer Science
+D CSD Computer Science DEPT
+D DEPT Department
+D ERL Electronics Research Laboratory
+#
+# Full Places
+#
+D BTLMH Bell Laboratories\
+%C Murray Hill, NJ
+D BTLHO Bell Laboratories\
+%C Holmdel, NJ
+D CMU Carnegie-Mellon University\
+%C Pittsburgh, PA
+D CMUCS CSD, CMU
+D DG Data General
+#
+D MITLCS MIT Laboratory for Computer Science\
+%C Cambridge, MA
+D MITAI MIT Artificial Intelligence Laboratory\
+%C Cambridge, MA
+D SUCS CSD, Stanford University
+D SUCSL Computer Systems Lab., Stanford Electronics Lab., Dept. of Electrical Engineering and Computer Science
+D SUEE Department of Electrical Engineering, Stanford University
+D TUM Technische Universita\*`t Mu\*`nchen
+D UCB University of California, Berkeley
+D UCBCS Computer Science Division, EECS, UCB\
+%C Berkeley, CA
+D UCBERL ERL, EECS, UCB\
+%C Berkeley, CA
