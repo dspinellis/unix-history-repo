@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	graph
 DPADD=	${LIBM} ${LIBPLOT}
