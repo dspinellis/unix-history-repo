@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.1 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.2 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.1 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.2 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -171,12 +171,14 @@ udbexpand(a, sendq, e)
 			key.data = keybuf;
 			key.size = keylen;
 			if (tTd(28, 80))
-				printf("udbexpand: trying %s\n", keybuf);
+				printf("udbexpand: trying %s (%d)\n",
+					keybuf, keylen);
 			i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_CURSOR);
 			if (i > 0 || info.size <= 0)
 			{
 				if (tTd(28, 2))
-					printf("udbexpand: no match on %s\n", keybuf);
+					printf("udbexpand: no match on %s (%d)\n",
+						keybuf, keylen);
 				continue;
 			}
 			if (tTd(28, 80))
@@ -368,8 +370,8 @@ udbsender(sender)
 			if (i != 0 || info.size <= 0)
 			{
 				if (tTd(28, 2))
-					printf("udbsender: no match on %s\n",
-							keybuf);
+					printf("udbsender: no match on %s (%d)\n",
+							keybuf, keylen);
 				continue;
 			}
 
