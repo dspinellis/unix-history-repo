@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.27 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -344,8 +344,10 @@ p_rr(cp, msg, file)
 		fprintf(file,"\t???\n");
 		cp += dlen;
 	}
-	if (cp != cp1 + dlen)
+	if (cp != cp1 + dlen) {
 		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
+		cp = NULL;
+	}
 	fprintf(file,"\n");
 	return (cp);
 }
