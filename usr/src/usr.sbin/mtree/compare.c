@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -103,10 +103,10 @@ typeerr:		LABEL;
 		    tab, s->st_gid, p->fts_statp->st_gid);
 		if (uflag)
 			if (chown(p->fts_accpath, -1, s->st_gid))
-				(void)printf(", not modified: %s)",
+				(void)printf(", not modified: %s)\n",
 				    strerror(errno));
 			else
-				(void)printf(", modified)");
+				(void)printf(", modified)\n");
 		else
 			(void)printf(")\n");
 		tab = "\t";
@@ -118,10 +118,10 @@ typeerr:		LABEL;
 		    tab, s->st_mode, p->fts_statp->st_mode & MBITS);
 		if (uflag)
 			if (chmod(p->fts_accpath, s->st_mode))
-				(void)printf(", not modified: %s)",
+				(void)printf(", not modified: %s)\n",
 				    strerror(errno));
 			else
-				(void)printf(", modified)");
+				(void)printf(", modified)\n");
 		else
 			(void)printf(")\n");
 		tab = "\t";
