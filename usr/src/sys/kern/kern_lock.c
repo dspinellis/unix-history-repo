@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.17 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -404,10 +404,11 @@ lockmgr_printinfo(lkp)
 {
 
 	if (lkp->lk_sharecount)
-		printf(" lock type %s: SHARED", lkp->lk_wmesg);
+		printf(" lock type %s: SHARED (count %d)", lkp->lk_wmesg,
+		    lkp->lk_sharecount);
 	else if (lkp->lk_flags & LK_HAVE_EXCL)
-		printf(" lock type %s: EXCL by pid %d", lkp->lk_wmesg,
-		    lkp->lk_lockholder);
+		printf(" lock type %s: EXCL (count %d) by pid %d",
+		    lkp->lk_wmesg, lkp->lk_exclusivecount, lkp->lk_lockholder);
 	if (lkp->lk_waitcount > 0)
 		printf(" with %d pending", lkp->lk_waitcount);
 }
