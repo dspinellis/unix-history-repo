@@ -8,14 +8,14 @@
 .\"*		Electronics Research Laboratory				*
 .\"*		U.C. Berkeley.						*
 .\"*									*
-.\"*	VERSION 2.9	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.10	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.9	%G%
+.\"	@(#)tmac.orig_me	2.10	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -67,6 +67,7 @@
 .	ds |p "\\$2
 ..
 .de @z			\" --- end macro
+.if \n@>1 .tm >> @z, .z=\\n(.z ?a=\\n(?a
 .if !"\\n(.z"" \
 \{\
 .	tm Line \\n(c. -- Unclosed block, footnote, or other diversion (\\n(.z)
@@ -76,10 +77,11 @@
 .if \\n(?a \
 .	bp			\" force out final table
 .rm bp
-.rm @b				\" don't start another page
+.rm @b\"			\" don't start another page
 .if t \
 .	wh -1p @m
 .br
+.if \n@>1 .tm << @z
 ..
 .de @I			\" --- initialize processor
 .rm th
@@ -147,7 +149,7 @@
 ..
 .\"		*** INTERNAL HEADER AND FOOTER MACROS ***
 .de @h			\" --- header
-.if \n@>0 .tm >> @h %=\\n% ?a=\\n(?a ?b=\\n(?b ?w=\\n(?w
+.if \n@>1 .tm >> @h %=\\n% ?a=\\n(?a ?b=\\n(?b ?w=\\n(?w
 .if (\\n(.i+\\n(.o)>=\\n(.l \
 .	tm Line \\n(c. -- Offset + indent exceeds line length
 .if t .if (\\n(.l+\\n(.o)>7.75i \
@@ -188,7 +190,7 @@
 .\}
 .el \
 .	@n			\" begin the column
-.if \n@>1 .tm << @h
+.if \n@>2 .tm << @h
 ..
 .de @m			\" --- output cut mark
 .@O 0
@@ -245,7 +247,7 @@
 .ns
 ..
 .de @f			\" --- footer
-.if \n@>0 .tm >> @f %=\\n% nl=\\n(nl ?a=\\n(?a ?b=\\n(?b
+.if \n@>1 .tm >> @f %=\\n% nl=\\n(nl ?a=\\n(?a ?b=\\n(?b
 .ec
 .if \\n(?T \
 \{\
@@ -258,7 +260,7 @@
 .if \\n(?b \
 \{\
 .	nr ?b 0
-.	@k |b			\" output bottom of page tables
+.	@k |b\"			\" output bottom of page tables
 .\}
 .if \\n(?f \
 .	@o			\" output footnote if present

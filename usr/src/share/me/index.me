@@ -1,27 +1,30 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.6	%G%
+.\"	@(#)index.me	2.7	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
+.if \n@>4 .tm >> (x, .z=\\n(.z
+.ds |X x
+.if \\n(.$>0 \
+.	ds |X \\$1
 .\" please note these cases MUST be in this order
 .ie !"\\n(.z"" \
 \{\
 .	ev 2			\" if in a diversion, save & process later
-\!\\!.(x \\$1
+\!.(x \\*(|X
+.rm |X
 .\}
 .el \
 \{\
-.	ds |X x
-.	if \\n(.$ \
-.		ds |X \\$1
 .	am %\\*(|X )x
 .	sp \\n(xsu
 .\}
 ..
 .de )x			\" *** end index entry
+.if \n@>4 .tm >> )x, .z=\\n(.z
 .ie "\\n(.z"" \
 \{\
 .	ds |x \\n%
-.	if \\n(.$ \
+.	if \\n(.$>0 \
 .		ds |x \\$1
 .	if "\\*(|x"_" \
 .		ig ..
@@ -35,7 +38,7 @@
 .\}
 .el \
 \{\
-\!\\!.)x \\$1 \\$2
+\!.)x \\$1 \\$2
 .	br			\" if in a diversion, save & process later
 .	ev
 .\}
@@ -47,7 +50,7 @@
 .vs \\n(.su*\\n($Ru
 .fi
 .ds |X x
-.if \\n(.$ \
+.if \\n(.$>0 \
 .	ds |X \\$1
 .xl -(\\n(xuu+\w'...'u)
 .di |x
