@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.33 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -322,6 +322,11 @@ loop:
 				q->p_ysptr = p->p_ysptr;
 			if ((q = p->p_pptr)->p_cptr == p)
 				q->p_cptr = p->p_osptr;
+
+#ifdef i386
+			cpu_wait(p);			/* XXX */
+#endif
+
 			FREE(p, M_PROC);
 			nprocs--;
 			return (0);
