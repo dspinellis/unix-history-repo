@@ -1,4 +1,4 @@
-#	@(#)OMRON1	8.2 (Berkeley) %G%
+#	@(#)OMRON1	8.3 (Berkeley) %G%
 #
 
 machine		"luna68k"
@@ -11,11 +11,13 @@ maxusers	16
 # Standard options
 options		QUOTA
 options		INET
-options		FFS,MFS,NFS,LFS,FIFO
-options		LOFS,KERNFS,FDESC,PORTAL,NULLFS,UMAPFS
+options		FFS,MFS,NFS,FIFO
+options		UNION,FDESC,NULLFS,UMAPFS
+options		"CD9660"
 options		"COMPAT_43"
 options		"TCP_COMPAT_42"
 options		SWAPPAGER,VNODEPAGER,DEVPAGER
+options		CLUSTERED_PAGEOUT
 
 options		DEBUG
 options		DIAGNOSTIC
