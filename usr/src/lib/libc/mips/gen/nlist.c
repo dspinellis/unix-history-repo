@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -107,8 +107,17 @@ __fdnlist(fd, list)
 
 			if (soff == 0 || (s->n_type & N_STAB) != 0)
 				continue;
-			for (p = list; !ISLAST(p); p++)
-				if (!strcmp(&strtab[soff], p->n_un.n_name)) {
+			for (p = list; !ISLAST(p); p++) {
+				char *cp = p->n_un.n_name;
+
+				/*
+				 * MIPS doesn't use '_' in front of symbols.
+				 * Strip the '_' to be compatible with other
+				 * systems.
+				 */
+				if (cp[0] == '_')
+					cp++;
+				if (!strcmp(&strtab[soff], cp)) {
 					p->n_value = s->n_value;
 					p->n_type = s->n_type;
 					p->n_desc = s->n_desc;
@@ -116,6 +125,7 @@ __fdnlist(fd, list)
 					if (--nent <= 0)
 						break;
 				}
+			}
 		}
 	}
 	munmap(strtab, strsize);
