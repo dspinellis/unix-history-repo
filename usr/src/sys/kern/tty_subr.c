@@ -1,9 +1,10 @@
-/*	tty_subr.c	6.7	84/12/20	*/
+/*	tty_subr.c	6.8	84/12/21	*/
 
 #include "param.h"
 #include "systm.h"
 #include "conf.h"
 #include "buf.h"
+#include "ioctl.h"
 #include "tty.h"
 #include "clist.h"
 

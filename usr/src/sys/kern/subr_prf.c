@@ -1,4 +1,4 @@
-/*	subr_prf.c	6.3	84/08/29	*/
+/*	subr_prf.c	6.4	84/12/21	*/
 
 #include "param.h"
 #include "systm.h"
@@ -11,6 +11,7 @@
 #include "dir.h"
 #include "user.h"
 #include "proc.h"
+#include "ioctl.h"
 #include "tty.h"
 
 #ifdef vax
