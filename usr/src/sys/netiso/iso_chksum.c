@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_chksum.c	7.5 (Berkeley) %G%
+ *	@(#)iso_chksum.c	7.6 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -227,22 +227,6 @@ iso_gen_csum(m,n,l)
 	ENDDEBUG
 }
 
-struct mbuf  *
-m_append(head, m)
-	struct mbuf *head, *m;
-{
-	register struct mbuf *n;
-
-	if (m == 0)
-		return head;
-	if (head == 0)
-		return m;
-	n = head;
-	while (n->m_next)
-		n = n->m_next;
-	n->m_next = m;
-	return head;
-}
 /*
  * FUNCTION:	m_datalen
  *
@@ -257,23 +241,13 @@ m_append(head, m)
  */
 
 int
-m_datalen (morig)
-	struct mbuf *morig;
+m_datalen (m)
+	register struct mbuf *m;
 { 	
-	int	s = splimp();
-	register struct mbuf *n=morig;
-	register int datalen = 0;
+	register int datalen;
 
-	if( morig == (struct mbuf *)0)
-		return 0;
-	for(;;) {
-		datalen += n->m_len;
-		if (n->m_next == (struct mbuf *)0 ) {
-			break;
-		}
-		n = n->m_next;
-	}
-	splx(s);
+	for (datalen = 0; m; m = m->m_next)
+		datalen += m->m_len;
 	return datalen;
 }
 
