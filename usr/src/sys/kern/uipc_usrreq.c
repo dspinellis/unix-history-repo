@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.3	82/11/13	*/
+/*	uipc_usrreq.c	1.4	82/11/23	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -356,7 +356,6 @@ unp_disconnect(unp)
 	case SOCK_STREAM:
 		unp2->unp_conn = 0;
 		soisdisconnected(unp2->unp_socket);
-		unp_drop(unp2, ECONNRESET);
 		break;
 	}
 }
