@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.13 84/01/12";
+static	char *sccsid = "@(#)lcmd1.c	3.14 84/01/13";
 #endif
 
 #include "defs.h"
@@ -226,7 +226,7 @@ register struct value *v;
 		v->v_num = -1;
 		return;
 	case V_NUM:
-		if ((a->arg_str = str_cpy(a->arg_num)) == 0) {
+		if ((a->arg_str = str_itoa(a->arg_num)) == 0) {
 			error("Out of memory.");
 			v->v_num = -1;
 			return;

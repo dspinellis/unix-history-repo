@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.8 84/01/13";
+static	char *sccsid = "@(#)cmd3.c	3.9 84/01/13";
 #endif
 
 #include "defs.h"
@@ -27,16 +27,16 @@ register struct var *r;
 {
 	if (more(w, 0) == 2)
 		return -1;
-	wwprintf(w, "%16s\t", r->r_name);
+	(void) wwprintf(w, "%16s\t", r->r_name);
 	switch (r->r_val.v_type) {
 	case V_STR:
-		wwprintf(w, "%s\n", r->r_val.v_str);
+		(void) wwprintf(w, "%s\n", r->r_val.v_str);
 		break;
 	case V_NUM:
-		wwprintf(w, "%d\n", r->r_val.v_num);
+		(void) wwprintf(w, "%d\n", r->r_val.v_num);
 		break;
 	case V_ERR:
-		wwprintf(w, "ERROR\n");
+		(void) wwprintf(w, "ERROR\n");
 		break;
 	}
 	return 0;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	3.6 83/12/01";
+static	char *sccsid = "@(#)wwspawn.c	3.7 84/01/13";
 #endif
 
 #include "ww.h"
@@ -18,11 +18,11 @@ char *file, *argv0;
 	extern char *sys_errlist[];
 	int pid;
 
-	sighold(SIGCHLD);
+	(void) sighold(SIGCHLD);
 	switch (pid = vfork()) {
 	case -1:
 		wwerrno = WWE_SYS;
-		sigrelse(SIGCHLD);
+		(void) sigrelse(SIGCHLD);
 		return -1;
 	case 0:
 		wwenviron(wp);
@@ -32,12 +32,12 @@ char *file, *argv0;
 	default:
 		if (errno != 0) {
 			wwerrno = WWE_SYS;
-			sigrelse(SIGCHLD);
+			(void) sigrelse(SIGCHLD);
 			return -1;
 		} else {
 			wp->ww_pid = pid;
 			wp->ww_state = WWS_HASPROC;
-			sigrelse(SIGCHLD);
+			(void) sigrelse(SIGCHLD);
 			return pid;
 		}
 	}
