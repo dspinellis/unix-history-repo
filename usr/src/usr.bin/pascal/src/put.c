@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.21 %G%";
+static char sccsid[] = "@(#)put.c 1.22 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -89,6 +89,24 @@ put(a)
 				cp = otext[op];
 #			endif DEBUG
 			break;
+		case O_FOR1U:
+		case O_FOR2U:
+		case O_FOR4U:
+		case O_FOR1D:
+		case O_FOR2D:
+		case O_FOR4D:
+			/* relative addressing */
+			p[1] -= ( unsigned ) lc + sizeof(short);
+			/* try to pack the jump */
+			if (p[1] <= 127 && p[1] >= -128) {
+				suboppr = subop = p[1];
+				p++;
+				n--;
+			} else {
+				/* have to allow for extra displacement */
+				p[1] -= sizeof(short);
+			}
+			break;
 		case O_CONG:
 		case O_LVCON:
 		case O_CON:
@@ -130,7 +148,7 @@ put(a)
 		case O_CON2:
 		case O_CON24:
 		pack:
-			if (p[1] < 128 && p[1] >= -128) {
+			if (p[1] <= 127 && p[1] >= -128) {
 				suboppr = subop = p[1];
 				p++;
 				n--;
@@ -186,19 +204,6 @@ put(a)
 *****/
 			/* relative addressing */
 			p[1] -= ( unsigned ) lc + sizeof(short);
-			break;
-		case O_FOR1U:
-		case O_FOR2U:
-		case O_FOR1D:
-		case O_FOR2D:
-			/* sub opcode optimization */
-			if (p[1] < 128 && p[1] >= -128 && p[1] != 0) {
-				suboppr = subop = p[1];
-				p++;
-				n--;
-			}
-			/* relative addressing */
-			p[n - 1] -= ( unsigned ) lc + (n - 1) * sizeof(short);
 			break;
 		case O_CONC:
 #ifdef DEBUG
@@ -269,20 +274,6 @@ around:
 #endif
 			word(p[1]);
 			return (oldlc);
-		case O_FOR4U:
-		case O_FOR4D:
-			/* sub opcode optimization */
-			lp = (long *)&p[1];
-			if (*lp < 128 && *lp >= -128 && *lp != 0) {
-				suboppr = subop = *lp;
-				p += (sizeof(long) / sizeof(int));
-				n--;
-			}
-			/* relative addressing */
-			p[1 + (n - 2) * (sizeof(long) / sizeof(int))] -=
-			    (unsigned)lc + (sizeof(short) +
-			    (n - 2) * sizeof(long));
-			goto longgen;
 		case O_PUSH:
 			lp = (long *)&p[1];
 			if (*lp == 0)
@@ -352,7 +343,7 @@ around:
 		case O_CASE4:
 		longgen:
 			n = (n << 1) - 1;
-			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D) {
+			if ( op == O_LRV ) {
 				n--;
 #				if defined(ADDR32) && !defined(DEC11)
 				    p[n / 2] <<= 16;
