@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.22 1994/03/20 20:06:04 davidg Exp $
+ *	$Id: tty.c,v 1.23 1994/03/21 18:28:28 ache Exp $
  */
 
 #include "param.h"
@@ -870,21 +870,14 @@ nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
-	
-	if (flag) {
+	if (flag)
 		tp->t_state |= TS_CARR_ON;
-		ttwakeup(tp);
-		wakeup((caddr_t)tp->t_out);
-	} else {
+	else {
 		tp->t_state &= ~TS_CARR_ON;
 		if ((tp->t_cflag&CLOCAL) == 0) {
 			if (tp->t_session && tp->t_session->s_leader)
 				psignal(tp->t_session->s_leader, SIGHUP);
-			ttyflush(tp, FREAD|FWRITE);
 			return (0);
-		} else {
-			wakeup((caddr_t)tp->t_raw);
-			wakeup((caddr_t)tp->t_out);
 		}
 	}
 	return (1);
