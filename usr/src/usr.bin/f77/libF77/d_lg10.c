@@ -9,7 +9,7 @@
 double d_lg10(x)
 double *x;
 {
-double log();
+double log10();
 
 return( log10(*x) );
 }
