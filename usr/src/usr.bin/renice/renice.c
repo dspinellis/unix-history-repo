@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)renice.c	4.1 (Berkeley) 83/03/19";
+static	char *sccsid = "@(#)renice.c	4.2 (Berkeley) 83/03/19";
 #endif
 
 #include <time.h>
@@ -16,8 +16,7 @@ main(argc, argv)
 	char **argv;
 {
 	int which = PRIO_PROCESS;
-	int who, id, prio, oldprio, errs = 0;
-	extern int errno;
+	int who = 0, prio, errs = 0;
 
 	argc--, argv++;
 	if (argc < 2)
@@ -36,7 +35,7 @@ main(argc, argv)
 	if (prio < PRIO_MIN)
 		prio = PRIO_MIN;
 	if (argc == 0)
-		usage();
+		errs += donice(which, 0, prio);
 	for (; argc > 0; argc--, argv++) {
 		if (which == PRIO_USER) {
 			register struct passwd *pwd = getpwnam(*argv);
@@ -46,38 +45,44 @@ main(argc, argv)
 					*argv);
 				continue;
 			}
-			id = pwd->pw_uid;
+			who = pwd->pw_uid;
 		} else {
-			id = atoi(*argv);
-			if (id < 0) {
+			who = atoi(*argv);
+			if (who < 0) {
 				fprintf(stderr, "renice: %s: bad value\n",
 					*argv);
 				continue;
 			}
 		}
-		oldprio = getpriority(which, who);
-		if (oldprio == -1 && errno) {
-			fprintf(stderr, "renice: ");
-			perror(*argv);
-			errs++;
-			continue;
-		}
-		if (setpriority(which, who, prio) < 0) {
-			fprintf(stderr, "renice: ");
-			perror(*argv);
-			errs++;
-			continue;
-		}
-		printf("%s: old priority %d, new priority %d\n", *argv,
-			oldprio, prio);
+		errs += donice(which, who, prio);
 	}
 	exit(errs != 0);
 }
 
+donice(which, who, prio)
+	int which, who, prio;
+{
+	int oldprio = getpriority(which, who);
+	extern int errno;
+
+	if (oldprio == -1 && errno) {
+		fprintf(stderr, "renice: %d: ", who);
+		perror("getpriority");
+		return (1);
+	}
+	if (setpriority(which, who, prio) < 0) {
+		fprintf(stderr, "renice: %d: ", who);
+		perror("setpriority");
+		return (1);
+	}
+	printf("%d: old priority %d, new priority %d\n", who, oldprio, prio);
+	return (0);
+}
+
 usage()
 {
-	fprintf(stderr, "usage: renice priority pid ....\n");
-	fprintf(stderr, "or, renice -g priority pgrp ....\n");
-	fprintf(stderr, "or, renice -u priority user ....\n");
+	fprintf(stderr, "usage: renice priority [ pid .... ]\n");
+	fprintf(stderr, "or, renice -g priority [ pgrp .... ]\n");
+	fprintf(stderr, "or, renice -u priority [ user .... ]\n");
 	exit(1);
 }
