@@ -1,0 +1,148 @@
+1.  use ELIPSES in structure specification, to make sure that underflow is
+intentional, or to allow non-0 initialization for fills.
+
+3.  Implement a C -> C compiler which inserts inline GDB statements.
+This will hurt optimization, but may allow for much freer debugging.
+Also implies determining on what level exactly that GDB statements are
+generated.
+
+4.  C virtual machine (infinite regs and cast operators?)
+
+5.  Make multi-type machine insns.  This may match faster than normal
+insn recog phase.  (Using bits for disjuntive decisions.)
+
+30.  Look at syntax more closely to fix up all those s/r conflicts.
+Make sure that C++ syntax is reasonably well implemented.
+
+52.  How to make GDB understand operator overloading...
+
+59.  Optimized bitfield accesses such as TREE_X (X) && TREE_Y (X) &&
+TREE_Z (X) as bit operation.  Some work has been done on this in
+cplus-type2.c, but really should be merged with expr.c.
+
+67.  How does one distinguish between a declaration of a function
+taking no arguments from a call to a constructor which takes no
+arguments?
+
+72.  How do we make operator[](), operator()(), and operator->()
+members-only functions?
+
+73.  The strategy for doing overloaded operators is to have pointer
+from an aggregate type to an op table.  If this pointer is NULL, then
+no operator overloading to check.  Otherwise, the op table is a hash
+table, which suitably indexed by the function, will yield the current
+list of argument lists that we can accept.  These argument lists are
+hashed to save space (and some time).
+
+77.  Look at making typenames stackable by recovering shadowed
+declarations from the tags (during poplevel) back to the TREE_TYPE of
+the IDENTIFIER_NODES.
+
+83.  In some situations it is possible to optimize virtual functions,
+making them either direct calls, or actually calling them inline!
+Identifier the cases where this may be done, and implement this
+optimization.  Currently, if a variable has decidedly static type
+(i.e., it is a VAR_DECL of aggregate type), then calls through the
+virtual function table are eliminated.  This could be extended to use
+flow analysis to help with pointers.  Doing PARM_DECLs might be very
+hard.
+
+As a follow-on, accessing base parts of objects which use virtual
+baseclasses can be optimized if the type is statically knowable.
+This would involve changes to `build_vbase_path'.
+
+88.  Make default parameters for inline functions live on the
+permanent obstack in a more natural fashion.
+
+89.  Should default parameter specifications be permitted to refer to
+other parameters in the list? I.e., should "f (int a = 0, int b = a + 5)"
+be a permissable declaration?
+
+93.  Set a bit on nodes which says whether default-conversion has been
+called for that node or not.  This would mean that any type-altering
+actions (which are by-and-large rare) would need to be more careful,
+but it might help speed up the front-end.
+
+99.  When using reference types, two kinds of temporary variables are
+needed.  One whose scope is the scope of a block, one whose scope is
+the scope of a stmt.  The latter is needed when a function takes
+reference parameters, and those references exist only for the calling
+of that function.
+
+105.  Applying the maxim "Same sh*t, different day" to compiler
+implementation, we note that when initializing or destroying
+aggregates, the tree structure we create for such actions is always
+the same for any given type, only the address we are operating on
+changes.  Memoize the tree structure for each type, so that init and
+delete code can be generated efficiently, without large walks.
+In fact, we might even want to memoize the rtl code for this for real
+speed.  --No, this tradeoff appears poor in speed/space.
+
+110.  Attach a pseudo-variable to all pointers to aggregate objects
+which is a pointer to its virtual function table.  CSE can be told
+that it is a pointer to constant storage.  If the base pointer is not
+assigned during its lifetime, then virtual function references can be
+made more efficiently.  This would be more general than the current
+hack (of treating `this' as constant).
+
+111.  Generate efficient (and expected) code for constructs of the
+form "X x = X (args)".  Though this should be equivalent to "X x (args)", 
+the current implementation make it behave like "X t (args); X x = t;".
+This code could cause some programs to fail if they do not have X(X&)
+defined.
+
+112.  Look at overloading functions based on their return type.
+
+113.  Arrays which are indexed by a constant, and are known to contain
+a constant at that address should be able to produce that constant
+during tree-build time.
+
+114.  Split ctors into vbase-initialization and regular initialization
+to avoid need for "in-charge" flag.
+
+115.  Register-based objects and `const' constructors.
+
+116.  VAR_DECL and PARM_DECL should have a slot knowing themselves as
+INDIRECT_REFs if they are pointers, and ADDR_EXPRs if they are not.
+
+    Return-Path: <bothner@cs.wisc.edu>
+    To: bug-g++@prep.ai.mit.edu
+    Cc: bothner@cs.wisc.edu
+    Subject: G++ wishlist
+    Date: Mon, 05 Mar 90 13:42:38 CST
+    From: bothner@cs.wisc.edu
+
+    A couple of items for the "Projects" section of the g++ manual.
+    (The first two imply incompatible changes to binaries, so getting
+    them into Gcc/g++ version 2.0 would be nice.)
+
+117.* Implement cfront-2.0-style virtual table rules: If a class has
+    a non-inline method, emit the virtual table iff the first such
+    method has been defined in the current compilation unit. Or some
+    such rule to emit only a single copy of each vtable.
+
+118.* Go back to the single-inheritance implementation of virtual
+    table fields (i.e. only a single pointer) and virtual method
+    calls (i.e. just an indirect jump without adjusting 'this').
+    Handle the multiple-inheritance case (i.e. when the 'delta != 0')
+    by having the vtable entry point to a stub routine of the form:
+
+    stub_foo:
+	    /* if vax: entry_code inserted by linker */
+	    this += delta;
+	    goto real_foo;
+
+119.* Some way of allowing static objects to be initialized at compile-time.
+    This would decrease code size and startup-time.
+    -Either:
+	* Allow C-style initialization lists (even when the class has
+	a constructor).
+    -Or:
+	* Optimize simple constructor calls by doing them at compile-time.
+	By "simple" constructors I mean ones that are lists of just
+	simple assignments, with constant RHS.
+	-or ideally both!
+
+	    --Per Bothner
+    bothner@cs.wisc.edu Computer Science Dept, U. of Wisconsin-Madison
+
