@@ -312,17 +312,17 @@ short side,xside,ply;
 #if (NEWMOVE > 5)
 GenMoves(ply,sq,side,xside)
      short ply,sq,side,xside;
-
+ 
 /*
   Generate moves for a piece. The moves are taken from the
   precalulated array posdata. If the board is free, next move
   is choosen from nextpos else from nextdir.
 */
-
+ 
 {
   register short u,piece;
   register struct sqdata *p;
-
+	 
   piece = board[sq];
   p = posdata[side][piece][sq];
   if (piece == pawn) {
@@ -333,22 +333,25 @@ GenMoves(ply,sq,side,xside)
     }
     u = p[sq].nextpos; /* and follow no captures thread */
     while (u != sq) {
-      if (color[u] == neutral) LinkMove(ply,sq,u,xside);
+      if (color[u] == neutral && (u != sq+16 || color[u-8] == neutral)
+          && (u != sq-16 || color[u+8] == neutral)) {
+        LinkMove(ply,sq,u,xside);
+      }
       u = p[u].nextpos;
     }
-  }
+  }  
   else {
     u = p[sq].nextpos;
     while (u != sq) {
       if (color[u] == neutral) {
-	LinkMove(ply,sq,u,xside);
-	u = p[u].nextpos;
+        LinkMove(ply,sq,u,xside);
+        u = p[u].nextpos;
       }
       else {
-	if (color[u] == xside) LinkMove(ply,sq,u,xside);
+        if (color[u] == xside) LinkMove(ply,sq,u,xside);
 	u = p[u].nextdir;
       }
     }
-  }
-}
+  }    
+} 
 #endif
