@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	6.2 (Berkeley) %G%
+.\"	@(#)intro.4	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 4 ""
 .UC 4
@@ -64,10 +64,13 @@ A list of the supported devices is given below.
 intro(4),
 intro(4N),
 autoconf(4),
-config(8)
+config(8).
+.PP
+Building 4.3BSD UNIX Systems with \fIConfig\fP (SMM:2)
 .SH "LIST OF DEVICES"
 The devices listed below are supported in this incarnation of
-the system.  Devices are indicated by their functional interface.
+the system.  Pseudo-devices are not listed.
+Devices are indicated by their functional interface.
 If second vendor products provide functionally identical interfaces
 they should be usable with the supplied software.
 (\fBBeware, however, that we promise the software works
@@ -94,7 +97,6 @@ dz	DZ-11 terminal multiplexor
 ec	3Com 10Mb/s Ethernet controller
 en	Xerox 3Mb/s Ethernet controller (obsolete)
 ex	Excelan 10Mb/s Ethernet controller
-kg	KL-11/DL-11W line clock
 fl	VAX-11/780 console floppy interface
 hdh	ACC IF-11/HDH IMP interface
 hk	RK6-11/RK06 and RK07 moving head disk
@@ -103,11 +105,14 @@ ht	TM03 MASSBUS tape drive interface (with TE-16, TU-45, TU-77)
 hy	DR-11B or GI-13 interface to an NSC Hyperchannel
 ik	Ikonas frame buffer graphics device interface
 il	Interlan 1010, 1010A 10Mb/s Ethernet controller
-il	Interlan NP-100 10Mb/s Ethernet controller
+ix	Interlan NP-100 10Mb/s Ethernet controller
+kg	KL-11/DL-11W line clock
 lp	LP-11 parallel line printer interface
 mt	TM78 MASSBUS tape drive interface
+np	Interlan NP-100 10Mb/s Ethernet controller (intelligent mode)
 pcl	DEC PCL-11 communications interface
 ps	Evans and Sutherland Picture System 2 graphics interface
+qe	DEC DEQNA Q-bus 10 Mb/s Ethernet interface
 rx	DEC RX02 floppy interface
 tm	TM-11/TE-10 tape drive interface
 tmscp	TMSCP-compatible tape controllers (e.g., TU81, TK50)
