@@ -650,7 +650,6 @@ register struct pklcd *lcp;
 		lcp -> lcd_facilities = 0;
 	}
 	if (so = lcp -> lcd_so) {
-		sbflush (&so -> so_rcv);
 		sbflush (&so -> so_snd);
 	} else 
 		sbflush (&lcp -> lcd_sb);
