@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.11 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.12 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -52,7 +52,7 @@ tuba_timer()
 
 tuba_table_init()
 {
-	rn_inithead((void **)&tuba_tree, 8);
+	rn_inithead((void **)&tuba_tree, 40);
 	timeout(tuba_timer, (caddr_t)0, arpt_prune * hz);
 }
 
