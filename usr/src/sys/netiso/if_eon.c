@@ -218,16 +218,14 @@ caddr_t loc;
  */
 eonrtrequest(cmd, rt, gate)
 register struct rtentry *rt;
-struct sockaddr *gate;
+register struct sockaddr *gate;
 {
-	caddr_t	ipaddrloc = 0;
+	unsigned long zerodst = 0;
+	caddr_t	ipaddrloc = (caddr_t) &zerodst;
 	register struct eon_llinfo *el = (struct eon_llinfo *)rt->rt_llinfo;
-	register struct rtentry *iprt;
-	register struct sockaddr_in sin;
 
 	if (el == 0)
 		panic("eonrtrequest");
-	iprt = el->el_iproute.ro_rt;
 	/*
 	 * Common Housekeeping
 	 */
@@ -243,17 +241,23 @@ struct sockaddr *gate;
 		/* FALLTHROUGH */
 	case RTM_CHANGE:
 		el->el_flags &= ~RTF_UP;
-		if (iprt)
-			RTFREE(iprt);
+		el->el_snpaoffset = 0;
+		if (el->el_iproute.ro_rt)
+			RTFREE(el->el_iproute.ro_rt);
 		if (cmd = RTM_DELETE)
 			return;
 	}
 	if (gate || (gate = rt->rt_gateway)) switch (gate->sa_family) {
 		case AF_LINK:
-			ipaddrloc = LLADDR((struct sockaddr_dl *)gate);
+#define SDL(x) ((struct sockaddr_dl *)x)
+			if (SDL(gate)->sdl_alen = 1)
+				el->el_snpaoffset = *(u_char *)LLADDR(SDL(gate));
+			else
+				ipaddrloc = LLADDR(SDL(gate));
 			break;
 		case AF_INET:
-			ipaddrloc = (caddr_t) &((struct sockaddr_in *)gate)->sin_addr;
+#define SIN(x) ((struct sockaddr_in *)x)
+			ipaddrloc = (caddr_t) &SIN(gate)->sin_addr;
 			break;
 		default:
 			return;
@@ -320,7 +324,6 @@ eonoutput(ifp, m, dst, rt)
 			int class = (sdl->sdl_alen == 5) ? 4[(u_char *)ipaddrloc] : 0;
 
 			if (sdl->sdl_alen == 4 || sdl->sdl_alen == 5) {
-				ipaddrloc = LLADDR(sdl);
 				ro = &route;
 				ei = &eon_iphdr;
 				eoniphdr(ei, ipaddrloc, ro, class, 1);
@@ -344,6 +347,13 @@ einval:
 	}
 	ei = &el->el_ei;
 	ro = &el->el_iproute;
+	if (el->el_snpaoffset) {
+		if (dst->siso_family == AF_ISO) {
+			bcopy((caddr_t) &dst->siso_data[el->el_snpaoffset],
+					(caddr_t) &ei->ei_ip.ip_dst, sizeof(ei->ei_ip.ip_dst));
+		} else
+			goto einval;
+	}
 send:
 	/* put an eon_hdr in the buffer, prepended by an ip header */
 	datalen = m->m_pkthdr.len + EONIPLEN;
