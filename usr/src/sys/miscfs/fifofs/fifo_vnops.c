@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fifo_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -124,17 +124,24 @@ fifo_open(vp, mode, cred)
 	if ((fip = vp->v_fifoinfo) == NULL) {
 		MALLOC(fip, struct fifoinfo *, sizeof(*fip), M_VNODE, M_WAITOK);
 		vp->v_fifoinfo = fip;
-		if (error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0))
+		if (error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0)) {
+			free(fip, M_VNODE);
+			vp->v_fifoinfo = NULL;
 			return (error);
+		}
 		fip->fi_readsock = rso;
 		if (error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0)) {
 			(void)soclose(rso);
+			free(fip, M_VNODE);
+			vp->v_fifoinfo = NULL;
 			return (error);
 		}
 		fip->fi_writesock = wso;
 		if (error = unp_connect2(wso, rso)) {
 			(void)soclose(wso);
 			(void)soclose(rso);
+			free(fip, M_VNODE);
+			vp->v_fifoinfo = NULL;
 			return (error);
 		}
 		wso->so_state |= SS_CANTRCVMORE;
