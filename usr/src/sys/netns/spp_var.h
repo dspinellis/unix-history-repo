@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)spp_var.h	6.2 (Berkeley) %G%
+ *	@(#)spp_var.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -69,6 +69,8 @@ struct	spp_istat {
 	short	wrncon;
 	short	bdreas;
 	short	gonawy;
+	short	notyet;
+	short	lstdup;
 };
 
 #ifdef KERNEL
