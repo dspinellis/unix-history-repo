@@ -1,4 +1,4 @@
-/*	route.h	4.3	82/03/29	*/
+/*	route.h	4.4	82/03/29	*/
 
 /*
  * Structure of kernel resident routing
@@ -30,8 +30,7 @@ struct route {
  * Flags and host/network status.
  */
 #define	RTF_UP		0x1		/* route useable */
-#define	RTF_MUNGE	0x2		/* munge packet src address */
-#define	RTF_DIRECT	0x4		/* destination is a neighbor */
+#define	RTF_DIRECT	0x2		/* destination is a neighbor */
 
 #ifdef KERNEL
 /*
