@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pwd.h	5.6 (Berkeley) %G%
+ *	@(#)pwd.h	5.7 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -12,11 +12,15 @@
 #ifndef _POSIX_SOURCE
 #define	_PATH_PASSWD		"/etc/passwd"
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
-#define	_PATH_MKPASSWD		"/usr/sbin/mkpasswd"
-#define	_PATH_PTMP		"/etc/ptmp"
 
-#define	_PW_KEYBYNAME		'0'
-#define	_PW_KEYBYUID		'1'
+#define	_PATH_MP_DB		"/var/db/pwd.db"
+#define	_PATH_SMP_DB		"/var/db/spwd.db"
+
+#define	_PATH_PWD_MKDB		"/usr/sbin/pwd_mkdb"
+
+#define	_PW_KEYBYNAME		'1'
+#define	_PW_KEYBYNUM		'2'
+#define	_PW_KEYBYUID		'3'
 
 #define	_PASSWORD_LEN		128
 #endif
