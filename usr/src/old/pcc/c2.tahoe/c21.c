@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c21.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c21.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -14,7 +14,7 @@ int bitsize[] = {0,8,16,32,64,32,64}; /* index by type codes */
 
 redun3(p) register struct node *p; {
 /* check for 3 addr instr which should be 2 addr */
-	if (OP3==((p->subop>>4)&0xF)) {
+	if (has3ops(p)) {
 		if (equstr(regs[RT1],regs[RT3])
 		  && (p->op==ADD || p->op==MUL || p->op==AND || p->op==OR || p->op==XOR)) {
 			register char *t=regs[RT1]; regs[RT1]=regs[RT2]; regs[RT2]=t;
@@ -56,18 +56,18 @@ bmove() {
 		}
 	else if((cp1=p->code, *cp1++)=='$' &&
 	 (*cp1=='0' || *cp1=='1' || *cp1++=='-' && *cp1=='1') && cp1[1]==',') {
-		switch((p->code[1]<<8)|p->op) {
-		case (('0'<<8)|ADD):
-		case (('0'<<8)|SUB):
-		case (('-'<<8)|AND):
-		case (('0'<<8)|OR):
-		case (('0'<<8)|XOR):
-		case (('1'<<8)|MUL):
-		case (('1'<<8)|DIV):
-		case (('0'<<8)|SHAL):
-		case (('0'<<8)|SHAR):
-		case (('0'<<8)|SHL):
-		case (('0'<<8)|SHR):
+		switch((p->code[1]<<8)|ord(p->op)) {
+		case (('0'<<8)|ord(ADD)):
+		case (('0'<<8)|ord(SUB)):
+		case (('-'<<8)|ord(AND)):
+		case (('0'<<8)|ord(OR)):
+		case (('0'<<8)|ord(XOR)):
+		case (('1'<<8)|ord(MUL)):
+		case (('1'<<8)|ord(DIV)):
+		case (('0'<<8)|ord(SHAL)):
+		case (('0'<<8)|ord(SHAR)):
+		case (('0'<<8)|ord(SHL)):
+		case (('0'<<8)|ord(SHR)):
 			if(r == OP2) {
 				if(p->forw->op!=CBR) {
 					delnode(p); redunm++; continue;
@@ -82,8 +82,8 @@ bmove() {
 				p = p->forw; redunm++; continue;
 			}
 			break;
-		case (('0'<<8)|MUL):
-		case (('0'<<8)|AND):
+		case (('0'<<8)|ord(MUL)):
+		case (('0'<<8)|ord(AND)):
 			p->op=CLR; p->subop&=0xF; p->pop=0;
 			while(*p->code++ != ',');
 			if(r == OP3)
@@ -100,7 +100,7 @@ bmove() {
 	case CALLS:
 	case CALLF:
 		clearuse(); goto std;
-	case 0:
+	case NIL:
 		clearuse(); break;
 	case CVT:
 		{ long n;
@@ -131,7 +131,7 @@ bmove() {
 	case ADD:
 		if ((p->subop&0xF)!=LONG) goto std; cp1=p->code;
 		if (*cp1++!='$') goto std; splitrand(p);
-		if (isstatic(cp1) && (r=isreg(regs[RT2]))>=0 && r<NUSE && uses[r]==p->forw)
+		if (isstatic(cp1) && tempreg(regs[RT2],r) && uses[r]==p->forw)
 		{
 			/* address comp:
 			**	addl2	$_foo,r0  \	movab	_foo[r0],bar
@@ -223,8 +223,7 @@ bmove() {
 			if(isreg(regs[RT1]) < 0) goto std; /* alignment */
 			if (regs[RT2][0] != '$') goto std;
 			if (getnum(&regs[RT2][1]) != 1) goto std;
-			r = isreg(regs[RT3]);
-			if (r < 0 || r >= NUSE) goto std;
+			if (!tempreg(regs[RT3],r)) goto std;
 			if ((pf = p->forw)->op != BIT && pf->op!=AND) goto std;
 			if (uses[r] && uses[r] != pf) goto std;
 			splitrand(pf);
@@ -247,7 +246,7 @@ bmove() {
 		if ((shcnt = getnum(&regs[RT1][1])) < 1 || shcnt > 2) goto std;
 		if ((shfrom = isreg(regs[RT2])) >= 0)
 			regfrom = copy(regs[RT2]);
-		if ((shto = isreg(regs[RT3])) >= 0 && shto<NUSE)
+		if (tempreg(regs[RT3],shto))
 		{
 			int	regnum;
 
@@ -331,8 +330,7 @@ ashadd:
 
 		splitrand(p);
 		if(isreg(regs[RT1]) < 0) goto std; /* alignment */
-		extreg = isreg(regs[RT3]);
-		if (extreg < 0 || extreg >= NUSE) goto std;
+		if (!tempreg(regs[RT3],extreg)) goto std;
 		if ((pf = p->forw)->op != BIT) goto std;
 		if (uses[extreg] && uses[extreg] != pf) goto std;
 		splitrand(pf);
@@ -538,7 +536,7 @@ ashadd:
 char *
 byondrd(p) register struct node *p; {
 /* return pointer to register which is "beyond last read/modify operand" */
-	if (OP2==(p->subop>>4)) return(regs[RT3]);
+	if (has2ops(p)) return(regs[RT3]);
 	switch (p->op) {
 		case MFPR:
 		case PUSHA:
@@ -566,175 +564,226 @@ byondrd(p) register struct node *p; {
 
 struct node *
 bflow(p)
-register struct node *p;
+	register struct node *p;
 {
 	register char *cp1,*cp2,**preg;
 	register int r, fr, dblflg=0;
 	int flow= -1;
 	struct node *olduse=0, *olduse1=0;
 
-	if(p->subop==QUAD || p->subop==DOUBLE || (p->subop&0xF0)==DOUBLE<<4)
+	if (p->subop==QUAD || p->subop==DOUBLE || (p->subop&0xF0)==DOUBLE<<4)
 		dblflg |= 1;	/* double dest */
-	if((p->subop&0xF)==DOUBLE || p->subop==QUAD)
+	if ((p->subop&0xF)==DOUBLE || p->subop==QUAD)
 		dblflg |= 2;	/* double src */
 	splitrand(p);
-	if (p->op!=PUSH
+	if (p->op!=PUSH &&
 #ifndef EMOD
-	&& p->op!=EDIV
+	p->op!=EDIV &&
 #endif EMOD
-	&& p->op!=EMUL
-	&& p->subop && 0<=(r=isreg(lastrand)) && r<NUSE && uses[r]==p->forw) {
-	if (equtype(p->subop,regs[r][0])
-	|| ((p->op==CVT || p->op==MOVZ || p->op==CVFL)
-			 && 0xf&regs[r][0] && compat(0xf&(p->subop>>4),regs[r][0]))
-	|| p->op==MOVA && compat(LONG, regs[r][0])) {
+	p->op!=EMUL &&
+	p->subop && tempreg(lastrand,r) && uses[r]==p->forw) {
+	if (equtype(p->subop,regs[r][0]) ||
+	    ((p->op==CVT || p->op==MOVZ || p->op==CVFL) &&
+	     (regs[r][0]&0xf) && compat((p->subop>>4)&0xf,regs[r][0])) ||
+	    p->op==MOVA && compat(LONG, regs[r][0])) {
 		register int r2;
-		if (regs[r][1]!=0) {/* send directly to destination */
+
+		if (regs[r][1]!=0) {	/* send directly to destination */
 			if (p->op==INC || p->op==DEC) {
-				if (p->op==DEC) p->op=SUB; else p->op=ADD;
-				p->subop=(OP2<<4)+(p->subop&0xF); /* use 2 now, convert to 3 later */
+				p->op = (p->op==DEC) ? SUB : ADD;
+				/* use 2 now, convert to 3 later */
+				p->subop=(OP2<<4)+(p->subop&0xF);
 				p->pop=0;
-				cp1=lastrand; cp2=regs[RT2]; while (*cp2++= *cp1++); /* copy reg */
+				cp1=lastrand; cp2=regs[RT2];
+				while (*cp2++= *cp1++)	/* copy reg */
+					;
 				cp1=lastrand; *cp1++='$'; *cp1++='1'; *cp1=0;
 			}
 			cp1=regs[r]+1; cp2=lastrand;
-			if (OP2==(p->subop>>4)) {/* use 3 operand form of instruction */
+			if (has2ops(p)) {
+				/* use 3 operand form of instruction */
 				p->pop=0;
-				p->subop += (OP3-OP2)<<4; lastrand=cp2=regs[RT3];
+				p->subop += (OP3-OP2)<<4;
+				lastrand = cp2 = regs[RT3];
 			}
-			while (*cp2++= *cp1++);
+			while (*cp2++= *cp1++)
+				;
 			if (p->op==MOVA && p->forw->op==PUSH) {
 				p->op=PUSHA;
 				*regs[RT2]=0; p->pop=0;
-			} else if ((p->op==MOV || p->op==CVT) && p->forw->op==PUSH) {
+			} else if ((p->op==MOV || p->op==CVT) &&
+			    p->forw->op==PUSH) {
 				p->op=PUSH; p->subop &= 0xF;
 				*regs[RT2]=0; p->pop=0;
 			}
 			delnode(p->forw);
-			if (0<=(r2=isreg(lastrand)) && r2<NUSE) {
-				uses[r2]=uses[r]; uses[r]=0;
-			}
+			if (tempreg(lastrand,r2))
+				uses[r2]=uses[r], uses[r]=0;
 			redun3(p);
 			newcode(p); redunm++; flow=r;
-		} else if (p->op==MOV) {
-			/* superfluous fetch */
+		} else if (p->op==MOV) {	/* superfluous fetch */
 			int nmatch;
 			char src[C2_ASIZE];
 	movit:
-			cp2=src; cp1=regs[RT1]; while (*cp2++= *cp1++);
+			for (cp2=src, cp1=regs[RT1]; *cp2++= *cp1++;)
+				;
 			splitrand(p->forw);
 			if (p->forw->op != INC && p->forw->op != DEC)
 				lastrand=byondrd(p->forw);
 			nmatch=0;
 			for (preg=regs+RT1;*preg!=lastrand;preg++)
 				if (r==isreg(*preg)) {
-				cp2= *preg; cp1=src; while (*cp2++= *cp1++); ++nmatch;
+					cp2= *preg; cp1=src;
+					while (*cp2++= *cp1++)
+						;
+					++nmatch;
 				}
 			if (nmatch==1) {
-				if (OP2==(p->forw->subop>>4) && equstr(src,regs[RT2])) {
+				if (has2ops(p->forw) && equstr(src,regs[RT2])) {
 					p->forw->pop=0;
-					p->forw->subop += (OP3-OP2)<<4; cp1=regs[RT3];
-					*cp1++='r'; *cp1++=r+'0'; *cp1=0;
+					p->forw->subop += (OP3-OP2)<<4;
+					cp1=regs[RT3];
+					*cp1++ = 'r'; *cp1++ = r+'0'; *cp1=0;
 				}
-				delnode(p); p=p->forw;
-				if (0<=(r2=isreg(src)) && r2<NUSE) {
-					uses[r2]=uses[r]; uses[r]=0;
-				}
+				delnode(p);
+				p=p->forw;
+				if (tempreg(src,r2))
+					uses[r2]=uses[r], uses[r]=0;
 				redun3(p);
 				newcode(p); redunm++; flow=r;
-			} else splitrand(p);
+			} else
+				splitrand(p);
 		}
-	} else if (p->op==MOV && (p->forw->op==CVT || p->forw->op==MOVZ)
-		&& p->forw->subop&0xf 	/* if base or index, then forget it */
-		&& compat(p->subop,p->forw->subop) && !indexa(cp1=regs[RT1]))
-			goto movit;
+	} else if (p->op==MOV && (p->forw->op==CVT || p->forw->op==MOVZ) &&
+	    p->forw->subop&0xf && 	/* if base or index, then forget it */
+	    compat(p->subop,p->forw->subop) && !indexa(cp1=regs[RT1]))
+		goto movit;
 	}
 	/* adjust 'lastrand' past any 'read' or 'modify' operands. */
 	lastrand=byondrd(p);
 	/* a 'write' clobbers the register. */
-	if (0<=(r=isreg(lastrand)) && r<NUSE
-	|| OP2==(p->subop>>4) && 0<=(r=isreg(regs[RT2])) && r<NUSE && uses[r]==0) {
-		/* writing a dead register is useless, but watch side effects */
+	if (tempreg(lastrand,r) ||
+	    (has2ops(p) && tempreg(regs[RT2],r) && uses[r]==0)) {
+		/*
+		 * Writing a dead register is useless,
+		 * but watch side effects
+		 */
 		switch (p->op) {
 #ifndef EMOD
 		case EDIV:
 #endif EMOD
 		case EMUL:
-		case AOBLEQ: case AOBLSS: break;
+		case AOBLEQ: case AOBLSS:
+			break;
 		default:
+			/*
+			 * If no direct uses, check for
+			 * use of condition codes
+			 */
 			if (uses[r]==0 && ((dblflg&1)==0 || uses[r+1]==0)) {
-			/* no direct uses, check for use of condition codes */
-				register struct node *q=p;
-				while ((q=nonlab(q->forw))->op==JBR && q->subop==0) q=q->ref;	/* cc unused, unchanged */
-				if (q->op!=CBR && q->op!=ADDA && q->op!=SUBA) {/* ... and destroyed */
+				register struct node *q = p;
+
+				while ((q = nonlab(q->forw))->op==JBR &&
+				    q->subop==0)
+					q=q->ref; /* cc unused, unchanged */
+				if (q->op!=CBR && q->op!=ADDA && q->op!=SUBA) {
+					/* ... and destroyed */
 					preg=regs+RT1;
-					while (cp1= *preg++) {
-						if ((cp1==lastrand)  &&
-						    (p->op != CLR) &&
-						    (p->op != CVFL)) 
-						{redunm++; delnode(p); return(p->forw);}
-						if (equstr(cp1,lastrand)) break;
+					while (cp1 = *preg++) {
+						if (cp1==lastrand &&
+						    p->op != CLR &&
+						    p->op != CVFL) {
+							redunm++;
+							delnode(p);
+							return(p->forw);
+						}
+						if (equstr(cp1,lastrand))
+							break;
 					}
 				}
 			}
 			flow=r;
 		}
 	}
-	if (0<=(r=flow)) {
-		olduse=uses[r]; uses[r]=0; *(short *)(regs[r])=0;
+	if ((r=flow) >= 0) {
+		olduse=uses[r], uses[r]=0;
+		*(short *)(regs[r])=0;
 		/* if r0 destroyed, dont keep r1 */
-		if(dblflg&1) {
-			olduse1=uses[++r]; uses[r]=0; *(short *)(regs[r])=0;
+		if (dblflg&1) {
+			olduse1=uses[++r], uses[r]=0;
+			*(short *)(regs[r])=0;
 		}
 	}
 	/* now look for 'read' or 'modify' (read & write) uses */
 	preg=regs+RT1; 
 	while (*(cp1= *preg++)) {
 		/* check for  r  */
-		if (lastrand!=cp1 && 0<=(r=isreg(cp1)) && r<NUSE && (uses[r]==0)){
-			uses[r]=p; cp2=regs[r]; *cp2++=p->subop;
-			if((p->op==SHAL || p->op==SHAR || p->op==SHL || p->op==SHR)
-				 && cp1==regs[RT1]) cp2[-1]=BYTE;
-			if(p->op==CBR && (p->subop==JBC || p->subop==JBS)) cp2[-1]=LONG;
-			if(p->op==MOVA && cp1==regs[RT2]) cp2[-1]=LONG;
+		if (lastrand!=cp1 && tempreg(cp1,r) && uses[r]==0) {
+			uses[r]=p;
+			cp2=regs[r]; *cp2++=p->subop;
+			if ((p->op==SHAL || p->op==SHAR ||
+			    p->op==SHL || p->op==SHR) &&
+			    cp1==regs[RT1])
+				cp2[-1] = BYTE;
+			if (p->op==CBR && (p->subop==JBC || p->subop==JBS))
+				cp2[-1] = LONG;
+			if (p->op==MOVA && cp1==regs[RT2])
+				cp2[-1]=LONG;
 			/* ediv/emod's 2nd operand is quad */
-			if(((p->op==EDIV
+			if (((p->op==EDIV
 #ifdef EMOD
-			|| p->op==EMOD
+			   || p->op==EMOD
 #endif EMOD
-			) && cp1==regs[RT2] || (dblflg&2))
-			 && ++r<NUSE && uses[r]==0) {
+			   ) && cp1==regs[RT2] || (dblflg&2)) &&
+			   ++r<NUSE && uses[r]==0) {
 				*cp2=0;
-				uses[r]=p; cp2=regs[r]; *cp2++=p->subop;
+				uses[r]=p;
+				cp2=regs[r]; *cp2++=p->subop;
 			}
-			if(p->op==MOV || p->op==PUSH || p->op==CVT ||
-			 p->op==MOVZ || p->op==COM || p->op==NEG || p->op==STF) {
-				if (p->op==PUSH) cp1="-(sp)";
-				else {
+			if (p->op==MOV || p->op==PUSH || p->op==CVT ||
+			    p->op==MOVZ || p->op==COM || p->op==NEG ||
+			    p->op==STF) {
+				if (p->op!=PUSH) {
 					cp1=regs[RT2];
-					if (0<=(r=isreg(cp1)) && r<NUSE) {
-						/* reincarnation!! */
-					/* as in  addl2 r0,r1;  movl r1,r0;  ret  */
-						if(uses[r]==0)
+					if (tempreg(cp1,r)) {
+						/*
+						 * reincarnation!!
+						 * (as in  addl2 r0,r1;
+						 *  movl r1,r0;  ret)
+						 */
+						if (uses[r]==0)
 							uses[r]=olduse;
-						if((dblflg&1) && uses[r+1]==0)
+						if ((dblflg&1) && uses[r+1]==0)
 							uses[r+1]=olduse1;
 					}
-					if (p->op!=MOV) cp1=0;
-				}
-				if (cp1) while (*cp2++= *cp1++);
-				else *cp2=0;
-			} else *cp2=0;
+					if (p->op!=MOV)
+						cp1=0;
+				} else
+					cp1="-(sp)";
+				if (cp1)
+					while (*cp2++= *cp1++)
+						;
+				else
+					*cp2=0;
+			} else
+				*cp2=0;
 			continue;
 		}
 		/* check for (r),[r] */
-		do if (*cp1=='(' || *cp1=='[') {/* get register number */
-			char t;
-			cp2= ++cp1; while (*++cp1!=')' && *cp1!=']'); t= *cp1; *cp1=0;
-			if (0<=(r=isreg(cp2)) && r<NUSE && (uses[r]==0 || uses[r]==p)) {
-				uses[r]=p; regs[r][0]=(*--cp2=='[' ? OPX<<4 : OPB<<4);
+		do {
+			if (*cp1=='(' || *cp1=='[') { /* get register number */
+				char t;
+				for (cp2= ++cp1; *++cp1!=')' && *cp1!=']';)
+					;
+				t= *cp1; *cp1=0;
+				if (tempreg(cp2,r) &&
+				    (uses[r]==0 || uses[r]==p)) {
+					uses[r]=p;
+					regs[r][0] =
+					    (*--cp2=='[' ? OPX<<4 : OPB<<4);
+				}
+				*cp1=t;
 			}
-			*cp1=t;
 		} while (*++cp1);
 	}
 #ifdef MOVAFASTER
@@ -760,7 +809,7 @@ register struct node *p;
 		}
 	}
 #endif MOVAFASTER
-	return(p);
+	return (p);
 }
 
 /* try to eliminate STF's */
@@ -771,7 +820,7 @@ register struct node *q;
 	register struct node *p;
 	register int r;
 
-	if(!(q->op==STF && ((r=isreg(q->code))<NUSE) && r>=0))
+	if(q->op!=STF || !tempreg(q->code,r))
 		return(q);
 	if(uses[r]) {
 		/* see if anyone destroys acc between us */

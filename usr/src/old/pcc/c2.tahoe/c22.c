@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)c22.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -65,19 +65,22 @@ rmove()
 		r = isreg(regs[RT1]);
 		r1 = isreg(regs[RT2]);
 		dest(regs[RT2],p->subop, 1);
-		if ((regs[ACC][0]) && equstr(regs[RT2],regs[ACC]+1)) {
-                *(short *)(regs[ACC]) = 0;}
-
+		if ((regs[ACC][0]) && equstr(regs[RT2],regs[ACC]+1))
+			*(short *)(regs[ACC]) = 0;
 		if (r>=0) {
 			if (r1>=0) {
 				if (r == r1 && p->forw->op!=CBR) {
-					delnode(p); redunm++; nchange++; break;
+					delnode(p); redunm++; nchange++;
+					break;
 				}
 				if(regs[r][0])
 					savereg(r1, regs[r]+1, p->subop);
-			} else savereg(r, regs[RT2], p->subop);
-		} else if (r1>=0) savereg(r1, regs[RT1], p->subop);
-		else setcon(regs[RT1], regs[RT2], p->subop);
+			} else
+				savereg(r, regs[RT2], p->subop);
+		} else if (r1>=0)
+			savereg(r1, regs[RT1], p->subop);
+		else
+			setcon(regs[RT1], regs[RT2], p->subop);
 		break;
 
 /* .rx,.wx or .rx,.rx,.wx */
@@ -114,16 +117,20 @@ rmove()
 			nst++; nchange++; break;
 		}
 		savereg(ACC, p->code, p->subop);
-	case CLR:
 	case INC:
 	case DEC:
 	case CVFL:
 		dest(p->code,p->subop, 1);
-		if (p->op==CLR)
-			if ((r = isreg(p->code)) >= 0)
-				savereg(r, "$0", p->subop);
-			else
-				setcon("$0", p->code, p->subop);
+		break;
+
+	case CLR:
+		dest(p->code,p->subop, 1);
+		if ((regs[ACC][0]) && equstr(p->code,regs[ACC]+1))
+			*(short *)(regs[ACC]) = 0;
+		if ((r = isreg(p->code)) < 0)
+			setcon("$0", p->code, p->subop);
+		else
+			savereg(r, "$0", p->subop);
 		break;
 
 /* .rx */
@@ -324,7 +331,7 @@ register struct node *p1, *p2;
 
 	if (p1->op != p2->op || p1->subop != p2->subop)
 		return(0);
-	if (p1->op>0 && p1->op<MOV)
+	if (p1->op != NIL && ord(p1->op) < ord(MOV))
 		return(0);
 	if (p1->op==MOVA && p1->labno!=p2->labno) return(0);
 	cp1 = p1->code;
@@ -778,7 +785,7 @@ struct intleavetab intltab[] = {
 	LDFD,	U(FLOAT,DOUBLE),0, 
 	CVDF,	U(DOUBLE,FLOAT),0,
 	NEGF,	FLOAT,		0,
-	0,	0,		0};
+	NIL,	0,		0};
 
 interleave()
 {
@@ -789,7 +796,7 @@ interleave()
 	int count;
 	for (p= first.forw; p!=0; p = p->forw){
 		count = 0;
-		for  (t =intltab; t->op != 0; t++){
+		for  (t =intltab; t->op != NIL; t++){
 			if (t->op == p->op && t->subop == p->subop){
 			count = t->intleavect;
 			break;
@@ -833,25 +840,25 @@ struct node *p, *p1;
 	p1->back = p;
 }
 
-int termop[] = {
+OpCode termop[] = {
 	JBR, CBR, JMP, LABEL, DLABEL, EROU, JSW, TST, CMP, BIT,
 	CALLF, CALLS, CASE, AOBLEQ, AOBLSS, CMPF, CMPF2, TSTF, MOVBLK, MFPR,
 	MTPR, PROBE, MOVO, TEXT, DATA, BSS, ALIGN, END, LGEN, SET,
-	LCOMM, COMM, 0
-	}; 
+	LCOMM, COMM, NIL
+}; 
 
 sideeffect(p,p1)
 struct node *p, *p1;
 {
 	register struct node *q;
 	register int r;
-	register int *t;
+	register OpCode *t;
 	register char *cp;
 	int i;
 
-	if (p1->op == 0) return(1);  /*  special instructions */
+	if (p1->op == NIL) return(1);  /*  special instructions */
 
-	for (t = termop; *t!=0; t++){
+	for (t = termop; *t!=NIL; t++){
 		if (*t == p1->op) return(1);
 	}
 	if ((p1->forw != NULL) && (p1->forw->op == CBR))
@@ -875,8 +882,7 @@ struct node *p, *p1;
 		if (q->op == STF || q->op == CVFL || q->op == CVLF) 
 		   {
 		    if (equstr(q->code, regs[RT1])) return(1);
-		if (OP3 == ((p1->subop >> 4)&0xF) || p1->op == EMUL 
-		|| p1->op == EDIV)
+		if (has3ops(p1) || p1->op == EMUL || p1->op == EDIV)
 		    if (equstr(q->code, regs[RT2]))
 		       return(1);
 		/*  handle the case  std -56(fp) pushl -60(fp) pushl
