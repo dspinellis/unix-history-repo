@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -204,8 +204,8 @@ main(argc, argv)
 		prog = argv[0];
 	af = AF_UNSPEC;
 
-	while ((ch = getopt(argc, argv, "AaBdf:hI:iM:mN:np:rstuw")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "AaBdf:hI:iM:mN:np:rstuw:")) != EOF)
+		switch(ch) {
 		case 'A':
 			Aflag = 1;
 			break;
