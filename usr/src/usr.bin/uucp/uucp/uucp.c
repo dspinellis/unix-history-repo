@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.7	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -7,8 +7,9 @@ static char sccsid[] = "@(#)uucp.c	5.6 (Berkeley) %G%";
 #include "uust.h"
 
 /*
- *	uucp
+ *	uucp command
  */
+
 int Uid;
 char *Ropt = " ";
 char Path[100], Optns[10], Ename[MAXBASENAME+1];
@@ -30,13 +31,15 @@ long Nbytes = 0;
 #define MAXCOUNT 15	/* maximun number of files per C. file */
 
 main(argc, argv)
-char *argv[];
+int argc;
+char **argv;
 {
-	int ret;
 	char *sysfile1, *sysfl2;
 	register char *cp;
 	char file1[MAXFULLNAME], file2[MAXFULLNAME];
-	int avoidgwd = 0;
+	int avoidgwd = 0, c;
+	extern char *optarg;
+	extern int optind;
 
 	strcpy(Progname, "uucp");
 	uucpname(Myname);
@@ -49,8 +52,8 @@ char *argv[];
 	Optns[2] = 'C';
 #endif !DONTCOPY
 	Ename[0] = Nuser[0] = Optns[3] = '\0';
-	while(argc>1 && argv[1][0] == '-'){
-		switch(argv[1][1]){
+	while((c = getopt(argc, argv, "aCcdfe:g:mn:rs:x:")) != EOF)
+		switch(c) {
 		case 'a':
 			/* efficiency hack; avoid gwd call */
 			avoidgwd = 1;
@@ -69,44 +72,52 @@ char *argv[];
 			Optns[1] = 'f';
 			break;
 		case 'e':
-			strncpy(Ename, &argv[1][2], MAXBASENAME);
+			strncpy(Ename, optarg, MAXBASENAME);
 			break;
 		case 'g':
-			Grade = argv[1][2];
+			Grade = *optarg;
 			break;
 		case 'm':
 			strcat(Optns, "m");
 			break;
 		case 'n':
-			sprintf(Nuser, "%.31s", &argv[1][2]);
+			sprintf(Nuser, "%.31s", optarg);
 			break;
 		case 'r':
-			Ropt = argv[1];
+			Ropt = argv[optind-1];
 			break;
 		case 's':
-			Spool = &argv[1][2]; break;
+			Spool = optarg;
+			break;
 		case 'x':
 			chkdebug();
-			Debug = atoi(&argv[1][2]);
+			Debug = atoi(optarg);
 			if (Debug <= 0)
 				Debug = 1;
+			fprintf(stderr, "DEBUG %d\n", Debug);
 			break;
+		case '?':
 		default:
-			printf("unknown flag %s\n", argv[1]); break;
+			fprintf(stderr, "unknown flag %s\n", argv[optind-1]);
+			break;
 		}
-		--argc;  argv++;
-	}
+
 	DEBUG(4, "\n\n** %s **\n", "START");
 	if (!avoidgwd) {
 		cp = getwd(Wrkdir);
-		ASSERT(cp != 0, "GETWD FAILED", Wrkdir, cp);
+		if (cp == NULL) {
+			syslog(LOG_WARNING, "getwd failed");
+			cleanup(1);
+		}
 	}
-	ret = subchdir(Spool);
-	ASSERT(ret >= 0, "CHDIR FAILED", Spool, ret);
+	if (subchdir(Spool) < 0) {
+		syslog(LOG_WARNING, "chdir(%s) failed: %m", Spool);
+		cleanup(1);
+	}
 
 	Uid = getuid();
 	if (guinfo(Uid, User, Path) != SUCCESS) {
-		assert("Can't find username for ", "uid", Uid);
+		syslog(LOG_WARNING, "Can't find username for uid %d", Uid);
 		DEBUG(1, "Using username", "uucp");
 		strcpy(User, "uucp");
 	}
@@ -114,15 +125,15 @@ char *argv[];
 	DEBUG(4, "User %s,", User);
 	DEBUG(4, "Ename (%s) ", Ename);
 	DEBUG(4, "PATH %s\n", Path);
-	if (argc < 3) {
-		fprintf(stderr, "usage uucp from ... to\n");
+	if (optind > (argc-2)) {
+		fprintf(stderr, "usage: uucp [flags] from... to\n");
 		cleanup(1);
 	}
 
 
 	/*  set up "to" system and file names  */
-	if ((cp = index(argv[argc - 1], '!')) != NULL) {
-		sysfl2 = argv[argc - 1];
+	if ((cp = index(argv[--argc], '!')) != NULL) {
+		sysfl2 = argv[argc];
 		*cp = '\0';
 		if (*sysfl2 == '\0')
 			sysfl2 = Myname;
@@ -141,19 +152,18 @@ char *argv[];
 			cleanup(1);
 		}
 		strcpy(file2, cp + 1);
-	}
-	else {
+	} else {
 		sysfl2 = Myname;
-		strcpy(file2, argv[argc - 1]);
+		strcpy(file2, argv[argc]);
 	}
 	if (strlen(sysfl2) > MAXBASENAME)
 		sysfl2[MAXBASENAME] = '\0';
 
 
 	/*  do each from argument  */
-	while (argc > 2) {
-		if ((cp = index(argv[1], '!')) != NULL) {
-			sysfile1 = argv[1];
+	while (optind < argc) {
+		if ((cp = index(argv[optind], '!')) != NULL) {
+			sysfile1 = argv[optind];
 			*cp = '\0';
 			if (strlen(sysfile1) > MAXBASENAME)
 				sysfile1[MAXBASENAME] = '\0';
@@ -163,20 +173,18 @@ char *argv[];
 				strncpy(Rmtname, sysfile1, MAXBASENAME);
 			if (versys(&sysfile1) != 0) {
 				fprintf(stderr, "bad system name: %s\n", sysfile1);
-				cleanup(0);
+				cleanup(1);
 			}
 			if (Rmtname[0] != '\0')
 				strncpy(Rmtname, sysfl2, MAXBASENAME);
 			strcpy(file1, cp + 1);
-		}
-		else {
+		} else {
 			sysfile1 = Myname;
-			strcpy(file1, argv[1]);
+			strcpy(file1, argv[optind]);
 		}
 		DEBUG(4, "file1 - %s\n", file1);
 		copy(sysfile1, file1, sysfl2, file2);
-		--argc;
-		argv++;
+		optind++;
 	}
 
 	clscfile();
@@ -425,7 +433,11 @@ register char *sys;
 #endif !VMS
 		Cfp = fopen(subfile(Cfile), "w");
 		umask(savemask);
-		ASSERT(Cfp != NULL, CANTOPEN, Cfile, 0);
+		if (Cfp == NULL) {
+			syslog(LOG_WARNING, "fopen(%s) failed: %m",
+				subfile(Cfile));
+			cleanup(1);
+		}
 		strcpy(presys, sys);
 	}
 	return Cfp;
