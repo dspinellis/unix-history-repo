@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)df.1	6.10 (Berkeley) %G%
+.\"     @(#)df.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DF 1
@@ -14,6 +14,7 @@
 .Sh SYNOPSIS
 .Nm df
 .Op Fl in
+.Op Fl t Ar type
 .Op Ar file | Ar filesystem ...
 .Sh DESCRIPTION
 .Nm Df
@@ -24,7 +25,10 @@ or on the filesystem of which
 is a part.
 Values are displayed in 512-byte per block block counts.
 If neither a file or a filesystem operand is specified,
-statistics for all mounted filesystems are displayed.
+statistics for all mounted filesystems are displayed
+(subject to the
+.Fl t
+option below).
 .Pp
 The following options are available:
 .Bl -tag -width Ds
@@ -39,6 +43,23 @@ When this option is specified,
 .Nm df
 will not request new statistics from the filesystems, but will respond
 with the possibly stale statistics that were previously obtained.
+.It Fl t
+Only print out statistics for filesystems of the specified types.
+The recognized types are:
+ufs, nfs, mfs, lfs, pc, fdesc, portal and kernfs,
+along with the aggregates:
+all (the default),
+local (ufs, mfs, lfs),
+and misc (fdesc, portal, kernfs).
+The string ``no'' may be prepending to a type to get its complement
+(e.g. ``nonfs'' to get non-NFS filesystems).  The first
+.Fl t
+option overrides the default, additional such options will add to
+(or subtract from) the current set of types; e.g. either
+``df -t ufs -t lfs''
+or
+``df -t local -t nomfs''
+will display statistics for UFS and LFS filesystems.
 .El
 .Sh ENVIRONMENTAL VARIABLES
 .Bl -tag -width BLOCKSIZE
@@ -50,7 +71,9 @@ is set, the block counts will be displayed in units of that size block.
 .Sh BUGS
 The
 .Fl n
-flag is ignored if a file or filesystem is specified.
+and
+.Fl t
+flags are ignored if a file or filesystem is specified.
 .Sh SEE ALSO
 .Xr quota 1 ,
 .Xr statfs 2 ,
