@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)paths.h	5.3 (Berkeley) %G%
+ *	@(#)paths.h	5.4 (Berkeley) %G%
  */
 
 #define	_PATH_BSHELL	"/bin/sh"
@@ -30,4 +30,5 @@
 #define	_PATH_TMP	"/tmp/"
 #define	_PATH_TTY	"/dev/tty"
 #define	_PATH_UNIX	"/vmunix"
+#define	_PATH_VARTMP	"/var/tmp"
 #define	_PATH_VI	"/usr/bin/vi"
