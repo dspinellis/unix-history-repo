@@ -13,15 +13,15 @@
  * and (for historical reasons, the amount of paper used.)
  * The paper use will have to be counted by harprot in future.
  *
-#ifdef tahoe
+#if tahoe || sun
  * For the sake of compbatibilty we will generate the same file format
  * as on the vaxes
-#endif tahoe
+#endif tahoe || sun
  *
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)llio.c	1.2 (CWI) 88/03/18";
+static char sccsid[] = "@(#)llio.c	1.3 (CWI) 88/03/23";
 #endif
 
 #include <stdio.h>
@@ -72,7 +72,7 @@ flusho()
 			exit(1);
 		}
 #endif vax
-#ifdef tahoe
+#if tahoe || sun
 		{	char c1, c2;
 			c1 = length & BMASK;
 			c2 = (length >> 8) & BMASK;
@@ -93,7 +93,7 @@ flusho()
 				exit(1);
 			}
 		}
-#endif tahoe
+#endif tahoe || sun
 		obufp = obuf;
 	}
 }

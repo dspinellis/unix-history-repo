@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dhar.c	1.3	CWI 1.3	%G%";
+static char *sccsid = "@(#)dhar.c	1.4	CWI 1.4	%G%";
 #endif
 /*
  * Drive the Harris 7500 tyepsetter
@@ -86,11 +86,11 @@ char	*codetab[NFONT+1];	/* device codes */
 typedef	char f_code;
 f_code	*fonttab[2*(NFONT+1)];	/*MC:jna optional fontcodes */
 #endif pdp
-#if	tahoe
+#if	tahoe || sun
 #define	tosh(a,b)	(a)[2*(b) + 1] & BMASK | ((a)[2*(b)] & BMASK) << BYTE
 typedef	char f_code;
 f_code	*fonttab[2*(NFONT+1)];	/*MC:jna optional fontcodes */
-#endif tahoe
+#endif tahoe || sun
 #if	vax
 #define	tosh(a,b)	(a)[b]
 typedef	short f_code;
