@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hexdump.1	5.4 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.5 (Berkeley) %G%
 .\"
 .TH HEXDUMP 1 ""
 .UC 7
@@ -50,6 +50,8 @@ format.
 The options are as follows:
 .TP
 -b
+One-byte octal display.
+.sp
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, zero-filled, bytes of input data,
 in octal, per line.
@@ -60,6 +62,8 @@ It is equivalent to specifying the following format strings:
 "%07.7_ax  " 16/1 "%03o " "\en"
 .TP
 -c
+One-byte character display.
+.sp
 Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, space-filled, characters of input
 data per line.
@@ -70,6 +74,8 @@ It is equivalent to specifying the following format strings:
 "%07.7_ax  " 16/1 "%3_c " "\en"
 .TP
 -d
+Two-byte decimal display.
+.sp
 Display the input offset in hexadecimal, followed by eight
 space-separated, five column, zero-filled, two-byte units
 of input data, in unsigned decimal, per line.
@@ -93,6 +99,8 @@ Interpret only
 bytes of input.
 .TP
 -o
+Two-byte octal display.
+.sp
 Display the input offset in hexadecimal, followed by eight
 space-separated, six column, zero-filled, two byte quantities of
 input data, in octal, per line.
@@ -132,6 +140,8 @@ for the input offsets), are replaced with a line comprised of a
 single asterisk.
 .TP
 -x
+Two-byte hexadecimal display.
+.sp
 Display the input offset in hexadecimal, followed by eight, space
 separated, four column, zero-filled, two-byte quantities of input
 data, in hexadecimal, per line.
@@ -181,7 +191,7 @@ A byte count or field precision is required for each ``s'' conversion
 character.
 .TP
 .B \(bu
-The conversion characters ``h'', ``l'', ``n'', and ``p'' are not
+The conversion characters ``h'', ``n'', and ``p'' are not
 supported.
 .TP
 .B \(bu
@@ -228,35 +238,27 @@ Output US ASCII characters, with the exception that control characters are
 displayed using the following, lower-case, names.
 Characters greater than 0xff, hexadecimal, are displayed as hexadecimal
 strings.
-.in +5
-.TS
-l l l l l l.
-00 nul	001 soh	002 stx	003 etx	004 eot	005 enq
-06 ack	007 bel	008 bs	009 ht	00A lf	00B vt
-0C ff	00D cr	00E so	00F si	010 dle	011 dc1
-12 dc2	013 dc3	014 dc4	015 nak	016 syn	017 etb
-18 can	019 em	01A sub	01B esc	01C fs	01D gs
-01E rs	01F us	0FF del
-.TE
+.sp
+.RS
+000 nul  001 soh  002 stx  003 etx  004 eot  005 enq
+006 ack  007 bel  008  bs  009  ht  00A  lf  00B  vt
+00C  ff  00D  cr  00E  so  00F  si  010 dle  011 dc1
+012 dc2  013 dc3  014 dc4  015 nak  016 syn  017 etb
+018 can  019  em  01A sub  01B esc  01C  fs  01D  gs
+01E rs   01F  us  0FF del
+.RE
 .PP
-The default and supported byte counts are as follows:
-.in +5
-.TS
-l l l.
-Conversion type	Default (bytes)	Other Supported (bytes)
-_
-%_c	1
-%_p	1
-%_u	1
-%c	1
-%d  (%i)	4	1, 2
-%o	4	1, 2
-%u	4	1, 2
-%x  (%X)	4	1, 2
-%e  (%E)	8	4
-%f	8	4
-%g  (%G)	8	4
-.TE
+The default and supported byte counts for the conversion characters
+are as follows:
+.TP
+"%_c, %_p, %_u, %c"
+One byte counts only.
+.TP
+"%d, %i, %o, %u, %X, %x"
+Four byte default, one and two byte counts supported.
+.TP
+"%E, %e, %f, %G, %g"
+Eight byte default, four byte counts supported.
 .PP
 The amount of data interpreted by each format string is the sum of the
 data required by each format unit, which is the iteration count times the
