@@ -1,9 +1,11 @@
+
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.12 (Berkeley) %G%
+#	@(#)Makefile	4.13 (Berkeley) %G%
+#
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -22,6 +24,24 @@
 # All files contain sccsid strings. To compile a library that does
 # not include these strings one must add -Dlint to DEFS below.
 #
+#*********************************************************************
+#=====================================================================
+#							
+# There are two types of resolvers, 'res_named' which uses the 
+#  nameserver and 'res_static' which uses /etc/hosts.
+#
+#	RESOLVER defines which resolver is to be compiled into libc  
+#								     
+#		defining RESOLVER to res_named, compiles the         
+#		routines which the BIND nameserver uses into libc    
+#---------------------------------------------------------------------
+#RESOLVER=	res_named
+#---------------------------------------------------------------------
+#		defining RESOLVER to res_static, compiles            #
+#		the routines which use the old method of             #
+#		hostname resolveing. (ie /etc/HOSTS )                #
+#---------------------------------------------------------------------
+RESOLVER=	res_static
 DESTDIR=
 INSTALL=install -m 644
 DFLMON=	mon.o
