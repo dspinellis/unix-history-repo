@@ -1,4 +1,4 @@
-/*	Locore.c	4.2	%G%	*/
+/*	Locore.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -8,6 +8,7 @@
 #include "../h/vm.h"
 #include "../h/tty.h"
 #include "../h/cmap.h"
+#include "../h/proc.h"
 
 /*
  * Pseudo file for lint to show what is used/defined in locore.s.
@@ -89,7 +90,7 @@ struct {
 
 /*ARGSUSED*/
 setjmp(lp)
-	label_t *lp;
+	label_t lp;
 {
 
 	/*NOTREACHED*/
@@ -97,7 +98,7 @@ setjmp(lp)
 
 /*ARGSUSED*/
 longjmp(lp)
-	label_t *lp;
+	label_t lp;
 {
 
 	/*NOTREACHED*/
@@ -132,14 +133,6 @@ resume(pcbpf)
 
 /*ARGSUSED*/
 fubyte(base)
-	caddr_t base;
-{
-
-	return (0);
-}
-
-/*ARGSUSED*/
-fuibyte(base)
 	caddr_t base;
 {
 
@@ -227,24 +220,6 @@ kernacc(addr, bcnt, rw)
 	return (0);
 }
 
-/*ARGSUSED*/
-udiv(i, j)
-	int i, j;
-{
-
-	return (0);
-}
-
-#ifdef	UNNEEDED
-/*ARGSUSED*/
-urem(i, j)
-	unsigned i, j;
-{
-
-	return (0);
-}
-#endif
-
 /*VARARGS1*/
 /*ARGSUSED*/
 mtpr(reg, value)
@@ -279,6 +254,8 @@ struct	pte Xswapmap[UPAGES];
 struct	pte Xswap2map[UPAGES];
 struct	pte Pushmap[UPAGES];
 struct	pte Vfmap[UPAGES];
+struct	pte mcrmap[1];
+struct	pte bufmap[NBUF];
 
 struct	pte mmap[1];
 struct	pte mcrmap[1];
@@ -325,17 +302,17 @@ spl7()
 	return (0);
 }
 
+/*ARGSUSED*/
 splx(s)
 	int s;
 {
 
-	return (s);
 }
 
 /*ARGSUSED*/
 bcopy(to, from, count)
 	caddr_t to, from;
-	int count;
+	unsigned count;
 {
 
 }
