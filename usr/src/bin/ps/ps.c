@@ -1,4 +1,3 @@
-static char *sccsid = "@(#)ps.c	4.1 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -28,6 +27,8 @@ struct nlist nl[] = {
 #define	X_TEXT		3
 	{ "_nswap" },
 #define	X_NSWAP		4
+	{ "_maxslp" },
+#define	X_MAXSLP	5
 	{ 0 },
 };
 
@@ -44,32 +45,31 @@ struct	savcom {
 struct	asav {
 	char	*a_cmdp;
 	int	a_flag;
-	short	a_stat, a_uid, a_pid, a_nice;
+	short	a_stat, a_uid, a_pid, a_nice, a_pri, a_slptime, a_time;
 	size_t	a_size, a_rss;
 	char	a_tty[DIRSIZ+1];
 	dev_t	a_ttyd;
-	time_t	a_time;
+	time_t	a_cpu;
 };
 
 char	*lhdr;
-/*	    F S UID   PID  PPID CP PRI NICE ADDR  SZ  RSS WCHAN TTY TIME */
+/*	     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN S  TT  TIME */
 struct	lsav {
 	short	l_ppid;
-	char	l_cpu, l_pri;
+	char	l_cpu;
 	int	l_addr;
 	caddr_t	l_wchan;
 };
 
 char	*uhdr;
-/*	 USER       PID %CPU NICE  SZ  RSS TTY TIME */
+/*	USER       PID %CPU NICE  SZ  RSS TT F  TIME */
 
 char	*shdr;
-/*	 SSIZ   PID TTY TIME */
+/*	SSIZ   PID TT S  TIME */
 
 char	*vhdr;
-/*	F     PID TTY  TIME TIM SL  MINFLT  MAJFLT SIZE  RSS  SRS TSIZ TRS PF*/
+/*	F     PID TT  TIME RES SL  MINFLT  MAJFLT SIZE  RSS  SRS TSIZ TRS PF*/
 struct	vsav {
-	short	v_slptime, v_pri;
 	u_int	v_minflt, v_majflt;
 	size_t	v_swrss, v_tsiz, v_txtrss, v_txtswrss;
 	short	v_xccount;
@@ -91,9 +91,9 @@ union {
 int	chkpid;
 int	aflg, cflg, eflg, gflg, kflg, lflg, sflg, uflg, vflg, xflg;
 char	*tptr;
-char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc();
+char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
 int	pscomp();
-int	nswap;
+int	nswap, maxslp;
 struct	pte *Usrptma, *usrpt;
 
 struct	ttys {
@@ -210,7 +210,7 @@ main(argc, argv)
 			mproc = &proc[j];
 			if (mproc->p_stat == 0 ||
 			    mproc->p_pgrp == 0 && xflg == 0)
-			continue;
+				continue;
 			if (tptr == 0 && gflg == 0 && xflg == 0 &&
 			    mproc->p_ppid == 1 && (mproc->p_flag&SDETACH) == 0)
 				continue;
@@ -307,6 +307,11 @@ getkvars(argc, argv)
 		cantread("nswap", kmemf);
 		exit(1);
 	}
+	lseek(kmem, (long)nl[X_MAXSLP].n_value, 0);
+	if (read(kmem, &maxslp, sizeof (maxslp)) != sizeof (maxslp)) {
+		cantread("maxslp", kmemf);
+		exit(1);
+	}
 	if (vflg) {
 		text = (struct text *)alloc(NTEXT * sizeof (struct text));
 		if (text == 0) {
@@ -332,7 +337,7 @@ printhdr()
 	}
 	hdr = lflg ? lhdr : (vflg ? vhdr : (uflg ? uhdr : shdr));
 	if (lflg+vflg+uflg+sflg == 0)
-		hdr += strlen(" SSIZ");
+		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
 	printf("%s COMMAND\n", hdr);
 	fflush(stdout);
@@ -486,7 +491,8 @@ gettty()
 	x = u.u_ttyd & 017;
 	for (dp = cand[x]; dp; dp = dp->cand) {
 		if (dp->ttyd == -1) {
-			if (stat(dp->name, &stb) == 0)
+			if (stat(dp->name, &stb) == 0 &&
+			   (stb.st_mode&S_IFMT)==S_IFCHR)
 				dp->ttyd = stb.st_rdev;
 			else
 				dp->ttyd = -2;
@@ -533,26 +539,27 @@ save()
 	sp->ap->a_cmdp = cmdp;
 #define e(a,b) ap->a = mproc->b
 	e(a_flag, p_flag); e(a_stat, p_stat); e(a_nice, p_nice);
-	e(a_uid, p_uid); e(a_pid, p_pid); e(a_rss, p_rssize);
+	e(a_uid, p_uid); e(a_pid, p_pid); e(a_rss, p_rssize); e(a_pri, p_pri);
+	e(a_slptime, p_slptime); e(a_time, p_time);
 #undef e
 	ap->a_tty[0] = ttyp[0];
 	ap->a_tty[1] = ttyp[1] ? ttyp[1] : ' ';
 	if (ap->a_stat == SZOMB) {
 		register struct xproc *xp = (struct xproc *)mproc;
 
-		ap->a_time = xp->xp_vm.vm_utime + xp->xp_vm.vm_stime;
+		ap->a_cpu = xp->xp_vm.vm_utime + xp->xp_vm.vm_stime;
 	} else {
 		ap->a_size = mproc->p_dsize + mproc->p_ssize;
 		ap->a_ttyd = u.u_ttyd;
-		ap->a_time = u.u_vm.vm_utime + u.u_vm.vm_stime;
+		ap->a_cpu = u.u_vm.vm_utime + u.u_vm.vm_stime;
 	}
-	ap->a_time /= HZ;
+	ap->a_cpu /= HZ;
 	if (lflg) {
 		register struct lsav *lp;
 
 		sp->sun.lp = lp = (struct lsav *)alloc(sizeof (struct lsav));
 #define e(a,b) lp->a = mproc->b
-		e(l_ppid, p_ppid); e(l_cpu, p_cpu); e(l_pri, p_pri);
+		e(l_ppid, p_ppid); e(l_cpu, p_cpu);
 		if (ap->a_stat != SZOMB)
 			e(l_wchan, p_wchan);
 #undef e
@@ -563,7 +570,6 @@ save()
 
 		sp->sun.vp = vp = (struct vsav *)alloc(sizeof (struct vsav));
 #define e(a,b) vp->a = mproc->b
-		e(v_slptime, p_slptime); e(v_pri, p_pri);
 		if (ap->a_stat != SZOMB) {
 			e(v_swrss, p_swrss); e(v_aveflt, p_aveflt);
 			vp->v_minflt = u.u_vm.vm_minflt;
@@ -709,8 +715,10 @@ getcmd()
 		strncat(cmdbuf, u.u_comm, sizeof(u.u_comm));
 		strcat(cmdbuf, ")");
 	}
+/*
 	if (xflg == 0 && gflg == 0 && tptr == 0 && cp[0] == '-')
 		return (0);
+*/
 	return (savestr(cmdbuf));
 
 bad:
@@ -724,18 +732,19 @@ retucomm:
 }
 
 char	*lhdr =
-"     F S UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN TTY TIME";
+"     F UID   PID  PPID CP PRI NI ADDR  SZ  RSS WCHAN S  TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 	register struct lsav *lp = sp->sun.lp;
 
-	printf("%6x %c%4d%6u%6u%3d%4d%2d%6x%4d%5d",
-	    ap->a_flag, "0SWRIZT"[ap->a_stat], ap->a_uid,
-	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, lp->l_pri-PZERO,
-	    ap->a_nice-NZERO, lp->l_addr, ap->a_size, ap->a_rss);
+	printf("%6x%4d%6u%6u%3d%4d%3d%5x%4d%5d",
+	    ap->a_flag, ap->a_uid,
+	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
+	    ap->a_nice-NZERO, lp->l_addr, ap->a_size/2, ap->a_rss/2);
 	printf(lp->l_wchan ? " %5x" : "      ", (int)lp->l_wchan&0xfffff);
+	printf(" %2.2s ", state(ap));
 	ptty(ap->a_tty);
 	ptime(ap);
 }
@@ -744,18 +753,18 @@ ptty(tp)
 	char *tp;
 {
 
-	printf(" %-2.2s", tp);
+	printf("%-2.2s", tp);
 }
 
 ptime(ap)
 	struct asav *ap;
 {
 
-	printf("%3ld:%02ld", ap->a_time / HZ, ap->a_time % HZ);
+	printf("%3ld:%02ld", ap->a_cpu / HZ, ap->a_cpu % HZ);
 }
 
 char	*uhdr =
-"USER       PID %CPU NICE  SZ  RSS TTY TIME";
+"USER       PID %CPU NICE  SZ  RSS TT F   TIME";
 upr(sp)
 	struct savcom *sp;
 {
@@ -763,62 +772,90 @@ upr(sp)
 
 	printf("%-8.8s %5u%5.1f%5d%4d%5d",
 	    getname(ap->a_uid), ap->a_pid, sp->sun.u_pctcpu, ap->a_nice-NZERO,
-	    ap->a_size, ap->a_rss);
+	    ap->a_size/2, ap->a_rss/2);
+	putchar(' ');
 	ptty(ap->a_tty);
+	printf(" %2.2s", state(ap));
 	ptime(ap);
 }
 
 char *vhdr =
-"F     PID TTY  TIME RES SL  MINFLT  MAJFLT SIZE  RSS  SRS TSIZ TRS PF";
+"   PID TT S     TIME RES SL MINFLT MAJFLT SIZE  RSS  SRS TSIZ TRS PF";
 vpr(sp)
 	struct savcom *sp;
 {
 	register struct vsav *vp = sp->sun.vp;
 	register struct asav *ap = sp->ap;
-	char stat, nice, anom;
 
-	switch (ap->a_stat) {
-
-	case SSLEEP:
-	case SSTOP:
-		if ((ap->a_flag & SLOAD) == 0)
-			stat = 'W';
-		else if (vp->v_pri >= PZERO)
-			stat = 'S';
-		else if (ap->a_flag & SPAGE)
-			stat = 'P';
-		else
-			stat = 'D';
-		break;
-
-	case SRUN:
-	case SIDL:
-		stat = ap->a_flag & SLOAD ? 'R' : 'W';
-		break;
-	}
-	nice = ap->a_nice > NZERO ? 'N' : ' ';
-	anom = ap->a_flag & (SANOM|SUANOM) ? 'A' : ' ';
-	printf("%c%c%c%6u ", stat, nice, anom, ap->a_pid);
+	printf("%6u ", ap->a_pid);
 	ptty(ap->a_tty);
+	printf(" %4s", state(ap));
 	ptime(ap);
-	printf("%4d%3d%8d%8d%5d%5d%5d%5d%4d%3d",
-	   ap->a_time, vp->v_slptime, vp->v_minflt, vp->v_majflt,
-	   ap->a_size, ap->a_rss / 2, vp->v_swrss / 2,
-	   vp->v_tsiz / 2, vp->v_txtrss / 2, vp->v_aveflt);
+	printf("%4d%3d%7d%7d%5d%5d%5d%5d%4d%3d",
+	   ap->a_time, ap->a_slptime, vp->v_minflt, vp->v_majflt,
+	   ap->a_size/2, ap->a_rss/2, vp->v_swrss/2,
+	   vp->v_tsiz/2, vp->v_txtrss/2, vp->v_aveflt);
 }
 
 char	*shdr =
-" SSIZ   PID TTY TIME";
+"SSIZ   PID TT S   TIME";
 spr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 
 	if (sflg)
-		printf("%5d", sp->sun.s_ssiz);
-	printf(" %5u", ap->a_pid);
+		printf("%4d ", sp->sun.s_ssiz);
+	printf("%5u", ap->a_pid);
+	putchar(' ');
 	ptty(ap->a_tty);
+	printf(" %2.2s", state(ap));
 	ptime(ap);
+}
+
+char *
+state(ap)
+	register struct asav *ap;
+{
+	char stat, load, nice, anom;
+	static char res[5];
+
+	switch (ap->a_stat) {
+
+	case SSTOP:
+		stat = 'T';
+		break;
+
+	case SSLEEP:
+		if (ap->a_pri >= PZERO)
+			if (ap->a_slptime >= MAXSLP)
+				stat = 'I';
+			else
+				stat = 'S';
+		else if (ap->a_flag & SPAGE)
+			stat = 'P';
+		else
+			stat = 'D';
+		break;
+
+	case SWAIT:
+	case SRUN:
+	case SIDL:
+		stat = 'R';
+		break;
+
+	case SZOMB:
+		stat = 'Z';
+		break;
+
+	default:
+		stat = '?';
+	}
+	load = ap->a_flag & SLOAD ? ' ' : 'W';
+	nice = ap->a_nice > NZERO ? 'N' : ' ';
+	anom = ap->a_flag & (SANOM|SUANOM) ? 'A' : ' ';
+	res[0] = stat; res[1] = load; res[2] = nice; res[3] = anom;
+	return (res);
 }
 
 /*
