@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.h	6.3 (Berkeley) %G%
+ *	@(#)ip_icmp.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -43,12 +43,14 @@ struct icmp {
 			/* options and then 64 bits of data */
 		} id_ip;
 		u_long	id_mask;
+		char	id_data[1];
 	} icmp_dun;
 #define	icmp_otime	icmp_dun.id_ts.its_otime
 #define	icmp_rtime	icmp_dun.id_ts.its_rtime
 #define	icmp_ttime	icmp_dun.id_ts.its_ttime
 #define	icmp_ip		icmp_dun.id_ip.idi_ip
 #define	icmp_mask	icmp_dun.id_mask
+#define	icmp_data	icmp_dun.id_data
 };
 
 /*
