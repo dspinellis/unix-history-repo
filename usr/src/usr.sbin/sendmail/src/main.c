@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.62 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -110,6 +110,7 @@ main(argc, argv, envp)
 	char **envp;
 {
 	register char *p;
+	register char *q;
 	char **av;
 	char *locname;
 	extern int finis();
@@ -282,7 +283,6 @@ main(argc, argv, envp)
 		av = myhostname(jbuf, sizeof jbuf);
 		if (jbuf[0] != '\0')
 		{
-			register char *q;
 			extern char *strchr();
 
 			if (tTd(0, 4))
@@ -441,7 +441,13 @@ main(argc, argv, envp)
 				av--;
 				break;
 			}
-			define('r', newstr(p), CurEnv);
+			q = strchr(p, ':');
+			if (q != NULL)
+				*q++ = '\0';
+			if (*p != '\0')
+				define('r', newstr(p), CurEnv);
+			if (*q != '\0')
+				define('s', newstr(q), CurEnv);
 			break;
 
 		  case 'q':	/* run queue files at intervals */

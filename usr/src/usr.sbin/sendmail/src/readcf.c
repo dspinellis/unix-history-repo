@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.54 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -799,10 +799,6 @@ setoption(opt, val, sticky)
 
 	switch (opt)
 	{
-	  case '=':		/* config file generation level */
-		ConfigLevel = atoi(val);
-		break;
-
 	  case '8':		/* allow eight-bit input */
 		EightBit = atobool(val);
 		break;
