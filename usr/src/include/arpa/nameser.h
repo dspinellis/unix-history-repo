@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)nameser.h	8.1 (Berkeley) %G%
+ *      @(#)nameser.h	8.2 (Berkeley) %G%
  * -
  * Portions Copyright (c) 1993 by Digital Equipment Corporation.
  * 
@@ -98,6 +98,9 @@
 #define T_MX		15		/* mail routing information */
 #define T_TXT		16		/* text strings */
 #define	T_RP		17		/* responsible person */
+#define	T_AFSDB		18		/* AFS cell database */
+#define	T_NSAP		22		/* NSAP address */
+#define	T_NSAP_PTR	23		/* reverse lookup for NSAP */
 	/* non standard */
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
