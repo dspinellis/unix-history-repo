@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * Michael Fischbein.
  *
-%sccs.include.redist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)ls.h	5.11 (Berkeley) %G%
+ *	@(#)ls.h	5.12 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
