@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -445,6 +445,7 @@ recipient(a, sendq, e)
 			a->q_home = newstr(pw->pw_dir);
 			a->q_uid = pw->pw_uid;
 			a->q_gid = pw->pw_gid;
+			a->q_ruser = newstr(pw->pw_name);
 			a->q_flags |= QGOODUID;
 			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
 			if (nbuf[0] != '\0')
