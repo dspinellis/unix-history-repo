@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,30 +7,28 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1991 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pwd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pwd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Print working (current) directory
- */
+#include <unistd.h>
+#include <errno.h>
 #include <stdio.h>
-#include <sys/param.h>
-
-char *getwd();
+#include <string.h>
 
 main()
 {
-	char pathname[MAXPATHLEN + 1];
+	char *p;
 
-	if (getwd(pathname) == NULL) {
-		fprintf(stderr, "pwd: %s\n", pathname);
-		exit(1);
+	p = getcwd((char *)NULL, 0);
+	if (p) {
+		(void)printf("%s\n", p);
+		exit(0);
 	}
-	printf("%s\n", pathname);
-	exit(0);
+	(void)fprintf(stderr, "pwd: %s\n", strerror(errno));
+	exit(1);
 }
