@@ -1,0 +1,4 @@
+procedure main()
+   write("Hello world")
+   write("   this is a new beginning")
+end

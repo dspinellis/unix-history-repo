@@ -1,0 +1,6 @@
+procedure countm(s)
+   count := 0
+   while line := read() do
+      if match(s,line) then count := count + 1
+   return count
+end
