@@ -11,13 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include "pathnames.h"
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <fstab.h>
 #include <errno.h>
 #include <stdio.h>
@@ -110,18 +111,8 @@ main(argc, argv, arge)
 			options = optarg;
 			break;
 		case 't':
-			if (!strcmp(optarg, "ufs")) {
-				mnttype = MOUNT_UFS;
+			if (mnttype = getmnttype(optarg))
 				break;
-			}
-			if (!strcmp(optarg, "nfs")) {
-				mnttype = MOUNT_NFS;
-				break;
-			}
-			if (!strcmp(optarg, "mfs")) {
-				mnttype = MOUNT_MFS;
-				break;
-			}
 			/* fall through */
 		case '?':
 		default:
@@ -141,6 +132,12 @@ main(argc, argv, arge)
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
 				fake = 1;
+			if ((mnttype = getmnttype(fs->fs_vfstype)) == 0) {
+				fprintf(stderr,
+				    "%s %s type of file system is unknown.\n",
+				    "mount:", fs->fs_vfstype);
+				continue;
+			}
 			rval |= mountfs(fs->fs_spec, fs->fs_file,
 			    type ? type : fs->fs_type, options, fs->fs_mntops);
 		}
@@ -180,9 +177,6 @@ main(argc, argv, arge)
 		exit(0);
 	}
 
-	if (all)
-		usage();
-
 	if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
 			fprintf(stderr,
@@ -193,6 +187,12 @@ main(argc, argv, arge)
 		if (BADTYPE(fs->fs_type)) {
 			fprintf(stderr,
 			    "mount: %s has unknown file system type.\n", *argv);
+			exit(1);
+		}
+		if ((mnttype = getmnttype(fs->fs_vfstype)) == 0) {
+			fprintf(stderr,
+			    "mount: %s type of file system is unknown.\n",
+			    fs->fs_vfstype);
 			exit(1);
 		}
 		exit(mountfs(fs->fs_spec, fs->fs_file,
@@ -329,7 +329,19 @@ prmount(spec, name, type)
 	printf("\n");
 }
 
-static
+getmnttype(fstype)
+	char *fstype;
+{
+
+	if (!strcmp(fstype, "ufs"))
+		return (MOUNT_UFS);
+	if (!strcmp(fstype, "nfs"))
+		return (MOUNT_NFS);
+	if (!strcmp(fstype, "mfs"))
+		return (MOUNT_MFS);
+	return (0);
+}
+
 usage()
 {
 	fprintf(stderr, "usage: mount [-afrw]\nor mount [-frw] special | node\nor mount [-frw] special node\n");
