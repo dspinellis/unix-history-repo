@@ -16,6 +16,8 @@
 **			comes with the Berkeley network.  Normally
 **			/bin/mail will work fine, but around Berkeley
 **			we use v6mail because it is a "fixed target".
+**			Also, only v6mail has the "/dev/mail" stuff
+**			in it (for biff(1)).
 **		V6 -- running on a version 6 system.  This determines
 **			whether to define certain routines between
 **			the two systems.  If you are running a funny
@@ -111,7 +113,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	2.4	%G%";
+static char SccsId[] = "@(#)conf.c	2.5	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -121,6 +123,7 @@ bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
 # ifdef BERKELEY
 
 char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
+# define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
 
 # else BERKELEY
 
@@ -157,8 +160,13 @@ static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
 char		*MyLocName = "CSVAX";
 char		*DaemonName = "CSVAX:~MAILER~DAEMON~";
 # define HASUUCP
-# define NETV6MAIL
 # endif CSVAX
+
+# ifdef ARPAVAX
+static char	*BerkLocal[] = { "r", "arpavax", NULL };
+char		*MyLocName = "ARPAVAX";
+char		*DaemonName = "ARPAVAX:~MAILER~DAEMON~";
+# endif ARPAVAX
 
 # ifdef CORY
 static char	*BerkLocal[] = { "y", "cory", NULL };
