@@ -1,4 +1,4 @@
-/*	defs.h	4.11	82/11/02	*/
+/*	defs.h	4.12	82/11/14	*/
 
 /*
  * Internal data structure definitions for
@@ -8,10 +8,13 @@
  */
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/in.h>
+
 #include <net/route.h>
+#include <netinet/in.h>
+
 #include <stdio.h>
 #include <netdb.h>
+
 #include "rip.h"
 
 /*
