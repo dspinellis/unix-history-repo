@@ -1,4 +1,11 @@
-static char *sccsid = "@(#)analyze.c	4.6 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)analyze.c	4.7 (Berkeley) %G%";
+#endif
+
+/*
+ * Analyze - analyze a core (and optional paging area) saved from
+ * a virtual Unix system crash.
+ */
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -10,11 +17,6 @@ static char *sccsid = "@(#)analyze.c	4.6 (Berkeley) %G%";
 #include <sys/text.h>
 #include <sys/cmap.h>
 #include <sys/vm.h>
-
-/*
- * Analyze - analyze a core (and optional paging area) saved from
- * a virtual Unix system crash.
- */
 
 int	Dflg;
 int	dflg;
@@ -39,6 +41,7 @@ struct	text *text, *atext;
 int	ntext;
 struct	mapent *swapmap;
 int	nswapmap;
+int	dmmin, dmmax, dmtext;
 struct	cmap *cmap;
 int	ecmx;
 struct	pte *usrpt;
@@ -115,7 +118,13 @@ struct	nlist nl[] = {
 	{ "_ntext" },
 #define	X_NSWAPMAP 12
 	{ "_nswapmap" },
-	{ 0 }
+#define	X_DMMIN	13
+	{ "_dmmin" },
+#define	X_DMMAX	14
+	{ "_dmmax" },
+#define	X_DMTEXT 15
+	{ "_dmtext" },
+	{ "" }
 };
 
 main(argc, argv)
@@ -193,13 +202,16 @@ usage:
 		    argc > 1 ? argv[1] : "/vmunix");
 		exit(1);
 	}
-	for (np = nl; np->n_name; np++)
+	for (np = nl; np->n_name && *np->n_name; np++)
 		vprintf("%8.8s %x\n", np->n_name ,np->n_value );
 	usrpt = (struct pte *)clear(nl[X_USRPT].n_value);
 	Usrptma = (struct pte *)clear(nl[X_PTMA].n_value);
 	firstfree = get(nl[X_FIRSTFREE].n_value);
 	maxfree = get(nl[X_MAXFREE].n_value);
 	freemem = get(nl[X_FREEMEM].n_value);
+	dmmin = get(nl[X_DMMIN]);
+	dmmax = get(nl[X_DMMAX]);
+	dmtext = get(nl[X_DMTEXT]);
 	paginfo = (struct paginfo *)calloc(maxfree, sizeof (struct paginfo));
 	if (paginfo == NULL) {
 		fprintf(stderr, "maxfree %x?... out of mem!\n", maxfree);
@@ -349,10 +361,10 @@ usage:
 		if (xp->x_iptr) {
 			int size = ctod(xp->x_size);
 
-			for (i = 0; i < size; i += DMTEXT)
+			for (i = 0; i < size; i += dmtext)
 				duse(xp->x_daddr[i],
-				    (size - i) > DMTEXT
-					? DMTEXT : size - i,
+				    (size - i) > dmtext
+					? dmtext : size - i,
 				    DTEXT, xp - text);
 			if (xp->x_flag & XPAGI)
 				duse(xp->x_ptdaddr, 
@@ -392,8 +404,8 @@ ptdmap(dp, size)
 		printf(" text:");
 	for (i = 0, rem = size; rem > 0; i++) {
 		if (Dflg)
-			printf(" %x<%x>", dp[i], rem < DMTEXT ? rem : DMTEXT);
-		rem -= rem < DMTEXT ? rem : DMTEXT;
+			printf(" %x<%x>", dp[i], rem < dmtext ? rem : dmtext);
+		rem -= rem < dmtext ? rem : dmtext;
 	}
 }
 
@@ -406,13 +418,13 @@ pdmseg(cp, dmp, type)
 
 	if (Dflg)
 		printf(", %s:", cp);
-	b = DMMIN;
+	b = dmmin;
 	for (i = 0, rem = dmp->dm_size; rem > 0; i++) {
 		if (Dflg)
 			printf(" %x<%x>", dmp->dm_map[i], rem < b ? rem : b);
 		duse(dmp->dm_map[i], b, type, u.u_procp - proc);
 		rem -= b;
-		if (b < DMMAX)
+		if (b < dmmax)
 			b *= 2;
 	}
 }
@@ -448,7 +460,7 @@ dmcheck()
 
 	for (smp = swapmap; smp->m_size; smp++)
 		duse(smp->m_addr, smp->m_size, DFREE, 0);
-	duse(ctod(CLSIZE), DMTEXT - ctod(CLSIZE), DFREE, 0);
+	duse(ctod(CLSIZE), dmtext - ctod(CLSIZE), DFREE, 0);
 	qsort(dblks, ndblks, sizeof (struct dblks), dsort);
 	d = &dblks[ndblks - 1];
 	if (d->d_first > 1)
@@ -793,7 +805,7 @@ vtod(p, v, dmap, smap)
 
 	if (isatsv(p, v)) {
 		v = ctod(vtotp(p, v));
-		return(p->p_textp->x_daddr[v / DMTEXT] + v % DMTEXT);
+		return(p->p_textp->x_daddr[v / dmtext] + v % dmtext);
 	}
 	if (isassv(p, v))
 		vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
@@ -830,14 +842,14 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	register struct dmap *dmp;
 	register struct dblock *dbp;
 {
-	register int blk = DMMIN;
+	register int blk = dmmin;
 	register swblk_t *ip = dmp->dm_map;
 
 	if (vsbase < 0 || vsbase + vssize > dmp->dm_size)
 		panic("vstodb");
 	while (vsbase >= blk) {
 		vsbase -= blk;
-		if (blk < DMMAX)
+		if (blk < dmmax)
 			blk *= 2;
 		ip++;
 	}
