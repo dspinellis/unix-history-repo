@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	8.6 (Berkeley) %G%
+ *	@(#)init_main.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -87,10 +87,9 @@ main(framep)
 	kmeminit();
 	cpu_startup();
 
-	/* Create process 0 (the swapper). */
-	p = &proc0;
-	curproc = p;
-
+	/*
+	 * Create process 0 (the swapper).
+	 */
 	allproc = (volatile struct proc *)p;
 	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
