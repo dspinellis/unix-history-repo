@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)io.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -15,6 +15,7 @@ static cmd_text_element	nul_table[] = {
 };
 
 int wait_for_char;
+int vdtimeout;
 char	*clean_up = "Cleaning up...  Please wait.\n";
 
 
