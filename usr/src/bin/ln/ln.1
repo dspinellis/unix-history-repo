@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ln.1	6.10 (Berkeley) %G%
+.\"	@(#)ln.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LN 1
@@ -91,91 +91,135 @@ makes links in
 .Ar target_dir
 to all the named source files.
 The links made will have the same name as the files being linked to.
-.Sh SYMBOLIC LINK FOLLOWING
-Many file system traversal utilities and system calls
-have the option of traversing the file system in a physical traversal, i.e., 
-treating a symbolic link as a link rather than its target, or in a logical
-traversal, i.e., following the symbolic link whenever one is encountered.
-The following rules summarize the conventions of symbolic link following in 
-utilities and system calls.
+.Sh SYMBOLIC LINK HANDLING
+There are two issues involved in symbolic link handling.
+The first issue is whether or not the utility or system call operates
+on the symbolic link itself or if it operates on the object to which
+the symbolic link refers.
+The following rules summarize the conventions of symbolic link handling
+in the system.
+Operating on the object referenced by the symbolic link or indirecting
+through symbolic links to directories is termed ``following'' the link.
 .Pp
-The only system calls that operate on symbolic links are 
-.Xr unlink 2 ,
-.Xr rename 2 ,
+The system calls that do not follow symbolic links are
 .Xr lstat 2 ,
+.Xr readlink 2 ,
+.Xr rename 2 ,
 and
-.Xr readlink 2 .
-All other system calls follow the symbolic link and operate on the object
-which the link points to.
+.Xr unlink 2 .
+All other system calls follow the symbolic link.
 .Pp
-Utilities that do not recurse over trees always
-follow symbolic links on the command line.  The rest of the utilities
-.Xr (chown 8 ,
-.Xr chmod 1 ,
-.Xr chgrp 1 ,
-.Xr chflags 1 ,
-.Xr cp 1 ,
-.Xr du 1 ,
-.Xr find 1 ,
-and
-.Xr tar 1 )
-treat symbolic links in three distinct ways.  The first option, the default,
-is to never follow any symbolic link.  The second, specified by the
-.Fl H 
-flag, causes the utility to follow symbolic links only on the command line
-but not in the tree of traversal (if recursive).  The third option, specified
-by the 
-.Fl h
-flag, causes the utility to follow any symbolic link encountered on the command
-line and in the tree of traversal (if recursive).
-.Pp
-The purpose of the 
-.Fl H
-flag is to make the command line name space look like the logical name space,
-i.e., make all names on the command line appear as hard links, whereas the
-purpose of the
-.Fl h
-flag is to make the entire hierarchy look like the logical name space. i.e., 
-make all names in the hierarchy appear as hard links.
-.Pp
-Exceptions to these rules are the behaviors of 
-.Xr rm  1 ,
-.Xr mv 1 ,
-and
-.Xr ls  1 .
-.Pp
-.Xr Rm 1 
-and
+The utilities that do not follow symbolic links are
 .Xr mv 1
-operate on the name, not the object it points to, and therefore always operate
-on the symbolic link itself and do not follow it.
+and
+.Xr rm 1 .
+For compatibility with historic systems, the 
+.Xr ls
+utility follows symbolic links listed on the command line, unless the
+.Fl F ,
+.Fl d
+or
+.Fl l 
+options are specified.
+However, if the
+.Fl L
+option is specified,
+.Xr ls
+always follows symbolic links.
+All other utilities follow symbolic links.
 .Pp
-For historical reasons,
-.Xr ls 1
-follows symbolic links in the entire hierarchy (including command line)
-only when the 
-.Fl L 
-option is specified, and follows only on the command line only 
-when neither of the 
-.Fl F, d, 
-or 
-.Fl l
-options are specified. In all other cases, 
-.Xr ls 1 
-does not follow symbolic links.
-.Sh SEE ALSO
-.Xr rm 1 ,
-.Xr cp 1 ,
-.Xr mv 1 ,
-.Xr ls 1 ,
-.Xr tar 1 ,
-.Xr chown 8 ,
-.Xr chmod 1 ,
-.Xr chgrp 1 ,
+The second issue in symbolic link handling is traversal of a file hierarchy.
+There are two ways for file hierarchy oriented utilities to traverse a
+file hierarchy.
+The first is a physical traversal, where the utility does not indirect
+through symbolic links to directories.
+The second is a logical traversal, where the utility does indirect
+through symbolic links to directories.
+.Pp
+The utilities that work with file hierarchies, either optionally or by
+default, are
 .Xr chflags 1 ,
+.Xr chgrp 1 ,
+.Xr chmod 1 ,
+.Xr chown 8 ,
+.Xr cp 1 ,
 .Xr du 1 ,
 .Xr find 1 ,
+.Xr ls 1 ,
+.Xr rm 1
+and
+.Xr tar 1 .
+All of these utilities, except for
+.Xr cp ,
+.Xr ls
+and
+.Xr rm ,
+operate according to the following rules.
+.Pp
+By default, these utilities do a physical traversal, never following any
+symbolic links.
+If the
+.Fl H 
+option is specified, the utility will follow symbolic links specified
+on the command line.
+If the
+.Fl h
+option is specified, the utilities do a logical traversal, following all
+symbolic links whether specified on the command line or encountered while
+descending the file hierarchy.
+The
+.Fl H
+flag is intended to make the command line name space look like the logical
+name space and the
+.Fl h
+flag is intended to make the entire hierarchy look like the logical name
+space.
+.Pp
+The utilities
+.Xr cp , 
+.Xr ls
+and
+.Xr rm
+are exceptions to these rules.
+.Pp
+To maintain compatibility with historic systems,
+.Xr cp
+always follows symbolic links on the command line.
+The 
+.Fl H
+and 
+.Fl h
+options have the effects described above only when the
+.Fl R 
+flag is specified.
+.Pp
+.Xr Rm
+operates on the name, not the object it points to, and therefore never
+follows a symbolic link.
+The
+.Xr rm
+utility does not support the
+.Fl H
+or
+.Fl h
+options.
+.Pp
+To maintain compatibility with historic systems, the
+.Xr ls
+utility follows all symbolic links in the file hierarchy, including ones
+listed on the command line, only when the 
+.Fl L 
+option is specified.
+The
+.Xr ls
+utility does not support the
+.Fl H
+or
+.Fl h
+options.
+.Sh SEE ALSO
 .Xr link 2 ,
+.Xr lstat 2 ,
 .Xr readlink 2 ,
 .Xr stat 2 ,
 .Xr symlink 2
