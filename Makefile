@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.42 1994/03/02 12:32:44 phk Exp $
+#	$Id: Makefile,v 1.43 1994/03/04 20:43:15 ache Exp $
 #
 
 SUBDIR=
@@ -172,7 +172,7 @@ bootstrappwd:
 	cd ${.CURDIR}/usr.sbin/pwd_mkdb; make all install ${CLEANDIR}
 	cp /etc/master.passwd /etc/mp.t; pwd_mkdb /etc/mp.t
 	cp ${.CURDIR}/lib/libc/obj/libc* /usr/lib
-	cp ${.CURDIR}/lib/libc; make install ${CLEANDIR}
+	cd ${.CURDIR}/lib/libc; make install ${CLEANDIR}
 	cd ${.CURDIR}/usr.bin/passwd; make all install ${CLEANDIR}
 	cd ${.CURDIR}/bin; make all install ${CLEANDIR}
 	cd ${.CURDIR}/sbin; make all install ${CLEANDIR}
