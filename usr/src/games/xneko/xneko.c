@@ -1,18 +1,18 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1991 The Regents of the University of California.\n\
- All rights reserved.\n";
+static char copyright[] =
+"@(#) Copyright (c) 1991, 1993\n\
+	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)xneko.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*--------------------------------------------------------------
@@ -26,11 +26,11 @@ static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
  *
  *!!Introduction:
  *
- *!!!!K\@(#)xneko.c	5.2m%0%i%`$O Macintosh $N%G%9%/%"%/%;%5%j!< "neko" $N
+ *!!!!K\@(#)xneko.c	8.1m%0%i%`$O Macintosh $N%G%9%/%"%/%;%5%j!< "neko" $N
  *!!F0:n$r X11 $G%^%M$?$b$N$G$9!#
  *
  *!!!!Macintosh "neko" $N=(0o$J%G%6%$%s$K7I0U$rI=$7$D$D!"$3$N
- *!!@(#)xneko.c	5.2m%0%i%`$r3'$5$s$KJ{$2$^$9!#
+ *!!@(#)xneko.c	8.1m%0%i%`$r3'$5$s$KJ{$2$^$9!#
  *
  *--------------------------------------------------------------
  *
@@ -38,10 +38,10 @@ static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
  *
  *	toshi-w	!D!!Macintosh neko $N>R2p<T
  *	shio-m	!D!!!VX11 $N neko $,M_$7$$!*!W$H%?%@$r$3$M$??M
- *	disco	!D!!X11 %F%/%K%+%k!&%"5.2P%$%6!<
+ *	disco	!D!!X11 %F%/%K%+%k!&%"8.1P%$%6!<
  *
  *	HOMY	!D!!%P%0;XE&<T
- *	BNS	!D!!J#?t@(#)xneko.c	5.2l!<%sBP1~C%ADs6!<T
+ *	BNS	!D!!J#?t@(#)xneko.c	8.1l!<%sBP1~C%ADs6!<T
  *
  *		"xneko"  Presented by Masayuki Koba (masa-k).
  *
@@ -49,10 +49,10 @@ static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
  *
  *!!Manifest:
  *
- *!!!!K\@(#)xneko.c	5.2m%0%i%`$O Public Domain Software $G$9!#E>:\!&2~NI$O
+ *!!!!K\@(#)xneko.c	8.1m%0%i%`$O Public Domain Software $G$9!#E>:\!&2~NI$O
  *!!<+M3$K9T$C$F2<$5$$!#
  *
- *!!!!$J$*!"86:n<T$O!"K\@(#)xneko.c	5.2m%0%i%`$r;HMQ$9$k$3$H$K$h$C$F@8$8$?
+ *!!!!$J$*!"86:n<T$O!"K\@(#)xneko.c	8.1m%0%i%`$r;HMQ$9$k$3$H$K$h$C$F@8$8$?
  *!!>c32$dITMx1W$K$D$$$F$$$C$5$$@UG$$r;}$A$^$;$s!#
  *
  *--------------------------------------------------------------
@@ -65,17 +65,17 @@ static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
  *!!!!!!!!$r%]!<%j%s%0$7$F$$$^$9!#=>$C$F!"%^%&%9$,A4$/F0:n$7$F
  *!!!!!!!!$$$J$$;~$OL5BL$J%^%&%9:BI8FI$_<h$j$r9T$C$F$7$^$$$^$9!#
  *
- *!!!!!J#3!K%&%#%s5.2&$,%"%$%3%s2=$5$l$F$b!"$7$i$s$W$j$GIA2h$7
- *!!!!!!!!$D$E$1$^$9!#$3$NItJ,$O!"8=:_$N%&%#%s5.2&$N>uBV$r@(#) xneko.c 5.2@(#)'
+ *!!!!!J#3!K%&%#%s8.1&$,%"%$%3%s2=$5$l$F$b!"$7$i$s$W$j$GIA2h$7
+ *!!!!!!!!$D$E$1$^$9!#$3$NItJ,$O!"8=:_$N%&%#%s8.1&$N>uBV$r@(#) xneko.c 8.1@(#)'
  *!!!!!!!!%C%/$7$F!"%"%$%3%s2=$5$l$F$$$k;~$O40A4$K%$s%HBT$A
  *!!!!!!!!$K$J$k$h$&$K=q$-JQ$($J$1$l$P$J$j$^$;$s!# ($=$s$J$3$H!"
  *!!!!!!!!$G$-$k$N$+$J$!!#X10 $G$O$G$-$^$7$?$,!#)
  *
- *!!!!!J#4!K%j%5%$%:8e$N%&%#%s5.2&$,6KC<$K>.$5$/$J$C$?;~$NF0:n
+ *!!!!!J#4!K%j%5%$%:8e$N%&%#%s8.1&$,6KC<$K>.$5$/$J$C$?;~$NF0:n
  *!!!!!!!!$OJ]>Z$G$-$^$;$s!#
  *
- *!!!!!J#5!KK\Mh$J$i$P3NJ]$7$?%&%#%s5.2&$d Pixmap $O@(#)xneko.c	5.2m%0%i%`
- *!!!!!!!!=*N;;~$K2rJ|$9$kI,MW$,$"$j$^$9$,!"K\@(#)xneko.c	5.2m%0%i%`$O$=$N
+ *!!!!!J#5!KK\Mh$J$i$P3NJ]$7$?%&%#%s8.1&$d Pixmap $O@(#)xneko.c	8.1m%0%i%`
+ *!!!!!!!!=*N;;~$K2rJ|$9$kI,MW$,$"$j$^$9$,!"K\@(#)xneko.c	8.1m%0%i%`$O$=$N
  *!!!!!!!!$X$s$r%5%\$C$F$*$j!"Hs>o$K$*9T57$,0-$/$J$C$F$$$^$9!#
  *!!!!!!!!IaDL$O exit() ;~$K%7%9%F%`$,M>J,$J%j%=!<%9$r2rJ|$7$F
  *!!!!!!!!$/$l$^$9$,!"#O#S$K%P%0$,$"$k>l9g$O xneko $r2?EY$b5/
@@ -90,7 +90,7 @@ static char sccsid[] = "@(#)xneko.c	5.2 (Berkeley) %G%";
  *
  *!!System (Machine):
  *
- *!!!!K\@(#)xneko.c	5.2m%0%i%`$NF0:n$r3NG'$7$?%7%9%F%`9=@.$O0J2<$NDL$j!#
+ *!!!!K\@(#)xneko.c	8.1m%0%i%`$NF0:n$r3NG'$7$?%7%9%F%`9=@.$O0J2<$NDL$j!#
  *
  *	!&NWS-1750!"NWS-1720 (NEWS)!"NWP-512D
  *	!!NEWS-OS 3.2a (UNIX 4.3BSD)!"X11 Release 2
@@ -126,7 +126,7 @@ static char	WriterMessage[] = "xneko: Programmed by Masayuki Koba, 1990";
 
 
 /*
- *	X11 G- C%H%^%C@(#)xneko.c	5.2U%!%$%k0lMw!'
+ *	X11 G- C%H%^%C@(#)xneko.c	8.1U%!%$%k0lMw!'
  *
  *		"icon.xbm"		!D!!%"%$%3%s
  *		"cursor.xbm"		!D!!%+!<%=%k
@@ -170,7 +170,7 @@ static char	WriterMessage[] = "xneko: Programmed by Masayuki Koba, 1990";
  *		"rtogi1.xbm"		!D!!1&Ka$.#1
  *		"rtogi2.xbm"		!D!!1&Ka$.#2
  *
- *	!!$3$l$i$N13:03:18!%$%k$O bitmap %3%^%s%I$GJT=82DG=$G$9!#
+ *	!!$3$l$i$N18:45:52!%$%k$O bitmap %3%^%s%I$GJT=82DG=$G$9!#
  *
  *		(bitmap size "* 32x32 ... Macintosh ICON resource size.)
  *
@@ -227,13 +227,13 @@ static char	WriterMessage[] = "xneko: Programmed by Masayuki Koba, 1990";
 #define	BITMAP_WIDTH		32	/* #1%-%c%i%/%?$NI} (%T%/%;%k) */
 #define	BITMAP_HEIGHT		32	/* #1%-%c%i%/%?$N9b$5 (%T%/%;%k) */
 
-#define	WINDOW_WIDTH		320	/* %&%#%s5.2&$NI} (%T%/%;%k) */
-#define	WINDOW_HEIGHT		256	/* %&%#%s5.2&$N9b$5 (%T%/%;%k) */
+#define	WINDOW_WIDTH		320	/* %&%#%s8.1&$NI} (%T%/%;%k) */
+#define	WINDOW_HEIGHT		256	/* %&%#%s8.1&$N9b$5 (%T%/%;%k) */
 
 #define	DEFAULT_BORDER		2	/* %\!<%@!<%5%$%: */
 
-#define	DEFAULT_WIN_X		1	/* %&%#%s5.2&@8@.#X:BI8 */
-#define	DEFAULT_WIN_Y		1	/* %&%#%s5.2&@8@.#Y:BI8 */
+#define	DEFAULT_WIN_X		1	/* %&%#%s8.1&@8@.#X:BI8 */
+#define	DEFAULT_WIN_Y		1	/* %&%#%s8.1&@8@.#Y:BI8 */
 
 #define	AVAIL_KEYBUF		255
 
@@ -501,7 +501,7 @@ Animation	AnimationPattern[] =
 
 /*--------------------------------------------------------------
  *
- *	C%H%^%C@(#)xneko.c	5.2G!<%?!&GC =i4|2=
+ *	C%H%^%C@(#)xneko.c	8.1G!<%?!&GC =i4|2=
  *
  *--------------------------------------------------------------*/
 
