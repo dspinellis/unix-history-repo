@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.24 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.25 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -452,7 +452,7 @@ R$+ < @ $j . >		$#local $: $1			dispose directly',
 `R$+ < @ $j . >		$: $1 < @ $j @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 < $2 >	yep ....
-R$+ < $+ @ $+ >		$#smtp $@ $3 $: $1 < $2 >	yep ....
+R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 < $2 >	yep ....
 R$+ < $+ @ >		$#local $: $1			nope, local address',
 `R$+ < $+ @ $+ >		$#local $: $1			yep ....
 R$+ < $+ @ >		$#local $: @ $1			nope, local address')')
@@ -520,7 +520,7 @@ R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ >		$#local $: $1			no relay or hub: local
 R$+ < @ $j  >		$#local $: $1			we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		deliver to relay/hub
-R$+ < @ $+ >		$#smtp $@ $2 $: $1		deliver to relay/hub',
+R$+ < @ $+ >		$#relay $@ $2 $: $1		deliver to relay/hub',
 `# handle locally delivered names
 R$=L			$#local $: @ $1			special local names
 R$+			$#local $: $1			regular local names
@@ -537,7 +537,7 @@ ifdef(`_MAILER_smtp_',
 R$+ < @ >		$: $1 < @ $H >			no relay, try hub
 R$+ < @ $j >		$@ $1				we are relay/hub: local
 R$+ < @ $-:$+ >		$# $2 $@ $3 $: $1		send to relay or hub
-R$+ < @ $+ >		$#smtp $@ $2 $: $1		send to relay or hub')')
+R$+ < @ $+ >		$#relay $@ $2 $: $1		send to relay or hub')')
 #
 ######################################################################
 ######################################################################
