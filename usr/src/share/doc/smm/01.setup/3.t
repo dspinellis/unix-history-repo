@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.15 (Berkeley) %G%
+.\"	@(#)3.t	6.16 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -210,7 +210,7 @@ It is also desirable to run filesystem checks
 of all filesystems to be converted to \*(4B before shutting down.
 In any case, this is an excellent time to review your disk configuration
 for possible tuning of the layout.
-Section 4.2 and
+Section 2.5 and
 .Xr config (8)
 are required reading.
 .LP
