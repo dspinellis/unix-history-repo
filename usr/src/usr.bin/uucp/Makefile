@@ -1,4 +1,4 @@
-#	Makefile	5.3	83/07/04
+#	Makefile	5.4	83/07/05
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -32,7 +32,7 @@ SUBDIRS=C. D.`uuname -l`X D.`uuname -l` D. X. TM.
 PKON=	pkon.o
 IOCTL=
 # for make depend
-UNDEF=	-uNDIR -uUNET -uSYSIII -uUNAME -uCCWHOAMI -uGETMYHNAME -uDATAKIT
+UNDEF=	-UNDIR -UUNET -USYSIII -UUNAME -UCCWHOAMI -UGETMYHNAME -UDATAKIT
 
 all:	${ALL} 
 
