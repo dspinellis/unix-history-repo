@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.15 (Berkeley) %G%";
 #endif
 
 /*
@@ -37,7 +37,7 @@ struct subdirs {
 	struct	subdirs *sd_next;
 } *subdirs;
 
-int	aflg, dflg, gflg, lflg, sflg, tflg, uflg, iflg, fflg, cflg, rflg = 1;
+int	aflg, dflg, gflg, lflg, sflg, tflg, uflg, iflg, cflg, rflg = 1;
 int	qflg, Aflg, Cflg, Fflg, Lflg, Rflg;
 
 int	usetabs;
@@ -108,8 +108,6 @@ main(argc, argv)
 			uflg++; break;
 		case 'i':
 			iflg++; break;
-		case 'f':
-			fflg++; break;
 		case 'L':
 			Lflg++; break;
 		case 'F':
@@ -118,9 +116,6 @@ main(argc, argv)
 		        Rflg++; break;
 		}
 		argc--, argv++;
-	}
-	if (fflg) { 
-		aflg++; lflg = 0; sflg = 0; tflg = 0;
 	}
 	if (lflg)
 		Cflg = 0;
@@ -148,13 +143,9 @@ main(argc, argv)
 		formatf(fp0, fplast);
 		exit(0);
 	}
-	if (fflg)
-		fp = fp0;
-	else {
-		for (fp = fp0; fp < fplast && fp->ftype != 'd'; fp++)
-			continue;
-		formatf(fp0, fp);
-	}
+	for (fp = fp0; fp < fplast && fp->ftype != 'd'; fp++)
+		continue;
+	formatf(fp0, fp);
 	if (fp < fplast) {
 		if (fp > fp0)
 			printf("\n");
@@ -189,8 +180,7 @@ formatd(name, title)
 	nkb = getdir(name, &dfp0, &dfplast);
 	if (dfp0 == 0)
 		return;
-	if (fflg == 0)
-		qsort(dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
+	qsort(dfp0, dfplast - dfp0, sizeof (struct afile), fcmp);
 	if (title)
 		printf("%s:\n", name);
 	if (lflg || sflg)
@@ -270,7 +260,7 @@ gstat(fp, file, statarg, pnb)
 	char *file;
 	int statarg, *pnb;
 {
-	int (*statf)() = Lflg || Fflg ? stat : lstat;
+	int (*statf)() = Lflg ? lstat : stat;
 	char buf[BUFSIZ]; int cc;
 	static struct afile azerofile;
 
@@ -282,8 +272,10 @@ gstat(fp, file, statarg, pnb)
 		struct stat stb, stb1;
 
 		if ((*statf)(file, &stb) < 0) {
-			fprintf(stderr, "%s not found\n", file);
-			return (0);
+			if (Lflg == 0 && lstat(file, &stb) < 0) {
+				fprintf(stderr, "%s not found\n", file);
+				return (0);
+			}
 		}
 		fp->fblks = stb.st_blocks;
 		fp->fsize = stb.st_size;
@@ -388,7 +380,7 @@ fcmp(f1, f2)
 	register struct afile *f1, *f2;
 {
 
-	if (dflg == 0 && fflg == 0) {
+	if (dflg == 0) {
 		if ((f1->fflags&ISARG) && f1->ftype == 'd') {
 			if ((f2->fflags&ISARG) == 0 || f2->ftype != 'd')
 				return (1);
