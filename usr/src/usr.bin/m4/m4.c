@@ -1,5 +1,8 @@
 Virgin BTL M4 as sent out in 4.1
-/* @(#)m4.c	1.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)m4.c	1.3 (Berkeley) %G%";
+#endif
+
 #include <stdio.h>
 #include <signal.h>
 
