@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	4.2 %G%";
+static char *sccsid = "@(#)ex.c	4.2 8/1/80";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -96,9 +96,6 @@ main(ac, av)
 	normf = tty;
 #endif
 	ppid = getpid();
-#ifdef HORSE
-	horse(ac, av);
-#endif
 	/*
 	 * Defend against d's, v's, w's, and a's in directories of
 	 * path leading to our true name.
@@ -229,10 +226,12 @@ main(ac, av)
 				defwind = 10*defwind + *cp - '0';
 			break;
 
+#ifdef CRYPT
 		case 'x':
 			/* -x: encrypted mode */
 			xflag = 1;
 			break;
+#endif
 
 		default:
 			smerror("Unknown option %s\n", av[0]);
@@ -245,10 +244,12 @@ main(ac, av)
 		ac--, av++;
 	}
 
+#ifdef CRYPT
 	if(xflag){
 		key = getpass(KEYPROMPT);
 		kflag = crinit(key, perm);
 	}
+#endif
 
 	/*
 	 * If we are doing a recover and no filename
@@ -385,10 +386,12 @@ init()
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
+#ifdef CRYPT
         if(xflag) {
                 xtflag = 1;
                 makekey(key, tperm);
         }
+#endif
 }
 
 /*
