@@ -1,0 +1,195 @@
+File: bash.info,  Node: Install,  Next: Invoke,	 Prev: Built-in,  Up: Top
+
+Installing BASH
+***************
+
+To install BASH you simply type `make'.	 The BASH `Makefile' tries
+to dynamically figure out what kind of machine and operating system
+you are using.	It makes an educated guess based on the information
+it finds.
+
+During the `make' process, a message is displayed describing what
+machine and operating system has been chosen for you.  This
+information is also saved in the file `.machine' so you can look at
+it later.
+
+Therefore, for most machines, simply follow this simple checklist
+to install BASH:
+
+  1. Type `make'.
+
+  2. Wait for the compilation to finish.
+
+  3. Type `./bash' to see if the compile worked.
+
+  4. Type `make install DESTDIR=/usr/gnu/bin' (or wherever you
+     keep GNU binaries) to copy bash to your binaries directory.
+
+* Menu:
+
+* Problems::  What to do if BASH doesn't install quite so easily.
+
+* Files::     Files used in the `make' process.
+
+* Porting::   Porting BASH to a new machine.
+
+* Bugs::      What to do if you Discover Bugs in BASH.
+
+ 
+File: bash.info,  Node: Problems,  Next: Files,	 Prev: Install,	 Up: Install
+
+What if it Doesn't Install so Easily?
+=====================================
+
+Sometimes BASH gets confused and will make the wrong assumptions
+about your machine or operating system.	 If the displayed
+information (also found in `.machine') is incorrect, you will have
+to edit the file `machines.h' and provide the appropriate
+information so that BASH can be installed correctly.  The complete
+instructions for doing this are located in the `machines.h' file.
+
+However, if BASH says that your machine type is an
+"UNKNOWN_MACHINE", or BASH thought it knew something about your
+machine but was wrong, then reading the next few sections could be
+of use to you (*note Files::., and *note Porting::., for more
+information).
+
+On the MIPSEB with the BSD universe, you must:
+
+1) Place /bsd43/bin in your PATH before /bin
+2) Use $(CC) -E instead of /lib/cpp to build cpp-Makefile.
+
+File: bash.info,  Node: Files,	Next: Porting,	Prev: Problems,	 Up: Install
+
+Files Used in the `make' Process.
+=================================
+
+The following files are used during the installation of BASH, in
+the `make' process:
+
+`Makefile'
+     This is responsible for making the actual `Makefile' that is
+     used to create Bash.  It runs the C preprocessor (usually
+     located in `/lib/cpp') on the file `cpp-Makefile', producing
+     the output file `bash-Makefile'.
+
+`cpp-Makefile'
+     This is a file of C comments and text.  It contains a
+     reasonable number of `ifdefs' which control what files get
+     compiled and which flags are passed to the various C files
+     comprising BASH.  It includes a file called `machines.h',
+     `sysdefs.h', and `config.h'.
+
+`machines.h'
+     This file contains the basic compilation parameters for all of
+     the machines to which BASH has been ported.  This file
+     consists of a series of conditional blocks, one per machine
+     type.
+
+     These conditional blocks are depend upon the unique identifier
+     that `cpp' has predefined for this machine.  In some cases,
+     additional information can be passed from `Makefile'.  It is
+     possible to pass information such as whether or not a
+     particular file is available on this system, and so on.
+
+`sysdefs.h'
+     This file is dynamically made at build time by running the shell
+     script `makeargs.sh'.  If there appears to be something wrong in
+     this file, then edit the `makeargs.sh' script, and mail the
+     changes that you make to bash-maintainers@ai.mit.edu.
+
+`bash-Makefile'
+     This is the output from the initial stage of `make'.  It is a
+     stripped down version of `cpp-Makefile' which is tailor-made
+     for your machine and operating system.  All subsequent `makes'
+     use this file.
+
+
+File: bash.info,  Node: Porting,  Next: Bugs,  Prev: Files,  Up: Install
+
+What if You Have to Port to a New Machine?
+==========================================
+
+Sometimes you may want to port BASH to a new, previously
+unsupported machine.  To do so you need to create a block in
+`machines.h' which is conditional based on a unique identifier
+present in your version of the C preprocessor.
+
+If you don't know what that symbol is, you might try the following
+simple test:
+
+     echo "main () { }" > foo.c
+     cc -v foo.c
+
+You are looking for `-DMACHINE', where `MACHINE' is an identifier
+for your machine.  If you are very unlucky and your machine's C
+preprocessor doesn't have a unique identifier, you will have to
+define the identifier in Makefile manually.
+
+Let's say you have a machine from Yoyodyne Industries, called the
+YoYo.  It runs a version of BSD, so it is reasonably compatible. 
+However, the `cpp' on this YoYo machine doesn't define any unique
+identifiers.  You should change the `Makefile' line for `CPPFLAGS'
+to:
+
+     CPPFLAGS = -P -DYoYo
+
+Then, in `machines.h', you copy the block for `UNKNOWN_MACHINE',
+and change the conditional to;
+
+     #if defined (YoYo)
+
+Inside of the YoYo block you define `M_MACHINE="YoYo"', and
+`M_OS=BSD'.  You also modify the existing defines to match your
+machine's software.
+
+If BASH still won't compile, perhaps because of missing code that
+is required for your YoYo machine, you will have to write that code
+and place it within a conditional block based on YoYo.
+
+Most machines aren't that difficult; simply redefining a few of the
+default values is sufficient.  If you do run across a difficult
+machine, please send all fixes and changes to
+bash-maintainers@ai.mit.edu in the form of context diffs:
+
+     diff -c orig-machines.h machines.h >machines.diffs
+
+Please include information about which version of the shell you have.
+
+
+File: bash.info,  Node: Bugs,  Prev: Porting,  Up: Install
+
+Reporting Bugs
+==============
+
+If you find a bug in bash, you should report it.  But first you
+should make sure that it really is a bug and that it appears in the
+latest version of BASH that is available.
+
+Once you have ascertained that a bug really exists, you are welcome
+to mail in a bug report.  If you have a fix, please mail that too!
+
+Suggestions and "philosophical" bug reports should be mailed to
+bug-bash@ai.mit.edu.  Genuine bug reports should be mailed to the
+same place, or to bash-maintainers@ai.mit.edu.
+
+*All* bug reports should include:
+
+   * The version number of BASH.
+
+   * The hardware and operating system used.
+
+   * The compiler used to compile BASH.
+
+   * A description of the bug's behavior.
+
+   * A short script or "recipe" which demonstrates the bug.
+
+Without this information, it is generally not possible to
+successfully debug BASH.  Usually, without this information, the
+bug won't manifest itself!
+
+Discussion and questions about BASH in general (including questions
+about this documentation) can be sent to bash-maintainers@ai.mit.edu.
+
+
