@@ -1,7 +1,7 @@
 s/.word	0x.*$/&\
 	.data\
 	.align 2\
-1:	.long 0\
+9:	.long 0\
 	.text\
-	pushal	1b\
-	callf	$8,mcount/
+	pushal	9b\
+	callf	\$8,mcount/
