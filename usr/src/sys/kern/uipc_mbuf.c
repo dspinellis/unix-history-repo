@@ -13,7 +13,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.14 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -234,6 +234,8 @@ m_prepend(m, len, how)
  * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
  * The wait parameter is a choice of M_WAIT/M_DONTWAIT from caller.
  */
+int MCFail;
+
 struct mbuf *
 m_copym(m, off0, len, wait)
 	register struct mbuf *m;
@@ -292,9 +294,12 @@ m_copym(m, off0, len, wait)
 		m = m->m_next;
 		np = &n->m_next;
 	}
+	if (top == 0)
+		MCFail++;
 	return (top);
 nospace:
 	m_freem(top);
+	MCFail++;
 	return (0);
 }
 
@@ -437,6 +442,8 @@ m_adj(mp, req_len)
  * If there is room, it will add up to max_protohdr-len extra bytes to the
  * contiguous region in an attempt to avoid being called next time.
  */
+int MPFail;
+
 struct mbuf *
 m_pullup(n, len)
 	register struct mbuf *n;
@@ -490,5 +497,6 @@ m_pullup(n, len)
 	return (m);
 bad:
 	m_freem(n);
+	MPFail++;
 	return (0);
 }
