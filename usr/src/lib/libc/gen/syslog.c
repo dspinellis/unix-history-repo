@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.34 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,6 +32,7 @@ static int	connected;		/* have done connect */
 static int	LogStat = 0;		/* status bits, set by openlog() */
 static const char *LogTag = "syslog";	/* string to tag the entry with */
 static int	LogFacility = LOG_USER;	/* default facility code */
+static int	LogMask = 0xff;		/* mask of priorities to be logged */
 
 /*
  * syslog, vsyslog --
@@ -71,7 +72,8 @@ vsyslog(pri, fmt, ap)
 	char tbuf[2048], fmt_cpy[1024], *stdp, *ctime();
 
 	/* check for invalid bits or no priority set */
-	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
+	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)) ||
+	    !(LOG_MASK(pri) & LogMask))
 		return;
 
 	saved_errno = errno;
@@ -194,8 +196,6 @@ closelog()
 	LogFile = -1;
 	connected = 0;
 }
-
-static int	LogMask = 0xff;		/* mask of priorities to be logged */
 
 /* setlogmask -- set the log mask level */
 setlogmask(pmask)
