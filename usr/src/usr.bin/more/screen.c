@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -135,6 +135,7 @@ raw_mode(on)
 	(void)ioctl(2, TCSETAW, &s);
 #else
 	struct sgttyb s;
+	struct ltchars l;
 	static struct sgttyb save_term;
 
 	if (on)
@@ -143,6 +144,7 @@ raw_mode(on)
 		 * Get terminal modes.
 		 */
 		(void)ioctl(2, TIOCGETP, &s);
+		(void)ioctl(2, TIOCGLTC, &l);
 
 		/*
 		 * Save modes and set certain variables dependent on modes.
@@ -151,7 +153,7 @@ raw_mode(on)
 		ospeed = s.sg_ospeed;
 		erase_char = s.sg_erase;
 		kill_char = s.sg_kill;
-		werase_char = -1;
+		werase_char = l.t_werasc;
 
 		/*
 		 * Set the modes to the way we want them.
