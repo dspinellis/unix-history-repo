@@ -55,7 +55,7 @@ command is used to mount a sub-tree of an existing file system
 that uses a different set of uids and gids than the local system.
 Such a file system could be mounted from a remote site via NFS or
 it could be a file system on removable media brought from some
-foreign location that uses a different password file and yellow pages.
+foreign location that uses a different password file.
 The
 .Nm mount_umap
 command uses a set of files provided by the user to make correspondences
@@ -68,18 +68,32 @@ command allows the subtree from smith's original environment to be
 mapped in such a way that all files with owning uid 1000 look like
 they are actually owned by uid 2000.  
 .Pp
-The target should be the current location of the sub-tree in the
-local system's name space.  The mount-point should be a directory
-where the mapped subtree is to be placed.  The uid-mapfile and
-gid-mapfile describe the mappings to be made between identifiers.
+.Em target 
+should be the current location of the sub-tree in the
+local system's name space.  
+.Em mount-point 
+should be a directory
+where the mapped subtree is to be placed.  
+.Em uid-mapfile 
+and
+.Em gid-mapfile 
+describe the mappings to be made between identifiers.
 Briefly, the format of these files is a count of the number of
 mappings on the first line, with each subsequent line containing
 a single mapping.  Each of these mappings consists of an id from
 the original environment and the corresponding id in the local environment,
-separated by white space.  The uid-mapfile should contain all uid
-mappings, and the gid-mapfile should contain all gid mappings.
-Any uids not mapped in the uid-mapfile will be treated as user NOBODY,
-and any gids not mapped in the gid-mapfile will be treated as group
+separated by white space.  
+.Em uid-mapfile 
+should contain all uid
+mappings, and 
+.Em gid-mapfile 
+should contain all gid mappings.
+Any uids not mapped in 
+.Em uid-mapfile 
+will be treated as user NOBODY,
+and any gids not mapped in 
+.Em gid-mapfile 
+will be treated as group
 NULLGROUP.  At most 64 uids can be mapped for a given subtree, and
 at most 16 groups can be mapped by a given subtree.
 .Pp
@@ -94,9 +108,9 @@ The layer created by the
 .Nm mount_umap
 command is meant to serve as a simple example of file system layering.
 It is not meant for production use.  The implementation is not very
-sophisticated, and not particularly fast.
+sophisticated.
 .Sh SEE ALSO
-.Xr mount_null 8
+.Xr mount_null 8 ,
 .Xr mount_lofs 8
 .Sh HISTORY
 The
