@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.40 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.41 (Berkeley) %G%
  */
 
 /*
@@ -771,6 +771,7 @@ nfs_mknod(ndp, vap, cred)
 #endif /* FIFO */
 	else {
 		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
 		return (EOPNOTSUPP);
 	}
 	nfsstats.rpccnt[NFSPROC_CREATE]++;
@@ -940,8 +941,13 @@ nfs_rename(sndp, tndp)
 			cache_purge(tndp->ni_dvp);
 		cache_purge(sndp->ni_dvp);
 	}
-	nfs_abortop(sndp);
-	nfs_abortop(tndp);
+	VOP_ABORTOP(tndp);
+	vput(tndp->ni_dvp);
+	if (tndp->ni_vp)
+		vput(tndp->ni_vp);
+	VOP_ABORTOP(sndp);
+	vrele(sndp->ni_dvp);
+	vrele(sndp->ni_vp);
 	/*
 	 * Kludge: Map ENOENT => 0 assuming that it is a reply to a retry.
 	 */

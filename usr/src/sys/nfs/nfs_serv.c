@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.21 (Berkeley) %G%
  */
 
 /*
@@ -574,11 +574,13 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 			if (vap->va_type == VFIFO) {
 #ifndef FIFO
 				VOP_ABORTOP(ndp);
+				vput(ndp->ni_dvp);
 				error = ENXIO;
 				nfsm_reply(0);
 #endif /* FIFO */
 			} else if (error = suser(cred, (short *)0)) {
 				VOP_ABORTOP(ndp);
+				vput(ndp->ni_dvp);
 				nfsm_reply(0);
 			} else
 				vap->va_rdev = (dev_t)rdev;
@@ -589,6 +591,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 				nfsm_reply(0);
 		} else {
 			VOP_ABORTOP(ndp);
+			vput(ndp->ni_dvp);
 			error = ENXIO;
 			nfsm_reply(0);
 		}
@@ -597,6 +600,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 		vp = ndp->ni_vp;
 		ndp->ni_vp = NULLVP;
 		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, cred))
 			nfsm_reply(0);
@@ -616,6 +620,9 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
+	vput(ndp->ni_dvp);
+	if (ndp->ni_vp)
+		vput(ndp->ni_vp);
 	return (error);
 }
 
@@ -664,10 +671,13 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (vp->v_flag & VTEXT)
 		xrele(vp);	/* try once to free text */
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_REMOVE(ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vput(vp);
+	}
 	nfsm_reply(0);
 	nfsm_srvdone;
 }
@@ -721,7 +731,12 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 	crhold(cred);
 	tond.ni_cred = cred;
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
-	error = nfs_namei(&tond, tfhp, len2, &md, &dpos);
+	if (error = nfs_namei(&tond, tfhp, len2, &md, &dpos)) {
+		VOP_ABORTOP(ndp);
+		vrele(ndp->ni_dvp);
+		vrele(fvp);
+		goto out1;
+	}
 	tdvp = tond.ni_dvp;
 	tvp = tond.ni_vp;
 	if (tvp != NULL) {
@@ -733,10 +748,6 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 			goto out;
 		}
 	}
-	if (error) {
-		VOP_ABORTOP(ndp);
-		goto out1;
-	}
 	if (fvp->v_mount != tdvp->v_mount) {
 		error = EXDEV;
 		goto out;
@@ -744,15 +755,20 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (fvp == tdvp || fvp == tvp)
 		error = EINVAL;
 out:
-	if (error) {
-		VOP_ABORTOP(&tond);
-		VOP_ABORTOP(ndp);
-	} else {
+	if (!error) {
 		VREF(ndp->ni_cdir);
 		VREF(tond.ni_cdir);
 		error = VOP_RENAME(ndp, &tond);
 		vrele(ndp->ni_cdir);
 		vrele(tond.ni_cdir);
+	} else {
+		VOP_ABORTOP(&tond);
+		vput(tdvp);
+		if (tvp)
+			vput(tvp);
+		VOP_ABORTOP(ndp);
+		vrele(ndp->ni_dvp);
+		vrele(fvp);
 	}
 out1:
 	crfree(cred);
@@ -760,6 +776,8 @@ out1:
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
+	vrele(ndp->ni_dvp);
+	vrele(fvp);
 	return (error);
 }
 
@@ -809,10 +827,14 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (vp->v_mount != xp->v_mount)
 		error = EXDEV;
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_LINK(vp, ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		if (ndp->ni_vp)
+			vrele(ndp->ni_vp);
+	}
 out1:
 	vrele(vp);
 	nfsm_reply(0);
@@ -841,7 +863,6 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	int error = 0;
 	char *pathcp, *cp2;
 	struct mbuf *mb, *mreq;
-	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len, len2;
@@ -854,7 +875,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	ndp->ni_cred = cred;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
-		goto out1;
+		goto out;
 	nfsm_strsiz(len2, NFS_MAXPATHLEN);
 	MALLOC(pathcp, caddr_t, len2 + 1, M_TEMP, M_WAITOK);
 	iv.iov_base = pathcp;
@@ -867,26 +888,26 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	io.uio_rw = UIO_READ;
 	nfsm_mtouio(&io, len2);
 	*(pathcp + len2) = '\0';
-	vp = ndp->ni_vp;
-	if (vp) {
+	if (ndp->ni_vp) {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vrele(ndp->ni_vp);
 		error = EEXIST;
 		goto out;
 	}
-	vp = ndp->ni_dvp;
 	VATTR_NULL(vap);
 	vap->va_mode = 0777;
+	error = VOP_SYMLINK(ndp, vap, pathcp);
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
-		error = VOP_SYMLINK(ndp, vap, pathcp);
-out1:
 	if (pathcp)
 		FREE(pathcp, M_TEMP);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
+	vput(ndp->ni_dvp);
+	if (ndp->ni_vp);
+		vrele(ndp->ni_vp);
 	if (pathcp)
 		FREE(pathcp, M_TEMP);
 	return (error);
@@ -934,6 +955,8 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
 		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vrele(vp);
 		error = EEXIST;
 		nfsm_reply(0);
 	}
@@ -955,6 +978,9 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
+	vput(ndp->ni_dvp);
+	if (ndp->ni_vp)
+		vrele(ndp->ni_vp);
 	return (error);
 }
 
@@ -1007,10 +1033,13 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (vp->v_flag & VROOT)
 		error = EBUSY;
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_RMDIR(ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vput(vp);
+	}
 	nfsm_reply(0);
 	nfsm_srvdone;
 }
