@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -809,15 +809,17 @@ do_rst:
 			break;
 
 		/*
-		 * The only thing that can arrive in  LAST_ACK state
-		 * is an acknowledgment of our FIN.  If our FIN is now
-		 * acknowledged, delete the TCB, enter the closed state
-		 * and return.
+		 * In LAST_ACK, we may still be waiting for data to drain
+		 * and/or to be acked, as well as for the ack of our FIN.
+		 * If our FIN is now acknowledged, delete the TCB,
+		 * enter the closed state and return.
 		 */
 		case TCPS_LAST_ACK:
-			if (ourfinisacked)
+			if (ourfinisacked) {
 				tp = tcp_close(tp);
-			goto drop;
+				goto drop;
+			}
+			break;
 
 		/*
 		 * In TIME_WAIT state the only thing that should arrive
