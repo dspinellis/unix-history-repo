@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -7,144 +7,133 @@ static char *sccsid = "@(#)du.c	4.3 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <ndir.h>
 
-#define howmany(x, y)	((x + y - 1) / y)
-#define EQ(x,y)	(strcmp(x,y)==0)
-#define ML	1000
+#define howmany(x, y)	(((x) + (y) - 1) / (y))
 
-struct stat Statb;
-char	path[256], name[256];
-int	Aflag = 0,
-	Sflag = 0,
-	Noarg = 0;
+char	path[BUFSIZ], name[BUFSIZ];
+int	aflg;
+int	sflg;
+char	*dot = ".";
+
+#define ML	1000
 struct {
-	int	dev,
-		ino;
+	int	dev;
+	ino_t	ino;
 } ml[ML];
+int	mlx;
+
 long	descend();
-char	*rindex();
-char	*strcpy();
+char	*index(), *rindex(), *strcpy(), *sprintf();
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	register	i = 1;
-	long	blocks = 0;
-	register char	*np;
+	long kbytes = 0;
+	register char *np;
 
-	if (argc>1) {
-		if(EQ(argv[i], "-s")) {
-			++i;
-			++Sflag;
-		} else if(EQ(argv[i], "-a")) {
-			++i;
-			++Aflag;
-		}
+	argc--, argv++;
+again:
+	if (argc && !strcmp(*argv, "-s")) {
+		sflg++;
+		argc--, argv++;
+		goto again;
 	}
-	if(i == argc)
-		++Noarg;
-
+	if (argc && !strcmp(*argv, "-a")) {
+		aflg++;
+		argc--, argv++;
+		goto again;
+	}
+	if (argc == 0) {
+		argv = &dot;
+		argc = 1;
+	}
 	do {
-		(void) strcpy(path, Noarg? ".": argv[i]);
-		(void) strcpy(name, path);
-		if(np = rindex(name, '/')) {
+		(void) strcpy(path, *argv);
+		(void) strcpy(name, *argv);
+		if (np = rindex(name, '/')) {
 			*np++ = '\0';
-			if(chdir(*name? name: "/") == -1) {
-				fprintf(stderr, "cannot chdir()\n");
+			if (chdir(*name ? name : "/") < 0) {
+				perror(*name ? name : "/");
 				exit(1);
 			}
 		} else
 			np = path;
-		blocks = descend(path, *np? np: ".");
-		if(Sflag)
-			printf("%ld	%s\n", blocks, path);
-	} while(++i < argc);
-
+		kbytes = descend(path, *np ? np : ".");
+		if (sflg)
+			printf("%ld\t%s\n", kbytes, path);
+		argc--, argv++;
+	} while (argc > 0);
 	exit(0);
 }
 
-DIR *dirp = NULL;
+DIR	*dirp = NULL;
+
 long
-descend(np, fname)
-char *np, *fname;
+descend(base, name)
+	char *base, *name;
 {
-	register  struct direct *dp;
-	register char *c1;
+	char *ebase0, *ebase;
+	struct stat stb;
 	int i;
-	char *endofname;
-	long blocks = 0;
+	long kbytes = 0;
 	long curoff = NULL;
+	register struct direct *dp;
 
-	if(stat(fname,&Statb)<0) {
-		fprintf(stderr, "--bad status < %s >\n", name);
-		return 0L;
+	ebase0 = ebase = index(base, 0);
+	if (ebase > base && ebase[-1] == '/')
+		ebase--;
+	if (lstat(name, &stb) < 0) {
+		perror(base);
+		*ebase0 = 0;
+		return (0);
 	}
-	if(Statb.st_nlink > 1 && (Statb.st_mode&S_IFMT)!=S_IFDIR) {
-		static linked = 0;
-
-		for(i = 0; i <= linked; ++i) {
-			if(ml[i].ino==Statb.st_ino && ml[i].dev==Statb.st_dev)
-				return 0;
+	if (stb.st_nlink > 1 && (stb.st_mode&S_IFMT) != S_IFDIR) {
+		for (i = 0; i <= mlx; i++)
+			if (ml[i].ino == stb.st_ino && ml[i].dev == stb.st_dev)
+				return (0);
+		if (mlx < ML) {
+			ml[mlx].dev = stb.st_dev;
+			ml[mlx].ino = stb.st_ino;
+			mlx++;
 		}
-		if (linked < ML) {
-			ml[linked].dev = Statb.st_dev;
-			ml[linked].ino = Statb.st_ino;
-			++linked;
-		}
 	}
-	blocks = howmany(Statb.st_size, 1024);
-
-	if((Statb.st_mode&S_IFMT) != S_IFDIR) {
-		if(Aflag)
-			printf("%ld	%s\n", blocks, np);
-		return(blocks);
+	kbytes = howmany(stb.st_size, 1024);
+	if ((stb.st_mode&S_IFMT) != S_IFDIR) {
+		if (aflg)
+			printf("%ld\t%s\n", kbytes, base);
+		return (kbytes);
 	}
-
-	for(c1 = np; *c1; ++c1);
-	if(*(c1-1) == '/')
-		--c1;
-	endofname = c1;
-	if(chdir(fname) == -1)
-		return 0;
+	if (chdir(name) < 0)
+		return (0);
 	if (dirp != NULL)
 		closedir(dirp);
-	if ((dirp = opendir(".")) == NULL) {
-		fprintf(stderr, "--cannot open < %s >\n", np);
-		goto ret;
+	dirp = opendir(".");
+	if (dirp == NULL) {
+		perror(base);
+		*ebase0 = 0;
+		return (0);
 	}
-	if ((dp = readdir(dirp)) == NULL) {
-		fprintf(stderr, "--cannot read < %s >\n", np);
-		closedir(dirp);
-		dirp = NULL;
-		goto ret;
-	}
-	for ( ; dp != NULL; dp = readdir(dirp)) {
-		/* each directory entry */
-		if (EQ(dp->d_name, ".") || EQ(dp->d_name, ".."))
+	while (dp = readdir(dirp)) {
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		c1 = endofname;
-		*c1++ = '/';
-		(void) strcpy(c1, dp->d_name);
+		(void) sprintf(ebase, "/%s", dp->d_name);
 		curoff = telldir(dirp);
-		blocks += descend(np, endofname+1);
+		kbytes += descend(base, ebase+1);
+		*ebase = 0;
 		if (dirp == NULL) {
-			/* previous entry was a directory */
 			dirp = opendir(".");
 			seekdir(dirp, curoff);
 		}
 	}
 	closedir(dirp);
 	dirp = NULL;
-	*endofname = '\0';
-	if(!Sflag)
-		printf("%ld	%s\n", blocks, np);
-ret:
-	if(chdir("..") == -1) {
-		*endofname = '\0';
-		fprintf(stderr, "Bad directory <%s>\n", np);
-		while(*--endofname != '/');
-		*endofname = '\0';
-		if(chdir(np) == -1)
-			exit(1);
+	if (sflg == 0)
+		printf("%ld\t%s\n", kbytes, base);
+	if (chdir("..") < 0) {
+		(void) sprintf(index(base, 0), "/..");
+		perror(base);
+		exit(1);
 	}
-	return(blocks);
+	*ebase0 = 0;
+	return (kbytes);
 }
