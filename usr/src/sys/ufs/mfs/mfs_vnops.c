@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.22 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,7 +22,7 @@
 #include "machine/vmparam.h"
 #include "machine/mtpr.h"
 
-#if !defined(hp300) && !defined(i386)
+#if !defined(hp300) && !defined(i386) && !defined(mips)
 static int mfsmap_want;		/* 1 => need kernel I/O resources */
 struct map mfsmap[MFS_MAPSIZE];
 extern char mfsiobuf[];
@@ -205,7 +205,7 @@ mfs_doio(bp, base)
 }
 #endif	/* vax || tahoe */
 
-#if defined(hp300) || defined(i386)
+#if defined(hp300) || defined(i386) || defined(mips)
 /*
  * Memory file system I/O.
  *
@@ -330,7 +330,7 @@ mfs_badop()
 mfs_init()
 {
 
-#if !defined(hp300) && !defined(i386)
+#if !defined(hp300) && !defined(i386) && !defined(mips)
 	rminit(mfsmap, (long)MFS_MAPREG, (long)1, "mfs mapreg", MFS_MAPSIZE);
 #endif
 }
