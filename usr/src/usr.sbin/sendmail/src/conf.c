@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.55		%G%);
+SCCSID(@(#)conf.c	3.56		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -49,24 +49,38 @@ SCCSID(@(#)conf.c	3.55		%G%);
 
 struct hdrinfo	HdrInfo[] =
 {
+		/* date information */
+	"posted-date",		0,			0,
 	"date",			H_CHECK,		M_NEEDDATE,
-	"from",			H_ADDR|H_FROM|H_CHECK,	M_NEEDFROM,
+	"resent-date",		0,			0,
+	"received-date",	H_CHECK,		M_LOCAL,
+		/* originator fields, most to least significant  */
+	"resent-sender",	H_FROM,			0,
+	"resent-from",		H_FROM,			0,
+	"sender",		H_FROM,			0,
+	"from",			H_FROM|H_CHECK,		M_NEEDFROM,
 	"original-from",	0,			0,
-	"sender",		H_ADDR,			0,
 	"full-name",		H_ACHECK,		M_FULLNAME,
-	"to",			H_ADDR|H_RCPT,		0,
-	"cc",			H_ADDR|H_RCPT,		0,
-	"bcc",			H_ADDR|H_RCPT,		0,
+	"received-from",	H_CHECK,		M_LOCAL,
+	"return-receipt-to",	H_FROM,			0,
+		/* destination fields */
+	"to",			H_RCPT,			0,
+	"resent-to",		H_RCPT,			0,
+	"cc",			H_RCPT,			0,
+	"resent-cc",		H_RCPT,			0,
+	"bcc",			H_RCPT,			0,
+	"resent-bcc",		H_RCPT,			0,
+		/* message identification and control */
 	"message-id",		0,			0,
+	"resent-message-id",	0,			0,
+	"precedence",		0,			0,
 	"message",		H_EOH,			0,
 	"text",			H_EOH,			0,
-	"posted-date",		0,			0,
-	"return-receipt-to",	0,			0,
-	"received-date",	H_CHECK,		M_LOCAL,
-	"received-from",	H_CHECK,		M_LOCAL,
-	"precedence",		0,			0,
-	"received",		H_FORCE,		0,
-	"via",			H_FORCE,		0,
+		/* trace fields */
+	"received",		H_TRACE|H_FORCE,	0,
+	"via",			H_TRACE|H_FORCE,	0,
+	"mail-from",		H_TRACE|H_FORCE,	0,
+
 	NULL,			0,			0,
 };
 
