@@ -14,11 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_acct.c	7.5 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "time.h"
+#include "proc.h"
 #include "user.h"
 #include "vnode.h"
 #include "mount.h"
@@ -141,8 +143,8 @@ acct()
 	timevalsub(&t, &u.u_start);
 	ap->ac_etime = compress(t.tv_sec, t.tv_usec);
 	ap->ac_btime = u.u_start.tv_sec;
-	ap->ac_uid = u.u_ruid;
-	ap->ac_gid = u.u_rgid;
+	ap->ac_uid = u.u_procp->p_ruid;
+	ap->ac_gid = u.u_procp->p_rgid;
 	t = ru->ru_stime;
 	timevaladd(&t, &ru->ru_utime);
 	if (i = t.tv_sec * hz + t.tv_usec / tick)
