@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)signal.3	6.6 (Berkeley) %G%
+.\"     @(#)signal.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGNAL 3
@@ -14,11 +14,11 @@
 .Sh SYNOPSIS
 .Fd #include <signal.h>
 .Ft void
-.\" can not do this with .Fn yet
-\*(fN*signal\*(lp\*(fAsig\fR, \*(fAfunc\*(rp\|\*(lp\|\*(rp\fR
-.br
+.Fn *signal sig func Ns Pq
 .Ft void
-\*(fN*func\*(rp\*(lp\|\*(rp\fR
+.\" can not do this with .Fn yet
+.br
+\*(lp\|\*(fN*func\*(rp\*(lp\|\*(rp\fR
 .Sh DESCRIPTION
 This
 .Fn signal
@@ -57,7 +57,7 @@ an interupt.
 These signals are defined in the file
 .Aq Pa signal.h :
 .Bl -column SIGVTALARMXX "create core imagexxx"
-.It Sy "  NAME  " "	  Default Action  " "	              Description"
+.It Sy "  Name  " "	  Default Action  " "	              Description"
 .It Dv SIGHUP No "	terminate process" "	terminal line hangup"
 .It Dv SIGINT No "	terminate process" "	interrupt program"
 .It Dv SIGQUIT No "	create core image" "	quit program"
