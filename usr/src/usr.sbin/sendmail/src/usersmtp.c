@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.46 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.47 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.46 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.47 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -356,6 +356,7 @@ smtpmailfrom(m, mci, e)
 	{
 		/* cannot just send a 8-bit version */
 		usrerr("%s does not support 8BITMIME", mci->mci_host);
+		mci->mci_status = "5.6.3";
 		return EX_DATAERR;
 	}
 
@@ -427,14 +428,22 @@ smtpmailfrom(m, mci, e)
 	{
 		return EX_OK;
 	}
-	else if (r == 501 || r == 553)
+	else if (r == 501)
 	{
-		/* syntax error in arguments/mailbox name not allowed */
+		/* syntax error in arguments */
+		mci->mci_status = "5.5.2";
+		return EX_DATAERR;
+	}
+	else if (r == 553)
+	{
+		/* mailbox name not allowed */
+		mci->mci_status = "5.1.3";
 		return EX_DATAERR;
 	}
 	else if (r == 552)
 	{
 		/* exceeded storage allocation */
+		mci->mci_status = "5.2.2";
 		return EX_UNAVAILABLE;
 	}
 
@@ -473,6 +482,7 @@ smtprcpt(to, m)
 {
 	register int r;
 	char optbuf[MAXLINE];
+	extern char *smtptodsn();
 
 	strcpy(optbuf, "");
 	if (bitset(MCIF_DSN, mci->mci_flags))
@@ -518,13 +528,13 @@ smtprcpt(to, m)
 	smtpmessage("RCPT To:<%s>%s", m, mci, to->q_user, optbuf);
 
 	if (r < 0 || REPLYTYPE(r) == 4)
-		return (EX_TEMPFAIL);
+		return EX_TEMPFAIL;
 	else if (REPLYTYPE(r) == 2)
-		return (EX_OK);
+		return EX_OK;
 	else if (r == 550 || r == 551 || r == 553)
-		return (EX_NOUSER);
+		return EX_NOUSER;
 	else if (r == 552 || r == 554)
-		return (EX_UNAVAILABLE);
+		return EX_UNAVAILABLE;
 
 #ifdef LOG
 	if (LogLevel > 1)

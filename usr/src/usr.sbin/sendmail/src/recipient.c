@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.79 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.80 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -213,6 +213,7 @@ recipient(a, sendq, aliaslevel, e)
 	/* break aliasing loops */
 	if (aliaslevel > MAXRCRSN)
 	{
+		a->q_status = "5.4.6";
 		usrerr("554 aliasing/forwarding loop broken (%d aliases deep; %d max",
 			aliaslevel, MAXRCRSN);
 		return (a);
@@ -242,17 +243,20 @@ recipient(a, sendq, aliaslevel, e)
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 Cannot mail directly to programs");
 		}
 		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 User %s@%s doesn't have a valid shell for mailing to programs",
 				a->q_alias->q_ruser, MyHostName);
 		}
 		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 Address %s is unsafe for mailing to programs",
 				a->q_alias->q_paddr);
 		}
@@ -310,6 +314,7 @@ recipient(a, sendq, aliaslevel, e)
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 Cannot mail directly to :include:s");
 		}
 		else
@@ -334,6 +339,7 @@ recipient(a, sendq, aliaslevel, e)
 			else if (ret != 0)
 			{
 				a->q_flags |= QBADADDR;
+				a->q_status = "5.2.4";
 				usrerr("550 Cannot open %s: %s",
 					a->q_user, errstring(ret));
 			}
@@ -347,17 +353,20 @@ recipient(a, sendq, aliaslevel, e)
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 Cannot mail directly to files");
 		}
 		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 User %s@%s doesn't have a valid shell for mailing to files",
 				a->q_alias->q_ruser, MyHostName);
 		}
 		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.7.1";
 			usrerr("550 Address %s is unsafe for mailing to files",
 				a->q_alias->q_paddr);
 		}
@@ -436,6 +445,7 @@ recipient(a, sendq, aliaslevel, e)
 		if (pw == NULL)
 		{
 			a->q_flags |= QBADADDR;
+			a->q_status = "5.1.1";
 			giveresponse(EX_NOUSER, m, NULL, a->q_alias,
 				     (time_t) 0, e);
 		}
@@ -450,6 +460,7 @@ recipient(a, sendq, aliaslevel, e)
 				if (findusercount++ > 3)
 				{
 					a->q_flags |= QBADADDR;
+					a->q_status = "5.4.6";
 					usrerr("554 aliasing/forwarding loop for %s broken",
 						pw->pw_name);
 					goto done;
@@ -507,6 +518,7 @@ recipient(a, sendq, aliaslevel, e)
 		if (q == NULL)
 		{
 			a->q_flags |= QBADADDR;
+			a->q_flags = "5.4.6";
 			usrerr("554 aliasing/forwarding loop broken");
 		}
 	}
