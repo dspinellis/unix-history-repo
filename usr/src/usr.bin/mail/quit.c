@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	2.4 %G%";
+static char *SccsId = "@(#)quit.c	2.5 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -177,7 +177,7 @@ quit()
 		}
 		fclose(obuf);
 		close(creat(mbox, 0600));
-		if ((obuf = fopen(mbox, "w")) == NULL) {
+		if ((obuf = fopen(mbox, "r+")) == NULL) {
 			perror(mbox);
 			fclose(ibuf);
 			unlock();
@@ -248,7 +248,7 @@ quit()
 
 cream:
 	if (rbuf != NULL) {
-		fbuf = fopen(mailname, "w");
+		fbuf = fopen(mailname, "r+");
 		if (fbuf == NULL)
 			goto newmail;
 		while ((c = getc(rbuf)) != EOF)
@@ -282,7 +282,7 @@ writeback(res)
 	FILE *obuf;
 
 	p = 0;
-	if ((obuf = fopen(mailname, "w")) == NULL) {
+	if ((obuf = fopen(mailname, "r+")) == NULL) {
 		perror(mailname);
 		return(-1);
 	}
