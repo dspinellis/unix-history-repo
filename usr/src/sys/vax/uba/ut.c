@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	6.7 (Berkeley) %G%
+ *	@(#)ut.c	6.8 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -176,7 +176,7 @@ get:
 	 * For 6250 bpi take exclusive use of the UNIBUS.
 	 */
 	ui->ui_driver->ud_xclu = (dens&(T_1600BPI|T_6250BPI)) == T_6250BPI;
-	s = spl6();
+	s = splclock();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
 		sc->sc_tact = 1;

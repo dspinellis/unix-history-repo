@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	6.7 (Berkeley) %G%
+ *	@(#)trap.c	6.8 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -157,7 +157,7 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) spl6();
+		(void) splclock();
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
@@ -279,7 +279,7 @@ done:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) spl6();
+		(void) splclock();
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();

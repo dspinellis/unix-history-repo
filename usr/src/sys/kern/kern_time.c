@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_time.c	6.8 (Berkeley) %G%
+ *	@(#)kern_time.c	6.9 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -186,7 +186,8 @@ setitimer()
 	}
 	if (aitvp == 0)
 		return;
-	u.u_error = copyin(aitvp, (caddr_t)&aitv, sizeof (struct itimerval));
+	u.u_error = copyin((caddr_t)aitvp, (caddr_t)&aitv,
+	    sizeof (struct itimerval));
 	if (u.u_error)
 		return;
 	if (itimerfix(&aitv.it_value) || itimerfix(&aitv.it_interval)) {

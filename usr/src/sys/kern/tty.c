@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.25 (Berkeley) %G%
+ *	@(#)tty.c	6.26 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -1066,9 +1066,11 @@ ttyoutput(c, tp)
 	case NEWLINE:
 		ctype = (tp->t_flags >> 8) & 03;
 		if (ctype == 1) { /* tty 37 */
-			if (*colp > 0)
-				c = max((((unsigned)*colp) >> 4) + 3,
-				    (unsigned)6);
+			if (*colp > 0) {
+				c = (((unsigned)*colp) >> 4) + 3;
+				if ((unsigned)c > 6)
+					c = 6;
+			}
 		} else if (ctype == 2) /* vt05 */
 			c = mstohz(100);
 		*colp = 0;

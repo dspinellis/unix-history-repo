@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	6.20 (Berkeley) %G%
+ *	@(#)kern_sig.c	6.21 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -533,7 +533,7 @@ issig()
 			sigbits &= ~stopsigmask;
 		if (sigbits == 0)
 			break;
-		sig = ffs(sigbits);
+		sig = ffs((long)sigbits);
 		mask = sigmask(sig);
 		p->p_sig &= ~mask;		/* take the signal! */
 		p->p_cursig = sig;
@@ -789,17 +789,17 @@ core()
 	u.u_error = rdwri(UIO_WRITE, ip,
 	    (caddr_t)&u,
 	    ctob(UPAGES),
-	    0, 1, (int *)0);
+	    (off_t)0, 1, (int *)0);
 	if (u.u_error == 0)
 		u.u_error = rdwri(UIO_WRITE, ip,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),
-		    ctob(u.u_dsize),
-		    ctob(UPAGES), 0, (int *)0);
+		    (int)ctob(u.u_dsize),
+		    (off_t)ctob(UPAGES), 0, (int *)0);
 	if (u.u_error == 0)
 		u.u_error = rdwri(UIO_WRITE, ip,
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
-		    ctob(u.u_ssize),
-		    ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
+		    (int)ctob(u.u_ssize),
+		    (off_t)ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
 out:
 	iput(ip);
 	return (u.u_error == 0);

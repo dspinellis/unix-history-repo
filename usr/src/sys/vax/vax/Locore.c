@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	6.7 (Berkeley) %G%
+ *	@(#)Locore.c	6.8 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -28,6 +28,7 @@
 #include "map.h"
 
 #include "nexus.h"
+#include "ioa.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 
@@ -182,6 +183,7 @@ char	Sysbase[6*NPTEPG*NBPG];
 int	umbabeg;
 struct	pte Nexmap[16][16];
 struct	nexus nexus[MAXNNEXUS];
+struct	pte Ioamap[MAXNIOA][IOAMAPSIZ/NBPG];
 struct	pte UMEMmap[NUBA][512];
 char	umem[NUBA][512*NBPG];
 int	umbaend;
@@ -255,8 +257,10 @@ resume(pcbpf) unsigned pcbpf; { }
 
 /*ARGSUSED*/
 fubyte(base) caddr_t base; { return (0); }
+#ifdef notdef
 /*ARGSUSED*/
 fuibyte(base) caddr_t base; { return (0); }
+#endif
 /*ARGSUSED*/
 subyte(base, i) caddr_t base; { return (0); }
 /*ARGSUSED*/
@@ -321,7 +325,7 @@ scanc(size, cp, table, mask)
 { return (0); }
 
 /*ARGSUSED*/
-skpc(mask, size, cp) int mask; char *cp; unsigned size; { return (0); }
+skpc(mask, size, cp) int mask; int size; char *cp; { return (0); }
 
 #ifdef notdef
 /*ARGSUSED*/
@@ -336,10 +340,12 @@ _remque(p) caddr_t p; { }
 /*ARGSUSED*/
 ffs(v) long v; { return (0); }
 
+#ifdef notdef
 imin(a, b) int a, b; { return (a < b ? a : b); }
 imax(a, b) int a, b; { return (a > b ? a : b); }
 unsigned min(a, b) u_int a, b; { return (a < b ? a : b); }
 unsigned max(a, b) u_int a, b; { return (a > b ? a : b); }
+#endif
 ntohs(s) u_short s; { return ((int)s); }
 htons(s) u_short s; { return ((int)s); }
 ntohl(l) u_long l; { return ((int)l); }

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.19 (Berkeley) %G%
+ *	@(#)hp.c	6.20 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -265,7 +265,11 @@ struct	hpsoftc {
 
 #define hpunit(dev)	(minor(dev) >> 3)
 #define	MASKREG(reg)	((reg)&0xffff)
+#ifdef lint
+#define HPWAIT(mi, addr) (hpwait(mi))
+#else
 #define HPWAIT(mi, addr) (((addr)->hpds & HPDS_DRY) || hpwait(mi))
+#endif
 
 /*ARGSUSED*/
 hpattach(mi, slave)
@@ -491,7 +495,7 @@ hpustart(mi)
 	switch (sc->sc_recal) {
 
 	case 1:
-		HPWAIT(mi, hpaddr);
+		(void)HPWAIT(mi, hpaddr);
 		hpaddr->hpdc = bp->b_cylin;
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
 		sc->sc_recal++;
@@ -528,7 +532,7 @@ hpustart(mi)
 			hpaddr->hpof =
 			    hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
 			hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-			HPWAIT(mi, hpaddr);
+			(void)HPWAIT(mi, hpaddr);
 			mbclrattn(mi);
 		}
 		return (MBU_DODATA);
@@ -720,7 +724,7 @@ hard:
 			    hpaddr->hper2, HPER2_BITS);
 		}
 #endif
-	HPWAIT(mi, hpaddr);
+	(void)HPWAIT(mi, hpaddr);
 	if (retry)
 		return (MBD_RETRY);
 	if (mi->mi_tab.b_errcnt >= 16) {
@@ -729,7 +733,7 @@ hard:
 		 * bother with interrupts.
 		 */
 		hpaddr->hpcs1 = HP_RTC|HP_GO;
-		HPWAIT(mi, hpaddr);
+		(void)HPWAIT(mi, hpaddr);
 		mbclrattn(mi);
 	}
 	if (mi->mi_tab.b_errcnt && (bp->b_flags & B_ERROR) == 0)
@@ -898,7 +902,9 @@ hpecc(mi, flag)
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
 		sn %= st->nsect;
-		mbp->mba_bcr = -(min(512, bp->b_bcount - (int)ptob(npf)));
+		bcr = bp->b_bcount - (int)ptob(npf);
+		bcr = MIN(bcr, 512);
+		mbp->mba_bcr = -bcr;
 #ifdef HPBDEBUG
 		if (hpbdebug)
 		log(LOG_DEBUG, "revector to cn %d tn %d sn %d\n", cn, tn, sn);

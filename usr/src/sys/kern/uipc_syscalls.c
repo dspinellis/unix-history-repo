@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_syscalls.c	6.14 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -275,9 +275,9 @@ free3:
 	fp1->f_count = 0;
 	u.u_ofile[sv[0]] = 0;
 free2:
-	soclose(so2);
+	(void)soclose(so2);
 free:
-	soclose(so1);
+	(void)soclose(so1);
 }
 
 sendto()
@@ -700,9 +700,9 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
-	soclose(wso);
+	(void)soclose(wso);
 free:
-	soclose(rso);
+	(void)soclose(rso);
 }
 
 /*

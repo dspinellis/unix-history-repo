@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ec.c	6.17 (Berkeley) %G%
+ *	@(#)if_ec.c	6.18 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -858,8 +858,8 @@ ecioctl(ifp, cmd, data)
 				 * so reset everything
 				 */
 				ifp->if_flags &= ~IFF_RUNNING; 
-				bcopy(ina->x_host.c_host, es->es_addr,
-					sizeof(es->es_addr));
+				bcopy((caddr_t)ina->x_host.c_host,
+				    (caddr_t)es->es_addr, sizeof(es->es_addr));
 			}
 			ecinit(ifp->if_unit); /* does ec_setaddr() */
 			break;

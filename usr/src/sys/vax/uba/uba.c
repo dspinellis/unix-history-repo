@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.9 (Berkeley) %G%
+ *	@(#)uba.c	6.10 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -30,6 +30,8 @@
 char	ubasr_bits[] = UBASR_BITS;
 #endif
 
+#define	spluba	spl7		/* IPL 17 */
+
 /*
  * Do transfer on device argument.  The controller
  * and uba involved are implied by the device.
@@ -51,7 +53,7 @@ ubago(ui)
 	register int s, unit;
 
 	uh = &uba_hd[um->um_ubanum];
-	s = spl6();
+	s = spluba();
 	if (um->um_driver->ud_xclu && uh->uh_users > 0 || uh->uh_xclu)
 		goto rwait;
 	um->um_ubinfo = ubasetup(um->um_ubanum, um->um_tab.b_actf->b_actf,
@@ -125,7 +127,7 @@ ubasetup(uban, bp, flags)
 	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
-	a = spl6();
+	a = spluba();
 	while ((reg = rmalloc(uh->uh_map, (long)npf)) == 0) {
 		if (flags & UBA_CANTWAIT) {
 			splx(a);
@@ -145,7 +147,7 @@ ubasetup(uban, bp, flags)
 	}
 	bdp = 0;
 	if (flags & UBA_NEEDBDP) {
-		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
+		while ((bdp = ffs((long)uh->uh_bdpfree)) == 0) {
 			if (flags & UBA_CANTWAIT) {
 				rmfree(uh->uh_map, (long)npf, (long)reg);
 				splx(a);
@@ -217,7 +219,7 @@ ubarelse(uban, amr)
 	 * Carefully see if we should release the space, since
 	 * it may be released asynchronously at uba reset time.
 	 */
-	s = spl6();
+	s = spluba();
 	mr = *amr;
 	if (mr == 0) {
 		/*
@@ -331,7 +333,7 @@ ubareset(uban)
 	register struct uba_hd *uh = &uba_hd[uban];
 	int s;
 
-	s = spl6();
+	s = spluba();
 	uh->uh_users = 0;
 	uh->uh_zvcnt = 0;
 	uh->uh_xclu = 0;
@@ -445,7 +447,7 @@ ubaerror(uban, uh, ipl, uvec, uba)
 		return;
 	}
 	sr = uba->uba_sr;
-	s = spl7();
+	s = spluba();
 	printf("uba%d: uba error sr=%b fmer=%x fubar=%o\n",
 	    uban, uba->uba_sr, ubasr_bits, uba->uba_fmer, 4*uba->uba_fubar);
 	splx(s);
@@ -533,7 +535,7 @@ ubamem(uban, addr, npg, doalloc)
 	int s;
 
 	a = (addr >> 9) + 1;
-	s = spl6();
+	s = spluba();
 	if (doalloc)
 		a = rmget(uh->uh_map, npg, a);
 	else

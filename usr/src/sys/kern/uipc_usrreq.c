@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.20 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -195,7 +195,7 @@ uipc_usrreq(so, req, m, nam, rights)
 			 * Wake up readers.
 			 */
 			if (rights)
-				sbappendrights(rcv, m, rights);
+				(void)sbappendrights(rcv, m, rights);
 			else
 				sbappend(rcv, m);
 			snd->sb_mbmax -=

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	6.7 (Berkeley) %G%
+ *	@(#)subr_log.c	6.8 (Berkeley) %G%
  */
 
 /*
@@ -94,7 +94,7 @@ logread(dev, uio)
 		l = msgbuf.msg_bufx - msgbuf.msg_bufr;
 		if (l < 0)
 			l = MSG_BSIZE - msgbuf.msg_bufr;
-		l = min(l, uio->uio_resid);
+		l = MIN(l, uio->uio_resid);
 		if (l == 0)
 			break;
 		error = uiomove((caddr_t)&msgbuf.msg_bufc[msgbuf.msg_bufr],

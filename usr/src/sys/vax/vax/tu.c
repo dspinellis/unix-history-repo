@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	6.6 (Berkeley) %G%
+ *	@(#)tu.c	6.7 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -46,7 +46,7 @@ int	tudebug;	/* printd */
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
 #define WRV     02              /* bit in minor dev => write w. read verify */
 #define NTUQ    2               /* # of blocks which can be queued up */
-#define	TUIPL	((cpu == VAX_750) ? 0x17 : 0x14)
+#define	spltu()	((cpu == VAX_750) ? spl7() : spl4())
 
 #ifndef MRSP
 #define MRSP (cpu != VAX_750)
@@ -113,7 +113,7 @@ tuopen(dev, flag)
 	if (tutimer++ == 0)
 		timeout(tuwatch, (caddr_t)0, hz);
 
-	s = splx(TUIPL);
+	s = spltu();
 	tu.tu_dopen[minor(dev)&DNUM]++;
 	/*
 	 * If the cassette's already initialized,
@@ -157,7 +157,7 @@ tuclose(dev, flag)
 	int s, unit = minor(dev);
 	struct buf *bp, *last = NULL;
 
-	s = splx(TUIPL);
+	s = spltu();
 	while (tu_pcnt[unit])
 		sleep(&tu_pcnt[unit], PRIBIO);
 	/*
@@ -186,7 +186,7 @@ tuclose(dev, flag)
 tuwake(bp)
 	struct buf *bp;
 {
-	wakeup(bp);
+	wakeup((caddr_t)bp);
 }
 
 /*
@@ -225,7 +225,7 @@ tustrategy(bp)
 	if ((bp->b_flags&B_READ) == 0)
 		tu_pee(&tu_pcnt[minor(bp->b_dev)&DNUM]);
 	bp->av_forw = NULL;
-	s = splx(TUIPL);
+	s = spltu();
 	if (tutab.b_actf == NULL)
 		tutab.b_actf = bp;
 	else
@@ -246,7 +246,7 @@ tustart()
 
 	if ((bp = tutab.b_actf) == NULL)
 		return;
-	s = splx(TUIPL);
+	s = spltu();
 	if (tu.tu_state != TUS_IDLE) {
 		tureset();
 		splx(s);
@@ -331,7 +331,7 @@ turintr()
 			tudata.pk_flag = TUF_DATA;
 			tudata.pk_mcount = MIN(128, tu.tu_count);
 			tudata.pk_chksum =
-			    tuchk(*((short *)&tudata), (caddr_t)tu.tu_addr,
+			    tuchk(*((short *)&tudata), (u_short *)tu.tu_addr,
 				(int)tudata.pk_mcount);
 			tu.tu_state = TUS_SENDH;
 			tu.tu_wbptr = (u_char *)&tudata;
@@ -638,7 +638,7 @@ tuchk(word, cp, n)
 #else
 tuchk(word0, wp, n)
 	register int word0;	/* r11 */
-	register char *wp;	/* r10 */
+	register u_short *wp;	/* r10 */
 	register int n;		/* r9 */
 {
 	asm("loop:");
@@ -676,7 +676,7 @@ tuwatch()
 		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
 		tu.tu_addr, tu.tu_count);
 #endif
-	s = splx(TUIPL);
+	s = spltu();
 	tu.tu_flag = 0;
 	(void) mfpr(CSRD);
 	mtpr(CSRS, IE);		/* in case we were flushing */
@@ -706,7 +706,7 @@ tu_pee(cp)
 {
 	register int s;
 
-	s = splx(TUIPL);
+	s = spltu();
 	if (++(*cp) > NTUQ)
 		sleep(cp, PRIBIO);
 	splx(s);
@@ -717,7 +717,7 @@ tu_vee(cp)
 {
 	register int s;
 
-	s = splx(TUIPL);
+	s = spltu();
 	if (--(*cp) <= NTUQ)
 		wakeup(cp);
 	splx(s);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	6.12 (Berkeley) %G%
+ *	@(#)ip_output.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -235,7 +235,7 @@ ip_insertoptions(m, opt, phlen)
 	register struct ipoption *p = mtod(opt, struct ipoption *);
 	struct mbuf *n;
 	register struct ip *ip = mtod(m, struct ip *);
-	int optlen;
+	unsigned optlen;
 
 	optlen = opt->m_len - sizeof(p->ipopt_dst);
 	if (p->ipopt_dst.s_addr)
@@ -257,7 +257,7 @@ ip_insertoptions(m, opt, phlen)
 		ovbcopy((caddr_t)ip, mtod(m, caddr_t), sizeof(struct ip));
 	}
 	ip = mtod(m, struct ip *);
-	bcopy((caddr_t)p->ipopt_list, (caddr_t)(ip + 1), optlen);
+	bcopy((caddr_t)p->ipopt_list, (caddr_t)(ip + 1), (unsigned)optlen);
 	*phlen = sizeof(struct ip) + optlen;
 	ip->ip_len += optlen;
 	return (m);
@@ -333,7 +333,7 @@ ip_ctloutput(op, so, level, optname, m)
 				(*m)->m_off = inp->inp_options->m_off;
 				(*m)->m_len = inp->inp_options->m_len;
 				bcopy(mtod(inp->inp_options, caddr_t),
-				    mtod(*m, caddr_t), (*m)->m_len);
+				    mtod(*m, caddr_t), (unsigned)(*m)->m_len);
 			} else
 				(*m)->m_len = 0;
 			break;
@@ -344,7 +344,7 @@ ip_ctloutput(op, so, level, optname, m)
 		break;
 	}
 	if (op == PRCO_SETOPT)
-		m_free(*m);
+		(void)m_free(*m);
 	return (error);
 }
 
@@ -363,14 +363,14 @@ ip_pcbopts(pcbopt, m)
 
 	/* turn off any old options */
 	if (*pcbopt)
-		m_free(*pcbopt);
+		(void)m_free(*pcbopt);
 	*pcbopt = 0;
 	if (m == (struct mbuf *)0 || m->m_len == 0) {
 		/*
 		 * Only turning off any previous options.
 		 */
 		if (m)
-			m_free(m);
+			(void)m_free(m);
 		return (0);
 	}
 
@@ -393,7 +393,7 @@ ip_pcbopts(pcbopt, m)
 	cnt = m->m_len;
 	m->m_len += sizeof(struct in_addr);
 	cp = mtod(m, u_char *) + sizeof(struct in_addr);
-	ovbcopy(mtod(m, caddr_t), cp, cnt);
+	ovbcopy(mtod(m, caddr_t), (caddr_t)cp, (unsigned)cnt);
 	bzero(mtod(m, caddr_t), sizeof(struct in_addr));
 
 	for (; cnt > 0; cnt -= optlen, cp += optlen) {
@@ -431,14 +431,16 @@ ip_pcbopts(pcbopt, m)
 			/*
 			 * Move first hop before start of options.
 			 */
-			bcopy(&cp[IPOPT_OFFSET+1], mtod(m, caddr_t),
+			bcopy((caddr_t)&cp[IPOPT_OFFSET+1], mtod(m, caddr_t),
 			    sizeof(struct in_addr));
 			/*
 			 * Then copy rest of options back
 			 * to close up the deleted entry.
 			 */
-			ovbcopy(&cp[IPOPT_OFFSET+1] + sizeof(struct in_addr),
-			    &cp[IPOPT_OFFSET+1], cnt + sizeof(struct in_addr));
+			ovbcopy((caddr_t)(&cp[IPOPT_OFFSET+1] +
+			    sizeof(struct in_addr)),
+			    (caddr_t)&cp[IPOPT_OFFSET+1],
+			    (unsigned)cnt + sizeof(struct in_addr));
 			break;
 		}
 	}
@@ -446,6 +448,6 @@ ip_pcbopts(pcbopt, m)
 	return (0);
 
 bad:
-	m_free(m);
+	(void)m_free(m);
 	return (EINVAL);
 }

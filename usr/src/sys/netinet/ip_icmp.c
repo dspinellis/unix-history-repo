@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.15 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,7 +48,7 @@ icmp_error(oip, type, code, ifp, dest)
 	register struct icmp *icp;
 	struct mbuf *m;
 	struct ip *nip;
-	int icmplen;
+	unsigned icmplen;
 
 #ifdef ICMPPRINTFS
 	if (icmpprintfs)
@@ -373,7 +373,7 @@ icmp_reflect(ip, ifp)
 	}
 	icmp_send(ip, opts);
 	if (opts)
-		m_free(opts);
+		(void)m_free(opts);
 }
 
 struct in_ifaddr *

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	6.12 (Berkeley) %G%
+ *	@(#)in.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,6 +101,7 @@ in_netof(in)
 /*
  * Return the host portion of an internet address.
  */
+u_long
 in_lnaof(in)
 	struct in_addr in;
 {
@@ -129,9 +130,15 @@ in_lnaof(in)
 	return (host);
 }
 
+#ifndef SUBNETSARELOCAL
+#define	SUBNETSARELOCAL	1
+#endif
+int subnetsarelocal = SUBNETSARELOCAL;
 /*
  * Return 1 if an internet address is for a ``local'' host
- * (one to which we have a connection through a local logical net).
+ * (one to which we have a connection).  If subnetsarelocal
+ * is true, this includes other subnets of the local net.
+ * Otherwise, it includes only the directly-connected (sub)nets.
  */
 in_localaddr(in)
 	struct in_addr in;
@@ -148,7 +155,7 @@ in_localaddr(in)
 		net = i & IN_CLASSC_NET;
 
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (net == ia->ia_net)
+		if (net == subnetsarelocal ? ia->ia_net : ia->ia_subnet)
 			return (1);
 	return (0);
 }

@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.3 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.4 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -622,20 +622,7 @@ tmscpintr (d)
 	 */
 	if (tm->tmscp_ca.ca_bdp)
 		{
-		/*
-		 * THIS IS A KLUDGE.
-		 * Maybe we should change the entire
-		 * UBA interface structure.
-		 */
-		int s = spl6();
-		i = um->um_ubinfo;
-#		ifdef DEBUG
-		printd("tmscp: purge bdp %d\n", tm->tmscp_ca.ca_bdp);
-#		endif		
-		um->um_ubinfo = tm->tmscp_ca.ca_bdp<<28;
-		ubapurge(um);
-		um->um_ubinfo = i;
-		(void) splx(s);
+		UBAPURGE(um->um_hd->uh_uba, tm->tmscp_ca.ca_bdp);
 		tm->tmscp_ca.ca_bdp = 0;
 		tmscpaddr->tmscpsa = 0;      /* signal purge complete */
 		}
@@ -668,7 +655,7 @@ tmscpintr (d)
 		tm->tmscp_ca.ca_cmdint = 0;
 		}
     	if(tmscp_cp_wait)
-		wakeup(&tmscp_cp_wait);
+		wakeup((caddr_t)&tmscp_cp_wait);
     	(void) tmscpstart(um);
 }
 
@@ -741,7 +728,7 @@ tmscpopen(dev, flag)
 		while(0 ==(mp = tmscpgetcp(um)))
 			{
 			tmscp_cp_wait++;
-			sleep(&tmscp_cp_wait,PSWP+1);
+			sleep((caddr_t)&tmscp_cp_wait,PSWP+1);
 			tmscp_cp_wait--;
 			}
 		(void) splx(s);
@@ -1051,7 +1038,7 @@ tmscpstart(um)
 		    minor(bp->b_dev)&03, bp->b_blkno);
 		log(TMS_PRI, "tmscp%d: sa 0%o, state %d\n",um->um_ctlr,
 				tmscpaddr->tmscpsa&0xffff, sc->sc_state);
-		tmscpinit(um->um_ctlr);
+		(void)tmscpinit(um->um_ctlr);
 		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE TMSCPRESET */
 		break;
 		}
@@ -1296,7 +1283,7 @@ tmscpstart(um)
 	if (tmscpaddr->tmscpsa&TMSCP_ERR)
 		{
 		printf("tmscp%d: fatal error (0%o)\n", um->um_ctlr, tmscpaddr->tmscpsa&0xffff);
-		tmscpinit(um->um_ctlr);
+		(void)tmscpinit(um->um_ctlr);
 		break;
 		}
     }   /* end for */
@@ -1440,7 +1427,7 @@ tmscprsp(um, tm, sc, i)
 			}
 		if(mp->mscp_cmdref!=NULL)
 			/* Seems to get lost sometimes in uda */
-			wakeup((caddr_t *) mp->mscp_cmdref);
+			wakeup((caddr_t)mp->mscp_cmdref);
 		break;
 	/*
 	 * The AVAILABLE ATTENTION message occurs when the
@@ -2063,7 +2050,7 @@ tmscpreset (uban)
 				dp->b_active = 1;
 				}
 			}
-		tmscpinit(d);
+		(void)tmscpinit(d);
 		}
 }
 

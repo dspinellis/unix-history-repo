@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.19 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.20 (Berkeley) %G%
  */
 
 /*
@@ -244,14 +244,14 @@ ptcread(dev, uio)
 	for (;;) {
 		if (tp->t_state&TS_ISOPEN) {
 			if (pti->pt_flags&PF_PKT && pti->pt_send) {
-				error = ureadc(pti->pt_send, uio);
+				error = ureadc((int)pti->pt_send, uio);
 				if (error)
 					return (error);
 				pti->pt_send = 0;
 				return (0);
 			}
 			if (pti->pt_flags&PF_UCNTL && pti->pt_ucntl) {
-				error = ureadc(pti->pt_ucntl, uio);
+				error = ureadc((int)pti->pt_ucntl, uio);
 				if (error)
 					return (error);
 				pti->pt_ucntl = 0;

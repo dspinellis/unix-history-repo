@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.18 (Berkeley) %G%
+ *	@(#)uda.c	6.19 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -163,8 +163,6 @@ struct  buf udutab[NRA];
 struct  buf udwtab[NUDA];               /* I/O wait queue, per controller */
 
 
-int     nNRA = NRA;
-int     nNUDA = NUDA;
 int     udamicro[NUDA];         /* to store microcode level */
 int     udaburst[NUDA] = { 0 };	/* DMA burst size, 0 is default */
 
@@ -342,7 +340,7 @@ udopen(dev, flag)
 	extern quota;
 	
 	unit = udunit(dev);
-	if (unit >= nNRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
+	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &uda_softc[ui->ui_ctlr];
 	s = spl5();
@@ -371,7 +369,7 @@ udopen(dev, flag)
 		s = spl5();
 		while(0 ==(mp = udgetcp(um))){
 			uda_cp_wait++;
-			sleep(&uda_cp_wait,PSWP+1);
+			sleep((caddr_t)&uda_cp_wait,PSWP+1);
 			uda_cp_wait--;
 		}
 		mp->mscp_opcode = M_OP_ONLIN;
@@ -460,7 +458,7 @@ udstrategy(bp)
 
 	sz = (bp->b_bcount+511) >> 9;
 	unit = udunit(bp->b_dev);
-	if (unit >= nNRA) {
+	if (unit >= NRA) {
 		bp->b_error = ENXIO;
 		goto bad;
 	}
@@ -577,7 +575,7 @@ loop:
 	if ((udaddr->udasa&UDA_ERR) || sc->sc_state != S_RUN) {
 		harderr(bp, "ra");
 		mprintf("Uda%d udasa %o, state %d\n",um->um_ctlr , udaddr->udasa&0xffff, sc->sc_state);
-		udinit(um->um_ctlr);
+		(void)udinit(um->um_ctlr);
 		/* SHOULD REQUEUE OUTSTANDING REQUESTS, LIKE UDRESET */
 		return (0);
 	}
@@ -790,21 +788,10 @@ udintr(d)
 	 * Check for a buffer purge request.
 	 */
 	if (ud->uda_ca.ca_bdp) {
-		/*
-		 * THIS IS A KLUDGE.
-		 * Maybe we should change the entire
-		 * UBA interface structure.
-		 */
-		int s = spl6();		/* was spl7 but I don't like turning */
-					/* off machine checks */
-		i = um->um_ubinfo;
 #ifdef	DEBUG
 		printd("uda: purge bdp %d\n", ud->uda_ca.ca_bdp);
 #endif		
-		um->um_ubinfo = ud->uda_ca.ca_bdp<<28;
-		ubapurge(um);
-		um->um_ubinfo = i;
-		(void) splx(s);
+		UBAPURGE(um->um_hd->uh_uba, ud->uda_ca.ca_bdp);
 		ud->uda_ca.ca_bdp = 0;
 		udaddr->udasa = 0;      /* signal purge complete */
 	}
@@ -834,7 +821,7 @@ udintr(d)
 		ud->uda_ca.ca_cmdint = 0;
 	}
 	if(uda_cp_wait)
-		wakeup(&uda_cp_wait);
+		wakeup((caddr_t)&uda_cp_wait);
 	(void) udstart(um);
 }
 
@@ -959,7 +946,7 @@ udrsp(um, ud, sc, i)
 			}
 		}
 		if(mp->mscp_cmdref!=NULL){/* Seems to get lost sometimes */
-			wakeup((caddr_t *) mp->mscp_cmdref);
+			wakeup((caddr_t)mp->mscp_cmdref);
 		}
 		break;
 
@@ -1176,7 +1163,7 @@ udread(dev, uio)
 {
 	register int unit = udunit(dev);
 
-	if (unit >= nNRA)
+	if (unit >= NRA)
 		return (ENXIO);
 	return (physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys, uio));
 }
@@ -1187,7 +1174,7 @@ udwrite(dev, uio)
 {
 	register int unit = udunit(dev);
 
-	if (unit >= nNRA)
+	if (unit >= NRA)
 		return (ENXIO);
 	return (physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys, uio));
 }
@@ -1211,7 +1198,7 @@ udreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		uda_softc[d].sc_state = S_IDLE;
 		uda_softc[d].sc_mapped = 0;	/* Rich */
-		for (unit = 0; unit < nNRA; unit++) {
+		for (unit = 0; unit < NRA; unit++) {
 			if ((ui = uddinfo[unit]) == 0)
 				continue;
 			if (ui->ui_alive == 0 || ui->ui_mi != um)
@@ -1245,7 +1232,7 @@ udreset(uban)
 				dp->b_active = 1;
 			}
 		}
-		udinit(d);
+		(void)udinit(d);
 	}
 }
 
@@ -1274,7 +1261,7 @@ uddump(dev)
 	register int i;
 	struct  size    *rasizes;
 	unit = udunit(dev);
-	if (unit >= nNRA)
+	if (unit >= NRA)
 		return (ENXIO);
 #define phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
 	ui = phys(struct uba_device *, uddinfo[unit]);
@@ -1392,7 +1379,7 @@ udsize(dev)
 	struct uba_device *ui;
 	struct	size	*rasizes;
 
-	if (unit >= nNRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0
+	if (unit >= NRA || (ui = uddinfo[unit]) == 0 || ui->ui_alive == 0
 		 || ui->ui_flags == 0)
 		return (-1);
 	rasizes = ra_info[ui->ui_unit].ra_sizes;

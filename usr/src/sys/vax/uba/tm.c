@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	6.9 (Berkeley) %G%
+ *	@(#)tm.c	6.10 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -250,7 +250,7 @@ get:
 	sc->sc_lastiow = 0;
 	sc->sc_dens = dens;
 	sc->sc_ttyp = u.u_ttyp;
-	s = spl6();
+	s = splclock();
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
 		sc->sc_tact = 1;

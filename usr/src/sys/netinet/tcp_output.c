@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.13 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -213,7 +213,7 @@ send:
 	 */
 	opt = NULL;
 	if (tp->t_state < TCPS_ESTABLISHED && (tp->t_flags & TF_NOOPT) == 0) {
-		int mss;
+		u_short mss;
 
 		mss = MIN(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
 		if (mss > IP_MSS - sizeof(struct tcpiphdr)) {
@@ -256,7 +256,7 @@ send:
 		win = (int)(tp->rcv_adv - tp->rcv_nxt);
 	ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
-		ti->ti_urp = htons(tp->snd_up - tp->snd_nxt);
+		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
 		ti->ti_flags |= TH_URG;
 	} else
 		/*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_lookup.c	6.27 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	6.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -785,7 +785,7 @@ haveino:
 		ovbcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
 		u.u_error =
 		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, (int)dp->i_size,
-			0, 1, (int *)0);
+			(off_t)0, 1, (int *)0);
 		if (u.u_error)
 			goto bad2;
 		cp = nbp->b_un.b_addr;
@@ -1017,8 +1017,7 @@ dirremove(ndp)
 		/*
 		 * Collapse new free space into previous entry.
 		 */
-		bp = blkatoff(dp, (int)(ndp->ni_offset - ndp->ni_count),
-			(char **)&ep);
+		bp = blkatoff(dp, ndp->ni_offset - ndp->ni_count, (char **)&ep);
 		if (bp == 0)
 			return (0);
 		ep->d_reclen += ndp->ni_dent.d_reclen;

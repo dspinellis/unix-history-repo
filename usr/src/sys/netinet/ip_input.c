@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.19 (Berkeley) %G%
+ *	@(#)ip_input.c	6.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -567,7 +567,7 @@ ip_dooptions(ip, ifp)
 			/*
 			 * locate outgoing interface
 			 */
-			bcopy(cp + off, (caddr_t)&ipaddr.sin_addr,
+			bcopy((caddr_t)(cp + off), (caddr_t)&ipaddr.sin_addr,
 			    sizeof(ipaddr.sin_addr));
 			if ((opt == IPOPT_SSRR &&
 			    in_iaonnetof(in_netof(ipaddr.sin_addr)) == 0) ||
@@ -577,8 +577,8 @@ ip_dooptions(ip, ifp)
 				goto bad;
 			}
 			ip->ip_dst = ipaddr.sin_addr;
-			bcopy(&(IA_SIN(ia)->sin_addr), cp + off,
-				sizeof(struct in_addr));
+			bcopy((caddr_t)&(IA_SIN(ia)->sin_addr),
+			    (caddr_t)(cp + off), sizeof(struct in_addr));
 			cp[IPOPT_OFFSET] += sizeof(struct in_addr);
 			break;
 
@@ -593,7 +593,7 @@ ip_dooptions(ip, ifp)
 			off--;			/* 0 origin */
 			if (off > optlen - sizeof(struct in_addr))
 				break;
-			bcopy(cp + off, (caddr_t)&ipaddr.sin_addr,
+			bcopy((caddr_t)(cp + off), (caddr_t)&ipaddr.sin_addr,
 			    sizeof(ipaddr.sin_addr));
 			/*
 			 * locate outgoing interface
@@ -603,8 +603,8 @@ ip_dooptions(ip, ifp)
 				code = ICMP_UNREACH_SRCFAIL;
 				goto bad;
 			}
-			bcopy(&(IA_SIN(ia)->sin_addr), cp + off,
-				sizeof(struct in_addr));
+			bcopy((caddr_t)&(IA_SIN(ia)->sin_addr),
+			    (caddr_t)(cp + off), sizeof(struct in_addr));
 			cp[IPOPT_OFFSET] += sizeof(struct in_addr);
 			break;
 
@@ -699,10 +699,10 @@ ip_rtaddr(dst)
  * to be picked up later by ip_srcroute if the receiver is interested.
  */
 save_rte(option, dst)
-	caddr_t option;
+	u_char *option;
 	struct in_addr dst;
 {
-	int olen;
+	unsigned olen;
 	extern ipprintfs;
 
 	olen = option[IPOPT_OLEN];
@@ -711,7 +711,7 @@ save_rte(option, dst)
 			printf("save_rte: olen %d\n", olen);
 		return;
 	}
-	bcopy(option, (caddr_t)ip_srcrt.srcopt, olen);
+	bcopy((caddr_t)option, (caddr_t)ip_srcrt.srcopt, olen);
 	ip_nhops = (olen - IPOPT_OFFSET - 1) / sizeof(struct in_addr);
 	ip_srcrt.route[ip_nhops++] = dst;
 }

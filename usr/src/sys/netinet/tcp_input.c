@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.20 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -379,7 +379,7 @@ tcp_input(m0)
 		(void) m_free(am);
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
-			tp = tcp_drop(tp);
+			tp = tcp_drop(tp, ENOBUFS);
 			dropsocket = 0;		/* socket is already gone */
 			goto drop;
 		}
@@ -648,7 +648,7 @@ trimthenstep6:
 			tp->snd_cwnd = MIN(11 * tp->snd_cwnd / 10, 65535);
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
-			sbdrop(&so->so_snd, so->so_snd.sb_cc);
+			sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
 		} else {
 			sbdrop(&so->so_snd, acked);
 			tp->snd_wnd -= acked;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.9 (Berkeley) %G%
+ *	@(#)ns_output.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,7 +42,7 @@ ns_output(m0, ro, flags)
 
 	if (ns_hold_output) {
 		if (ns_lastout) {
-			m_free(ns_lastout);
+			(void)m_free(ns_lastout);
 		}
 		ns_lastout = m_copy(m0, 0, (int)M_COPYALL);
 	}

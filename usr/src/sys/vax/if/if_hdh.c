@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	6.5 (Berkeley) %G% */
+/*	@(#)if_hdh.c	6.6 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -83,7 +83,7 @@ Revision History:
 #include "if_hdhreg.h"
 #include "if_uba.h"
 
-int     hdhprobe(), hdhattach(), hdhrint(), hdhxint();
+int     hdhprobe(), hdhattach(), hdhintr();
 struct  uba_device *hdhinfo[NHDH];
 u_short hdhstd[] = { 0 };
 struct  uba_driver hdhdriver =
@@ -174,6 +174,7 @@ caddr_t reg;
 	struct hdhregs *addr = (struct hdhregs *)reg;
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
+	hdhintr(0);
 #endif
 
 	br = 0x15;			/* priority 21 (5 on UNIBUS) */

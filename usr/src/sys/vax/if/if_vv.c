@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.17 (Berkeley) %G%
+ *	@(#)if_vv.c	6.18 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -106,7 +106,7 @@ int	vv_tracehdr = 0;	/* 1 => trace headers (slowly!!) */
  */
 int	vvprobe(), vvattach(), vvreset(), vvinit();
 int	vvidentify(), vvstart(), vvxint(), vvwatchdog();
-int	vvrint(), vvoutput(), vvioctl(), vvsetaddr();
+int	vvrint(), vvoutput(), vvioctl();
 struct	uba_device *vvinfo[NVV];
 u_short vvstd[] = { 0 };
 struct	uba_driver vvdriver =
@@ -423,7 +423,7 @@ gotit:			/* we got something--is it any good? */
 				UBAPURGE(vs->vs_ifuba.ifu_uba,
 				    vs->vs_ifuba.ifu_r.ifrw_bdp);
 			m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header),
-				0, 0);
+				0, &vs->vs_if);
 			if (m != NULL)
 				m_freem(m);
 			

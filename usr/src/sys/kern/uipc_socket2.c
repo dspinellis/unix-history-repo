@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket2.c	6.14 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -554,7 +554,7 @@ sbflush(sb)
 	if (sb->sb_flags & SB_LOCK)
 		panic("sbflush");
 	while (sb->sb_mbcnt)
-		sbdrop(sb, sb->sb_cc);
+		sbdrop(sb, (int)sb->sb_cc);
 	if (sb->sb_cc || sb->sb_mbcnt || sb->sb_mb)
 		panic("sbflush 2");
 }
@@ -562,7 +562,6 @@ sbflush(sb)
 /*
  * Drop data from (the front of) a sockbuf.
  */
-struct mbuf *
 sbdrop(sb, len)
 	register struct sockbuf *sb;
 	register int len;
@@ -600,14 +599,12 @@ sbdrop(sb, len)
 		m->m_act = next;
 	} else
 		sb->sb_mb = next;
-	return (sb->sb_mb);
 }
 
 /*
  * Drop a record off the front of a sockbuf
  * and move the next record to the front.
  */
-struct mbuf *
 sbdroprecord(sb)
 	register struct sockbuf *sb;
 {
@@ -621,5 +618,4 @@ sbdroprecord(sb)
 			MFREE(m, mn);
 		} while (m = mn);
 	}
-	return (sb->sb_mb);
 }

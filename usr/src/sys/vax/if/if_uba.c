@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	6.10 (Berkeley) %G%
+ *	@(#)if_uba.c	6.11 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -59,7 +59,7 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 	if (ifr[0].ifrw_addr)
 		cp = ifr[0].ifrw_addr - off;
 	else {
-		cp = m_clalloc((nr + nw) * ncl, MPG_SPACE);
+		cp = m_clalloc((nr + nw) * ncl, MPG_SPACE, M_DONTWAIT);
 		if (cp == 0)
 			return (0);
 		p = cp;
@@ -276,7 +276,7 @@ rcv_xmtbuf(ifw)
 	int t;
 	char *cp;
 
-	while (i = ffs(ifw->ifw_xswapd)) {
+	while (i = ffs((long)ifw->ifw_xswapd)) {
 		cp = ifw->ifw_base + i * CLBYTES;
 		i--;
 		ifw->ifw_xswapd &= ~(1<<i);
@@ -287,7 +287,7 @@ rcv_xmtbuf(ifw)
 		if (m == NULL)
 			panic("rcv_xmtbuf");
 		bcopy(mtod(m, caddr_t), cp, CLBYTES);
-		m_free(m);
+		(void) m_free(m);
 		*mprev = NULL;
 		for (t = 0; t < CLSIZE; t++) {
 			ifw->ifw_mr[i] = ifw->ifw_wmap[i];
@@ -363,7 +363,7 @@ if_ubaput(ifu, ifw, m)
 	cc = cp - ifw->ifw_addr;
 	x = ((cc - ifu->iff_hlen) + CLBYTES - 1) >> CLSHIFT;
 	ifw->ifw_xswapd &= ~xswapd;
-	while (i = ffs(ifw->ifw_xswapd)) {
+	while (i = ffs((long)ifw->ifw_xswapd)) {
 		i--;
 		if (i >= x)
 			break;
