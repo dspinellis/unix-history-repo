@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboot.c	7.5 (Berkeley) %G%
+ *	@(#)mkboot.c	8.1 (Berkeley) %G%
  */
 
 #ifndef lint

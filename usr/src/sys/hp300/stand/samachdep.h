@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)samachdep.h	7.4 (Berkeley) %G%
+ *	@(#)samachdep.h	8.1 (Berkeley) %G%
  */
 
 #define	NHPIB		4

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.20 92/12/21$
  *
- *	@(#)rd.c	7.8 (Berkeley) %G%
+ *	@(#)rd.c	8.1 (Berkeley) %G%
  */
 
 /*
