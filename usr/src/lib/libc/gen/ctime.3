@@ -5,7 +5,7 @@
 .\" Arthur Olson.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ctime.3	6.15 (Berkeley) %G%
+.\"     @(#)ctime.3	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CTIME 3
@@ -21,12 +21,12 @@
 .Tn ASCII
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
+.Fd #include <time.h>
 .Vt extern char *tzname[2];
 .Ft char *
 .Fn ctime "const time_t *clock"
 .Ft double
 .Fn difftime "time_t time1" "time_t time0"
-.Fd #include <time.h>
 .Ft char *
 .Fn asctime "const struct tm *tm"
 .Ft struct tm *

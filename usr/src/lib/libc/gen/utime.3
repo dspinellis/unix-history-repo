@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)utime.3	6.4 (Berkeley) %G%
+.\"     @(#)utime.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UTIME 3
@@ -13,6 +13,7 @@
 .Nd set file times
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
+.Fd #include <utime.h>
 .Ft int
 .Fn utime "const char *file" "const struct utimbuf *timep"
 .Sh DESCRIPTION
