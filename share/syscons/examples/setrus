@@ -1,6 +1,6 @@
 #!/bin/sh
 # Load KOI8-R screen mapping.
-syscons -S koi82alt
+syscons -S koi8-r2alt
 # Load Alternate Codes screen font.
 syscons -f 16 alt8x16
 syscons -f 14 alt-8x14
