@@ -1,4 +1,4 @@
-static char *SCCS_ID = "@(#)more.c	4.2 (Berkeley) 3/27/81";
+static	char *sccsid = "@(#)more.c	4.3 (Berkeley) 81/04/02";
 /*
 ** more.c - General purpose tty output filter and file perusal program
 **
