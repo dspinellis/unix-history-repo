@@ -9,20 +9,24 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)swab.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)swab.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
 
 void
 swab(from, to, n)
-	register char *from, *to;
-	register int n;
+	const void *from;
+	void *to;
+	register size_t n;
 {
+	register char *fp, *tp;
 	register unsigned long temp;
 
 	n >>= 1; n++;
-#define	STEP	temp = *from++,*to++ = *from++,*to++ = temp
+	fp = (char *)from;
+	tp = (char *)to;
+#define	STEP	temp = *fp++,*tp++ = *fp++,*tp++ = temp
 	/* round to multiple of 8 */
 	while ((--n) & 07)
 		STEP;

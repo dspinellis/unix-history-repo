@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtok.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtok.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stddef.h>
@@ -14,7 +14,8 @@ static char sccsid[] = "@(#)strtok.c	5.7 (Berkeley) %G%";
 
 char *
 strtok(s, delim)
-	register char *s, *delim;
+	register char *s;
+	register const char *delim;
 {
 	register char *spanp;
 	register int c, sc;
@@ -30,7 +31,7 @@ strtok(s, delim)
 	 */
 cont:
 	c = *s++;
-	for (spanp = delim; (sc = *spanp++) != 0;) {
+	for (spanp = (char *)delim; (sc = *spanp++) != 0;) {
 		if (c == sc)
 			goto cont;
 	}
@@ -47,7 +48,7 @@ cont:
 	 */
 	for (;;) {
 		c = *s++;
-		spanp = delim;
+		spanp = (char *)delim;
 		do {
 			if ((sc = *spanp++) == c) {
 				if (c == 0)

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)strftime.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,15 +32,16 @@ static char *Bfmt[] = {
 
 static size_t gsize;
 static char *pt;
+static int _add(), _conv(), _secs();
 
 size_t
 strftime(s, maxsize, format, t)
 	char *s;
-	char *format;
 	size_t maxsize;
-	struct tm *t;
+	const char *format;
+	const struct tm *t;
 {
-	size_t _fmt();
+	static size_t _fmt();
 
 	pt = s;
 	if ((gsize = maxsize) < 1)

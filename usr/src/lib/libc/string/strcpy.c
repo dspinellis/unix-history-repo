@@ -6,14 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcpy.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)strcpy.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
 
 char *
 strcpy(to, from)
-	register char *to, *from;
+	register char *to;
+	register const char *from;
 {
 	char *save = to;
 
