@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdarg.h	5.4 (Berkeley) %G%
+ *	@(#)stdarg.h	5.5 (Berkeley) %G%
  */
+
+#ifndef _STDARG_H
+#define	_STDARG_H
 
 typedef char *va_list;
 
@@ -20,3 +23,5 @@ typedef char *va_list;
 
 #define	va_start(ap, last) \
 	(ap = ((char *)&(last) + __va_promote(last)))
+
+#endif /* !_STDARG_H */
