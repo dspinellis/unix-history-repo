@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.23 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -61,7 +61,7 @@ fts_open(argv, options, compar)
 		SET(FTS_NOCHDIR);
 
 	/* Allocate/initialize root's parent. */
-	if (!(parent = fts_alloc(sp, "", 0)))
+	if ((parent = fts_alloc(sp, "", 0)) == NULL)
 		goto mem1;
 	parent->fts_level = FTS_ROOTPARENTLEVEL;
 
@@ -89,7 +89,7 @@ fts_open(argv, options, compar)
 				p->fts_info = fts_stat(sp, p, 0);
 		} else {
 			p->fts_link = NULL;
-			if (!root)
+			if (root == NULL)
 				tmp = root = p;
 			else {
 				tmp->fts_link = p;
@@ -105,7 +105,7 @@ fts_open(argv, options, compar)
 	 * finished the node before the root(s); set p->fts_info to FTS_NS
 	 * so that everything about the "current" node is ignored.
 	 */
-	if (!(sp->fts_cur = fts_alloc(sp, "", 0)))
+	if ((sp->fts_cur = fts_alloc(sp, "", 0)) == NULL)
 		goto mem2;
 	sp->fts_cur->fts_link = root;
 	sp->fts_cur->fts_info = FTS_NS;
@@ -221,7 +221,7 @@ fts_read(sp)
 	register char *t;
 
 	/* If finished or unrecoverable error, return NULL. */
-	if (!sp->fts_cur || ISSET(FTS_STOP))
+	if (sp->fts_cur == NULL || ISSET(FTS_STOP))
 		return (NULL);
 
 	/* Set current node pointer. */
@@ -278,7 +278,7 @@ fts_read(sp)
 					p->fts_accpath =
 					    p->fts_parent->fts_accpath;
 			}
-		} else if (!(sp->fts_child = fts_build(sp, BREAD))) {
+		} else if ((sp->fts_child = fts_build(sp, BREAD)) == NULL) {
 			if ISSET(FTS_STOP)
 				return (NULL);
 			if (p->fts_level == FTS_ROOTLEVEL &&
@@ -459,7 +459,7 @@ fts_build(sp, type)
 	 * Open the directory for reading.  If this fails, we're done.
 	 * If being called from fts_read, set the fts_info field.
 	 */
-	if (!(dirp = opendir(cur->fts_accpath))) {
+	if ((dirp = opendir(cur->fts_accpath)) == NULL) {
 		if (type == BREAD)
 			cur->fts_info = FTS_DNR;
 		return (NULL);
@@ -523,7 +523,7 @@ fts_build(sp, type)
 		if (!ISSET(FTS_SEEDOT) && ISDOT(dp->d_name))
 			continue;
 
-		if (!(p = fts_alloc(sp, dp->d_name, (int)dp->d_namlen)))
+		if ((p = fts_alloc(sp, dp->d_name, (int)dp->d_namlen)) == NULL)
 			goto mem1;
 		if (dp->d_namlen > maxlen) {
 			if (!fts_path(sp, (int)dp->d_namlen)) {
@@ -686,8 +686,8 @@ fts_sort(sp, head, nitems)
 	 */
 	if (nitems > sp->fts_nitems) {
 		sp->fts_nitems = nitems + 40;
-		if (!(sp->fts_array =
-		    R(FTSENT *, sp->fts_nitems, sp->fts_array))) {
+		if ((sp->fts_array =
+		    R(FTSENT *, sp->fts_nitems, sp->fts_array)) == NULL) {
 			sp->fts_nitems = 0;
 			return (head);
 		}
