@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.21 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.22 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -668,6 +668,7 @@ doswap()
 	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
 	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
+	swapmap->m_name = "swap";
 	nswap = getw(nl[SNSWAP].n_value);
 	dmmin = getw(nl[SDMMIN].n_value);
 	dmmax = getw(nl[SDMMAX].n_value);
@@ -734,7 +735,7 @@ up(size)
 }
 
 vusize(p)
-struct proc *p;
+	struct proc *p;
 {
 	register int tsz = p->p_tsize / NPTEPG;
 
@@ -743,7 +744,7 @@ struct proc *p;
 }
 
 xdsize(xp)
-struct text *xp;
+	struct text *xp;
 {
 
 	if (xp->x_flag & XPAGI)
