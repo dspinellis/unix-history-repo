@@ -1,4 +1,4 @@
-/* csh.h 4.1 %G% */
+/* csh.h 4.2 %G% */
 
 #include "sh.local.h"
 #ifdef VMUNIX
@@ -397,6 +397,7 @@ char	*globone();
 struct	biltins *isbfunc();
 char	**glob();
 char	*operate();
+int	phup();
 int	pintr();
 int	pchild();
 char	*putn();
