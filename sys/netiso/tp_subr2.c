@@ -62,8 +62,8 @@ SOFTWARE.
 /* 
  * ARGO TP
  *
- * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
- * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
+ * $Header: /a/cvs/386BSD/src/sys/netiso/tp_subr2.c,v 1.1.1.1 1993/06/12 14:57:17 rgrimes Exp $
+ * $Source: /a/cvs/386BSD/src/sys/netiso/tp_subr2.c,v $
  *
  * Some auxiliary routines:
  * 	tp_protocol_error: required by xebec- called when a combo of state,
@@ -636,6 +636,10 @@ done:
 	return error;
 }
 
+#ifndef TPCONS
+static
+pk_flowcontrol() {}
+#endif
 
 /* class zero version */
 void
@@ -698,10 +702,6 @@ register struct tp_pcb *tpcb;
 			pk_flowcontrol(lcp, 0, 0);
 	}
 }
-#ifndef TPCONS
-static
-pk_flowcontrol() {}
-#endif
 
 #ifdef TP_PERF_MEAS
 /*
