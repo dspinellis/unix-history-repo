@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -304,9 +304,11 @@ recipient(a, sendq, e)
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
 			}
-			if (!bitset(QPRIMARY, q->q_flags))
+			if (!bitset(QPRIMARY, q->q_flags) ||
+			    bitset(QSELFREF, q->q_flags))
 			{
-				if (!bitset(QDONTSEND, a->q_flags))
+				if (!bitset(QDONTSEND, a->q_flags) &&
+				    !bitset(QSELFREF, q->q_flags))
 					message("duplicate suppressed");
 				q->q_flags |= a->q_flags;
 			}
