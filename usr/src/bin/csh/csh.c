@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -119,6 +119,8 @@ main(argc, argv)
 	quitit = 1;
     uid = getuid();
     gid = getgid();
+    euid = geteuid();
+    egid = getegid();
     /*
      * We are a login shell if: 1. we were invoked as -<something> and we had
      * no arguments 2. or we were invoked only with the -l flag
@@ -369,7 +371,7 @@ main(argc, argv)
     intty = isatty(SHIN);
     intty |= intact;
     if (intty || (intact && isatty(SHOUT))) {
-	if (!batch && (uid != geteuid() || gid != getegid())) {
+	if (!batch && (uid != euid || gid != egid)) {
 	    errno = EACCES;
 	    child = 1;		/* So this doesn't return */
 	    stderror(ERR_SYSTEM, "csh", strerror(errno));
@@ -576,6 +578,9 @@ importpath(cp)
 	for (;;) {
 	    if ((c = *dp) == ':' || c == 0) {
 		*dp = 0;
+		if ((*cp != '/' || *cp == '\0') && (euid == 0 || uid == 0)) 
+		    (void) fprintf(csherr,
+	    "Warning: imported path contains relative components\n");
 		pv[i++] = Strsave(*cp ? cp : STRdot);
 		if (c) {
 		    cp = dp + 1;
@@ -1248,7 +1253,8 @@ defaultpath()
 
 #undef DIRAPPEND
 
-    *blkp++ = Strsave(STRdot);
+    if (euid != 0 && uid != 0)
+	*blkp++ = Strsave(STRdot);
     *blkp = NULL;
     return (blk);
 }
