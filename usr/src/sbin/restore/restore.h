@@ -1,6 +1,6 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
-/*	@(#)restore.h	3.3	(Berkeley)	83/01/16	*/
+/*	@(#)restore.h	3.1	(Berkeley)	83/02/18	*/
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -24,8 +24,7 @@ extern char	*clrimap; 	/* map of inodes to be deleted */
 extern ino_t	maxino;		/* highest numbered inode in this file system */
 extern long	dumpnum;	/* location of the dump on this tape */
 extern long	volno;		/* current volume being read */
-extern time_t	dumptime;	/* time that this dump begins */
-extern time_t	dumpdate;	/* time that this dump was made */
+extern time_t	dumptime;	/* time that this dump was made */
 extern char	command;	/* opration being performed */
 
 /*
@@ -37,35 +36,44 @@ struct entry {
 	char	e_type;			/* type of this entry, see below */
 	short	e_flags;		/* status flags, see below */
 	ino_t	e_ino;			/* inode number in previous file sys */
-	long	e_index;		/* unique index (for dumpped table) */
+	char	*e_newname;		/* full pathname of rename in new fs */
 	struct	entry *e_parent;	/* pointer to parent directory (..) */
 	struct	entry *e_sibling;	/* next element in this directory (.) */
 	struct	entry *e_links;		/* hard links to this inode */
 	struct	entry *e_entries;	/* for directories, their entries */
-	struct	entry *e_next;		/* hash chain list */
 };
 /* types */
 #define	LEAF 1			/* non-directory entry */
 #define NODE 2			/* directory entry */
 #define LINK 4			/* synthesized type, stripped by addentry */
 /* flags */
-#define EXTRACT		0x0001	/* entry is to be replaced from the tape */
-#define NEW		0x0002	/* a new entry to be extracted */
-#define KEEP		0x0004	/* entry is not to change */
-#define REMOVED		0x0010	/* entry has been removed */
-#define TMPNAME		0x0020	/* entry has been given a temporary name */
+#define REMOVE		0x0001	/* entry to be removed */
+#define REMOVED		0x0002	/* entry has been removed */
+#define RENAME		0x0004	/* entry to be renamed */
+#define TMPNAME		0x0008	/* entry has been given a temporary name */
+#define TMPNODE		0x0010	/* entry is a temporary, to be replaced */
+#define EXTRACT		0x0020	/* entry is to be extracted from the tape */
+#define RENUMBER	0x0040	/* entry is to be assigned a new inode number */
+#define CHANGE		0x0080	/* entry is to be deleted and extracted */
+#define NEW		0x0100	/* a new entry to be extracted */
+#define KEEP		0x0200	/* entry is not to change */
 /*
  * functions defined on entry structs
  */
+extern struct entry **entry;
 extern struct entry *lookupino();
 extern struct entry *lookupname();
 extern struct entry *lookupparent();
+extern struct entry *pathcheck();
 extern struct entry *addentry();
 extern char *myname();
 extern char *savename();
 extern ino_t lowerbnd();
 extern ino_t upperbnd();
 #define NIL ((struct entry *)(0))
+#define lookupino(inum)		(entry[(inum)])
+#define addino(inum, np)	(entry[(inum)] = (np))
+#define deleteino(inum)		(entry[(inum)] = (struct entry *)NIL)
 /*
  * Constants associated with entry structs
  */
@@ -93,16 +101,13 @@ struct context {
 extern ino_t psearch();
 extern void listfile();
 extern void addfile();
-extern void nodeupdates();
+extern void markfile();
 extern void verifyfile();
 extern char *rindex();
 extern char *index();
-extern char *strcat();
-extern char *strcpy();
-extern char *mktemp();
-extern char *malloc();
-extern char *calloc();
-extern long lseek();
+extern void strcat();
+extern void strcpy();
+extern void mktemp();
 
 /*
  * Useful macros
@@ -116,5 +121,5 @@ extern long lseek();
 #define dprintf		if (dflag) fprintf
 #define vprintf		if (vflag) fprintf
 
-#define GOOD 1
-#define FAIL 0
+#define GOOD 0
+#define FAIL 1
