@@ -4,19 +4,15 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)tocrc	5.1 (Berkeley) %G%
+#	@(#)tocrc	6.1 (Berkeley) %G%
 #
 tmp=/tmp/toc$$
-troff=itroff
 trap "rm $tmp ; exit" 2 3 15
 if [ $# -eq 2 -a $1 = "3" ]
 then
 	: create toc input files for section 3 only
 
-	( cd man3 ; for x in 3 3f 3m 3n 3s 3x 3c
-	    do
-		/usr/lib/getNAME -t *.$x |
-		sed \
+	( cd ../man3 ; /usr/lib/getNAME -t `ls *.3 *.3[mnsxc] | sort` | sed \
 			-e 's/.s-2//g' \
 			-e 's/.s-1//g' \
 			-e 's/.s0//g' \
@@ -24,14 +20,22 @@ then
 			-e 's/  *.-  */: /' \
 			-e 's/ *$/./' \
 			-e 's/.TH.*	//' \
-		> ../man0/tocx$x
-	    done
+		> ../man0/tocx3 ;
+		/usr/lib/getNAME -t *.3f | sed \
+			-e 's/.s-2//g' \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/ *$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx3f
 	)
 elif [ $# -eq 2 ]
 then
 	: create toc input file for one section only
 
-	( cd man$1 ; /usr/lib/getNAME -t *.* |
+	( cd ../man$1 ; /usr/lib/getNAME -t *.* |
 		sed \
 			-e 's/.s-2//g' \
 			-e 's/.s-1//g' \
@@ -55,7 +59,7 @@ else case $1 in
 	t )
 		:   permuted index and toc files
 
-		if [ ! -f man0/tocx1 ]
+		if [ ! -f tocx1 ]
 		then
 			echo "tocx* files missing; must run tocrc all first"
 			exit
@@ -74,15 +78,15 @@ else case $1 in
 			-e 's/(8c)/(8C)/' \
 			-e 's/(8v)/(8V)/' \
 			-e '/"\."/d' \
-			man0/tocx* man0/cshcmd \
+			tocx* cshcmd \
 		> /tmp/cattoc
 
-		ptx -r -t -b break -f -w 108 -i man0/ignore \
-		    /tmp/cattoc man0/ptxx
+		ptx -r -t -b break -f -w 108 -i ignore \
+		    /tmp/cattoc ptxx
 
-		for x in 1 2 3 3f 3m 3n 3s 3x 3c 4 5 6 7 8
+		for x in 1 2 3 3f 4 5 6 7 8
 		do
-			< man0/tocx$x grep '^intro' >$tmp
+			< tocx$x grep '^intro' >$tmp
 				sed \
 				-e '2,${' \
 				-e '/^intro/d' \
@@ -92,13 +96,9 @@ else case $1 in
 				-e 's/([^)]*) /" "/' \
 				-e 's/.*/.xx "&"/' \
 				-e '/""/d' \
-				$tmp man0/tocx$x \
-			>man0/toc$x
+				$tmp tocx$x \
+			>toc$x
 		done
-		;;
-	tr )
-		cd man0; $troff ptx.in ; cd ..
-		cd man0 ; $troff toc.in  ; cd ..
 		;;
 	* )
 		./$0 $1 $1
