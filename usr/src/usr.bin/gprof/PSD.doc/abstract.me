@@ -1,4 +1,4 @@
-\"	@(#)abstract.me	1.1 %G%
+\"	@(#)abstract.me	1.2 %G%
 .ls 1
 .lp
 .sp 1
@@ -22,17 +22,15 @@ Berkeley, California 94720
 .sp 1
 .sh 0 "Abstract"
 .pp
-Programs the size and complexity of compilers
-are composed of a large number of small routines,
-each implementing an abstraction for the routines
-that call it.
+Large complex programs are composed of a number of small routines
+that implement abstractions for the routines that call them.
 To be useful, an execution profiler must attribute
 execution time in a way that is meaningful in terms of the 
-logical structure of a program 
-as well as its decomposition.
-The information must then be displayed to the user
+logical structure of a program.
+as well as in terms of its textual decomposition.
+This data must then be displayed to the user
 in a convenient and informative way.
-The \fBgprof\fP profiler described in this paper
-incorporates the running time of called routines
+The \fBgprof\fP profiler 
+accounts for the running time of called routines
 in the running time of the routines that call them.
 The design and use of this profiler is described.
