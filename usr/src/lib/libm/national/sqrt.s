@@ -1,4 +1,4 @@
-; @(#)sqrt.s	1.1 (ucb.elefunt) %G%
+; @(#)sqrt.s	5.1 (ucb.elefunt) %G%
 ;
 ; double sqrt(x)
 ; double x;

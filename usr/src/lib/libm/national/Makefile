@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.5 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 CFLAGS=	-O
 SRCS=	cabs.c cbrt.c
