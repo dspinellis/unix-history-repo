@@ -2,45 +2,97 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpriority.2	4.1 (Berkeley) %G%
+.\"	@(#)getpriority.2	5.1 (Berkeley) %G%
 .\"
-.TH NICE 2 
+.TH GETPRIORITY 2 "18 July 1983"
 .UC 4
 .SH NAME
-nice \- set program priority
+getpriority, setpriority \- get/set program scheduling priority
 .SH SYNOPSIS
-.B nice(incr)
+.nf
+.ft B
+#include <sys/resource.h>
+.PP
+.ft B
+#define PRIO_PROCESS	0	/* process */
+#define PRIO_PGRP		1	/* process group */
+#define PRIO_USER		2	/* user id */
+.PP
+.ft B
+prio = getpriority(which, who)
+int prio, which, who;
+.PP
+.ft B
+setpriority(which, who, prio)
+int which, who, prio;
+.fi
 .SH DESCRIPTION
 The scheduling
-priority of the process is augmented by
-.IR incr .
-Positive priorities get less
-service than normal.
-Priority 10 is recommended to users
-who wish to execute long-running programs
-without flak from the administration.
+priority of the process, process group, or user, as indicated by
+.I which
+and
+.I who
+is obtained with the
+.I getpriority
+call and set with the
+.I setpriority
+call.
+.I Which
+is one of PRIO_PROCESS, PRIO_PGRP, or PRIO_USER, and 
+.I who
+is interpreted relative to 
+.I which
+(a process identifier for PRIO_PROCESS, process group
+identifier for PRIO_PGRP, and a user ID for PRIO_USER).
+.I Prio
+is a value in the range \-20 to 20.  The default priority is 0;
+lower priorities cause more favorable scheduling.
 .PP
-Negative increments are ignored except on behalf of 
-the super-user.
-The priority is limited to the range
-\-20 (most urgent) to 20 (least).
+The
+.I getpriority
+call returns the highest priority (lowest numerical value)
+enjoyed by any of the specified processes.  The
+.I setpriority
+call sets the priorities of all of the specified processes
+to the specified value.  Only the super-user may lower priorities.
+.SH "RETURN VALUE
+Since
+.I getpriority
+can legitimately return the value \-1, it is necessary
+to clear the external variable \fIerrno\fP prior to the
+call, then check it afterward to determine
+if a \-1 is an error or a legitimate value.
+The
+.I setpriority
+call returns 0 if there is no error, or
+\-1 if there is.
+.SH ERRORS
+.I Getpriority
+and
+.I setpriority
+may return one of the following errors:
+.TP 15
+[ESRCH]
+No process(es) were located using the 
+.I which
+and
+.I who
+values specified.
+.TP 15
+[EINVAL]
+.I Which
+was not one of PRIO_PROCESS, PRIO_PGRP, or PRIO_USER.
 .PP
-The priority of a process is
-passed to a child process by
-.IR fork (2).
-For a privileged process to return to normal priority
-from an unknown state,
-.I nice
-should be called successively with arguments
-\-40 (goes to priority \-20 because of truncation),
-20 (to get to 0),
-then 0 (to maintain compatibility with previous versions
-of this call).
+In addition to the errors indicated above,
+.I setpriority
+may fail with one of the following errors returned:
+.TP 15
+[EACCES]
+A process was located, but neither its effective nor real user
+ID matched the effective user ID of the caller.
+.TP 15
+[EACCES]
+A non super-user attempted to change a process
+priority to a negative value.
 .SH "SEE ALSO"
 nice(1), fork(2), renice(8)
-.SH "ASSEMBLER (PDP-11)"
-(nice = 34.)
-.br
-(priority in r0)
-.br
-.B sys nice
