@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 VPATH=	../dump:
 CFLAGS=	-O
@@ -29,10 +29,10 @@ MAN=	restore.0 rrestore.0
 all: restore rrestore
 
 restore: ${OBJS} ${LIBC}
-	${CC} ${CFLAGS} -o $@ ${OBJS}
+	${CC} ${CFLAGS} -o $@ ${OBJS} -lcompat
 
 rrestore: ${ROBJS} ${LIBC}
-	${CC} ${CFLAGS} -o $@ ${ROBJS}
+	${CC} ${CFLAGS} -o $@ ${ROBJS} -lcompat
 
 rtape.o: ${LIBC} tape.c
 	${CC} ${CFLAGS} -c -DRRESTORE tape.c -o rtape.o
