@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -91,17 +91,22 @@ struct nlist nl[] = {
 #define	ISO_TP		25
 	{ "_tp_isopcb" },
 #define	ISO_X25		26
-	{ "_x25_isopcb" },
+	{ /*"_x25_isopcb"*/ "_file"}, /* fast gross hack to speed up */
 #define	N_TPSTAT	27
 	{ "_tp_stat" },
 #define	N_X25STAT	28
-	{ "_x25_stat" },
+	{ /*"_x25_stat"*/ "_file"},
 #define	N_ESISSTAT	29
 	{ "_esis_stat"},
 #define N_NIMP		30
 	{ "_nimp"},
 #define N_RTREE		31
 	{ "_radix_node_head"},
+#define N_CLTP		32
+	{ "_cltb"},
+#define N_CLTPSTAT	33
+	{ "_cltpstat"},
+
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -125,7 +130,7 @@ extern	int nsprotopr();
 extern	int spp_stats(), idp_stats(), nserr_stats();
 /* iso protocols */
 extern	int iso_protopr();
-extern	int tp_stats(), esis_stats(), clnp_stats();
+extern	int tp_stats(), esis_stats(), clnp_stats(), cltp_stats();
 
 #define NULLPROTOX	((struct protox *) 0)
 struct protox {
@@ -183,6 +188,8 @@ struct protox nsprotox[] = {
 struct protox isoprotox[] = {
 	{ ISO_TP,	N_TPSTAT,	1,	iso_protopr,
 	  tp_stats,	"tp" },
+	{ N_CLTP,	N_CLTPSTAT,	1,	iso_protopr,
+	  cltp_stats,	"cltp" },
 #ifdef notdef
 	{ ISO_X25,	N_X25STAT,	1,	x25_protopr,
 	  x25_stats,	"x25" },
