@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)set.c 4.2 %G%";
+static	char *sccsid = "@(#)set.c 4.3 %G%";
 
 #include "sh.h"
 
@@ -259,7 +259,7 @@ xfree(cp)
 	extern char end[];
 
 	if (cp >= end && cp < (char *) &cp)
-		cfree(cp);
+		free(cp);
 }
 
 char *

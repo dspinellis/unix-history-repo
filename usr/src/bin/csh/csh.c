@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.17 %G%";
+static	char *sccsid = "@(#)csh.c 4.18 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -32,13 +32,14 @@ main(c, av)
 {
 	register char **v, *cp;
 	register int f;
+	struct sigvec osv;
 
 	settimes();			/* Immed. estab. timing base */
 	v = av;
 	if (eq(v[0], "a.out"))		/* A.out's are quittable */
 		quitit = 1;
 	uid = getuid();
-	loginsh = **v == '-';
+	loginsh = **v == '-' && c == 1;
 	if (loginsh)
 		time(&chktim);
 
@@ -110,10 +111,10 @@ main(c, av)
 	 * Our children inherit termination from our parent.
 	 * We catch it only if we are the login shell.
 	 */
-	parintr = signal(SIGINT, SIG_IGN);	/* parents interruptibility */
-	sigset(SIGINT, parintr);			/* ... restore */
-	parterm = signal(SIGTERM, SIG_IGN);	/* parents terminability */
-	signal(SIGTERM, parterm);			/* ... restore */
+	sigvec(SIGINT, 0, &osv);		/* parents interruptibility */
+	parintr = osv.sv_handler;
+	sigvec(SIGTERM, 0, &osv);		/* parents terminability */
+	parterm = osv.sv_handler;
 	if (loginsh) {
 		signal(SIGHUP, phup);		/* exit processing on HUP */
 		signal(SIGXCPU, phup);		/* ...and on XCPU */
@@ -132,13 +133,8 @@ main(c, av)
 	 */
 	c--, v++;
 	while (c > 0 && (cp = v[0])[0] == '-') {
+		cp++;
 		do switch (*cp++) {
-
-		case 0:			/* -	Interruptible, no prompt */
-			prompt = 0;
-			setintr++;
-			nofile++;
-			break;
 
 		case 'c':		/* -c	Command input from arg */
 			if (c == 1)
@@ -258,8 +254,8 @@ main(c, av)
 		**av = '-';
 		if (!quitit)		/* Wary! */
 			signal(SIGQUIT, SIG_IGN);
-		sigset(SIGINT, pintr);
-		sighold(SIGINT);
+		signal(SIGINT, pintr);
+		sigblock(sigmask(SIGINT));
 		signal(SIGTERM, SIG_IGN);
 		if (quitit == 0 && arginp == 0) {
 			signal(SIGTSTP, SIG_IGN);
@@ -283,9 +279,9 @@ retry:
 			if (ioctl(f, TIOCGPGRP, &tpgrp) == 0 && tpgrp != -1) {
 				int ldisc;
 				if (tpgrp != shpgrp) {
-					int (*old)() = sigsys(SIGTTIN, SIG_DFL);
+					int (*old)() = signal(SIGTTIN, SIG_DFL);
 					kill(0, SIGTTIN);
-					sigsys(SIGTTIN, old);
+					signal(SIGTTIN, old);
 					goto retry;
 				}
 				if (ioctl(f, TIOCGETD, &oldisc) != 0) 
@@ -314,7 +310,7 @@ notty:
 	}
 	if (setintr == 0 && parintr == SIG_DFL)
 		setintr++;
-	sigset(SIGCHLD, pchild);		/* while signals not ready */
+	signal(SIGCHLD, pchild);	/* while signals not ready */
 
 	/*
 	 * Set an exit here in case of an interrupt or error reading
@@ -458,7 +454,7 @@ srcunit(unit, onlyown, hflg)
 
 	/* The (few) real local variables */
 	jmp_buf oldexit;
-	int reenter;
+	int reenter, omask;
 
 	if (unit < 0)
 		return;
@@ -488,7 +484,7 @@ srcunit(unit, onlyown, hflg)
 	getexit(oldexit);
 	reenter = 0;
 	if (setintr)
-		sighold(SIGINT);
+		omask = sigblock(sigmask(SIGINT));
 	setexit();
 	reenter++;
 	if (reenter == 1) {
@@ -507,14 +503,14 @@ srcunit(unit, onlyown, hflg)
 		 * we let ourselves be interrupted.
 		 */
 		if (setintr)
-			sigrelse(SIGINT);
+			sigsetmask(omask);
 #ifdef TELL
 		settell();
 #endif
 		process(0);		/* 0 -> blow away on errors */
 	}
 	if (setintr)
-		sigrelse(SIGINT);
+		sigsetmask(omask);
 	if (oSHIN >= 0) {
 		register int i;
 
@@ -578,7 +574,7 @@ goodbye()
 {
 	if (loginsh) {
 		signal(SIGQUIT, SIG_IGN);
-		sigset(SIGINT, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
 		signal(SIGTERM, SIG_IGN);
 		setintr = 0;		/* No interrupts after "logout" */
 		if (adrof("home"))
@@ -626,9 +622,11 @@ pintr1(wantnl)
 	bool wantnl;
 {
 	register char **v;
+	int omask;
 
+	omask = sigblock(0);
 	if (setintr) {
-		sigrelse(SIGINT);
+		sigsetmask(omask & ~sigmask(SIGINT));
 		if (pjobs) {
 			pjobs = 0;
 			printf("\n");
@@ -636,9 +634,7 @@ pintr1(wantnl)
 			bferr("Interrupted");
 		}
 	}
-	if (setintr)
-		sighold(SIGINT);
-	sigrelse(SIGCHLD);
+	sigsetmask(omask & ~sigmask(SIGCHLD));
 	draino();
 
 	/*
@@ -693,7 +689,7 @@ process(catch)
 		 * Interruptible during interactive reads
 		 */
 		if (setintr)
-			sigrelse(SIGINT);
+			sigsetmask(sigblock(0) & ~sigmask(SIGINT));
 
 		/*
 		 * For the sake of reset()
@@ -757,7 +753,7 @@ process(catch)
 		 * The parser may lose space if interrupted.
 		 */
 		if (setintr)
-			sighold(SIGINT);
+			sigblock(sigmask(SIGINT));
 
 		/*
 		 * Save input text on the history list if 
