@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.2 (Berkeley) %G%
+ *	@(#)uda.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -72,7 +72,7 @@ raopen(io)
 		udaddr[uba] = (struct udadevice *)ubamem(unit, udastd[0]);
 	addr = udaddr[uba];
 	if (badaddr((char *)addr, sizeof(short))) {
-		printf("nonexistent device");
+		printf("nonexistent device\n");
 		return (ENXIO);
 	}
 	if (ud_ubaddr[uba] == 0) {
@@ -105,7 +105,7 @@ raopen(io)
 		uda.uda_ca.ca_cmddsc[0] = (long)&ubaddr->uda_cmd.mscp_cmdref;
 		uda.uda_cmd.mscp_cntflgs = 0;
 		if (udcmd(M_OP_STCON, io) == 0) {
-			printf("ra: open error, STCON");
+			printf("ra: open error, STCON\n");
 			return (EIO);
 		}
 	}
@@ -115,7 +115,7 @@ raopen(io)
 
 		uda.uda_cmd.mscp_unit = UNITTODRIVE(unit);
 		if (udcmd(M_OP_ONLIN, io) == 0) {
-			printf("ra: open error, ONLIN");
+			printf("ra: open error, ONLIN\n");
 			return (EIO);
 		}
 		udainit[uba] = 1;
@@ -125,10 +125,9 @@ raopen(io)
 		tio.i_cc = SECTSIZ;
 		tio.i_flgs |= F_RDDATA;
 		if (rastrategy(&tio, READ) != SECTSIZ) {
-			printf("can't read disk label");
+			printf("can't read disk label\n");
 			return (EIO);
 		}
-		*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 		if (lp->d_magic != DISKMAGIC || lp->d_magic2 != DISKMAGIC) {
 			printf("ra%d: unlabeled\n", unit);
 #ifdef COMPAT_42
@@ -136,11 +135,12 @@ raopen(io)
 #else
 			return (ENXIO);
 #endif
-		}
+		} else
+			*lp = *(struct disklabel *)(lbuf + LABELOFFSET);
 	}
 	if ((unsigned)io->i_boff >= lp->d_npartitions ||
 	    (io->i_boff = lp->d_partitions[io->i_boff].p_offset) == -1) {
-		printf("ra: bad partition");
+		printf("ra: bad partition\n");
 		return (EUNIT);
 	}
 	return (0);
@@ -185,7 +185,7 @@ rastrategy(io, func)
 	ubinfo = ubasetup(io, 1);
 	mp = &uda.uda_cmd;
 	mp->mscp_lbn = io->i_bn;
-	mp->mscp_unit = io->i_unit&7;
+	mp->mscp_unit = UNITTODRIVE(io->i_unit);
 	mp->mscp_bytecnt = io->i_cc;
 	mp->mscp_buffer = (ubinfo & 0x3ffff) | (((ubinfo>>28)&0xf)<<24);
 	if ((mp = udcmd(func == READ ? M_OP_READ : M_OP_WRITE, io)) == 0) {
