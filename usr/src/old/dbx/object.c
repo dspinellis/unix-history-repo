@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)object.c 5.1 %G%";
+static char sccsid[] = "@(#)object.c 5.2 %G%";
 /*
  * Object code interface, mainly for extraction of symbolic information.
  */
@@ -196,12 +196,13 @@ Fileid f;
     register struct nlist *np, *ub;
     register int index;
     register String name;
-    register Boolean afterlg;
+    boolean afterlg, foundstab;
 
     initsyms();
     namelist = newarr(struct nlist, nlhdr.nsyms);
     read(f, namelist, nlhdr.nsyms * sizeof(struct nlist));
     afterlg = false;
+    foundstab = false;
     ub = &namelist[nlhdr.nsyms];
     for (np = &namelist[0]; np < ub; np++) {
 	index = np->n_un.n_strx;
@@ -239,6 +240,7 @@ Fileid f;
          *
 	 */
 	if ((np->n_type&N_STAB) != 0) {
+	    foundstab = true;
 	    enter_nl(name, np);
 	} else if (name[0] == '-') {
 	    afterlg = true;
@@ -254,6 +256,9 @@ Fileid f;
 	} else if ((np->n_type&N_TEXT) == N_TEXT) {
 	    check_filename(name);
 	}
+    }
+    if (not foundstab) {
+	warning("no source compiled with -g");
     }
     dispose(namelist);
 }
@@ -278,7 +283,8 @@ private initsyms()
     }
     program = insert(identname(progname, true));
     program->class = PROG;
-    program->symvalue.funcv.beginaddr = 0;
+    program->language = primlang;
+    program->symvalue.funcv.beginaddr = CODESTART;
     program->symvalue.funcv.inline = false;
     newfunc(program, codeloc(program));
     findbeginning(program);
@@ -391,8 +397,8 @@ register struct nlist *np;
 	    if (index(name, ':') == nil) {
 		if (not warned) {
 		    warned = true;
-		    warning("old style symbol information found in \"%s\"",
-			curfilename());
+		    printf("warning: old style symbol information ");
+		    printf("found in \"%s\"\n", curfilename());
 		}
 	    } else {
 		entersym(name, np);
@@ -453,7 +459,7 @@ register struct nlist *np;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t, codeloc(t));
 	    findbeginning(t);
-	} else if ((np->n_type&N_TYPE) == N_BSS) {
+	} else if ((np->n_type&N_TYPE) == N_BSS or (np->n_type&N_TYPE) == N_DATA) {
 	    find(t, n) where
 		t->class == COMMON
 	    endfind(t);
@@ -517,6 +523,7 @@ register struct nlist *np;
 	t->language = findlanguage(".s");
 	t->type = t_int;
 	t->block = cur;
+	t->storage = EXT;
 	t->level = cur->level;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
@@ -622,6 +629,10 @@ Address addr;
 	mname = rindex(mname, '/') + 1;
     }
     suffix = rindex(mname, '.');
+    if (suffix > mname && *(suffix-1) == '.') {
+	/* special hack for C++ */
+	--suffix;
+    }
     curlang = findlanguage(suffix);
     if (curlang == findlanguage(".f")) {
 	strip_ = true;

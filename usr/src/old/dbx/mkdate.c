@@ -4,12 +4,16 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)mkdate.c 5.2 %G%";
+static char sccsid[] = "@(#)mkdate.c 5.3 %G%";
 
-static char rcsid[] = "$Header: mkdate.c,v 1.5 84/12/26 10:40:30 linton Exp $";
+static char rcsid[] = "$Header: mkdate.c,v 1.2 87/03/26 19:56:22 donn Exp $";
 
 #include <stdio.h>
-#include <sys/time.h>
+#ifdef IRIS
+#   include <time.h>
+#else
+#   include <sys/time.h>
+#endif
 
 main()
 {
@@ -23,7 +27,9 @@ main()
     t = localtime(&clock);
     printf("%d/%d/%d ", t->tm_mon + 1, t->tm_mday, t->tm_year % 100);
     printf("%d:%02d", t->tm_hour, t->tm_min);
-    gethostname(name, &namelen);
-    printf(" (%s)", name);
+#   ifndef IRIS
+	gethostname(name, &namelen);
+	printf(" (%s)", name);
+#   endif
     printf("\";\n");
 }

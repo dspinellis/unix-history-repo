@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)mappings.c 5.2 %G%";
+static char sccsid[] = "@(#)mappings.c 5.3 %G%";
 
-static char rcsid[] = "$Header: mappings.c,v 1.4 84/12/26 10:40:25 linton Exp $";
+static char rcsid[] = "$Header: mappings.c,v 1.3 87/03/26 19:41:55 donn Exp $";
 
 /*
  * Source-to-object and vice versa mappings.
@@ -99,10 +99,8 @@ Boolean exact;
     register Lineno r;
     register Address a;
 
-    if (nlhdr.nlines == 0) {
+    if (nlhdr.nlines == 0 or addr < linetab[0].addr) {
 	r = -1;
-    } else if (addr < linetab[0].addr) {
-	r = exact ? -1 : 0;
     } else {
 	i = 0;
 	j = nlhdr.nlines - 1;
@@ -146,16 +144,28 @@ Boolean exact;
  * If it isn't, then we walk forward until the first suitable line is found.
  */
 
-public Lineno srcline(addr)
+public Lineno srcline (addr)
 Address addr;
 {
-    integer i;
-    Lineno r;
+    Lineno i, r;
     Symbol f1, f2;
+    Address a;
 
     i = findline(addr, false);
     if (i == -1) {
-	r = 0;
+	f1 = whatblock(addr);
+	if (f1 == nil or nosource(f1)) {
+	    r = 0;
+	} else {
+	    a = codeloc(f1);
+	    for (;;) {
+		r = linelookup(a);
+		if (r != 0 or a >= CODESTART + objsize) {
+		    break;
+		}
+		++a;
+	    }
+	}
     } else {
 	r = linetab[i].line;
 	if (linetab[i].addr != addr) {
