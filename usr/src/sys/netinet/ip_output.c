@@ -1,4 +1,4 @@
-/*	ip_output.c	1.43	83/01/04	*/
+/*	ip_output.c	1.44	83/01/08	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -96,7 +96,7 @@ gotif:
 			goto bad;
 		}
 		sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-		dst.sin_addr = sin->sin_addr;
+		((struct sockaddr_in *)dst)->sin_addr = sin->sin_addr;
 	}
 
 	/*
