@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.10 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -306,6 +306,7 @@ sort()
 	int done = 0;
 	int i = 0;
 	char *f;
+	char c;
 
 	if((f = setfil(i++)) == NULL)
 		is = stdin;
@@ -333,8 +334,11 @@ sort()
 			*lp++ = cp;
 			len = strlen(cp) + 1; /* null terminate */
 			if(cp[len - 2] != '\n') {
-				diag("line too long: ", cp);
-				term();
+				diag("line too long (skipped): ", cp);
+				while((c = getc(is)) != EOF && c != '\n')
+					/* throw it away */;
+				--lp;
+				continue;
 			}
 			cp += len;
 			--lines;
