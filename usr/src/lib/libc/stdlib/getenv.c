@@ -1,44 +1,48 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getenv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getenv.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
-/*
- *	getenv(name)
- *	returns ptr to value associated with name, if any, else NULL
- */
-#define NULL	0
-extern	char **environ;
-char	*nvmatch();
+#include <stdio.h>
 
+/*
+ * getenv(name) --
+ *	Returns ptr to value associated with name, if any, else NULL.
+ */
 char *
 getenv(name)
-register char *name;
+	char *name;
 {
-	register char **p = environ;
-	register char *v;
+	int	offset;
+	char	*_findenv();
 
-	while (*p != NULL)
-		if ((v = nvmatch(name, *p++)) != NULL)
-			return(v);
-	return(NULL);
+	return(_findenv(name,&offset));
 }
 
 /*
- *	s1 is either name, or name=value
- *	s2 is name=value
- *	if names match, return value of s2, else NULL
- *	used for environment searching: see getenv
+ * _findenv(name,offset) --
+ *	Returns pointer to value associated with name, if any, else NULL.
+ *	Sets offset to be the offset of the name/value combination in the
+ *	environmental array, for use by setenv(3) and unsetenv(3).
+ *	Explicitly removes '=' in argument name.
+ *
+ *	This routine *should* be a static; don't use it.
  */
-
-static char *
-nvmatch(s1, s2)
-register char *s1, *s2;
+char *
+_findenv(name,offset)
+	register char *name;
+	int	*offset;
 {
+	extern char	**environ;
+	register int	len;
+	register char	**P,
+			*C;
 
-	while (*s1 == *s2++)
-		if (*s1++ == '=')
-			return(s2);
-	if (*s1 == '\0' && *(s2-1) == '=')
-		return(s2);
+	for (C = name,len = 0;*C && *C != '=';++C,++len);
+	for (P = environ;*P;++P)
+		if (!strncmp(*P,name,len))
+			if (*(C = *P + len) == '=') {
+				*offset = P - environ;
+				return(++C);
+			}
 	return(NULL);
 }
