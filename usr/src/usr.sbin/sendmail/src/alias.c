@@ -4,9 +4,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-static char SccsId[] = "@(#)alias.c	3.26	%G%	(with DBM)";
+static char SccsId[] = "@(#)alias.c	3.26.1.1	%G%	(with DBM)";
 # else DBM
-static char SccsId[] = "@(#)alias.c	3.26	%G%	(without DBM)";
+static char SccsId[] = "@(#)alias.c	3.26.1.1	%G%	(without DBM)";
 # endif DBM
 
 /*
@@ -61,6 +61,7 @@ alias(a)
 	register ADDRESS *a;
 {
 	register char *p;
+	extern ADDRESS *sendto();
 # ifndef DBM
 	register STAB *s;
 # endif DBM
@@ -112,7 +113,7 @@ alias(a)
 	if (Verbose)
 		message(Arpa_Info, "aliased to %s", p);
 	AliasLevel++;
-	sendto(p, 1, a);
+	a->q_child = sendto(p, 1, a, 0);
 	AliasLevel--;
 }
 /*
