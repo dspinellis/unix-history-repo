@@ -1,5 +1,4 @@
-#define UPECCDEBUG
-/*	up.c	4.43	82/03/24	*/
+/*	up.c	4.44	82/03/29	*/
 
 #include "up.h"
 #if NSC > 0
@@ -81,7 +80,11 @@ struct	size
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
-#define	_upSDIST	2		/* 1.0 msec */
+/*
+ * On a 780 upSDIST could be 2, but
+ * in the interest of 750's...
+ */
+#define	_upSDIST	3		/* 1.5 msec */
 #define	_upRDIST	4		/* 2.0 msec */
 
 int	upSDIST = _upSDIST;
@@ -107,7 +110,7 @@ struct	upst {
 	32,	19,	32*19,	823,	up_sizes,	/* 9300/cdc */
 /* 9300 actually has 815 cylinders... */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
-	32,	16,	32*16,	1024,	am_sizes,	/* fujitsu 160m */
+	32,	16,	32*16,	1024,	am_sizes,	/* ampex capricorn */
 };
 
 u_char	up_offset[16] = {
@@ -456,6 +459,7 @@ updgo(um)
 {
 	register struct updevice *upaddr = (struct updevice *)um->um_addr;
 
+	um->um_tab.b_active++;	/* should now be 2 */
 	upaddr->upba = um->um_ubinfo;
 	upaddr->upcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
@@ -482,7 +486,7 @@ upintr(sc21)
 	 * interrupt for attention status on seeking drives.
 	 * Just service them.
 	 */
-	if (um->um_tab.b_active == 0) {
+	if (um->um_tab.b_active != 2 && !sc->sc_recal) {
 		if (upaddr->upcs1 & UP_TRE)
 			upaddr->upcs1 = UP_TRE;
 		goto doattn;
@@ -733,7 +737,7 @@ upecc(ui)
 		i++;
 		bit -= 8;
 	}
-	um->um_tab.b_active++;	/* Either complete or continuing... */
+	um->um_tab.b_active = 2;	/* Either complete or continuing... */
 	if (up->upwc == 0)
 		return (0);
 	/*
@@ -786,6 +790,7 @@ upreset(uban)
 		um->um_tab.b_active = 0;
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		up_softc[sc21].sc_recal = 0;
+		up_softc[sc21].sc_wticks = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);

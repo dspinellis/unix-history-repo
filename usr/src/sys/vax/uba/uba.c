@@ -1,4 +1,4 @@
-/*	uba.c	4.40	82/03/14	*/
+/*	uba.c	4.41	82/03/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -56,14 +56,12 @@ ubago(ui)
 	if (ui->ui_dk >= 0) {
 		unit = ui->ui_dk;
 		dk_busy |= 1<<unit;
+		dk_xfer[unit]++;
+		dk_wds[unit] += um->um_tab.b_actf->b_actf->b_bcount>>6;
 	}
 	if (uh->uh_actf == ui)
 		uh->uh_actf = ui->ui_forw;
 	(*um->um_driver->ud_dgo)(um);
-	if (ui->ui_dk >= 0) {
-		dk_xfer[unit]++;
-		dk_wds[unit] += um->um_tab.b_actf->b_actf->b_bcount>>6;
-	}
 	return (1);
 rwait:
 	if (uh->uh_actf != ui) {
@@ -456,7 +454,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 }
 #endif
 
-#if notdef
+#ifdef notdef
 /*
  * This routine allows remapping of previously
  * allocated UNIBUS bdp and map resources
