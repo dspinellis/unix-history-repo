@@ -1,0 +1,158 @@
+.TH TAR 1 
+.SH NAME
+tar  \-  tape archiver
+.SH SYNOPSIS
+.B tar
+[ key ] [ name ... ]
+.SH DESCRIPTION
+.I Tar
+saves and restores files
+on magtape.
+Its actions are controlled by the
+.I key
+argument.
+The
+.I key
+is a string of characters containing
+at most one function letter and possibly
+one or more function modifiers.
+Other arguments to the command are file or directory
+names specifying which files are to be dumped or restored.
+In all cases, appearance of a directory name refers to
+the files and (recursively) subdirectories of that directory.
+.PP
+The function portion of
+the key is specified by one of the following letters:
+.TP 8
+.B  r
+The named files
+are written
+on the end of the tape.
+The
+.B c
+function implies this.
+.TP 8
+.B  x
+The named files are extracted from the tape.
+If the named file matches a directory whose contents 
+had been written onto the tape, this directory is (recursively) extracted.
+The owner and mode are restored (if possible).
+If no file argument is given, the entire content of the
+tape is extracted.
+Note that if multiple entries specifying the same file
+are on the tape, the last one overwrites
+all earlier.
+.TP 8
+.B  t
+The names of the specified files are listed each time they occur
+on the tape.
+If no file argument is given,
+all of the names on the tape are listed.
+.TP 8
+.B  u
+The named files are added to the tape if either they
+are not already there or have
+been modified since last put on the tape.
+.TP 8
+.B  c
+Create a new tape; writing begins on the beginning
+of the tape instead of after the last file.
+This command implies
+.B r.
+.PP
+The following characters may be used in addition to the letter
+which selects the function desired.
+.TP 10
+.B  0,...,7
+This
+modifier selects the drive on which the tape is mounted.
+The default is
+.BR 1 .
+.TP 10
+.B  v
+Normally
+.I tar
+does its work silently.
+The
+.B v
+(verbose)
+option causes it to type the name of each file it treats
+preceded by the function letter.
+With the
+.B t
+function,
+.B v
+gives more information about the
+tape entries than just the name.
+.TP 10
+.B  w
+causes
+.I tar
+to print the action to be taken followed by file name, then
+wait for user confirmation. If a word beginning with `y'
+is given, the action is performed. Any other input means
+don't do it.
+.TP 10
+.B f
+causes 
+.I tar
+to use the next argument as the name of the archive instead
+of /dev/mt?. 
+If the name of the file is `\-', tar writes to
+standard output or reads from standard input, whichever is
+appropriate. Thus,
+.I tar
+can be used as the head or tail of a filter chain
+.I Tar
+can also be used to move hierarchies with the command
+.ce 1
+cd fromdir; tar cf - . | (cd todir; tar xf -)
+.TP 10
+.B b
+causes
+.I tar
+to use the next argument as the blocking factor for tape
+records. The default is 1, the maximum is 20. This option
+should only be used with raw magnetic tape archives (See
+.B f
+above).
+.TP 10
+.B l
+tells
+.I tar
+to complain if it cannot resolve all of the links
+to the files dumped. If this is not specified, no
+error meesages are printed.
+.PP
+.SH FILES
+/dev/mt?
+.br
+/tmp/tar*
+.SH DIAGNOSTICS
+Complaints about bad key characters and tape read/write errors.
+.br
+Complaints if enough memory is not available to hold
+the link tables.
+.SH BUGS
+There is no way to ask for the
+.IR n -th
+occurrence of a file.
+.br
+Tape errors are handled ungracefully.
+.br
+The
+.B u
+option can be slow.
+.br
+The
+.B b
+option should not be used with archives that are
+going to be updated. The current magtape driver cannot
+backspace raw magtape.
+If the archive is on a disk file the 
+.B b
+option should not be used at all, as updating
+an archive stored in this manner can destroy it.
+.br
+The current limit on file name length is
+100 characters.
