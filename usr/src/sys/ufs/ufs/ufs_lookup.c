@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	8.14 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -313,7 +313,7 @@ searchloop:
 					slotoffset = dp->i_offset;
 					slotsize = ep->d_reclen;
 					dp->i_reclen = slotsize;
-					enduseful = slotoffset + slotsize;
+					enduseful = dp->i_size;
 					ap->a_cnp->cn_flags |= ISWHITEOUT;
 					numdirpasses--;
 					goto notfound;
