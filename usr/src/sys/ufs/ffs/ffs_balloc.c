@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_balloc.c	8.6 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +42,8 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	struct vnode *vp = ITOV(ip);
 	struct indir indirs[NIADDR + 2];
 	ufs_daddr_t newb, *bap, pref;
-	int osize, nsize, num, i, error;
+	int deallocated, osize, nsize, num, i, error;
+	ufs_daddr_t *allocib, *blkp, *allocblk, allociblk[NIADDR];
 
 	*bpp = NULL;
 	if (lbn < 0)
@@ -141,6 +142,8 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	 */
 	--num;
 	nb = ip->i_ib[indirs[0].in_off];
+	allocib = 0;
+	allocblk = allociblk;
 	if (nb == 0) {
 		pref = ffs_blkpref(ip, lbn, 0, (ufs_daddr_t *)0);
 	        if (error = ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize,
@@ -158,6 +161,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 			ffs_blkfree(ip, nb, fs->fs_bsize);
 			return (error);
 		}
+		allocib = &ip->i_ib[indirs[0].in_off];
 		ip->i_ib[indirs[0].in_off] = newb;
 		ip->i_flag |= IN_CHANGE | IN_UPDATE;
 	}
@@ -169,7 +173,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		    indirs[i].in_lbn, (int)fs->fs_bsize, NOCRED, &bp);
 		if (error) {
 			brelse(bp);
-			return (error);
+			goto fail;
 		}
 		bap = (ufs_daddr_t *)bp->b_data;
 		nb = bap[indirs[i].in_off];
@@ -185,8 +189,9 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		if (error =
 		    ffs_alloc(ip, lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
-			return (error);
+			goto fail;
 		}
+		*allocblk++ = newb;
 		nb = newb;
 		nbp = getblk(vp, indirs[i].in_lbn, fs->fs_bsize, 0, 0);
 		nbp->b_blkno = fsbtodb(fs, nb);
@@ -196,9 +201,8 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		 * never point at garbage.
 		 */
 		if (error = bwrite(nbp)) {
-			ffs_blkfree(ip, nb, fs->fs_bsize);
 			brelse(bp);
-			return (error);
+			goto fail;
 		}
 		bap[indirs[i - 1].in_off] = nb;
 		/*
@@ -219,8 +223,9 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		if (error = ffs_alloc(ip,
 		    lbn, pref, (int)fs->fs_bsize, cred, &newb)) {
 			brelse(bp);
-			return (error);
+			goto fail;
 		}
+		*allocblk++ = newb;
 		nb = newb;
 		nbp = getblk(vp, lbn, fs->fs_bsize, 0, 0);
 		nbp->b_blkno = fsbtodb(fs, nb);
@@ -244,7 +249,7 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 		error = bread(vp, lbn, (int)fs->fs_bsize, NOCRED, &nbp);
 		if (error) {
 			brelse(nbp);
-			return (error);
+			goto fail;
 		}
 	} else {
 		nbp = getblk(vp, lbn, fs->fs_bsize, 0, 0);
@@ -252,4 +257,32 @@ ffs_balloc(ip, lbn, size, cred, bpp, flags)
 	}
 	*bpp = nbp;
 	return (0);
+fail:
+	/*
+	 * If we have failed part way through block allocation, we
+	 * have to deallocate any indirect blocks that we have allocated.
+	 */
+	if (allocib == 0) {
+		deallocated = 0;
+	} else {
+		ffs_blkfree(ip, *allocib, fs->fs_bsize);
+		*allocib = 0;
+		deallocated = fs->fs_bsize;
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+	}
+	for (blkp = allociblk; blkp < allocblk; blkp++) {
+		ffs_blkfree(ip, *blkp, fs->fs_bsize);
+		deallocated += fs->fs_bsize;
+	}
+	if (deallocated) {
+#ifdef QUOTA
+		/*
+		 * Restore user's disk quota because allocation failed.
+		 */
+		(void) chkdq(ip, (long)-btodb(deallocated), cred, FORCE);
+#endif
+		ip->i_blocks -= btodb(deallocated);
+		ip->i_flag |= IN_CHANGE | IN_UPDATE;
+	}
+	return (error);
 }
