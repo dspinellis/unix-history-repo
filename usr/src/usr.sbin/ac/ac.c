@@ -1,7 +1,7 @@
 /*
  * acct [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.3 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -182,7 +182,7 @@ struct tbuf *tp;
 		t = ibuf.ut_time;
 	if (tp->userp) {
 		t1 = t - tp->ttime;
-		if (t1>0 && t1 < 1.5*day)
+		if (t1 > 0)
 			tp->userp->utime += t1;
 	}
 	tp->ttime = t;
