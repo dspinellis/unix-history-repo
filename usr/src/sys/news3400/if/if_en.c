@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.4 (Berkeley) %G%
+ *	@(#)if_en.c	7.5 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -191,6 +191,7 @@ enstart(ifp)
         int unit = ifp->if_unit, len;
 	register struct en_softc *es = &en_softc[unit];
 	register struct mbuf *m;
+	int s;
 
 	IF_DEQUEUE(&es->es_if.if_snd, m);
 	if (m == 0)
@@ -208,7 +209,10 @@ enstart(ifp)
 	 */
 	if (len - sizeof(struct ether_header) < ETHERMIN)
 		len = ETHERMIN + sizeof(struct ether_header);
+	s = splclock();			/* KU:XXX should be gone */
 	en_start(unit, len);
+	es->es_if.if_flags |= IFF_OACTIVE;
+	(void) splx(s);			/* KU:XXX */
 #if NBPFILTER > 0
 	/*
 	 * If bpf is listening on this interface, let it
@@ -222,7 +226,6 @@ enstart(ifp)
 #endif
 	}
 #endif /* NBPFILTER > 0 */
-	es->es_if.if_flags |= IFF_OACTIVE;
 	return(0);
 }
 
