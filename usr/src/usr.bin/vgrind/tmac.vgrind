@@ -9,7 +9,6 @@
 'bd S B 3
 'nr cm 0
 'nf
-'wh 0 he
 'de he
 'ev 2
 'tl '\-\-''\-\-'
@@ -23,7 +22,6 @@
 'ev
 'ds =G \\*(=F
 ..
-'wh -1i fo
 'de fo
 'ev 2
 'sp .35i
