@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.24 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -609,7 +609,10 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 		vp = ndp->ni_vp;
 		ndp->ni_vp = NULLVP;
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, cred)) {
 			vput(vp);
@@ -631,7 +634,10 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
-	vput(ndp->ni_dvp);
+	if (ndp->ni_dvp == ndp->ni_vp)
+		vrele(ndp->ni_dvp);
+	else
+		vput(ndp->ni_dvp);
 	if (ndp->ni_vp)
 		vput(ndp->ni_vp);
 	return (error);
@@ -686,7 +692,10 @@ out:
 		error = VOP_REMOVE(ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vput(vp);
 	}
 	nfsm_reply(0);
@@ -774,7 +783,10 @@ out:
 		vrele(tond.ni_cdir);
 	} else {
 		VOP_ABORTOP(&tond);
-		vput(tdvp);
+		if (tdvp == tvp)
+			vrele(tdvp);
+		else
+			vput(tdvp);
 		if (tvp)
 			vput(tvp);
 		VOP_ABORTOP(ndp);
@@ -842,7 +854,10 @@ out:
 		error = VOP_LINK(vp, ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		if (ndp->ni_vp)
 			vrele(ndp->ni_vp);
 	}
@@ -901,7 +916,10 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat)
 	*(pathcp + len2) = '\0';
 	if (ndp->ni_vp) {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vrele(ndp->ni_vp);
 		error = EEXIST;
 		goto out;
@@ -916,7 +934,10 @@ out:
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
-	vput(ndp->ni_dvp);
+	if (ndp->ni_dvp == ndp->ni_vp)
+		vrele(ndp->ni_dvp);
+	else
+		vput(ndp->ni_dvp);
 	if (ndp->ni_vp);
 		vrele(ndp->ni_vp);
 	if (pathcp)
@@ -966,7 +987,10 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vrele(vp);
 		error = EEXIST;
 		nfsm_reply(0);
@@ -989,7 +1013,10 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	return (error);
 nfsmout:
 	VOP_ABORTOP(ndp);
-	vput(ndp->ni_dvp);
+	if (ndp->ni_dvp == ndp->ni_vp)
+		vrele(ndp->ni_dvp);
+	else
+		vput(ndp->ni_dvp);
 	if (ndp->ni_vp)
 		vrele(ndp->ni_vp);
 	return (error);
@@ -1048,7 +1075,10 @@ out:
 		error = VOP_RMDIR(ndp);
 	} else {
 		VOP_ABORTOP(ndp);
-		vput(ndp->ni_dvp);
+		if (ndp->ni_dvp == ndp->ni_vp)
+			vrele(ndp->ni_dvp);
+		else
+			vput(ndp->ni_dvp);
 		vput(vp);
 	}
 	nfsm_reply(0);
