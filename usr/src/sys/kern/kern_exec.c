@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.60 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.61 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -672,7 +672,7 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 		addr = VM_MIN_ADDRESS;
 		size = round_page(xts + ep->a_data);
 		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
-			MAP_FILE|MAP_COPY|MAP_FIXED,
+			MAP_COPY|MAP_FIXED,
 			(caddr_t)vp, (vm_offset_t)toff);
 		(void) vm_map_protect(&vm->vm_map, addr, addr + xts,
 			VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
@@ -681,13 +681,13 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 		size = xts;
 		error = vm_mmap(&vm->vm_map, &addr, size,
 			VM_PROT_READ|VM_PROT_EXECUTE,
-			MAP_FILE|MAP_COPY|MAP_FIXED,
+			MAP_COPY|MAP_FIXED,
 			(caddr_t)vp, (vm_offset_t)toff);
 		toff += size;
 		addr = (vm_offset_t)vm->vm_daddr;
 		size = round_page(ep->a_data);
 		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
-			MAP_FILE|MAP_COPY|MAP_FIXED,
+			MAP_COPY|MAP_FIXED,
 			(caddr_t)vp, (vm_offset_t)toff);
 #endif /* COFF */
 		vp->v_flag |= VTEXT;
