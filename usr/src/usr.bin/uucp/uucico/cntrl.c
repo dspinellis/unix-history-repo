@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.11	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -198,7 +198,8 @@ top:
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			assert("CMD FILE CORRUPTED", Wfile, narg);
+			syslog(LOG_WARNING, "%s CORRUPTED: %d args", Wfile,
+				narg);
 			Wfile[0] = '\0';
 			goto top;
 		}
@@ -234,8 +235,10 @@ top:
 			&&  (stbuf.st_mode & ANYREAD) == 0) {
 		e_access:;
 				/*  access denied  */
-				fclose(fp);
-				fp = NULL;
+				if (fp != NULL) {
+					fclose(fp);
+					fp = NULL;
+				}
 				TransferSucceeded = 1; /* else will keep sending */
 				logent("DENIED", "ACCESS");
 				USRF(USR_LOCACC);
@@ -299,10 +302,10 @@ process:
 			USRF(USR_COK);
 			TransferSucceeded = 1;
 		}
-		if (role == MASTER) {
+		if (role == MASTER)
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
-		}
-		if (msg[2] == 'M') {
+
+		if (msg[2] == 'M' && role == MASTER) {
 			extern int Nfiles;
 			WMESG(HUP, "");
 			RMESG(HUP, msg, 1);
@@ -331,7 +334,10 @@ process:
 		}
 
 		if (msg[1] == 'N') {
-			ASSERT(role == MASTER, "WRONG ROLE - HUP", CNULL, role);
+			if (role != MASTER) {
+				syslog(LOG_ERR, "Wrong Role - HUP");
+				cleanup(FAIL);
+			}
 			role = SLAVE;
 			goto remaster;
 		}
@@ -344,6 +350,15 @@ process:
 		}
 
 		WMESG(HUP, NO);
+		/*
+		 * want to create an orphan uuxqt,
+		 * so a double-fork is needed.
+		 */
+		if (fork() == 0) {
+			xuuxqt();
+			_exit(0);
+		}
+		wait((int *)0);
 		role = MASTER;
 		goto remaster;
 
@@ -391,16 +406,24 @@ process:
 				goto process;
 			}
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
-			ASSERT(role == MASTER, "WRONG ROLE - SN", CNULL, role);
+			if (role != MASTER) {
+				syslog(LOG_ERR, "Wrong Role - SN");
+				cleanup(FAIL);
+			}
 			unlinkdf(W_DFILE);
 			goto top;
 		}
 
 		if (msg[1] == 'Y') {
 			/* send file */
-			ASSERT(role == MASTER, "WRONG ROLE - SY", CNULL, role);
-			ret = fstat(fileno(fp), &stbuf);
-			ASSERT(ret != -1, "STAT FAILED", filename, 0);
+			if (role != MASTER) {
+				syslog(LOG_ERR, "Wrong Role - SY");
+				cleanup(FAIL);
+			}
+			if (fstat(fileno(fp), &stbuf) < 0) {
+				syslog(LOG_ERR, "stat(%s) failed: %m",filename);
+				cleanup(FAIL);
+			}
 			i = 1 + (int)(stbuf.st_size / XFRRATE);
 			if (send_or_receive != SNDFILE) {
 				send_or_receive = SNDFILE;
@@ -420,7 +443,10 @@ process:
 		}
 
 		/*  SLAVE section of SNDFILE  */
-		ASSERT(role == SLAVE, "WRONG ROLE - SLAVE", CNULL, role);
+		if (role != SLAVE) {
+			syslog(LOG_ERR, "Wrong Role - SLAVE");
+			cleanup(FAIL);
+		}
 
 		/* request to receive file */
 		/* check permissions */
@@ -430,7 +456,7 @@ process:
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			assert("CMD FILE CORRUPTED",Wfile, i);
+			syslog(LOG_WARNING, "%s CORRUPTED: %d args", Wfile, i);
 			Wfile[0] = '\0';
 			goto top;
 		}
@@ -541,14 +567,20 @@ process:
 			fclose(fp);
 			fp = NULL;
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
-			ASSERT(role == MASTER, "WRONG ROLE - RN", CNULL, role);
+			if (role != MASTER) {
+				syslog(LOG_ERR, "Wrong Role - RN");
+				cleanup(FAIL);
+			}
 			unlinkdf(Dfile);
 			goto top;
 		}
 
 		if (msg[1] == 'Y') {
 			/* receive file */
-			ASSERT(role == MASTER, "WRONG ROLE - RY", CNULL, role);
+			if (role != MASTER) {
+				syslog(LOG_ERR, "Wrong Role - RY");
+				cleanup(FAIL);
+			}
 			if (send_or_receive != RCVFILE) {
 				send_or_receive = RCVFILE;
 				systat(Rmtname, SS_INPROGRESS, "RECEIVING");
@@ -569,12 +601,7 @@ process:
 				strcat(filename, lastpart(W_FILE1));
 			}
 			status = xmv(Dfile, filename);
-			if (willturn && Now.time > (LastTurned.time+turntime)
-				&& iswrk(Wfile, "chk", Spool, wkpre)) {
-					WMESG(RQSTCMPT, status ? EM_RMTCP : "YM");
-					willturn = -1;
-			} else
-				WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
+			WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
 			notify(mailopt, W_USER, filename, Rmtname,
 				status ? EM_LOCCP : YES);
 			if (status == 0) {
@@ -588,11 +615,28 @@ process:
 				putinpub(filename, Dfile, W_USER);
 				USRF(USR_LOCCP);
 			}
+			if (msg[strlen(msg)-1] == 'M') {
+				extern int Nfiles;
+				WMESG(HUP, "");
+				RMESG(HUP, msg, 1);
+				logent(Rmtname, "TURNAROUND");
+#ifdef USG
+				time(&LastTurned.time);
+				LastTurned.millitm = 0;
+#else !USG
+				ftime(&LastTurned);
+#endif !USG
+				Nfiles = 0; /* force rescan of queue for work */
+				goto process;
+			}
 			goto top;
 		}
 
 		/*  SLAVE section of RCVFILE  */
-		ASSERT(role == SLAVE, "WRONG ROLE - SLAVE RCV", CNULL, role);
+		if (role != SLAVE) {
+			syslog(LOG_ERR, "Wrong Role - SLAVE RCV");
+			cleanup(FAIL);
+		}
 
 		/* request to send file */
 		strcpy(rqstr, msg);
@@ -605,7 +649,7 @@ process:
 			bnp = rindex(Wfile, '/');
 			sprintf(rqstr, "%s/%s", CORRUPT, bnp ? bnp + 1 : Wfile);
 			xmv(Wfile, rqstr);
-			assert("CMD FILE CORRUPTED", Wfile, i);
+			syslog(LOG_WARNING, "%s CORRUPTED: %d args", Wfile, i);
 			Wfile[0] = '\0';
 			goto top;
 		}
@@ -632,10 +676,18 @@ process:
 		}
 
 		/*  ok to send file */
-		ret = fstat(fileno(fp), &stbuf);
-		ASSERT(ret != -1, "STAT FAILED", filename, 0);
+		if (fstat(fileno(fp), &stbuf) < 0) {
+			syslog(LOG_ERR, "stat(%s) failed: %m", filename);
+			cleanup(FAIL);
+		}
+
 		i = 1 + (int)(stbuf.st_size / XFRRATE);
-		sprintf(msg, "%s %o", YES, (int)stbuf.st_mode & 0777);
+		if (willturn && Now.time > (LastTurned.time+turntime)
+			&& iswrk(Wfile, "chk", Spool, wkpre)) {
+				willturn = -1;
+		}
+		sprintf(msg, "%s %o%s", YES, (int)stbuf.st_mode & 0777,
+			willturn < 0 ? " M" : "");
 		WMESG(RCVFILE, msg);
 		if (send_or_receive != SNDFILE) {
 			send_or_receive = SNDFILE;
