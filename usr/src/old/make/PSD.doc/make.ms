@@ -1,8 +1,9 @@
-.\"	@(#)make.ms	5.1 (Berkeley) %G%
+.\"	@(#)make.ms	6.1 (Berkeley) %G%
 .\"
+.EH 'PS1:12-%''Make \(em A Program for Maintaining Computer Programs'
+.OH 'Make \(em A Program for Maintaining Computer Programs''PS1:12-%'
 .....TR 57
-.ND August 15, 1978
-.RP
+.\".RP
 .de IT
 .if n .ul
 \&\\$3\f2\\$1\fR\^\&\\$2
@@ -43,6 +44,8 @@ to determine what work is really necessary.
 also provides a simple macro substitution facility
 and the ability to encapsulate commands in a single file
 for convenient administration.
+.sp 2
+Revised April, 1986
 .AE
 .SH
 Introduction
@@ -530,6 +533,27 @@ Thus,
 make "CFLAGS=\|\(miO"
 .DE
 causes the optimizing C compiler to be used.
+.PP
+Another special macro is `VPATH'.
+The ``VPATH'' macro should be set to a list of directories separated by colons.
+When
+.I make
+searches for a file as a result of a dependency relation, it will
+first search the current directory and then each of the directories on the
+``VPATH'' list.
+If the file is found, the actual path to the file will be used, rather than
+just the filename.
+If ``VPATH'' is not defined, then only the current directory is searched.
+Note that ``VPATH'' is intended to act like the System V ``VPATH'' support,
+but there is no guarantee that it functions identically.
+.PP
+One use for ``VPATH'' is when one has several programs that compile from the
+same source.
+The source can be kept in one directory and each set of
+object files (along with a separate
+.IR makefile )
+would be in a separate subdirectory.
+The ``VPATH'' macro would point to the source directory in this case.
 .SH
 Example
 .PP
