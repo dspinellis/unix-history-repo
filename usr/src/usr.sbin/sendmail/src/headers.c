@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -1030,16 +1030,25 @@ putheader(mci, h, e)
 
 	/*
 	**  If we are converting this to a MIME message, add the
-	**  MIME-Version: header.
+	**  MIME headers.
 	*/
 
 	if (bitset(MM_MIME8BIT, MimeMode) &&
 	    bitset(EF_HAS8BIT, e->e_flags) &&
 	    !bitnset(M_8BITS, mci->mci_mailer->m_flags) &&
-	    !bitset(MCIF_CVT8TO7, mci->mci_flags) &&
-	    hvalue("MIME-Version", e->e_header) == NULL)
+	    !bitset(MCIF_CVT8TO7, mci->mci_flags))
 	{
-		putline("MIME-Version: 1.0", mci);
+		if (hvalue("MIME-Version", e->e_header) == NULL)
+			putline("MIME-Version: 1.0", mci);
+		if (hvalue("Content-Type", e->e_header) == NULL)
+		{
+			sprintf(obuf, "Content-Type: text/plain; charset=%s",
+				DefaultCharSet != NULL ? DefaultCharSet
+						       : "unknown-8bit");
+			putline(obuf, mci);
+		}
+		if (hvalue("Content-Transfer-Encoding", e->e_header) == NULL)
+			putline("Content-Transfer-Encoding: 8bit", mci);
 	}
 }
 /*
