@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.52	%G%";
+static char SccsId[] = "@(#)deliver.c	3.53	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -53,6 +53,8 @@ deliver(firstto, editfcn)
 	char tfrombuf[MAXNAME];		/* translated from person */
 	extern char **prescan();
 	register ADDRESS *to = firstto;
+	bool clever = FALSE;		/* running user smtp to this mailer */
+	bool tempfail = FALSE;
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
@@ -128,8 +130,20 @@ deliver(firstto, editfcn)
 			return (-1);
 		}
 	}
+
 	if (*mvp == NULL)
-		syserr("No $u in mailer argv for %s", pv[0]);
+	{
+		/* running SMTP */
+		clever = TRUE;
+		*pvp = NULL;
+		i = smtpinit(m, pv, (ADDRESS *) NULL);
+		giveresponse(i, TRUE, m);
+		if (i == EX_TEMPFAIL)
+		{
+			QueueUp = TRUE;
+			tempfail = TRUE;
+		}
+	}
 
 	/*
 	**  At this point *mvp points to the argument with $u.  We
@@ -159,6 +173,8 @@ deliver(firstto, editfcn)
 		user = to->q_user;
 		To = to->q_paddr;
 		to->q_flags |= QDONTSEND;
+		if (tempfail)
+			to->q_flags |= QQUEUEUP;
 # ifdef DEBUG
 		if (Debug)
 			printf("   send to `%s'\n", user);
@@ -239,19 +255,44 @@ deliver(firstto, editfcn)
 		define('u', user);		/* to user */
 		define('z', to->q_home);	/* user's home */
 
-		/* expand out this user */
-		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
-		*pvp++ = newstr(buf);
-		if (pvp >= &pv[MAXPV - 2])
+		/*
+		**  Expand out this user into argument list or
+		**  send it to our SMTP server.
+		*/
+
+		if (clever)
 		{
-			/* allow some space for trailing parms */
-			break;
+			i = smtpmrcp(to);
+			if (i == EX_TEMPFAIL)
+			{
+				QueueUp = TRUE;
+				to->q_flags |= QQUEUEUP;
+			}
+			else if (i != EX_OK)
+			{
+				to->q_flags |= QBADADDR;
+				giveresponse(i, TRUE, m);
+			}
+		}
+		else
+		{
+			(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
+			*pvp++ = newstr(buf);
+			if (pvp >= &pv[MAXPV - 2])
+			{
+				/* allow some space for trailing parms */
+				break;
+			}
 		}
 	}
 
 	/* see if any addresses still exist */
 	if (tobuf[0] == '\0')
+	{
+		if (clever)
+			smtpquit(pv[0]);
 		return (0);
+	}
 
 	/* print out messages as full list */
 	To = tobuf;
@@ -260,7 +301,7 @@ deliver(firstto, editfcn)
 	**  Fill out any parameters after the $u parameter.
 	*/
 
-	while (*++mvp != NULL)
+	while (!clever && *++mvp != NULL)
 	{
 		(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 		*pvp++ = newstr(buf);
@@ -274,13 +315,20 @@ deliver(firstto, editfcn)
 	**	The argument vector gets built, pipes
 	**	are created as necessary, and we fork & exec as
 	**	appropriate.
+	**	If we are running SMTP, we just need to clean up.
 	*/
 
 	if (editfcn == NULL)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &From;
-	i = sendoff(m, pv, editfcn, ctladdr);
+	if (clever)
+	{
+		i = smtpfinish(m, editfcn);
+		smtpquit(pv[0]);
+	}
+	else
+		i = sendoff(m, pv, editfcn, ctladdr);
 
 	/*
 	**  If we got a temporary failure, arrange to queue the
@@ -387,18 +435,115 @@ sendoff(m, pvp, editfcn, ctladdr)
 	int (*editfcn)();
 	ADDRESS *ctladdr;
 {
-	auto int st;
+	auto FILE *mfile;
+	auto FILE *rfile;
 	register int i;
+	extern putmessage();
+	int pid;
+
+	/*
+	**  Create connection to mailer.
+	*/
+
+	pid = openmailer(m, pvp, ctladdr, FALSE, &mfile, &rfile);
+	if (pid < 0)
+		return (-1);
+
+	/*
+	**  Format and send message.
+	*/
+
+	(void) signal(SIGPIPE, SIG_IGN);
+	if (editfcn == NULL)
+		editfcn = putmessage;
+	
+	(*editfcn)(mfile, m, FALSE);
+	(void) fclose(mfile);
+
+	i = endmailer(pid, pvp[0]);
+	giveresponse(i, TRUE, m);
+	return (i);
+}
+/*
+**  ENDMAILER -- Wait for mailer to terminate.
+**
+**	We should never get fatal errors (e.g., segmentation
+**	violation), so we report those specially.  For other
+**	errors, we choose a status message (into statmsg),
+**	and if it represents an error, we print it.
+**
+**	Parameters:
+**		pid -- pid of mailer.
+**		name -- name of mailer (for error messages).
+**
+**	Returns:
+**		exit code of mailer.
+**
+**	Side Effects:
+**		none.
+*/
+
+endmailer(pid, name)
+	int pid;
+	char *name;
+{
+	register int i;
+	auto int st;
+
+	while ((i = wait(&st)) > 0 && i != pid)
+		continue;
+	if (i < 0)
+	{
+		syserr("wait");
+		return (-1);
+	}
+	if ((st & 0377) != 0)
+	{
+		syserr("%s: stat %o", name, st);
+		ExitStat = EX_UNAVAILABLE;
+		return (-1);
+	}
+	i = (st >> 8) & 0377;
+	return (i);
+}
+/*
+**  OPENMAILER -- open connection to mailer.
+**
+**	Parameters:
+**		m -- mailer descriptor.
+**		pvp -- parameter vector to pass to mailer.
+**		ctladdr -- controlling address for user.
+**		clever -- create a full duplex connection.
+**		pmfile -- pointer to mfile (to mailer) connection.
+**		prfile -- pointer to rfile (from mailer) connection.
+**
+**	Returns:
+**		pid of mailer.
+**		-1 on error.
+**
+**	Side Effects:
+**		creates a mailer in a subprocess.
+*/
+
+openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
+	struct mailer *m;
+	char **pvp;
+	ADDRESS *ctladdr;
+	bool clever;
+	FILE **pmfile;
+	FILE **prfile;
+{
 	int pid;
 	int mpvect[2];
+	int rpvect[2];
 	FILE *mfile;
-	extern putmessage();
+	FILE *rfile;
 	extern FILE *fdopen();
 
 # ifdef DEBUG
 	if (Debug)
 	{
-		printf("Sendoff:\n");
+		printf("openmailer:\n");
 		printav(pvp);
 	}
 # endif DEBUG
@@ -407,9 +552,19 @@ sendoff(m, pvp, editfcn, ctladdr)
 	/* create a pipe to shove the mail through */
 	if (pipe(mpvect) < 0)
 	{
-		syserr("pipe");
+		syserr("pipe (to mailer)");
 		return (-1);
 	}
+
+	/* if this mailer speaks smtp, create a return pipe */
+	if (clever && pipe(rpvect) < 0)
+	{
+		syserr("pipe (from mailer)");
+		(void) close(mpvect[0]);
+		(void) close(mpvect[1]);
+		return (-1);
+	}
+
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
@@ -417,6 +572,11 @@ sendoff(m, pvp, editfcn, ctladdr)
 		syserr("Cannot fork");
 		(void) close(mpvect[0]);
 		(void) close(mpvect[1]);
+		if (clever)
+		{
+			(void) close(rpvect[0]);
+			(void) close(rpvect[1]);
+		}
 		return (-1);
 	}
 	else if (pid == 0)
@@ -428,7 +588,14 @@ sendoff(m, pvp, editfcn, ctladdr)
 		(void) signal(SIGTERM, SIG_DFL);
 
 		/* arrange to filter standard & diag output of command */
-		if (OutChannel != stdout)
+		if (clever)
+		{
+			(void) close(rpvect[0]);
+			(void) close(1);
+			(void) dup(rpvect[1]);
+			(void) close(rpvect[1]);
+		}
+		else if (OutChannel != stdout)
 		{
 			(void) close(1);
 			(void) dup(fileno(OutChannel));
@@ -492,41 +659,21 @@ sendoff(m, pvp, editfcn, ctladdr)
 	}
 
 	/*
-	**  Format and write message to mailer.
+	**  Set up return value.
 	*/
 
 	(void) close(mpvect[0]);
-	(void) signal(SIGPIPE, SIG_IGN);
 	mfile = fdopen(mpvect[1], "w");
-	if (editfcn == NULL)
-		editfcn = putmessage;
-	(*editfcn)(mfile, m);
-	(void) fclose(mfile);
-
-	/*
-	**  Wait for child to die and report status.
-	**	We should never get fatal errors (e.g., segmentation
-	**	violation), so we report those specially.  For other
-	**	errors, we choose a status message (into statmsg),
-	**	and if it represents an error, we print it.
-	*/
-
-	while ((i = wait(&st)) > 0 && i != pid)
-		continue;
-	if (i < 0)
+	if (clever)
 	{
-		syserr("wait");
-		return (-1);
+		(void) close(rpvect[1]);
+		rfile = fdopen(rpvect[0], "r");
 	}
-	if ((st & 0377) != 0)
-	{
-		syserr("%s: stat %o", pvp[0], st);
-		ExitStat = EX_UNAVAILABLE;
-		return (-1);
-	}
-	i = (st >> 8) & 0377;
-	giveresponse(i, TRUE, m);
-	return (i);
+
+	*pmfile = mfile;
+	*prfile = rfile;
+
+	return (pid);
 }
 /*
 **  GIVERESPONSE -- Interpret an error response from a mailer
@@ -631,6 +778,7 @@ giveresponse(stat, force, m)
 **	Parameters:
 **		fp -- file to output onto.
 **		m -- a mailer descriptor.
+**		xdot -- if set, hide lines beginning with dot.
 **
 **	Returns:
 **		none.
@@ -639,12 +787,12 @@ giveresponse(stat, force, m)
 **		The message is written onto fp.
 */
 
-putmessage(fp, m)
+putmessage(fp, m, xdot)
 	FILE *fp;
 	struct mailer *m;
+	bool xdot;
 {
 	char buf[BUFSIZ];
-	register int i;
 	register HDR *h;
 	extern char *arpadate();
 	bool anyheader = FALSE;
@@ -736,8 +884,8 @@ putmessage(fp, m)
 	if (TempFile != NULL)
 	{
 		rewind(TempFile);
-		while (!ferror(fp) && (i = fread(buf, 1, BUFSIZ, TempFile)) > 0)
-			(void) fwrite(buf, 1, i, fp);
+		while (!ferror(fp) && fgets(buf, sizeof buf, TempFile) != NULL)
+			fprintf(fp, "%s%s", xdot && buf[0] == '.' ? "." : "", buf);
 
 		if (ferror(TempFile))
 		{
@@ -879,7 +1027,7 @@ mailfile(filename, ctladdr)
 		if (f == NULL)
 			exit(EX_CANTCREAT);
 
-		putmessage(f, Mailer[1]);
+		putmessage(f, Mailer[1], FALSE);
 		fputs("\n", f);
 		(void) fclose(f);
 		(void) fflush(stdout);
