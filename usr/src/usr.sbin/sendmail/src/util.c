@@ -3,7 +3,7 @@
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.4	%G%";
+static char	SccsId[] = "@(#)util.c	3.5	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -284,4 +284,33 @@ makelower(p)
 	for (; (c = *p) != '\0'; p++)
 		if (isascii(c) && isupper(c))
 			*p = c - 'A' + 'a';
+}
+/*
+**  SAMEWORD -- return TRUE if the words are the same
+**
+**	Ignores case.
+**
+**	Parameters:
+**		a, b -- the words to compare.
+**
+**	Returns:
+**		TRUE if a & b match exactly (modulo case)
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+sameword(a, b)
+	register char *a, *b;
+{
+	while (lower(*a) == lower(*b))
+	{
+		if (*a == '\0')
+			return (TRUE);
+		a++;
+		b++;
+	}
+	return (FALSE);
 }
