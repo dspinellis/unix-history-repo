@@ -1,4 +1,4 @@
-.\"	@(#)HEADERS	1.4	%G%
+.\"	@(#)HEADERS	1.5	%G%
 .\"
 .\"	.UC -- UCB external letterhead, CSRG address
 .\"	.UC "date" -- add date
@@ -43,7 +43,7 @@ LOS\\ ANGELES \\(bu RIVERSIDE \\(bu SAN\\ DIEGO
 COMPUTER SYSTEMS RESEARCH GROUP
 COMPUTER SCIENCE DIVISION, EECS\\h'|4.1i'\\s0\\s10\\$1\\s0\\s7
 BERKELEY, CALIFORNIA 94720
-(415) 642-7780
+(510) 642-7780
 .ps
 .vs
 .fi
@@ -110,7 +110,7 @@ UNIVERSITY OF CALIFORNIA, BERKELEY
 \|COMPUTER SYSTEMS RESEARCH GROUP
 \|COMPUTER SCIENCE DIVISION, EECS
 \|BERKELEY, CALIFORNIA 94720
-\|(415) 642-7780
+\|(510) 642-7780
 .ft \\n(xz
 .ps \\n(xw
 .if "\\$1"D" \{\.sp 4p
