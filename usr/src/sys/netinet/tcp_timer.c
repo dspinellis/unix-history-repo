@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	6.13 (Berkeley) %G%
+ *	@(#)tcp_timer.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -193,7 +193,8 @@ tcp_timers(tp, timer)
 	case TCPT_KEEP:
 		if (tp->t_state < TCPS_ESTABLISHED)
 			goto dropit;
-		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE) {
+		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE &&
+		    tp->t_state <= TCPS_CLOSE_WAIT) {
 		    	if (tp->t_idle >= TCPTV_MAXIDLE)
 				goto dropit;
 			/*
@@ -208,8 +209,7 @@ tcp_timers(tp, timer)
 			 */
 			tcp_respond(tp,
 			    tp->t_template, tp->rcv_nxt-1, tp->snd_una-1, 0);
-		} else
-			tp->t_idle = 0;
+		}
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		break;
 	dropit:
