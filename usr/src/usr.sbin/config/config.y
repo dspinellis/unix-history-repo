@@ -1,13 +1,14 @@
 %token CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
 %token CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
-%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS
+%token DISK SLAVE AT HZ TIMEZONE DST MAXUSERS MASTER COMMA MINUS EQUALS
 %{
-/*	config.y	1.12	82/07/13	*/
+/*	config.y	1.13	82/07/21	*/
 #include "config.h"
 #include <stdio.h>
 	struct device cur;
 	struct device *curp = NULL;
 	char *temp_id;
+	char *val_id;
 %}
 %%
 Configuration:
@@ -67,10 +68,26 @@ Option:
 		    struct opt *op = malloc(sizeof (struct opt));
 		    op->op_name = ns($1);
 		    op->op_next = opt;
+		    op->op_value = NULL;
 		    opt = op;
 		    free(temp_id);
+	} |
+	Save_id EQUALS Opt_value = {
+		    struct opt *op = malloc(sizeof (struct opt));
+		    op->op_name = ns($1);
+		    op->op_next = opt;
+		    op->op_value = ns($3);
+		    opt = op;
+		    free(temp_id);
+		    free(val_id);
 	}
 	;
+
+Opt_value:
+	ID = { $$ = val_id = ns($1); } |
+	NUMBER = { char nb[16]; sprintf(nb, "%d", $1); $$ = val_id = ns(nb); }
+	;
+
 
 Save_id:
 	ID = { $$ = temp_id = ns($1); }
@@ -88,8 +105,15 @@ Device_spec:
 	DISK Dev_name Dev_info Int_spec =
 				{  cur.d_dk = 1; cur.d_type = DEVICE; } |
 	CONTROLLER Dev_name Dev_info Int_spec = {  cur.d_type = CONTROLLER; } |
-	PSEUDO_DEVICE Init_dev Dev =
-			{ cur.d_name = $3; cur.d_type = PSEUDO_DEVICE; }
+	PSEUDO_DEVICE Init_dev Dev = {
+			cur.d_name = $3;
+			cur.d_type = PSEUDO_DEVICE;
+		  } |
+	PSEUDO_DEVICE Init_dev Dev NUMBER = {
+			cur.d_name = $3;
+			cur.d_type = PSEUDO_DEVICE;
+			cur.d_slave = $4;
+		}
 	;
 
 Dev_name:
@@ -343,7 +367,7 @@ int num;
 
 check_tz()
 {
-	if (timezone > 24 * 60)
+	if (abs(timezone) > 12 * 60)
 		yyerror("timezone is unreasonable");
 	else
 		hadtz = TRUE;
