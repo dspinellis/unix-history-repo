@@ -1,4 +1,4 @@
-/*	vft2ch.c	(Berkeley)	1.1	85/02/04
+/*	vft2ch.c	(Berkeley)	1.2	85/04/29
  *
  * Font translation for vfont-style fonts to character format.
  *
@@ -16,7 +16,9 @@
 
 #define	DIRSIZ	256
 #define	MAGICNO	0436
+#ifndef BITDIR
 #define BITDIR		"/usr/lib/vfont"
+#endif
 
 
 struct header FontHeader;
