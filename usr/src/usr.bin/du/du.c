@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)du.c	5.15 (Berkeley) %G%";
 #include <string.h>
 #include <stdlib.h>
 
+void	 err __P((const char *, ...));
 char	*getbsize __P((char *, int *, long *));
 int	 linkchk __P((FTSENT *));
 void	 usage __P((void));
@@ -85,10 +86,8 @@ main(argc, argv)
 	(void)getbsize("du", &notused, &blocksize);
 	blocksize /= 512;
 
-	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL) {
-		(void)fprintf(stderr, "du: %s\n", strerror(errno));
-		exit(1);
-	}
+	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL)
+		err("%s", strerror(errno));
 
 	while (p = fts_read(fts))
 		switch(p->fts_info) {
@@ -132,6 +131,8 @@ main(argc, argv)
 				    p->fts_path);
 			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
+	if (errno)
+		err("%s", strerror(errno));
 	exit(0);
 }
 
@@ -158,10 +159,8 @@ linkchk(p)
 				return(1);
 
 	if (nfiles == maxfiles && (files = realloc((char *)files,
-	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL) {
-		(void)fprintf(stderr, "du: %s\n", strerror(errno));
-		exit(1);
-	}
+	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL)
+		err("%s", strerror(errno));
 	files[nfiles].inode = ino;
 	files[nfiles].dev = dev;
 	++nfiles;
@@ -173,4 +172,33 @@ usage()
 {
 	(void)fprintf(stderr, "usage: du [-a | -s] [-x] [file ...]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "du: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
