@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.c	6.4 (Berkeley) %G%
+ *	@(#)ns.c	6.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -249,15 +249,33 @@ ns_ifinit(ifp, ia, sns)
  * Return address info for specified internet network.
  */
 struct ns_ifaddr *
-ns_iaonnetof(net)
-	union ns_net net;
+ns_iaonnetof(dst)
+	register struct ns_addr *dst;
 {
 	register struct ns_ifaddr *ia;
+	register struct ns_addr *compare;
+	struct ifnet *ifp;
+	long net = ns_netof(*dst);
+	static struct ns_addr laddr;
+	struct ns_ifaddr *ia_maybe = 0;
 
-#define	NtoL(x)	(*(long *)(&(x)))
-	for (ia = ns_ifaddr; ia; ia = ia->ia_next)
-		if (NtoL(ia->ia_net) == NtoL(net))
-			return (ia);
-	return ((struct ns_ifaddr *)0);
+	for (ia = ns_ifaddr; ia; ia = ia->ia_next) {
+		laddr.x_net = ia->ia_net;
+		if (ns_netof(laddr) == net) {
+			ia_maybe = ia;
+			ifp = ia->ia_ifp;
+			if (ifp) {
+				if (ifp->if_flags & IFF_POINTOPOINT) {
+					compare = &satons_addr(ia->ia_dstaddr);
+					if (ns_hosteq(*dst, *compare))
+						return (ia);
+					else
+						continue;
+				} else
+					return (ia);
+			}
+		}
+	}
+	return (ia_maybe);
 }
 #endif
