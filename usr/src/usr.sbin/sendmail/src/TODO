@@ -1,4 +1,4 @@
-(Version 8.24 of %G%)
+(Version 8.25 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -6,8 +6,6 @@ Key:
   S -- security fix
   E -- enhancement to existing algorithm
 
-
-X ****	8 -> 7 bit MIME conversion.
 
 X ****	Merge Sun changes.  [8.7]
 
@@ -52,14 +50,7 @@ X ****	Named rulesets.
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
 
-E ****	Change collect() handling to use high level timeouts instead
-	of per-line timeouts -- the current mechanism is swamping
-	the machine with system calls.  (Look at KJS code.)
-
 X ****	Add smrsh to release.
-
-E ****	Have returned warning messages (and errors?) include a
-	``Precedence: automatic'' header to make them easier to filter.
 
 E ***	Arrange to run queue jobs as the owner of that queue file.  This
 	probably requires forcing a fork in order to be able to completely
