@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.2	81/02/26
+ * mkmakefile.c	1.3	81/02/26
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -61,13 +61,13 @@ struct file_list *new_fent()
 makefile()
 {
     FILE *ifp, *ofp;
-    char line[80];
+    char line[BUFSIZ];
 
     read_files();			/* Read in the "files" file */
-    ifp = fopen("../unix/makefile", "r");
+    ifp = fopen("../conf/makefile", "r");
     ofp = fopen(path("makefile"), "w");
     fprintf(ofp, "IDENT=-D%s -D%s\n", raise(ident), cpu_type);
-    while(fgets(line, 80, ifp) != NULL)
+    while(fgets(line, BUFSIZ, ifp) != NULL)
     {
 	if (*line != '%')
 	{
@@ -83,7 +83,7 @@ makefile()
 	else if (eq(line, "%LOAD\n"))
 	    do_load(ofp);
 	else
-	    fprintf(stderr, "Unknown %% thingy in generic makefile %s", line);
+	    fprintf(stderr, "Unknown %% construct in generic makefile: %s", line);
     }
     fclose(ifp);
     fclose(ofp);
@@ -103,8 +103,11 @@ read_files()
     register char *wd, *this;
     int type;
 
-    fp = fopen("../unix/files", "r");
-
+    fp = fopen("../conf/files", "r");
+    if (fp == NULL) {
+	perror("../conf/files");
+	exit(1);
+    }
     ftab = NULL;
     while((wd = get_word(fp)) != EOF)
     {
@@ -288,22 +291,22 @@ register FILE *f;
     putc('\n', f);
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "\n%s: makefile locore.o ${OBJS} swap%s.o\n",
+	fprintf(f, "\n%s: makefile locore.o ${OBJS} ioconf.o swap%s.o\n",
 		fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n\t",
 		fl->f_needs, fl->f_needs);
 	fprintf(f,
-	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} swap%s.o\n",
+	    "@ld -n -o %s -e start -x -T 80000000 locore.o ${OBJS} ioconf.o swap%s.o\n",
 	    fl->f_needs, fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
-	fprintf(f, "\t@-symorder ../conf/symbols.sort %s\n", fl->f_needs);
+	fprintf(f, "\t@-symorder ../sys/symbols.sort %s\n", fl->f_needs);
 	fprintf(f, "\t@size %s\n", fl->f_needs);
 	fprintf(f, "\t@chmod 755 %s\n", fl->f_needs);
     }
     for (fl = conf_list; fl != NULL; fl = fl->f_next)
     {
-	fprintf(f, "\nswap%s.o: ../conf/swap%s.c\n", fl->f_fn, fl->f_fn);
-	fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../conf/swap%s.c\n", fl->f_fn);
+	fprintf(f, "\nswap%s.o: ../dev/swap%s.c\n", fl->f_fn, fl->f_fn);
+	fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../dev/swap%s.c\n", fl->f_fn);
 	fprintf(f,
 	    "\t${C2} swap%s.s | sed -f ../sys/asm.sed | ${AS} -o swap%s.o\n",
 	    fl->f_fn, fl->f_fn);
