@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.11 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -82,7 +82,7 @@ read()
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
-		ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_READ, ktriov, cnt);
+		ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_READ, &ktriov, cnt);
 #endif
 	u.u_r.r_val1 = cnt;
 	RETURN (error);
@@ -222,7 +222,7 @@ write()
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
 		ktrgenio(u.u_procp->p_tracep, uap->fdes, UIO_WRITE,
-		    ktriov, cnt);
+		    &ktriov, cnt);
 #endif
 	u.u_r.r_val1 = cnt;
 	RETURN (error);
