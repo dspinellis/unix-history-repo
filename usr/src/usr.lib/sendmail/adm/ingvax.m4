@@ -1,0 +1,1 @@
+define(WHOAMI, INGVAX)dnl
