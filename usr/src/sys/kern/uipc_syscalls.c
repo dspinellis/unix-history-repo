@@ -2,11 +2,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.22 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "filedesc.h"
 #include "proc.h"
 #include "file.h"
@@ -46,7 +45,7 @@ socket(p, uap, retval)
 	fp->f_type = DTYPE_SOCKET;
 	fp->f_ops = &socketops;
 	if (error = socreate(uap->domain, &so, uap->type, uap->protocol)) {
-		OFILE(fdp, fd) = 0;
+		fdp->fd_ofiles[fd] = 0;
 		crfree(fp->f_cred);
 		fp->f_count = 0;
 	} else {
@@ -310,11 +309,11 @@ socketpair(p, uap, retval)
 free4:
 	crfree(fp2->f_cred);
 	fp2->f_count = 0;
-	OFILE(fdp, sv[1]) = 0;
+	fdp->fd_ofiles[sv[1]] = 0;
 free3:
 	crfree(fp1->f_cred);
 	fp1->f_count = 0;
-	OFILE(fdp, sv[0]) = 0;
+	fdp->fd_ofiles[sv[0]] = 0;
 free2:
 	(void)soclose(so2);
 free1:
@@ -473,6 +472,7 @@ sendit(p, s, mp, flags, retsize)
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_rw = UIO_WRITE;
+	auio.uio_procp = p;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
@@ -739,6 +739,7 @@ recvit(p, s, mp, namelenp, retsize)
 	auio.uio_iovcnt = mp->msg_iovlen;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_rw = UIO_READ;
+	auio.uio_procp = p;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
@@ -968,10 +969,10 @@ pipe(p, uap, retval)
 	return (0);
 free4:
 	wf->f_count = 0;
-	OFILE(fdp, retval[1]) = 0;
+	fdp->fd_ofiles[retval[1]] = 0;
 free3:
 	rf->f_count = 0;
-	OFILE(fdp, retval[0]) = 0;
+	fdp->fd_ofiles[retval[0]] = 0;
 free2:
 	(void)soclose(wso);
 free1:
@@ -1189,7 +1190,7 @@ getsock(fdp, fdes, fpp)
 	register struct file *fp;
 
 	if ((unsigned)fdes >= fdp->fd_nfiles ||
-	    (fp = OFILE(fdp, fdes)) == NULL)
+	    (fp = fdp->fd_ofiles[fdes]) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_SOCKET)
 		return (ENOTSOCK);
