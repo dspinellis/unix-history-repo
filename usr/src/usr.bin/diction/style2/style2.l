@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static char sccsid[] = "@(#)style2.l	4.2	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)style2.l	4.3	(Berkeley)	90/06/26";
 #endif not lint
 
 #include <stdio.h>
@@ -8,6 +8,9 @@ static char sccsid[] = "@(#)style2.l	4.2	(Berkeley)	82/11/06";
 #include "names.h"
 #include "ehash.c"
 #include "edict.c"
+
+#undef yywrap
+
 #define OUT1(c) putchar(c); putchar(':'); for(i=yyleng-1;i>=0;)putchar(yytext[i--])
 #define POUT1(c) putchar(c); putchar(':'); for(i=yyleng-1;i>0;)putchar(yytext[i--])
 int i;
