@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -209,7 +209,7 @@ ccval(c)
 	char *bp;
 
 	if (c == _POSIX_VDISABLE)
-		return("<undef>");
+		return ("<undef>");
 
 	bp = buf;
 	if (c & 0200) {
@@ -228,5 +228,5 @@ ccval(c)
 	else
 		*bp++ = c;
 	*bp = '\0';
-	return(buf);
+	return (buf);
 }
