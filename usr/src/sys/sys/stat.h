@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)stat.h	7.2 (Berkeley) %G%
+ *	@(#)stat.h	7.3 (Berkeley) %G%
  */
 
 struct	stat
@@ -41,3 +41,5 @@ struct	stat
 #define	S_IREAD	0000400		/* read permission, owner */
 #define	S_IWRITE 0000200	/* write permission, owner */
 #define	S_IEXEC	0000100		/* execute/search permission, owner */
+
+#define S_BLKSIZE	512	/* block size used in the stat struct */
