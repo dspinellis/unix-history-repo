@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_var.h	7.9 (Berkeley) %G%
+ *	@(#)ip_var.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -49,7 +49,9 @@ struct	ipasfrag {
 	u_char	ip_v:4,
 		ip_hl:4;
 #endif
-	u_char	ipf_mff;		/* copied from (ip_off&IP_MF) */
+	u_char	ipf_mff;		/* XXX overlays ip_tos: use low bit
+					 * to avoid destroying tos;
+					 * copied from (ip_off&IP_MF) */
 	short	ip_len;
 	u_short	ip_id;
 	short	ip_off;
@@ -107,12 +109,15 @@ struct	ipstat {
 	u_long	ips_ofragments;		/* output fragments created */
 	u_long	ips_cantfrag;		/* don't fragment flag was set, etc. */
 	u_long	ips_badoptions;		/* error in option processing */
-	u_long	ips_noroute;		/* packtes discarded due to no route */
+	u_long	ips_noroute;		/* packets discarded due to no route */
+	u_long	ips_badvers;		/* ip version != 4 */
+	u_long	ips_rawout;		/* total raw ip packets generated */
 };
 
 #ifdef KERNEL
 /* flags passed to ip_output as last parameter */
 #define	IP_FORWARDING		0x1		/* most of ip header exists */
+#define	IP_RAWOUTPUT		0x2		/* raw ip header exists */
 #define	IP_ROUTETOIF		SO_DONTROUTE	/* bypass routing tables */
 #define	IP_ALLOWBROADCAST	SO_BROADCAST	/* can send broadcast packets */
 
