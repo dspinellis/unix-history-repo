@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ed.1	5.2 (Berkeley) %G%
+.\"	@(#)ed.1	5.3 (Berkeley) %G%
 .\"
 .TH ED 1 ""
 .SH NAME
@@ -837,9 +837,9 @@ a directory. `?'
 for all other errors unless the help messages have been toggled on (with
 the H command) in which case a descriptive message will be printed.
 .PP
-All NULL and non-ASCII characters (bit-8 high) are ignored
-during input from the user or files. EOF is treated as a newline so
-that characters after the last <newline> are included into the \fBbuffer\fR.
+All NULL characters are ignored during input from the user or files.
+EOF is treated as a newline so that characters after the last <newline>
+are included into the \fBbuffer\fR.
 .PP
 .I Ed
 returns 0 on successful completion. A value >0 is returned
