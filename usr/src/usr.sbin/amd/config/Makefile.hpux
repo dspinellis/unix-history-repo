@@ -1,0 +1,21 @@
+#
+# $Id: Makefile.hpux,v 5.2 90/06/23 22:20:49 jsp Rel $
+#
+# Copyright (c) 1989 Jan-Simon Pendry
+# Copyright (c) 1989 Imperial College of Science, Technology & Medicine
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Jan-Simon Pendry at Imperial College, London.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)Makefile.hpux	5.1 (Berkeley) %G%
+#
+# Extra Makefile definitions for HP-UX
+#
+
+#CC = gcc ${GCCOPTS}
+CC = cc -Wc,-Nd2000
+OLDCC = cc -Wc,-Nd2000

@@ -1,0 +1,212 @@
+.\" $Id: amd.8,v 5.2 90/06/23 22:21:12 jsp Rel $
+.\" Copyright (c) 1989 Jan-Simon Pendry
+.\" Copyright (c) 1989 Imperial College of Science, Technology & Medicine
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Jan-Simon Pendry at Imperial College, London.
+.\"
+.\"  %sccs.include.redist.man%
+.\"
+.\"	@(#)amd.8	5.1 (Berkeley) %G%
+.\"
+.TH AMD 8 ""
+.SH NAME
+amd \- automatically mount file systems
+.SH SYNOPSIS
+.B amd
+[
+.B \-nprv
+] [
+.BI \-a " mount_point"
+] [
+.BI \-c " duration"
+] [
+.BI \-d " domain"
+] [
+.BI \-k " kernel-arch"
+] [
+.BI \-l " logfile"
+] [
+.BI \-t " interval.interval"
+] [
+.BI \-w " interval"
+] [
+.BI \-x " log-option"
+] [
+.BI \-y " YP-domain"
+] [
+.BI \-C " cluster-name"
+] [
+.BI \-D " option"
+]
+[
+.I directory
+.I mapname
+.RI [ " \-map-options " ]
+] .\|.\|.
+.SH DESCRIPTION
+.B Amd
+is a daemon that automatically mounts filesystems
+whenever a file or directory
+within that filesystem is accessed.
+Filesystems are automatically unmounted when they
+appear to have become quiescent.
+.LP
+.B Amd
+has been designed as a value-added replacement
+for the SunOS 4
+.IR automount (8)
+program.
+Considerable design effort has been expended in making
+.B amd
+robust in the face of
+.SM NFS
+servers going down.
+.B Amd
+operates by attaching itself as an
+.SM NFS
+server to each of the specified
+.IB directories .
+Lookups within the specified directories
+are handled by
+.BR amd ,
+which uses the map contained in
+.I mapname
+to determine how to resolve the lookup.
+Generally, this will be a host name, some filesystem information
+and some mount options for the given filesystem.
+.SH OPTIONS
+.TP
+.B \-n
+Normalize hostnames.
+The name refered to by ${rhost} are normalized relative to the
+host database before being used.  The effect is to translate
+aliases into ``official'' names.
+.TP
+.B \-p
+Print PID.
+Outputs the process-id of
+.B amd
+to standard output where it can be saved into a file.
+.TP
+.B \-r
+Restart existing mounts.
+.B Amd
+will scan the mount file table to determine which filesystems
+are currently mounted.  Whenever one of these would have
+been auto-mounted,
+.B amd
+.I inherits
+it.
+.TP
+.B \-v
+Version.  Displays version and configuration information on standard error.
+If you send a bug report, this should be used to determine
+which version of
+.B amd
+you are using.
+.TP
+.BI \-a " temporary-directory"
+Specify an alternative location for the real mount points.
+The default is
+.BR /a .
+.TP
+.BI \-c " duration"
+Specify a
+.IR duration ,
+in seconds, that a looked up name remains
+cached when not in use.  The default is 5 minutes.
+.TP
+.BI \-d " domain"
+Specify the local domain name.  If this option is not
+given the domain name is determined from the hostname.
+.TP
+.BI \-k " kernel-arch"
+Specifies the kernel architecture.  This is used solely
+to set the ${karch} selector.
+.TP
+.BI \-l " logfile"
+Specify a logfile in which to record mount and unmount events.
+If
+.I logfile
+is the string
+.B syslog
+then the log messages will be sent to the system log daemon by
+.IR syslog (3).
+This is only available on certain systems (e.g.
+.I not
+.SM HP-UX
+and early versions of Ultrix).
+.TP
+.BI \-t " interval.interval"
+Specify the
+.IR interval ,
+in tenths of a second, between NFS/RPC/UDP retries.
+The default is 0.8 seconds.
+The second values alters the restransmit counter.
+Useful defaults are supplied if either or both
+values are missing.
+.TP
+.BI \-w " interval"
+Specify an
+.IR interval ,
+in seconds, between attempts to dismount
+filesystems that have exceeded their cached times.
+The default is 2 minutes.
+.TP
+.BI \-y " domain"
+Specify an alternative YP domain from which to fetch the YP maps.
+The default is the system domain name.
+.TP
+.BI \-x " options"
+Specify run-time logging options.  The options are a comma separated
+list chosen from: fatal, error, user, warn, info, all.
+.TP
+.BI \-D " option"
+Select from a variety of debug options.  Prefixing an
+option with the strings
+.B no
+reverses the effect of that option.  Options are cumulative.
+The most useful option is
+.BR all .
+Since
+.I \-D
+is only used for debugging other options are not documented here:
+the current supported set of options is listed by the \-v option
+and a fuller description is available in the program source.
+.SH FILES
+.PD 0
+.TP 5
+.B /a
+directory under which filesystems are dynamically mounted
+.PD
+.SH CAVEATS
+Some care may be required when creating a mount map.
+.LP
+Symbolic links on an NFS filesystem are incredibly inefficient.
+Their interpolations are not cached by the kernel and each time a symlink is
+encountered during a
+.I lookuppn
+translation it costs an RPC call to the NFS server.
+It would appear that a large improvement in real-time
+performance could be gained by adding a cache somewhere.
+Replacing symlinks with a suitable incarnation of the auto-mounter
+results in a large real-time speedup, but also causes a large
+number of process context switches.
+.LP
+A weird imagination is most useful to gain full advantage of all
+the features.
+.SH "SEE ALSO"
+.BR amq (8),
+.BR domainname (1),
+.BR hostname (1),
+.BR automount (8),
+.BR mount (8),
+.BR umount (8),
+.BR mtab (5),
+.LP
+.I "Amd \- An Automounter"
+.SH AUTHOR
+Jan-Simon Pendry <jsp@doc.ic.ac.uk>, Department of Computing, Imperial College, London, UK.
