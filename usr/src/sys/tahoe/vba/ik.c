@@ -18,6 +18,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
@@ -571,7 +572,7 @@ iktimer(unit)
                 register struct buf *dp, *bp;
                 int s;
 
-                log(LOG_ERROR, "ik%d: timeout\n", unit);
+                log(LOG_ERR, "ik%d: timeout\n", unit);
                 s = splik();
                 /* should abort current command */
                 dp = &iktab[unit];
