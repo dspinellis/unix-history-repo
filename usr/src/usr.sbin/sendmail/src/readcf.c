@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.2.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1289,7 +1289,9 @@ setoption(opt, val, sticky)
 		Verbose = atobool(val);
 		break;
 
-	    /* 'w' available -- was "no wildcard MX matching" */
+	  case 'w':		/* if we are best MX, try host directly */
+		TryNullMXList = atobool(val);
+		break;
 
 	    /* 'W' available -- was wizard password */
 
