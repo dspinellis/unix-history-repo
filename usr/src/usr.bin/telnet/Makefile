@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.15 (Berkeley) %G%
+#	@(#)Makefile	1.16 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -23,11 +23,43 @@
 
 VPATH	=	Source
 INCLUDES=	-ISource
-CFLAGS=	-O ${INCLUDES} -DSRCRT -DKLUDGELINEMODE
-LIBC=	/lib/libc.a
+
+#
+# TERMCAP	Define this if your system is termcap based,
+#		otherwise a terminfo based system is assumed.
+#
+# SRCRT		Includes code to allow you to specify source routes.
+#		Format is:
+#			[!]@hop1@hop2...[@|:]dst
+#		Leading ! means strict source route.
+#
+# NOSTRNCASECMP	Define this if you do not have strncasecmp() in
+#		your C libarary.
+#
+# USE_TERMIO	Define this if you have System V termio structures.
+#		What is here is how things are on Cray computers.
+#
+# KLUDGELINEMODE Define this to get the kludged up version of linemode
+#		that was in 4.3BSD.  This is a good thing to have
+#		around for talking to older systems.
+#
+
+DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE
+
+#
+# LIBS should be set to any libraries that need to be included,
+# like the termcap or terminfo library.  LIBPATH is the paths
+# to these libraries, for dependencies.
+#	For CRAY: LIBS= -lcurses -lnet
+#
+LIBS=	-ltermcap
+LIBPATH= /lib/libc.a /usr/lib/libtermcap.a
+
 SRCS=	commands.c main.c network.c ring.c \
 	sys_bsd.c sys_dos.c telnet.c terminal.c \
 	tn3270.c utilities.c
+
+CFLAGS=	-O ${INCLUDES} ${DEFINES}
 
 ALLHC=	${SRCS} \
 	Source/defines.h Source/externs.h Source/fdset.h Source/general.h \
@@ -39,8 +71,8 @@ MAN=	telnet.0
 
 all: telnet
 
-telnet:	${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+telnet:	${OBJS} ${LIBPATH}
+	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
 
 clean: FRC
 	rm -f ${OBJS} core errs l.errs telnet

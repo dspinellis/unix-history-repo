@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)telnet.1	6.7 (Berkeley) %G%
+.\"	@(#)telnet.1	6.8 (Berkeley) %G%
 .\"
 .TH TELNET 1 ""
 .UC 5
@@ -319,6 +319,15 @@ Sends the
 \s-1TELNET GA\s+1
 (Go Ahead)
 sequence, which likely has no significance to the remote system.
+.TP
+.B getstatus
+.br
+If the remote side supports the
+\s-1TELNET STATUS\s+1
+command,
+.B getstatus
+will send the subnegotiation to request that the server send
+its current option status.
 .TP
 .B ip
 .br
@@ -780,7 +789,19 @@ The initial value of this toggle is FALSE.
 .br
 Enable or disable the
 \s-1TELNET BINARY\s+1
-option.
+option on both input and output.
+.TP
+.B inbinary
+.br
+Enable or disable the
+\s-1TELNET BINARY\s+1
+option on input.
+.TP
+.B outbinary
+.br
+Enable or disable the
+\s-1TELNET BINARY\s+1
+option on output.
 .TP
 .B crlf
 .br

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -270,6 +270,7 @@ static struct sendlist Sendlist[] = {
     { "susp",	"Send Telnet 'Suspend Process'",	0,	SUSP },
     { "eof",	"Send Telnet End of File Character",	0,	xEOF },
     { "synch",	"Perform Telnet 'Synch operation'",	dosynch, SYNCH },
+    { "getstatus", "Send request for STATUS",		get_status, 0 },
     { "?",	"Display send options",			0,	SENDQUESTION },
     { 0 }
 };
@@ -453,6 +454,7 @@ togcrlf()
     return 1;
 }
 
+int binmode;
 
 static int
 togbinary(val)
@@ -460,26 +462,92 @@ int val;
 {
     donebinarytoggle = 1;
 
-    if (my_want_state_is_will(TELOPT_BINARY) ||
-	my_want_state_is_do(TELOPT_BINARY)) {
-	if (val == 1)
-	    printf("Already operating in binary mode with remote host.\n");
-	else {
-	    /* leave binary mode */
-	    printf("Negotiating network ascii mode with remote host.\n");
-	    tel_leave_binary();
+    if (val >= 0) {
+	binmode = val;
+    } else {
+	if (my_want_state_is_will(TELOPT_BINARY) &&
+				my_want_state_is_do(TELOPT_BINARY)) {
+	    binmode = 1;
+	} else if (my_want_state_is_wont(TELOPT_BINARY) &&
+				my_want_state_is_dont(TELOPT_BINARY)) {
+	    binmode = 0;
 	}
-    } else {				/* Turn off binary mode */
-	if (val == 0)
-	    printf("Already in network ascii mode with remote host.\n");
-	else {
+	val = binmode ? 0 : 1;
+    }
+
+    if (val == 1) {
+	if (my_want_state_is_will(TELOPT_BINARY) &&
+					my_want_state_is_do(TELOPT_BINARY)) {
+	    printf("Already operating in binary mode with remote host.\n");
+	} else {
 	    printf("Negotiating binary mode with remote host.\n");
-	    tel_enter_binary();
+	    tel_enter_binary(3);
+	}
+    } else {
+	if (my_want_state_is_wont(TELOPT_BINARY) &&
+					my_want_state_is_dont(TELOPT_BINARY)) {
+	    printf("Already in network ascii mode with remote host.\n");
+	} else {
+	    printf("Negotiating network ascii mode with remote host.\n");
+	    tel_leave_binary(3);
 	}
     }
     return 1;
 }
 
+static int
+togrbinary(val)
+int val;
+{
+    donebinarytoggle = 1;
+
+    if (val == -1)
+	val = my_want_state_is_do(TELOPT_BINARY) ? 0 : 1;
+
+    if (val == 1) {
+	if (my_want_state_is_do(TELOPT_BINARY)) {
+	    printf("Already receiving in binary mode.\n");
+	} else {
+	    printf("Negotiating binary mode on input.\n");
+	    tel_enter_binary(1);
+	}
+    } else {
+	if (my_want_state_is_dont(TELOPT_BINARY)) {
+	    printf("Already receiving in network ascii mode.\n");
+	} else {
+	    printf("Negotiating network ascii mode on input.\n");
+	    tel_leave_binary(1);
+	}
+    }
+    return 1;
+}
+
+static int
+togxbinary(val)
+int val;
+{
+    donebinarytoggle = 1;
+
+    if (val == -1)
+	val = my_want_state_is_will(TELOPT_BINARY) ? 0 : 1;
+
+    if (val == 1) {
+	if (my_want_state_is_will(TELOPT_BINARY)) {
+	    printf("Already transmitting in binary mode.\n");
+	} else {
+	    printf("Negotiating binary mode on output.\n");
+	    tel_enter_binary(2);
+	}
+    } else {
+	if (my_want_state_is_wont(TELOPT_BINARY)) {
+	    printf("Already transmitting in network ascii mode.\n");
+	} else {
+	    printf("Negotiating network ascii mode on output.\n");
+	    tel_leave_binary(2);
+	}
+    }
+    return 1;
+}
 
 
 extern int togglehelp();
@@ -507,6 +575,16 @@ static struct togglelist Togglelist[] = {
     { "binary",
 	"sending and receiving of binary data",
 	    togbinary,
+		0,
+		    0 },
+    { "inbinary",
+	"receiving of binary data",
+	    togrbinary,
+		0,
+		    0 },
+    { "outbinary",
+	"sending of binary data",
+	    togxbinary,
 		0,
 		    0 },
     { "crlf",
@@ -2096,7 +2174,7 @@ int	*lenp;
 }
 #endif
 
-#if	defined(sun)
+#if	defined(NOSTRNCASECMP)
 strncasecmp(p1, p2, len)
 register char *p1, *p2;
 int len;
