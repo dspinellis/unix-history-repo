@@ -8,7 +8,7 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)aix3.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)aix3.m4	8.3 (Berkeley) %G%')
 define(`LOCAL_MAILER_PATH', /bin/bellmail)dnl
 define(`LOCAL_MAILER_ARGS', mail $u)dnl
-define(`LOCAL_MAILER_FLAGS', `n')dnl
+define(`LOCAL_MAILER_FLAGS', `mn')dnl
