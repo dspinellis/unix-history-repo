@@ -1,0 +1,21 @@
+
+
+# DO NOT DELETE THIS LINE -- g++dep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+PlotFile3D.o : PlotFile3D.cc \
+  PlotFile3D.h \
+  $(srcdir)/../../$(IO_DIR)/PlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/fstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  Vec3D.h
+tPlotFile3D.o : tPlotFile3D.cc \
+  PlotFile3D.h \
+  $(srcdir)/../../$(IO_DIR)/PlotFile.h \
+  $(srcdir)/../../$(IO_DIR)/fstream.h \
+  $(srcdir)/../../$(IO_DIR)/iostream.h \
+  $(srcdir)/../../$(IO_DIR)/streambuf.h \
+  Vec3D.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
