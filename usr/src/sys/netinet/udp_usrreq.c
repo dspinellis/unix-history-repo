@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)udp_usrreq.c	6.14 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@ udp_input(m0)
 	register struct inpcb *inp;
 	register struct mbuf *m;
 	int len;
+	struct ip ip;
 
 	/*
 	 * Get IP and UDP header together in first mbuf.
@@ -73,8 +74,12 @@ udp_input(m0)
 			goto bad;
 		}
 		m_adj(m, len - ((struct ip *)ui)->ip_len);
-		/* (struct ip *)ui->ip_len = len; */
+		/* ((struct ip *)ui)->ip_len = len; */
 	}
+	/*
+	 * Save a copy of the IP header in case we want restore it for ICMP.
+	 */
+	ip = *(struct ip*)ui;
 
 	/*
 	 * Checksum extended UDP header and data.
@@ -100,6 +105,7 @@ udp_input(m0)
 		/* don't send ICMP response for broadcast packet */
 		if (in_broadcast(ui->ui_dst))
 			goto bad;
+		*(struct ip *)ui = ip;
 		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
 	}
@@ -121,51 +127,40 @@ bad:
 	m_freem(m);
 }
 
-udp_abort(inp)
-	struct inpcb *inp;
-{
-	struct socket *so = inp->inp_socket;
-
-	in_pcbdisconnect(inp);
-	soisdisconnected(so);
-}
-
-udp_ctlinput(cmd, arg)
+udp_ctlinput(cmd, sa)
 	int cmd;
-	caddr_t arg;
+	struct sockaddr *sa;
 {
-	struct in_addr *in;
 	extern u_char inetctlerrmap[];
+	struct sockaddr_in *sin;
 	int in_rtchange();
 
-	if (cmd < 0 || cmd > PRC_NCMDS)
+	if ((unsigned)cmd > PRC_NCMDS)
 		return;
+	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
+		return;
+	sin = (struct sockaddr_in *)sa;
+	if (sin->sin_addr.s_addr == INADDR_ANY)
+		return;
+
 	switch (cmd) {
 
-	case PRC_ROUTEDEAD:
+	case PRC_QUENCH:
 		break;
 
+	case PRC_ROUTEDEAD:
 	case PRC_REDIRECT_NET:
 	case PRC_REDIRECT_HOST:
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-		in_pcbnotify(&udb, in, 0, in_rtchange);
+	case PRC_REDIRECT_TOSNET:
+	case PRC_REDIRECT_TOSHOST:
+		in_pcbnotify(&udb, &sin->sin_addr, 0, in_rtchange);
 		break;
-
-	case PRC_IFDOWN:
-		in = &((struct sockaddr_in *)arg)->sin_addr;
-		goto notify;
-
-	case PRC_HOSTDEAD:
-	case PRC_HOSTUNREACH:
-		in = (struct in_addr *)arg;
-		goto notify;
 
 	default:
 		if (inetctlerrmap[cmd] == 0)
 			return;		/* XXX */
-		in = &((struct icmp *)arg)->icmp_ip.ip_dst;
-notify:
-		in_pcbnotify(&udb, in, (int)inetctlerrmap[cmd], udp_abort);
+		in_pcbnotify(&udb, &sin->sin_addr, (int)inetctlerrmap[cmd],
+			(int (*)())0);
 	}
 }
 
@@ -221,7 +216,7 @@ udp_output(inp, m0)
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
 	if (so->so_options & SO_DONTROUTE)
-		return (ip_output(m, (struct mbuf *)0, (struct route *)0,
+		return (ip_output(m, inp->inp_options, (struct route *)0,
 		    (so->so_options & SO_BROADCAST) | IP_ROUTETOIF));
 	/*
 	 * Use cached route for previous datagram if
@@ -237,7 +232,7 @@ udp_output(inp, m0)
 		RTFREE(ro->ro_rt);
 		ro->ro_rt = (struct rtentry *)0;
 	}
-	return (ip_output(m, (struct mbuf *)0, ro, 
+	return (ip_output(m, inp->inp_options, ro, 
 	    so->so_options & SO_BROADCAST));
 }
 
