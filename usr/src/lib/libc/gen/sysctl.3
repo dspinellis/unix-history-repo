@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.5 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.6 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -407,15 +407,21 @@ The currently defined protocols and names are:
 The variables are as follows:
 .Bl -tag -width "123456"
 .It Li ip.forwarding
-Returns 1 when ip forwarding is enabled for the host.
+Returns 1 when IP forwarding is enabled for the host,
+meaning that the host is acting as a router.
 .It Li ip.redirect
-Returns 1 when redirects may be sent by the host.
+Returns 1 when ICMP redirects may be sent by the host.
+This option is ignored unless the host is routing IP packets,
+and should normally be enabled on all systems.
 .It Li ip.ttl
-The maximum time-to-live for an ip packet.
+The maximum time-to-live (hop count) value for an IP packet sourced by
+the system.
+This value applies to normal transport protocols, not to ICMP.
 .It Li icmp.maskrepl
-Returns 1 when icmp mask requests are provided.
+Returns 1 if ICMP network mask requests are to be answered.
 .It Li udp.checksum
-Returns 1 when udp checksums are being done.
+Returns 1 when UDP checksums are being computed and checked.
+Disabling UDP checksums is strongly discouraged.
 .El
 .Sh CTL_USER
 The string and integer information available for the CTL_USER level
