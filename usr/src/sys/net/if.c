@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.c	7.10 (Berkeley) %G%
+ *	@(#)if.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -82,12 +82,15 @@ if_attach(ifp)
 	char workbuf[16];
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
+	extern link_rtrequest();
 
 	while (*p)
 		p = &((*p)->if_next);
 	*p = ifp;
 	ifp->if_index = ++if_index;
-	/* create a link level name for this device */
+	/*
+	 * create a Link Level name for this device
+	 */
 	sprint_d(workbuf, ifp->if_unit);
 	namelen = strlen(ifp->if_name);
 	unitlen = strlen(workbuf);
@@ -116,9 +119,9 @@ if_attach(ifp)
 	while (namelen != 0)
 		sdl->sdl_data[--namelen] = 0xff;
 	ifa->ifa_next = ifp->if_addrlist;
+	ifa->ifa_rtrequest = link_rtrequest;
 	ifp->if_addrlist = ifa;
 }
-
 /*
  * Locate an interface based on a complete address.
  */
@@ -199,7 +202,6 @@ ifa_ifwithnet(addr)
 	return ((struct ifaddr *)0);
 }
 
-#ifdef notdef
 /*
  * Find an interface using a specific address family
  */
@@ -216,7 +218,34 @@ ifa_ifwithaf(af)
 			return (ifa);
 	return ((struct ifaddr *)0);
 }
-#endif
+
+#include "route.h"
+/*
+ * Default action when installing a route with a Link Level gateway.
+ * Lookup an appropriate real ifa to point to.
+ * This should be moved to /sys/net/link.c eventually.
+ */
+link_rtrequest(cmd, rt, sa)
+register struct rtentry *rt;
+struct sockaddr *sa;
+{
+	register struct ifaddr *ifa;
+	struct sockaddr *dst;
+	struct ifnet *ifp, *oldifnet = ifnet;
+
+	if (cmd != RTM_ADD || ((ifa = rt->rt_ifa) == 0) ||
+	    ((ifp = ifa->ifa_ifp) == 0) || ((dst = rt_key(rt)) == 0))
+		return;
+	ifnet = ifp;
+	if (((ifa = ifa_ifwithnet(dst)) && ifa->ifa_ifp == ifp) ||
+	    ((ifa = ifa_ifwithaf(dst->sa_family)) && ifa->ifa_ifp == ifp)) {
+		ifnet = oldifnet;
+		rt->rt_ifa = ifa;
+		if (ifa->ifa_rtrequest && ifa->ifa_rtrequest != link_rtrequest)
+			ifa->ifa_rtrequest(cmd, rt, sa);
+	} else
+		ifnet = oldifnet;
+}
 
 /*
  * Mark an interface down and notify protocols of
