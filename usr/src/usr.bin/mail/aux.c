@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.1 %G%";
+static char *SccsId = "@(#)aux.c	2.2 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -480,14 +480,9 @@ alter(name)
 	time_p[1] = statb.st_mtime;
 	utime(name, time_p);
 #else
-	if ((pid = fork()) != 0)
-		return;
-	clrbuf(stdout);
-	clrbuf(stderr);
-	clrbuf(stdin);
 	sleep(1);
 	if ((f = open(name, 0)) < 0)
-		exit(1);
+		return;
 	read(f, &w, 1);
 	exit(0);
 #endif
