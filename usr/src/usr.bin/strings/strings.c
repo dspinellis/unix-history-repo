@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)strings.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -122,7 +122,7 @@ char	**argv;
 				if (++cnt < minlen)
 					continue;
 				if (oflg)
-					printf("%07lo %s",foff - minlen,bfr);
+					printf("%07ld %s",foff - minlen,bfr);
 				else
 					fputs((char *)bfr,stdout);
 				while ((ch = getch()) != EOF && ISSTR(ch))
