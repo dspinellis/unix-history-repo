@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.33 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.34 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.33 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.34 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -115,7 +115,7 @@ getrequests()
 		printf("getrequests: port 0x%x\n", DaemonAddr.sin.sin_port);
 
 	/* get a socket for the SMTP connection */
-	DaemonSocket = socket(AF_INET, SOCK_STREAM, 0);
+	DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
 	if (DaemonSocket < 0)
 	{
 		/* probably another daemon already */
@@ -134,7 +134,26 @@ getrequests()
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
-	if (bind(DaemonSocket, &DaemonAddr.sa, sizeof DaemonAddr) < 0)
+	switch (DaemonAddr.sa.sa_family)
+	{
+# ifdef NETINET
+	  case AF_INET:
+		t = sizeof DaemonAddr.sin;
+		break;
+# endif
+
+# ifdef NETISO
+	  case AF_ISO:
+		t = sizeof DaemonAddr.siso;
+		break;
+# endif
+
+	  default:
+		t = sizeof DaemonAddr;
+		break;
+	}
+
+	if (bind(DaemonSocket, &DaemonAddr.sa, t) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
