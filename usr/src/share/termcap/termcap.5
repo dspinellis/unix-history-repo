@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)termcap.5	6.9 (Berkeley) %G%
+.\"     @(#)termcap.5	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMCAP 5
@@ -1770,12 +1770,16 @@ hence does not turn on the function key labels when in visual mode.
 This is useful for different modes for a terminal, or for different
 user preferences.
 .Sh FILES
-.Bl -tag -width /usr/share/misc/termcap -compact
+.Bl -tag -width /usr/share/misc/termcap.db -compact
 .It Pa /usr/share/misc/termcap
 File containing terminal descriptions.
+.It Pa /usr/share/misc/termcap.db
+Hash database file containing terminal descriptions (see 
+.Xr cap_mkdb 1 ) .
 .El
 .Sh SEE ALSO
 .Xr \&ex 1 ,
+.Xr cap_mkdb 1 ,
 .Xr more 1 ,
 .Xr tset 1 ,
 .Xr \&ul 1 ,
