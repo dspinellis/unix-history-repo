@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.42	81/12/20	*/
+/*	tcp_input.c	1.43	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,17 +115,20 @@ COUNT(TCP_INPUT);
 	 * If the state is CLOSED (i.e., TCB does not exist) then
 	 * all data in the incoming segment is discarded.
 	 */
-	if (inp == 0)
+	if (inp == 0) {
+printf("cant find inp\n");
 		goto dropwithreset;
+	}
 	tp = intotcpcb(inp);
-	if (tp == 0)
+	if (tp == 0) {
+printf("tp is 0\n");
 		goto dropwithreset;
+	}
 	so = inp->inp_socket;
 	if (so->so_options & SO_DEBUG) {
 		ostate = tp->t_state;
 		tcp_saveti = *ti;
 	}
-		
 
 	/*
 	 * Segment received on connection.
@@ -159,16 +162,23 @@ COUNT(TCP_INPUT);
 	case TCPS_LISTEN:
 		if (tiflags & TH_RST)
 			goto drop;
-		if (tiflags & TH_ACK)
+		if (tiflags & TH_ACK) {
+printf("contains ACK\n");
 			goto dropwithreset;
-		if ((tiflags & TH_SYN) == 0)
+}
+		if ((tiflags & TH_SYN) == 0) {
+printf("no syn\n");
 			goto drop;
+}
 		tcp_in.sin_addr = ti->ti_src;
 		tcp_in.sin_port = ti->ti_sport;
-		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in))
+		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in)) {
+printf("pcb cant connect\n");
 			goto drop;
+}
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
+printf("can't get template\n");
 			in_pcbdisconnect(inp);
 			goto drop;
 		}
@@ -246,8 +256,10 @@ trimthenstep6:
 		 * window edge, and have to drop data and PUSH from
 		 * incoming segments.
 		 */
-		if (tp->rcv_nxt != ti->ti_seq)
+		if (tp->rcv_nxt != ti->ti_seq) {
+printf("wnd closed, not at edge\n");
 			goto dropafterack;
+		}
 		if (ti->ti_len > 0) {
 			ti->ti_len = 0;
 			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
@@ -267,8 +279,10 @@ trimthenstep6:
 					tiflags &= ~TH_URG;
 				todrop--;
 			}
-			if (todrop > ti->ti_len)
+			if (todrop > ti->ti_len) {
+printf("window open but outside\n");
 				goto dropafterack;
+}
 			m_adj(m, todrop);
 			ti->ti_seq += todrop;
 			ti->ti_len -= todrop;
@@ -289,8 +303,10 @@ trimthenstep6:
 		if (SEQ_GT(ti->ti_seq+ti->ti_len, tp->rcv_nxt+tp->rcv_wnd)) {
 			todrop =
 			     ti->ti_seq+ti->ti_len - (tp->rcv_nxt+tp->rcv_wnd);
-			if (todrop > ti->ti_len)
+			if (todrop > ti->ti_len) {
+printf("segment outside window\n");
 				goto dropafterack;
+}
 			m_adj(m, -todrop);
 			ti->ti_len -= todrop;
 			ti->ti_flags &= ~(TH_PUSH|TH_FIN);
@@ -393,19 +409,23 @@ trimthenstep6:
 
 		if (SEQ_LEQ(ti->ti_ack, tp->snd_una))
 			break;
-		if (SEQ_GT(ti->ti_ack, tp->snd_max))
+		if (SEQ_GT(ti->ti_ack, tp->snd_max)) {
+printf("ack > snd_max\n");
 			goto dropafterack;
+}
 		acked = ti->ti_ack - tp->snd_una;
 		if (acked >= so->so_snd.sb_cc) {
 			acked -= so->so_snd.sb_cc;
+			tp->snd_wnd -= so->so_snd.sb_cc;
 			/* if acked > 0 our FIN is acked */
-if (so->so_snd.sb_cc)
 			sbdrop(&so->so_snd, so->so_snd.sb_cc);
 			tp->t_timer[TCPT_REXMT] = 0;
 		} else {
-if (acked)
-			sbdrop(&so->so_snd, acked);
-			acked = 0;
+			if (acked) {
+				sbdrop(&so->so_snd, acked);
+				tp->snd_wnd -= acked;
+				acked = 0;
+			}
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		}
@@ -480,7 +500,7 @@ step6:
 	 * Update window information.
 	 */
 	if (SEQ_LT(tp->snd_wl1, ti->ti_seq) ||
-	    tp->snd_wl1==ti->ti_seq && SEQ_LEQ(tp->snd_wl2,ti->ti_seq)) {
+	    tp->snd_wl1==ti->ti_seq && SEQ_LEQ(tp->snd_wl2,ti->ti_ack)) {
 		tp->snd_wnd = ti->ti_win;
 		tp->snd_wl1 = ti->ti_seq;
 		tp->snd_wl2 = ti->ti_ack;
@@ -518,7 +538,10 @@ step6:
 		m->m_off += off;
 		m->m_len -= off;
 		tiflags = tcp_reass(tp, ti);
+{ extern tcpdelack; 
+if (tcpdelack) tp->t_flags |= TF_DELACK; else
 		tp->t_flags |= TF_ACKNOW;		/* XXX TF_DELACK */
+}
 	} else {
 		m_freem(m);
 		tiflags &= ~TH_FIN;
@@ -609,6 +632,7 @@ dropwithreset:
 	return;
 
 drop:
+printf("drop\n");
 	/*
 	 * Drop space held by incoming segment and return.
 	 */
