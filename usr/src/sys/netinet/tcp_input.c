@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.52	82/02/03	*/
+/*	tcp_input.c	1.53	82/02/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -470,8 +470,15 @@ trimthenstep6:
 		 * then enter FIN_WAIT_2.
 		 */
 		case TCPS_FIN_WAIT_1:
-			if (ourfinisacked)
+			if (ourfinisacked) {
+				/*
+				 * If we can't receive any more
+				 * data, then closing user can proceed.
+				 */
+				if (so->so_state & SS_CANTRCVMORE)
+					soisdisconnected(so);
 				tp->t_state = TCPS_FIN_WAIT_2;
+			}
 			break;
 
 	 	/*
