@@ -1,0 +1,161 @@
+GNU Emacs Installation Guide
+Copyright (c) 1988 Free software Foundation, Inc.
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and permission notice are preserved,
+   and that the distributor grants the recipient permission
+   for further redistribution as permitted by this notice.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them,
+   and that any new or changed statements about the activities
+   of the Free Software Foundation are approved by the Foundation.
+
+
+PREPARATION
+
+0) Make sure your system has enough swapping space allocated
+ to handle a program whose pure code is 400k bytes or
+ and whose data area is at least 150k and can reach 600k
+ bytes or much more.  If the swapping space is insufficient, you
+ will get an error in the command temacs -l loadup inc dump,
+ found in $BUILD/src/ymakefile, or possibly when running the
+ final dumped Emacs.
+ 
+1) Choose a place in the file structure for the main directory
+ of Emacs code to reside.  This will ultimately have
+ subdirectories named src, lisp, etc, etc.  Call this name
+ $EMACS.  Let $BUILD stand for the name the directory has now.
+
+2) Copy $BUILD/src/config.h-dist to $BUILD/src/config.h,
+ and edit it to set the right options for your system.  The file
+ $BUILD/etc/MACHINES may help you decide what to put there.
+ If you need to override any of the definitions in the s- and m-
+ files for your system and machine, do so by editing config.h,
+ not by changing the s- and m- files.  Occasionally you may
+ need to redefine parameters used in etc/movemail.c.
+
+3) Declare the place in the file system where Emacs will
+ be once installed.  This is done in the file `src/paths.h'.
+
+ If you are using the shell-script `build-install'
+ edit the `set' command that sets the variable `EMACS'.
+ If you are using `make' in the main Emacs directory to do
+ the installation, edit the definition of `LIBDIR' in `Makefile'
+ in that directory.  `build-install' and `make' edit `src/paths.h'
+ automatically.
+
+ If you are doing the building by hand (not using `build-install' or
+ `make') then you yourself must copy $BUILD/src/paths.h-dist to
+ paths.h, and edit it to contain the correct directory names:
+ $EMACS/lisp for the directory for Lisp libraries, and $EMACS/etc for
+ the directory for executables and text files.
+
+ Emacs will use these names once it has been built.
+ During building, Emacs searches the directory ../lisp for
+ Lisp files before the directories specified in paths.h, and
+ executable files are found in ../etc.  So the main Emacs
+ directory $BUILD can be anywhere while Emacs is built, but
+ must be renamed to $EMACS afterwards in order for Emacs to
+ work properly.
+
+4) Look at $BUILD/lisp/paths.el; if some of those values
+ are not right for your system, create a file
+ $BUILD/lisp/site-init.el containing Lisp code to override them.
+ You would use the Lisp function `setq'.  For example,
+
+     (setq news-inews-program "/usr/bin/inews")
+
+ is how you would override the default value of the
+ variable news-inews-program (which is "/usr/local/inews").
+
+5) Put into $BUILD/lisp/site-init.el any Lisp code
+ you want loaded into Emacs before it is dumped out.
+
+ This file is nonexistent in the distribution.
+ You do not need to create it, if you have nothing
+ to put in it.
+
+6) Decide what compiler switches to use.
+ You might want to replace the `-g' in the file $BUILD/src/ymakefile
+ with `-O'.  If you are not running on 4.2 on a vax,
+ it is possible that no debugger you have will be able
+ to run Emacs with its symbol table, so you might as well
+ use `-O' instead.  If you do have a debugger that works,
+ it is probably best to use `-g' so that you are not
+ helpless in the face of a problem.
+  
+7) If you wish to compile with GCC, you should use -traditional.
+ This is needed for certain include files.  For more info, refer
+ the INSTALL file of GCC.
+
+8) Refer to the file $BUILD/etc/TERMS for information on
+ fields you may wish to add to various termcap entries.
+
+9) Run `make' in the main directory of the Emacs distribution
+ to finish building and installing Emacs in the standard way.
+ You are done!
+
+
+BUILDING GNU EMACS
+The steps below are done by the shell script `build-install'
+or by running `make' in the main directory of the Emacs distribution.
+
+1) Cd to $BUILD/etc and run `make'.
+ This creates files named `ctags' and `etags' and `wakeup'
+ and `make-docfile' and `digest-doc' and `test-distrib'.  And others.
+
+2) Cd to $BUILD/src and Run `make'
+ This refers to files in the $BUILD/lisp and $BUILD/etc subdirectories
+ using names ../lisp and ../etc.
+
+ This creates a file $BUILD/src/xemacs which is the runnable Emacs,
+ assigning it a new version number by incrementing the version
+ stored in $BUILD/lisp/version.el.
+
+ It also creates a file in $BUILD/etc, whose name is
+ DOC followed by the current Emacs version.
+ This file contains documentation strings for all the
+ functions in Emacs.  Each time you run make to make a new xemacs,
+ a new DOC file with a new name is made.  You must keep
+ the DOC file for an Emacs version as long as you keep using
+ that Emacs version.
+
+
+INSTALLATION
+The steps below are done by the shell script `build-install'
+or by running `make' in the main directory of the Emacs distribution.
+
+0) mv $BUILD $EMACS   if $BUILD and $EMACS are not the same.
+ This moves the main Emacs directory to the name you have told
+ Emacs (via paths.h) it is going to have.
+
+1) Move the file $EMACS/xemacs to /usr/local/bin/emacs,
+ or some other name in users' search paths.
+ `xemacs' has an alternate name $EMACS/src/emacs-EMACSVERSION;
+ you may wish to make a symbolic link
+ named /usr/local/bin/emacs pointing to that alternate name,
+ as an easy way of installing different versions.
+
+ You can delete $EMACS/src/temacs.
+
+3) Move the programs ctags and etags from $EMACS/etc
+ to /usr/local/bin.  These programs are run by users as shell commands.
+
+ The program $EMACS/etc/loadst is invoked by Emacs when appropriate.
+
+ The programs $EMACS/etc/make-docfile and $EMACS/etc/test-distrib
+ are not used any more; they were used in building Emacs.
+
+ $EMACS/etc/digest-doc can be used to convert DOC into a
+ file for users to read.  There is no important reason to move it.
+
+4) The files in $EMACS/src subdirectory, except for xemacs,
+ are not used by Emacs once it is built.
+
+
+See the file PROBLEMS in this directory for a list of various
+problems sometimes encountered, and what to do about them.
