@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -26,7 +26,7 @@ MAN=	wump.0
 all: wump
 
 wump: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c -lcompat
+	${CC} -o $@ ${CFLAGS} $@.c
 
 clean:
 	rm -f ${OBJS} core wump
@@ -40,6 +40,7 @@ depend: ${SRCS}
 install: ${MAN}
 	install -s -o bin -g bin -m 755 wump ${DESTDIR}/usr/games
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
+	install -c -o bin -g bin -m 444 wump.info ${DESTDIR}/usr/share/games
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
