@@ -1,8 +1,14 @@
-/*	ttydev.h	4.1	82/12/02	*/
+/*	ttydev.h	4.2	82/12/05	*/
 
 /*
  * Terminal definitions related to underlying hardware.
  */
+#ifndef _TTYDEV_
+#define	_TTYDEV_
+
+/* hardware bits */
+#define	DONE	0200
+#define	IENABLE	0100
 
 /*
  * Speeds
@@ -32,4 +38,5 @@
 #define	DMBIS		1
 #define	DMBIC		2
 #define	DMGET		3
+#endif
 #endif
