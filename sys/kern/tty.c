@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.27 1994/03/23 17:35:48 ache Exp $
+ *	$Id: tty.c,v 1.28 1994/03/26 14:08:23 ache Exp $
  */
 
 /*-
@@ -2122,7 +2122,7 @@ ttyinfo(tp)
 {
 	register struct proc *p, *pick;
 	struct timeval utime, stime;
-	int loadtmp, tmp;
+	int loadtmp, tmp = 0;
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
