@@ -1,4 +1,4 @@
-/*	nsp_usrreq.c	1.4	82/10/21	*/
+/*	nsp_usrreq.c	1.5	82/12/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -240,7 +240,7 @@ nsp_attach(so, sa)
 	} else {
 		/* nothing specified, will expect a connect request soon */
 	}
-	m = m_getclr(0);
+	m = m_getclr(MT_CANTWAIT, MT_PCB);
 	if (m == 0)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, 1024) == 0) {
