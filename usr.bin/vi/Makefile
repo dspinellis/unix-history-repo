@@ -6,9 +6,9 @@ BINDIR?=	/usr/bin
 
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
-CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/include -I${.CURDIR}/ex.d -I${.CURDIR}/vi.d
+CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/obj -I${.CURDIR}/include -I${.CURDIR}/nex -I${.CURDIR}/nvi
 #STRIP=
-.PATH:	${.CURDIR}/ex.d ${.CURDIR}/sex ${.CURDIR}/vi.d ${.CURDIR}/svi \
+.PATH:	${.CURDIR}/nex ${.CURDIR}/sex ${.CURDIR}/nvi ${.CURDIR}/svi \
 	${.CURDIR}/xaw
 CLEANFILES+=ex
 
@@ -58,7 +58,7 @@ all: vi vi.1
 
 warn:: ${SRCS}
 	-(cd ${.CURDIR} && \
-	    gcc -Wall -O -DDEBUG -Iobj -Ivi.d -Iex.d -I. ${.ALLSRC} \
+	    gcc -Wall -O -DDEBUG -Iobj -Invi -Inex -I. ${.ALLSRC} \
 	    -lcurses -ltermlib 2>&1 | \
 	    sed -e "/warning: .*sccsid.*defined but not used/d" \
 	    	-e "/warning: suggest parentheses around/d" \
@@ -84,13 +84,13 @@ options.h: options.h.stub options.c # Makefile
 
 excmd.h: excmd.h.stub excmd.c # Makefile
 	rm -f excmd.h
-	cp ${.CURDIR}/ex.d/excmd.h.stub excmd.h
+	cp ${.CURDIR}/nex/excmd.h.stub excmd.h
 	chmod 664 excmd.h
 	(echo '/^\/\* C_[0-9A-Z_]* \*\/$$/ {'; \
 	 echo 'printf("#define %s %d\n", $$2, cnt++)'; \
 	 echo 'next'; \
 	 echo '}') > /tmp/__vi.excmd.h
-	 awk -f /tmp/__vi.excmd.h ${.CURDIR}/ex.d/excmd.c >> excmd.h
+	 awk -f /tmp/__vi.excmd.h ${.CURDIR}/nex/excmd.c >> excmd.h
 	 rm -f /tmp/__vi.excmd.h
 
 .include <bsd.prog.mk>
