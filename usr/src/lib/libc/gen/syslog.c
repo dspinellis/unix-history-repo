@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -125,7 +125,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		return;
 
 	/* output the message to the console */
-	pid = fork();
+	pid = vfork();
 	if (pid == -1)
 		return;
 	if (pid == 0) {
@@ -135,7 +135,8 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		LogFile = open(ctty, O_WRONLY);
 		alarm(0);
 		strcat(o, "\r");
-		write(LogFile, outline, c+1);
+		o = outline + index(outline, '>') + 1;
+		write(LogFile, outline, c + 1 - (o - outline));
 		close(LogFile);
 		exit(0);
 	}
