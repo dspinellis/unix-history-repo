@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.5 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -491,31 +491,15 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	can't distinguish those which want the
 			 *	original from those which need the
 			 *	new copy.
+			 *
+			 *	XXX If we know that only one map has
+			 *	access to this page, then we could
+			 *	avoid the pmap_page_protect() call.
 			 */
 
 			vm_page_lock_queues();
-			if (!su) {
-				/*
-				 *	Also, once it's no longer in
-				 *	use by any maps, move it to
-				 *	the inactive queue instead.
-				 */
-
-				vm_page_deactivate(m);
-				pmap_remove_all(VM_PAGE_TO_PHYS(m));
-			}
-			else {
-				/*
-				 *	Old page is only (possibly)
-				 *	in use by faulting map.  We
-				 *	should do a pmap_remove on
-				 *	that mapping, but we know
-				 *	that pmap_enter will remove
-				 *	the old mapping before
-				 *	inserting the new one.
-				 */
-				vm_page_activate(m);
-			}
+			vm_page_deactivate(m);
+			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 			vm_page_unlock_queues();
 
 			/*
@@ -728,7 +712,8 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				 *    pmaps use it.)
 				 */
 				vm_page_lock_queues();
-				pmap_remove_all(VM_PAGE_TO_PHYS(old_m));
+				pmap_page_protect(VM_PAGE_TO_PHYS(old_m),
+						  VM_PROT_NONE);
 				copy_m->clean = FALSE;
 				vm_page_activate(copy_m);	/* XXX */
 				vm_page_unlock_queues();
