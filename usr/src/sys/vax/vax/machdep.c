@@ -32,6 +32,7 @@
 #include "quota.h"
 
 #include "frame.h"
+#include "clock.h"
 #include "cons.h"
 #include "cpu.h"
 #include "mem.h"
@@ -549,7 +550,11 @@ memerr()
 		 * The asm's below have a number of constants which
 		 * are defined correctly in mem.h and mtpr.h.
 		 */
+#ifdef lint
+		reg11 = 0;
+#else
 		asm("mtpr $0x27,$0x4e; mfpr $0x4f,r11");
+#endif
 		mdecc = reg11;	/* must acknowledge interrupt? */
 		if (M8600_MEMERR(mdecc)) {
 			asm("mtpr $0x2a,$0x4e; mfpr $0x4f,r11");
@@ -1090,17 +1095,41 @@ machinecheck(cmcf)
 	panic("mchk");
 }
 
+/*
+ * Return the best possible estimate of the time in the timeval
+ * to which tvp points.  We do this by reading the interval count
+ * register to determine the time remaining to the next clock tick.
+ * We must compensate for wraparound which is not yet reflected in the time
+ * (which happens when the ICR hits 0 and wraps after the splhigh(),
+ * but before the mfpr(ICR)).  Also check that this time is no less than
+ * any previously-reported time, which could happen around the time
+ * of a clock adjustment.  Just for fun, we guarantee that the time
+ * will be greater than the value obtained by a previous call.
+ */
 microtime(tvp)
 	register struct timeval *tvp;
 {
 	int s = splhigh();
+	extern int adjtimedelta, tickadj;
+	static struct timeval lasttime;
+	register long t;
 
 	*tvp = time;
-	tvp->tv_usec += tick + mfpr(ICR);
-	while (tvp->tv_usec > 1000000) {
+	t =  mfpr(ICR);
+	if (t < -tick / 2 && (mfpr(ICCS) & ICCS_INT))
+		t += tick;
+	tvp->tv_usec += tick + t;
+	if (tvp->tv_usec > 1000000) {
 		tvp->tv_sec++;
 		tvp->tv_usec -= 1000000;
 	}
+	if (tvp->tv_sec == lasttime.tv_sec &&
+	    tvp->tv_usec <= lasttime.tv_usec &&
+	    (tvp->tv_usec = lasttime.tv_sec + 1) > 1000000) {
+		tvp->tv_sec++;
+		tvp->tv_usec -= 1000000;
+	}
+	lasttime = *tvp;
 	splx(s);
 }
 
