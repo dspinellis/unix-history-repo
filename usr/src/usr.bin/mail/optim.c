@@ -10,7 +10,7 @@
 #include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.3 %G%";
+static char *SccsId = "@(#)optim.c	2.4 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -486,13 +486,13 @@ optim1(netstr, name)
 
 	cp = netstr;
 	prefer(cp);
+	strcpy(name, "");
 	/*
 	 * If the address ultimately points back to us,
 	 * just return a null network path.
 	 */
 	if (strlen(cp) > 1 && cp[strlen(cp) - 2] == LOCAL)
 		return;
-	strcpy(name, "");
 	while (*cp != 0) {
 		strcpy(path, "");
 		tp = ntype(cp[1]);
