@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -118,7 +118,7 @@ lprint(pn)
 			tp = localtime(&w->loginat);
 			t = asctime(tp);
 			tzn = tp->tm_zone;
-			cpr = printf("On since %16.16s (%s) on %s",
+			cpr = printf("On since %.16s (%s) on %s",
 			    t, tzn, w->tty);
 			/*
 			 * idle time is tough; if have one, print a comma,
@@ -153,10 +153,11 @@ lprint(pn)
 			t = asctime(tp);
 			tzn = tp->tm_zone;
 			if (now - w->loginat > SECSPERDAY * DAYSPERNYEAR / 2)
-				cpr = printf("Last login %10.10s (%s), %4.4s on %s",
+				cpr =
+				    printf("Last login %.16s %.4s (%s) on %s",
 				    t, t + 20, tzn, w->tty);
 			else
-				cpr = printf("Last login %16.16s (%s) on %s",
+				cpr = printf("Last login %.16s (%s) on %s",
 				    t, tzn, w->tty);
 			break;
 		}
