@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_input.c	7.21 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,9 +30,9 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "tcp.h"
 #include "tcp_fsm.h"
@@ -309,7 +309,7 @@ findpcb:
 		tcp_saveti = *ti;
 	}
 	if (so->so_options & SO_ACCEPTCONN) {
-		so = sonewconn(so);
+		so = sonewconn(so, 0);
 		if (so == 0)
 			goto drop;
 		/*
