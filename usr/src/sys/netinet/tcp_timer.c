@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_timer.c	7.11.1.3 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -268,10 +269,10 @@ tcp_timers(tp, timer)
 			 * The keepalive packet must have nonzero length
 			 * to get a 4.2 host to respond.
 			 */
-			tcp_respond(tp, tp->t_template,
+			tcp_respond(tp, tp->t_template, (struct mbuf *)NULL,
 			    tp->rcv_nxt - 1, tp->snd_una - 1, 0);
 #else
-			tcp_respond(tp, tp->t_template,
+			tcp_respond(tp, tp->t_template, (struct mbuf *)NULL,
 			    tp->rcv_nxt, tp->snd_una - 1, 0);
 #endif
 			tp->t_timer[TCPT_KEEP] = tcp_keepintvl;
