@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.17 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -105,6 +105,7 @@ main(argc, argv)
 	char *argv[];
 {
 	int af = AF_INET;
+
 	if (argc < 2) {
 		fprintf(stderr, "usage: ifconfig interface\n%s%s%s%s",
 		    "\t[ af [ address [ dest_addr ] ] [ up ] [ down ]",
@@ -143,15 +144,6 @@ main(argc, argv)
 		perror("ioctl (SIOCGIFMETRIC)");
 	else
 		metric = ifr.ifr_metric;
-	if (af == AF_INET) {
-		if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
-			if (errno != EADDRNOTAVAIL)
-				Perror("ioctl (SIOCGIFNETMASK)");
-		} else
-			netmask.sin_addr =
-			      ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
-		strncpy(ifr.ifr_name, name, sizeof ifr.ifr_name);
-	}
 	if (argc == 0) {
 		status();
 		exit(0);
@@ -173,7 +165,7 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
-	if ((setmask || setaddr) && (af == AF_INET)){
+	if ((setmask || setaddr) && (af == AF_INET)) {
 		/*
 		 * If setting the address and not the mask,
 		 * clear any existing mask and the kernel will then
@@ -318,6 +310,13 @@ in_status()
 	struct sockaddr_in *sin;
 	char *inet_ntoa();
 
+	if (ioctl(s, SIOCGIFNETMASK, (caddr_t)&ifr) < 0) {
+		if (errno != EADDRNOTAVAIL)
+			Perror("ioctl (SIOCGIFNETMASK)");
+	} else
+		netmask.sin_addr =
+		    ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
 	if (ioctl(s, SIOCGIFADDR, (caddr_t)&ifr) < 0) {
 		if (errno == EADDRNOTAVAIL)
 			bzero((char *)&ifr.ifr_addr, sizeof(ifr.ifr_addr));
