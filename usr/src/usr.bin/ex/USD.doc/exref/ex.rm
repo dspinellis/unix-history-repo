@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)ex.rm	8.2 (Berkeley) %G%
+.\"	@(#)ex.rm	8.3 (Berkeley) %G%
 .\"
 .EH 'USD:12-%''Ex Reference Manual'
 .OH 'Ex Reference Manual''USD:12-%'
@@ -2171,28 +2171,8 @@ Inhibit the checks normally made before
 commands, allowing a write to any file which the system protection
 mechanism will allow.
 .NH 1
-Limitations
+Acknowledgements
 .PP
-Editor limits that the user is likely to encounter are as follows:
-1024 characters per line,
-256 characters per global command list,
-128 characters per file name,
-128 characters in the previous inserted and deleted text in
-.I open
-or
-.I visual,
-100 characters in a shell escape command,
-63 characters in a string valued option,
-and 30 characters in a tag name, and
-a limit of 250000 lines in the file is silently enforced.
-.PP
-The
-.I visual
-implementation limits the number of macros defined with map to
-32, and the total number of characters in macros to be less than 512.
-.LP
-.LP
-.I Acknowledgments.
 Chuck Haley contributed greatly to the early development of
 .I ex.
 Bruce Englar encouraged the redesign which led to
