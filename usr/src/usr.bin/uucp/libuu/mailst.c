@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mailst.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mailst.c	5.6 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -48,7 +48,7 @@ char *user, *str, *file;
 static	int	popen_pid[20];
 
 FILE *
-rpopen(cmd,mode)
+rpopen(cmd, mode)
 char	*cmd;
 char	*mode;
 {
@@ -63,7 +63,7 @@ char	*mode;
 		/* myside and hisside reverse roles in child */
 		close(myside);
 #ifdef USG
-		close(tst(0, 1);
+		close(tst(0, 1));
 		fcntl(hisside, F_DUPFD, tst(0, 1));
 #else !USG
 		dup2(hisside, tst(0, 1));
