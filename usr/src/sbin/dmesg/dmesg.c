@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)dmesg.c	4.1 (Berkeley) 82/03/01";
+static char *sccsid = "@(#)dmesg.c	4.2 (Berkeley) 83/01/02";
 /*
  *	Suck up system messages
  *	dmesg
@@ -22,7 +22,7 @@ int	of	= -1;
 struct	msgbuf omesg;
 struct	nlist nl[2] = {
 	{ "_msgbuf" },
-	{ 0 }
+	{ "" }
 };
 
 main(argc, argv)
