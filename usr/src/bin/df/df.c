@@ -188,7 +188,7 @@ prtstat(sfsp, maxwidth)
  * This code constitutes the old df code for extracting
  * information from filesystem superblocks.
  */
-#include <ufs/fs.h>
+#include <ufs/ffs/fs.h>
 #include <errno.h>
 #include <fstab.h>
 
