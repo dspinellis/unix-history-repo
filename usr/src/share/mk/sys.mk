@@ -1,4 +1,4 @@
-#	@(#)sys.mk	5.8 (Berkeley) %G%
+#	@(#)sys.mk	5.9 (Berkeley) %G%
 
 unix=		We run UNIX.
 
@@ -22,7 +22,7 @@ CC=		cc
 CFLAGS=		-O
 
 .if (${MACHINE} == "hp300")
-CPP=		cpp -traditional
+CPP=		/usr/local/lib/gcc-cpp -traditional
 .else
 CPP=		cpp
 .endif
