@@ -1,0 +1,358 @@
+.\"     @(#)Infoletter	1.1 (Berkeley) %G%
+.nr PS 11
+.ps 11
+.nr VS 13
+.vs 11p
+.nr LL 6.5i
+.ll 6.5i
+.so HEADERS
+.HE
+.LP
+.in 4.1i
+April 30, 1991
+.in
+.sp 2
+.LP
+Dear Colleague:
+.sp
+.PP
+We are happy to send you information about our April,
+1991 update to our 1988 freely-redistributable networking release.
+This software is copyright Berkeley, and may be freely redistributed.
+It is available to anyone and requires no previous license, either from
+AT&T or The Regents of the University of California.
+.PP
+This packet is designed to serve two purposes.
+The first purpose is to acquaint you with the details of our distribution
+so you can decide whether you would like to receive it.
+The second purpose is to tell you how to obtain our distribution.
+.SH
+Distribution contents
+.PP
+The distribution does not contain binaries for any architecture.
+It is a source distribution only.
+The distribution includes source code and manual pages for the C library
+and about 85% of the 4.3BSD-Reno utilities.
+See the attached appendix for an approximate list of
+included and excluded utilities.
+.PP
+The software includes source code for most of the
+4.3BSD-Reno kernel including machine support for the HP300
+(Motorola 68000 based machines)
+and for the PC's built by Compaq and others
+(Intel 386/486 based machines).
+It does not include machine support for the Tahoe or VAX architectures
+found in the standard 4.3BSD and 4.3BSD-Tahoe distributions.
+The kernel source code is not complete for any architecture.
+In particular, the code for executing files, doing physical I/O,
+managing the buffer cache, handling process tracing, and doing accounting
+is not included (as it still contains AT&T proprietary code).
+.PP
+This release represents an intermediate point in the development
+of 4.4BSD; several new facilities have been completed and are ready
+for external use, while other new facilities slated for the 4.4BSD
+release have not yet been integrated.
+The major addition since the 4.3BSD-Reno release is the replacement 
+of the 1979 vintage virtual memory system with the virtual memory
+implementation from Carnegie-Mellon's MACH operating system.
+Other major kernel changes include the elimination of all references
+to the user area except for the per-process runtime stack.
+All substructures are referenced via the proc structure.
+The kernel has also been converted to full ANSI C (including prototypes).
+.SH
+Intended audience for this distribution
+.PP
+This distribution is NOT intended to be used on production systems;
+nor is it intended for sites without enough local expertise
+to find and fix any problems that are encountered.
+It is NOT suitable for the home hobbyist that wants BSD on their PC.
+It is intended to be used to provide an advance look at some of the
+facilities and interfaces that we will be distributing in 4.4BSD.
+Our goal in making this release available is to get feedback on any
+problems in the design or implementation of the new facilities.
+This distribution will allow adventurous sites to gain experience with the
+new framework and to help us turn it into a complete system as 4.4BSD.
+Because many of the oldest and most stable parts of the
+system have been replaced recently to eliminate AT&T proprietary code,
+this software is not as stable or reliable as earlier BSD distributions.
+Much of the work to be done between now and the 4.4BSD distribution
+is release engineering and documentation.
+.PP
+Only limited support will be provided by our group.
+In particular,
+we cannot provide help with installation
+of this software on other systems.
+We are interested in getting feedback on the problems that you find 
+and also any compatibility problems that you expect in trying
+to convert your applications to run on this release.
+The interfaces in this release will change before the release
+of 4.4BSD (at least in part based on feedback from this test group).
+Thus, you should not expect applications ported to this release
+to work unchanged on 4.4BSD.
+We appreciate your help in this debugging effort and look
+forward to hearing from you.
+Please send your comments to reno43-bugs@vangogh.Berkeley.EDU.
+.PP
+The code in this distribution may be redistributed and used
+in released products.
+However, you are strongly encouraged to upgrade any code
+that you use from this distribution to the similarly licensed
+distribution of the 4.4BSD code within one year of its release.
+We regret that changes documents are not available;
+the major changes are outlined in the next section.
+.SH
+Summary of changes since the first networking distribution
+.PP
+In addition to the inclusion of the process scheduling and management funtions,
+there are four major new kernel facilities available in this release.
+They are ISO/OSI networking support,
+a freely redistributable implementation of UFS and NFS,
+a new virtual memory implementation, and
+the conversion to and addition of the POSIX.1 facilities.
+There are numerous other changes throughout the system.
+.PP
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet\(dg).
+.FS
+\(dgEthernet is a trademark of the Xerox Corporation.
+.FE
+The session and presentation layers will be provided outside
+the kernel by the ISO development environment (ISODE).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500),
+and miscellaneous other utilities.
+.PP
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+Although generally similar to Sun's vnode interface,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+In addition to the local ``fast filesystem'',
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented using only the
+publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+We have also added a memory-based filesystem that runs in
+pageable memory, which allows large temporary filesystems without
+requiring dedicated physical memory.
+.PP
+The quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom login.
+.PP
+The new virtual memory implementation is derived from the MACH
+operating system developed at Carnegie-Mellon.
+The MACH virtual memory interface has been replaced with the
+``mmap''-based interface described in the ``Berkeley Software
+Architecture Manual'' (see UNIX Programmer's Manual, 
+Supplementary Documents, PS1:6).
+The interface is similar to the interface shipped
+in several commercial versions of UNIX such as SunOS 4.0.
+The current integration of the new virtual memory is functionally complete,
+but still has serious performance problems under heavy memory load.
+The internal kernel interfaces have not yet been completed
+and the memory pool and buffer cache have not yet been merged.
+These changes are expected before the release of 4.4BSD.
+.PP
+This distribution contains most of the interfaces
+specified in the POSIX.1 system interface standard.
+The biggest area of change is a new terminal driver.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the 4.3BSD terminal driver.
+This distribution also adds the POSIX job control interface,
+which is similar to the 4.3BSD job control interface,
+but adds a security model that was missing in the
+4.3BSD job control implementation.
+Other additions include POSIX signals, FIFO's, byte-range file locking,
+and saved user and group identifiers.
+.PP
+We have been tracking the POSIX shell and utility work
+and have included prototypes of many of the proposed utilities.
+Most of the libraries and header files have been converted
+to be compliant with ANSI C.
+The compiler default is to require ANSI C;
+the default can be over-ridden by using the \fB-traditional\fP flag.
+Another compiler default is to put strings into the shared text region.
+This change obviates the need for the xstr and mkstr utilities.
+The old behavior of placing strings in data space can be obtained
+by specifying the \fB-Fwritable-strings\fP flag.
+.PP
+Work has also progressed in several other areas.
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
+.PP
+The Kerberos (version 4) authentication software has been
+integrated into much of the system (except NFS) to provide
+the first real network authentication on BSD.
+.PP
+The hardware supported is:
+.IP \(bu
+HP 9000/300 series
+.IP \(bu
+Intel 386/486 based PC with AT-bus peripherals
+.IP \(bu
+Sample drivers for the VAX, but no complete machine support
+.PP
+The reason that this distribution is not considered an alpha release of 4.4BSD
+is because it does not contain several major interfaces that we 
+plan to have available for that distribution.
+These include:
+.IP \(bu
+Support for ISO Connection-Oriented Network Service, X.25, TP-0.
+.IP \(bu
+A new internal network layering (``bstreams'') combining features
+of the current socket layering and of Streams.
+.IP \(bu
+Fixes, tuning, fixes, documentation, and fixes.
+.PP
+This release does include several important structural kernel changes.
+The kernel uses a new internal system call convention:
+.ft C
+.nf
+error = (*callp)(proc, args, retval);
+.fi
+.ft P
+.PP
+Another major change is the introduction
+of a new sleep interface:
+.ft C
+.nf
+error = tsleep(wchan, pri|PCATCH, wstring, timeout);
+.fi
+.ft P
+.LP
+The old sleep interface can be used only for non-interruptible sleeps.
+The \fItsleep\fP interface can be used at any priority,
+but is only interruptible if the PCATCH flag is set.
+When interrupted, \fItsleep\fP returns EINTR or ERESTART;
+all non-local goto's (longjmp's) have been eliminated from the kernel.
+.PP
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include proc structure entries,
+user file descriptors, the mount table,
+the vnode table, the name cache, and the quota structures.
+.SH
+How to obtain this software
+.PP
+You do not have to get this software from Berkeley
+nor obtain a license from Berkeley to use it.
+You may obtain it from anybody that has a copy.
+If you wish to obtain this software from Berkeley,
+you need to follow the procedure below.
+.PP
+Before the distribution can be sent, we require:
+.IP \(bu
+Execution of the attached Berkeley License Agreement.
+.IP \(bu
+A check from a U.S. bank for $495.00 US, payable to
+``The Regents of the University of California.''
+If you must issue a Purchase Order, please issue one that is blank-backed.
+If this is not possible, insert and initial in the body of the Purchase
+Order the following clause: ``The terms and conditions of this Purchase
+Order are not accepted by The Regents of the University of California.
+The Berkeley License Agreement governs.''
+Because we are a research and development organization and not a commercial
+organization, this fee covers only our distribution costs.
+.IP \(bu
+The attached Site Information Form and
+Checklist for Hardware/Software completely filled out and dated.
+Your copy of the signed Berkeley License Agreement will be sent to the
+person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+All information is kept confidential;
+it is for our use in notifying you of important bug fixes and
+the availability of future BSD distributions.
+Please note that we cannot ship to post office boxes;
+therefore, please have the technical contact's
+address supplied without use of a post office box.
+.PP
+All the above material must be sent to:
+.DS
+Pauline Schwartz, Distribution Coordinator
+Computer Systems Research Group
+Computer Science Division, EECS
+University of California
+Berkeley, California 94720
+.DE
+Once these three items have been received and are in proper order, the
+distribution will be sent to the technical address given on the
+Site Information Form.
+We cannot provide delivery dates.
+Once the material is assembled and packaged, the distribution is shipped
+by commercial carrier.
+Order of shipment will be based on time of arrival of the properly
+completed paperwork.
+Because of the differential in costs of shipping outside the United States,
+we ask that organizations beyond the North American continent pay
+the collect shipping charges.
+.PP
+The most expedient way to insure that your full distribution is sent as
+quickly as possible is to include, in a single package, two copies of the
+completed and properly signed Berkeley License Agreement (\fBwithout
+modification\fR), the check properly made out to ``The Regents of the
+University of California,'' and a completely filled out Site Information
+Form and Checklist for Hardware/Software, and to send this single package to 
+the address noted above.
+.PP
+Please note that if you modify the Berkeley License Agreement, you may
+experience a delay of three months or more before receiving an acceptance
+or denial of the changes.  We reserve the right to cancel your application
+if we have not received the requested paperwork within 60 days from the date
+of our request. 
+.SH
+Special Cases
+.PP
+\fBUniversity of California Sites\fR.
+If you are a part of the University of California,
+\fByou must send 
+the following items to the Computer Systems Research Group:\fR
+1) a letter signed by the Director or Head of Department requesting
+this distribution and stating that you have read and understood the Berkeley
+License Agreement and that your organization will abide by it, 2)
+an IOC for $495.00, and 3) a Site Information Form and Checklist for
+Hardware/Software.
+.SH
+A Special Note 
+.PP
+The procedures and rules set out in this document are University constraints
+that must be followed in order for the distribution of software to be
+possible.
+The Computer Systems Research Group has no control over these constraints
+and must reject your application if material submitted is not in order.
+.SH
+If You Have Read Everything and Still Need Help
+.PP
+If you have questions about the licensing process after reading this letter,
+you may call Pauline Schwartz at 415-642-7780, write to her, or contact her
+via electronic mail at bsd-dist@cs.berkeley.edu. or
+uunet!bsd-dist@CS.Berkeley.EDU.
+She will not be able to answer technical questions.
+.sp 2
+.ti +2.5i
+Sincerely yours,
+.sp 3
+.ti +2.5i
+Marshall Kirk McKusick
+.br
+.ti +2.5i
+Computer Systems Research Group
