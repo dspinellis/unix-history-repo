@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dirent.h	5.6 (Berkeley) %G%
+ *	@(#)dirent.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_
@@ -67,6 +67,6 @@ extern	void seekdir();
 extern	void closedir();
 extern	long _rewinddir;
 #define rewinddir(dirp) \
-	_seekdir((dirp), _rewinddir); \
+	_seekdir((dirp), _rewinddir), \
 	_rewinddir = telldir(dirp)
 #endif /* _DIRENT_ */
