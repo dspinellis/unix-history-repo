@@ -1,4 +1,4 @@
-/*	namei.h	6.5	84/07/08	*/
+/*	namei.h	6.6	84/07/08	*/
 
 #ifndef _NAMEI_
 #define	_NAMEI_
@@ -9,14 +9,20 @@
 #include <sys/uio.h>
 #endif
 
+/*
+ * Encapsulation of namei parameters.
+ * One of these is located in the u. area to
+ * minimize space allocated on the kernel stack.
+ */
 struct nameidata {
 	caddr_t	ni_dirp;		/* pathname pointer */
-	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
-	struct	iovec ni_iovec;
-	struct	uio ni_uio;
-	struct	direct ni_dent;		/* current directory entry */
-	short	ni_error;		/* error return if any */
 	short	ni_nameiop;		/* see below */
+	short	ni_error;		/* error return if any */
+	struct	inode *ni_pdir;		/* inode of parent directory of dirp */
+	struct	buf *ni_pathbp;		/* unresolved pathname */
+	struct	iovec ni_iovec;		/* MUST be pointed to by ni_iov */
+	struct	uio ni_uio;		/* directory I/O parameters */
+	struct	direct ni_dent;		/* current directory entry */
 };
 
 #define	ni_base		ni_iovec.iov_base
