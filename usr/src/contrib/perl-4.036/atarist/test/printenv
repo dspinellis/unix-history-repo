@@ -1,0 +1,16 @@
+$exit = 0;
+$\ = "\n";
+if($#ARGV >= 0) {
+    foreach (@ARGV) {
+	if(defined $ENV{$_}) {
+	    print $ENV{$_};
+        } else {
+	    $exit = 1;
+        }
+    }
+} else {
+    foreach (sort keys %ENV) {
+	print $_, '=', $ENV{$_};
+    }
+}
+exit $exit;

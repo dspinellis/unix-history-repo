@@ -1,0 +1,589 @@
+diff -cbBwr perl-4.019/t/base/term.t new/t/base/term.t
+*** perl-4.019/t/base/term.t	Wed Mar 20 08:47:14 1991
+--- new/t/base/term.t	Sun Jun 16 20:39:50 1991
+***************
+*** 29,35 ****
+
+  # check <> pseudoliteral
+
+! open(try, "/dev/null") || (die "Can't open /dev/null.");
+  if (<try> eq '') {
+      print "ok 5\n";
+  }
+--- 29,35 ----
+
+  # check <> pseudoliteral
+
+! open(try, "nul") || (die "Can't open /dev/null.");
+  if (<try> eq '') {
+      print "ok 5\n";
+  }
+diff -cbBwr perl-4.019/t/cmd/while.t new/t/cmd/while.t
+*** perl-4.019/t/cmd/while.t	Wed Mar 20 08:46:28 1991
+--- new/t/cmd/while.t	Sun Jun 16 20:52:36 1991
+***************
+*** 90,96 ****
+  if (!eof || $bad) {print "not ok 8\n";} else {print "ok 8\n";}
+  if (!$badcont) {print "ok 9\n";} else {print "not ok 9\n";}
+
+! `/bin/rm -f Cmd.while.tmp`;
+
+  #$x = 0;
+  #while (1) {
+--- 90,97 ----
+  if (!eof || $bad) {print "not ok 8\n";} else {print "ok 8\n";}
+  if (!$badcont) {print "ok 9\n";} else {print "not ok 9\n";}
+
+! close(fh);
+! `del Cmd.while.tmp`;
+
+  #$x = 0;
+  #while (1) {
+diff -cbBwr perl-4.019/t/comp/cpp.t new/t/comp/cpp.t
+*** perl-4.019/t/comp/cpp.t	Wed Mar 20 08:48:44 1991
+--- new/t/comp/cpp.t	Sun Jun 16 20:54:00 1991
+***************
+*** 32,39 ****
+  print TRY '#define OK "ok 3\n"' . "\n";
+  close TRY;
+
+! $pwd=`pwd`;
+  $pwd =~ s/\n//;
+! $x = `./perl -P Comp.cpp.tmp`;
+  print $x;
+  unlink "Comp.cpp.tmp", "Comp.cpp.inc";
+--- 32,39 ----
+  print TRY '#define OK "ok 3\n"' . "\n";
+  close TRY;
+
+! $pwd=`cd`;
+  $pwd =~ s/\n//;
+! $x = `perl -P Comp.cpp.tmp`;
+  print $x;
+  unlink "Comp.cpp.tmp", "Comp.cpp.inc";
+diff -cbBwr perl-4.019/t/comp/script.t new/t/comp/script.t
+*** perl-4.019/t/comp/script.t	Wed Mar 20 08:48:50 1991
+--- new/t/comp/script.t	Sun Jun 16 21:05:02 1991
+***************
+*** 4,10 ****
+
+  print "1..3\n";
+
+! $x = `./perl -e 'print "ok\n";'`;
+
+  if ($x eq "ok\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+--- 4,10 ----
+
+  print "1..3\n";
+
+! $x = `perl -e "print \\\"ok\\n\\\";"`;
+
+  if ($x eq "ok\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+***************
+*** 12,23 ****
+  print try 'print "ok\n";'; print try "\n";
+  close try;
+
+! $x = `./perl Comp.script`;
+
+  if ($x eq "ok\n") {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `./perl <Comp.script`;
+
+  if ($x eq "ok\n") {print "ok 3\n";} else {print "not ok 3\n";}
+
+! `/bin/rm -f Comp.script`;
+--- 12,23 ----
+  print try 'print "ok\n";'; print try "\n";
+  close try;
+
+! $x = `perl Comp.script`;
+
+  if ($x eq "ok\n") {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `perl <Comp.script`;
+
+  if ($x eq "ok\n") {print "ok 3\n";} else {print "not ok 3\n";}
+
+! `del Comp.script`;
+diff -cbBwr perl-4.019/t/io/argv.t new/t/io/argv.t
+*** perl-4.019/t/io/argv.t	Wed Mar 20 08:48:38 1991
+--- new/t/io/argv.t	Sun Jun 16 21:14:14 1991
+***************
+*** 8,26 ****
+  print try "a line\n";
+  close try;
+
+! $x = `./perl -e 'while (<>) {print \$.,\$_;}' Io.argv.tmp Io.argv.tmp`;
+
+  if ($x eq "1a line\n2a line\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+! $x = `echo foo|./perl -e 'while (<>) {print $_;}' Io.argv.tmp -`;
+
+  if ($x eq "a line\nfoo\n") {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `echo foo|./perl -e 'while (<>) {print $_;}'`;
+
+  if ($x eq "foo\n") {print "ok 3\n";} else {print "not ok 3 :$x:\n";}
+
+! @ARGV = ('Io.argv.tmp', 'Io.argv.tmp', '/dev/null', 'Io.argv.tmp');
+  while (<>) {
+      $y .= $. . $_;
+      if (eof()) {
+--- 8,26 ----
+  print try "a line\n";
+  close try;
+
+! $x = `perl -e "while (<>) {print \$.,\$_;}" Io.argv.tmp Io.argv.tmp`;
+
+  if ($x eq "1a line\n2a line\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+! $x = `echo foo | perl -e "while (<>) {print $_;}" Io.argv.tmp -`;
+
+  if ($x eq "a line\nfoo\n") {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `echo foo | perl -e "while (<>) {print $_;}"`;
+
+  if ($x eq "foo\n") {print "ok 3\n";} else {print "not ok 3 :$x:\n";}
+
+! @ARGV = ('Io.argv.tmp', 'Io.argv.tmp', 'nul', 'Io.argv.tmp');
+  while (<>) {
+      $y .= $. . $_;
+      if (eof()) {
+***************
+*** 33,36 ****
+  else
+      {print "not ok 5\n";}
+
+! `/bin/rm -f Io.argv.tmp`;
+--- 33,36 ----
+  else
+      {print "not ok 5\n";}
+
+! `del Io.argv.tmp`;
+diff -cbBwr perl-4.019/t/io/pipe.t new/t/io/pipe.t
+*** perl-4.019/t/io/pipe.t	Wed Mar 20 08:48:38 1991
+--- new/t/io/pipe.t	Sun Jun 16 21:25:14 1991
+***************
+*** 5,11 ****
+  $| = 1;
+  print "1..8\n";
+
+! open(PIPE, "|-") || (exec 'tr', '[A-Z]', '[a-z]');
+  print PIPE "OK 1\n";
+  print PIPE "ok 2\n";
+  close PIPE;
+--- 5,11 ----
+  $| = 1;
+  print "1..8\n";
+
+! open(PIPE, "|-") || (exec 'tr.exe', '[A-Z]', '[a-z]');
+  print PIPE "OK 1\n";
+  print PIPE "ok 2\n";
+  close PIPE;
+***************
+*** 18,24 ****
+  }
+  else {
+      print STDOUT "not ok 3\n";
+!     exec 'echo', 'not ok 4';
+  }
+
+  pipe(READER,WRITER) || die "Can't open pipe";
+--- 18,24 ----
+  }
+  else {
+      print STDOUT "not ok 3\n";
+!     exec 'perlglob', 'not ok 4';
+  }
+
+  pipe(READER,WRITER) || die "Can't open pipe";
+diff -cbBwr perl-4.019/t/op/exec.t new/t/op/exec.t
+*** perl-4.019/t/op/exec.t	Wed Mar 20 08:48:46 1991
+--- new/t/op/exec.t	Sun Jun 16 21:39:32 1991
+***************
+*** 7,21 ****
+
+  print "not ok 1\n" if system "echo ok \\1";	# shell interpreted
+  print "not ok 2\n" if system "echo ok 2";	# split and directly called
+! print "not ok 3\n" if system "echo", "ok", "3"; # directly called
+
+! if (system "true") {print "not ok 4\n";} else {print "ok 4\n";}
+
+! if ((system "/bin/sh -c 'exit 1'") != 256) { print "not "; }
+  print "ok 5\n";
+
+! if ((system "lskdfj") == 255 << 8) {print "ok 6\n";} else {print "not ok 6\n";}
+
+  unless (exec "lskdjfalksdjfdjfkls") {print "ok 7\n";} else {print "not ok 7\n";}
+
+! exec "echo","ok","8";
+--- 7,21 ----
+
+  print "not ok 1\n" if system "echo ok \\1";	# shell interpreted
+  print "not ok 2\n" if system "echo ok 2";	# split and directly called
+! print "not ok 3\n" if system "perlglob", "ok", "3", "\n"; # directly called
+
+! if (system "expr 1 >nul") {print "not ok 4\n";} else {print "ok 4\n";}
+
+! if ((system "sh -c \"exit 1\"") != 1) { print "not "; }
+  print "ok 5\n";
+
+! if ((system "lskdfj") == 1) {print "ok 6\n";} else {print "not ok 6\n";}
+
+  unless (exec "lskdjfalksdjfdjfkls") {print "ok 7\n";} else {print "not ok 7\n";}
+
+! exec "perlglob","ok","8";
+diff -cbBwr perl-4.019/t/op/glob.t new/t/op/glob.t
+*** perl-4.019/t/op/glob.t	Wed Mar 20 08:48:54 1991
+--- new/t/op/glob.t	Sun Jun 16 21:43:26 1991
+***************
+*** 7,13 ****
+  @ops = <op/*>;
+  $list = join(' ',@ops);
+
+! chop($otherway = `echo op/*`);
+
+  print $list eq $otherway ? "ok 1\n" : "not ok 1\n$list\n$otherway\n";
+
+--- 7,13 ----
+  @ops = <op/*>;
+  $list = join(' ',@ops);
+
+! chop($otherway = `perlglob op/*`);
+
+  print $list eq $otherway ? "ok 1\n" : "not ok 1\n$list\n$otherway\n";
+
+diff -cbBwr perl-4.019/t/op/goto.t new/t/op/goto.t
+*** perl-4.019/t/op/goto.t	Wed Mar 20 08:48:46 1991
+--- new/t/op/goto.t	Sun Jun 16 21:50:54 1991
+***************
+*** 29,34 ****
+  print "#2\t:$foo: == 4\n";
+  if ($foo == 4) {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `./perl -e 'goto foo;' 2>&1`;
+  print "#3\t/label/ in :$x";
+  if ($x =~ /label/) {print "ok 3\n";} else {print "not ok 3\n";}
+--- 29,34 ----
+  print "#2\t:$foo: == 4\n";
+  if ($foo == 4) {print "ok 2\n";} else {print "not ok 2\n";}
+
+! $x = `perl -e "goto foo;" 2>&1`;
+  print "#3\t/label/ in :$x";
+  if ($x =~ /label/) {print "ok 3\n";} else {print "not ok 3\n";}
+diff -cbBwr perl-4.019/t/op/magic.t new/t/op/magic.t
+*** perl-4.019/t/op/magic.t	Wed Mar 20 08:48:36 1991
+--- new/t/op/magic.t	Sun Jun 16 21:56:14 1991
+***************
+*** 7,13 ****
+  print "1..5\n";
+
+  eval '$ENV{"foo"} = "hi there";';	# check that ENV is inited inside eval
+! if (`echo \$foo` eq "hi there\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+  unlink 'ajslkdfpqjsjfk';
+  $! = 0;
+--- 7,13 ----
+  print "1..5\n";
+
+  eval '$ENV{"foo"} = "hi there";';	# check that ENV is inited inside eval
+! if (`echo %foo%` eq "hi there\n") {print "ok 1\n";} else {print "not ok 1\n";}
+
+  unlink 'ajslkdfpqjsjfk';
+  $! = 0;
+***************
+*** 17,30 ****
+  # the next tests are embedded inside system simply because sh spits out
+  # a newline onto stderr when a child process kills itself with SIGINT.
+
+! system './perl',
+  '-e', '$| = 1;		# command buffering',
+
+! '-e', '$SIG{"INT"} = "ok3"; kill 2,$$;',
+! '-e', '$SIG{"INT"} = "IGNORE"; kill 2,$$; print "ok 4\n";',
+! '-e', '$SIG{"INT"} = "DEFAULT"; kill 2,$$; print "not ok\n";',
+
+! '-e', 'sub ok3 { print "ok 3\n" if pop(@_) eq "INT"; }';
+
+  @val1 = @ENV{keys(%ENV)};	# can we slice ENV?
+  @val2 = values(%ENV);
+--- 17,30 ----
+  # the next tests are embedded inside system simply because sh spits out
+  # a newline onto stderr when a child process kills itself with SIGINT.
+
+! system 'perl',
+  '-e', '$| = 1;		# command buffering',
+
+! '-e', '$SIG{"TERM"} = "ok3"; kill 0,$$;',
+! '-e', '$SIG{"TERM"} = "IGNORE"; kill 0,$$; print "ok 4\n";',
+! '-e', '$SIG{"TERM"} = "DEFAULT"; kill 0,$$; print "not ok\n";',
+
+! '-e', 'sub ok3 { print "ok 3\n" if pop(@_) eq "TERM"; }';
+
+  @val1 = @ENV{keys(%ENV)};	# can we slice ENV?
+  @val2 = values(%ENV);
+diff -cbBwr perl-4.019/t/op/mkdir.t new/t/op/mkdir.t
+*** perl-4.019/t/op/mkdir.t	Wed Mar 20 08:48:54 1991
+--- new/t/op/mkdir.t	Sun Jun 16 22:00:06 1991
+***************
+*** 4,14 ****
+
+  print "1..7\n";
+
+! `rm -rf blurfl`;
+
+  print (mkdir('blurfl',0777) ? "ok 1\n" : "not ok 1\n");
+  print (mkdir('blurfl',0777) ? "not ok 2\n" : "ok 2\n");
+! print ($! =~ /exist/ ? "ok 3\n" : "not ok 3\n");
+  print (-d 'blurfl' ? "ok 4\n" : "not ok 4\n");
+  print (rmdir('blurfl') ? "ok 5\n" : "not ok 5\n");
+  print (rmdir('blurfl') ? "not ok 6\n" : "ok 6\n");
+--- 4,14 ----
+
+  print "1..7\n";
+
+! `rm -r blurfl`;
+
+  print (mkdir('blurfl',0777) ? "ok 1\n" : "not ok 1\n");
+  print (mkdir('blurfl',0777) ? "not ok 2\n" : "ok 2\n");
+! print ($! =~ /denied/ ? "ok 3\n" : "not ok 3\n");
+  print (-d 'blurfl' ? "ok 4\n" : "not ok 4\n");
+  print (rmdir('blurfl') ? "ok 5\n" : "not ok 5\n");
+  print (rmdir('blurfl') ? "not ok 6\n" : "ok 6\n");
+diff -cbBwr perl-4.019/t/op/split.t new/t/op/split.t
+*** perl-4.019/t/op/split.t	Wed Mar 20 08:48:24 1991
+--- new/t/op/split.t	Sun Jun 16 22:04:02 1991
+***************
+*** 47,53 ****
+  print $_ eq '1:2:3:4:5:6:::' ? "ok 10\n" : "not ok 10 $_\n";
+
+  # Does assignment to a list imply split to one more field than that?
+! $foo = `./perl -D1024 -e '(\$a,\$b) = split;' 2>&1`;
+  print $foo =~ /DEBUGGING/ || $foo =~ /num\(3\)/ ? "ok 11\n" : "not ok 11\n";
+
+  # Can we say how many fields to split to when assigning to a list?
+--- 47,53 ----
+  print $_ eq '1:2:3:4:5:6:::' ? "ok 10\n" : "not ok 10 $_\n";
+
+  # Does assignment to a list imply split to one more field than that?
+! $foo = `perl -D1024 -e "(\$a,\$b) = split;" 2>&1`;
+  print $foo =~ /DEBUGGING/ || $foo =~ /num\(3\)/ ? "ok 11\n" : "not ok 11\n";
+
+  # Can we say how many fields to split to when assigning to a list?
+diff -cbBwr perl-4.019/t/op/stat.t new/t/op/stat.t
+*** perl-4.019/t/op/stat.t	Fri Nov 22 22:04:46 1991
+--- new/t/op/stat.t	Fri Nov 22 22:16:40 1991
+***************
+*** 4,12 ****
+
+  print "1..56\n";
+
+! chop($cwd = `pwd`);
+
+! $DEV = `ls -l /dev`;
+
+  unlink "Op.stat.tmp";
+  open(FOO, ">Op.stat.tmp");
+--- 4,12 ----
+
+  print "1..56\n";
+
+! chop($cwd = `cd`);
+
+! $DEV = `ls -l`;
+
+  unlink "Op.stat.tmp";
+  open(FOO, ">Op.stat.tmp");
+***************
+*** 23,29 ****
+
+  sleep 2;
+
+! `rm -f Op.stat.tmp2; ln Op.stat.tmp Op.stat.tmp2; chmod 644 Op.stat.tmp`;
+
+  ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,
+      $blksize,$blocks) = stat('Op.stat.tmp');
+--- 23,29 ----
+
+  sleep 2;
+
+! `del Op.stat.tmp2; ln Op.stat.tmp Op.stat.tmp2; chmod 644 Op.stat.tmp 2>nul`;
+
+  ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,
+      $blksize,$blocks) = stat('Op.stat.tmp');
+***************
+*** 73,80 ****
+  if (-d '.') {print "ok 23\n";} else {print "not ok 23\n";}
+  if (! -f '.') {print "ok 24\n";} else {print "not ok 24\n";}
+
+! if (`ls -l perl` =~ /^l.*->/) {
+!     if (-l 'perl') {print "ok 25\n";} else {print "not ok 25\n";}
+  }
+  else {
+      print "ok 25\n";
+--- 73,80 ----
+  if (-d '.') {print "ok 23\n";} else {print "not ok 23\n";}
+  if (! -f '.') {print "ok 24\n";} else {print "not ok 24\n";}
+
+! if (`ls -l perl.exe` =~ /^l.*->/) {
+!     if (-l 'perl.exe') {print "ok 25\n";} else {print "not ok 25\n";}
+  }
+  else {
+      print "ok 25\n";
+***************
+*** 83,89 ****
+  if (-o 'Op.stat.tmp') {print "ok 26\n";} else {print "not ok 26\n";}
+
+  if (-e 'Op.stat.tmp') {print "ok 27\n";} else {print "not ok 27\n";}
+! `rm -f Op.stat.tmp Op.stat.tmp2`;
+  if (! -e 'Op.stat.tmp') {print "ok 28\n";} else {print "not ok 28\n";}
+
+  if ($DEV !~ /\nc.* (\S+)\n/)
+--- 83,89 ----
+  if (-o 'Op.stat.tmp') {print "ok 26\n";} else {print "not ok 26\n";}
+
+  if (-e 'Op.stat.tmp') {print "ok 27\n";} else {print "not ok 27\n";}
+! `del Op.stat.tmp Op.stat.tmp2 2>nul`;
+  if (! -e 'Op.stat.tmp') {print "ok 28\n";} else {print "not ok 28\n";}
+
+  if ($DEV !~ /\nc.* (\S+)\n/)
+***************
+*** 113,119 ****
+  $cnt = $uid = 0;
+
+  die "Can't run op/stat.t test 35 without pwd working" unless $cwd;
+! chdir '/usr/bin' || die "Can't cd to /usr/bin";
+  while (defined($_ = <*>)) {
+      $cnt++;
+      $uid++ if -u;
+--- 113,119 ----
+  $cnt = $uid = 0;
+
+  die "Can't run op/stat.t test 35 without pwd working" unless $cwd;
+! chdir '../os2' || die "Can't cd to ../os2";
+  while (defined($_ = <*>)) {
+      $cnt++;
+      $uid++ if -u;
+***************
+*** 124,138 ****
+  # I suppose this is going to fail somewhere...
+  if ($uid > 0 && $uid < $cnt) {print "ok 35\n";} else {print "not ok 35\n";}
+
+! unless (open(tty,"/dev/tty")) {
+!     print STDERR "Can't open /dev/tty--run t/TEST outside of make.\n";
+  }
+  if (-t tty) {print "ok 36\n";} else {print "not ok 36\n";}
+  if (-c tty) {print "ok 37\n";} else {print "not ok 37\n";}
+  close(tty);
+  if (! -t tty) {print "ok 38\n";} else {print "not ok 38\n";}
+! open(null,"/dev/null");
+! if (! -t null || -e '/xenix') {print "ok 39\n";} else {print "not ok 39\n";}
+  close(null);
+  if (-t) {print "ok 40\n";} else {print "not ok 40\n";}
+
+--- 124,138 ----
+  # I suppose this is going to fail somewhere...
+  if ($uid > 0 && $uid < $cnt) {print "ok 35\n";} else {print "not ok 35\n";}
+
+! unless (open(tty,"con")) {
+!     print STDERR "Can't open con--run t/TEST outside of make.\n";
+  }
+  if (-t tty) {print "ok 36\n";} else {print "not ok 36\n";}
+  if (-c tty) {print "ok 37\n";} else {print "not ok 37\n";}
+  close(tty);
+  if (! -t tty) {print "ok 38\n";} else {print "not ok 38\n";}
+! open(null,"nul");
+! if (! -t null || -e 'c:/os2krnl') {print "ok 39\n";} else {print "not ok 39\n";}
+  close(null);
+  if (-t) {print "ok 40\n";} else {print "not ok 40\n";}
+
+***************
+*** 141,148 ****
+  if (-T 'op/stat.t') {print "ok 41\n";} else {print "not ok 41\n";}
+  if (! -B 'op/stat.t') {print "ok 42\n";} else {print "not ok 42\n";}
+
+! if (-B './perl') {print "ok 43\n";} else {print "not ok 43\n";}
+! if (! -T './perl') {print "ok 44\n";} else {print "not ok 44\n";}
+
+  open(FOO,'op/stat.t');
+  eval { -T FOO; };
+--- 141,148 ----
+  if (-T 'op/stat.t') {print "ok 41\n";} else {print "not ok 41\n";}
+  if (! -B 'op/stat.t') {print "ok 42\n";} else {print "not ok 42\n";}
+
+! if (-B 'perl.exe') {print "ok 43\n";} else {print "not ok 43\n";}
+! if (! -T 'perl.exe') {print "ok 44\n";} else {print "not ok 44\n";}
+
+  open(FOO,'op/stat.t');
+  eval { -T FOO; };
+***************
+*** 172,176 ****
+  }
+  close(FOO);
+
+! if (-T '/dev/null') {print "ok 55\n";} else {print "not ok 55\n";}
+! if (-B '/dev/null') {print "ok 56\n";} else {print "not ok 56\n";}
+--- 172,176 ----
+  }
+  close(FOO);
+
+! if (-T 'nul') {print "ok 55\n";} else {print "not ok 55\n";}
+! if (-B 'nul') {print "ok 56\n";} else {print "not ok 56\n";}
+diff -cbBwr perl-4.019/t/TEST new/t/TEST
+*** perl-4.019/t/TEST	Tue Jun 11 23:32:06 1991
+--- new/t/TEST	Sun Jun 16 20:47:38 1991
+***************
+*** 16,22 ****
+
+  if ($ARGV[0] eq '') {
+      @ARGV = split(/[ \n]/,
+!       `echo base/*.t comp/*.t cmd/*.t io/*.t; echo op/*.t lib/*.t`);
+  }
+
+  open(CONFIG,"../config.sh");
+--- 16,22 ----
+
+  if ($ARGV[0] eq '') {
+      @ARGV = split(/[ \n]/,
+!       `ls base/*.t comp/*.t cmd/*.t io/*.t op/*.t lib/*.t`);
+  }
+
+  open(CONFIG,"../config.sh");
+***************
+*** 35,41 ****
+      chop($te);
+      print "$te" . '.' x (15 - length($te));
+      if ($sharpbang) {
+! 	open(results,"./$test|") || (print "can't run.\n");
+      } else {
+  	open(script,"$test") || die "Can't run $test.\n";
+  	$_ = <script>;
+--- 35,41 ----
+      chop($te);
+      print "$te" . '.' x (15 - length($te));
+      if ($sharpbang) {
+! 	open(results,"$test|") || (print "can't run.\n");
+      } else {
+  	open(script,"$test") || die "Can't run $test.\n";
+  	$_ = <script>;
+***************
+*** 45,51 ****
+  	} else {
+  	    $switch = '';
+  	}
+! 	open(results,"./perl$switch $test|") || (print "can't run.\n");
+      }
+      $ok = 0;
+      $next = 0;
+--- 45,51 ----
+  	} else {
+  	    $switch = '';
+  	}
+! 	open(results,"perl$switch $test|") || (print "can't run.\n");
+      }
+      $ok = 0;
+      $next = 0;
+
