@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpmain.c	5.6 (Berkeley) 2/23/87";
+static char sccsid[] = "@(#)dumpmain.c	1.3 (UKC) %G%	5.6 (Berkeley) 2/23/87";
 #endif not lint
 
 #include "dump.h"
@@ -16,6 +16,10 @@ int	tapeno = 0;	/* current tape number */
 int	density = 0;	/* density in bytes/0.1" */
 int	ntrec = NTREC;	/* # tape blocks in each tape record */
 int	cartridge = 0;	/* Assume non-cartridge tape */
+
+extern int labchk;	/* check labels */
+int	rewindoffline;	/* put tape offline after every write */
+
 #ifdef RDUMP
 char	*host;
 #endif
@@ -124,6 +128,30 @@ main(argc, argv)
 		notify++;
 		break;
 
+	case 'l':			/* set a label format */
+		if (argc > 1) {
+			argv++;
+			argc--;
+			storelabel(*argv);
+		}
+		break;
+
+	case 'm':			/* set a label map */
+		if (argc > 1) {
+			argv++;
+			argc--;
+			storelabelmap(*argv);
+		}
+		break;
+
+	case 't':
+		labchk = 1;
+		break;
+
+	case 'o':
+		rewindoffline = 1;
+		break;
+
 	default:
 		fprintf(stderr, "bad key '%c%'\n", arg[-1]);
 		Exit(X_ABORT);
@@ -199,7 +227,7 @@ main(argc, argv)
 		strncpy(spcl.c_dev, disk, NAMELEN);
 		strncpy(spcl.c_filesys, "an unlisted file system", NAMELEN);
 	}
-	strcpy(spcl.c_label, "none");
+	strcpy(spcl.c_label, createlabel(0));
 	gethostname(spcl.c_host, NAMELEN);
 	spcl.c_level = incno - '0';
 	spcl.c_type = TS_TAPE;
@@ -209,6 +237,7 @@ main(argc, argv)
  	msg("Date of last level %c dump: %s\n",
 		lastincno, prdate(spcl.c_ddate));
 	msg("Dumping %s ", disk);
+
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
 #ifdef RDUMP
@@ -216,6 +245,9 @@ main(argc, argv)
 #else
 	msgtail("to %s\n", tape);
 #endif
+
+	initialtape();	/* print label message if required */
+
 
 	fi = open(disk, 0);
 	if (fi < 0) {
@@ -286,6 +318,8 @@ main(argc, argv)
 		bmapest(nodmap);
 	esize += i + 10;	/* headers + 10 trailer blocks */
 	msg("estimated %ld tape blocks on %3.2f tape(s).\n", esize, fetapes);
+
+	labelest(fetapes);		/* check we have enough labels */
 
 	alloctape();			/* Allocate tape buffer */
 

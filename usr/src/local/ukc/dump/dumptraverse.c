@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumptraverse.c	5.3 (Berkeley) 1/9/86";
+static char sccsid[] = "@(#)dumptraverse.c	1.2 (UKC) %G%	5.3 (Berkeley) 1/9/86";
 #endif not lint
 
 #include "dump.h"
@@ -237,6 +237,8 @@ spclrec()
 
 	spcl.c_inumber = ino;
 	spcl.c_magic = NFS_MAGIC;
+	if(newtape)			/* add label */
+		strcpy(spcl.c_label, createlabel(tapeno));
 	spcl.c_checksum = 0;
 	ip = (int *)&spcl;
 	s = 0;
