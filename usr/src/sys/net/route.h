@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)route.h	7.7 (Berkeley) %G%
+ *	@(#)route.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,22 @@
 struct route {
 	struct	rtentry *ro_rt;
 	struct	sockaddr ro_dst;
+};
+
+/*
+ * These numbers are used by reliable protocols for determining
+ * retransmission behavior and are included in the routing structure.
+ */
+struct rt_metrics {
+	u_long	rmx_locks;	/* Kernel must leave these values alone */
+	u_long	rmx_mtu;	/* MTU for this path */
+	u_long	rmx_hopcount;	/* max hops expected */
+	u_long	rmx_expire;	/* lifetime for route, e.g. redirect */
+	u_long	rmx_recvpipe;	/* inbound delay-bandwith product */
+	u_long	rmx_sendpipe;	/* outbound delay-bandwith product */
+	u_long	rmx_ssthresh;	/* outbound gateway buffer limit */
+	u_long	rmx_rtt;	/* estimated round trip time */
+	u_long	rmx_rttvar;	/* estimated rtt variance */
 };
 
 /*
@@ -55,6 +71,7 @@ struct rtentry {
 	struct	ifaddr *rt_ifa;		/* the answer: interface to use */
 	struct	sockaddr *rt_genmask;	/* for generation of cloned routes */
 	caddr_t	rt_llinfo;		/* pointer to link level info cache */
+	struct	rt_metrics rt_rmx;	/* metrics used by rx'ing protocols */
 };
 
 /*
@@ -95,33 +112,19 @@ struct	rtstat {
 /*
  * Structures for routing messages.
  */
-struct rt_metrics {
-	u_long	rtm_mtu;	/* MTU for this path */
-	u_long	rtm_hopcount;	/* max hops expected */
-	u_long	rtm_expire;	/* lifetime for route, e.g. redirect */
-	u_long	rtm_recvpipe;	/* inbound delay-bandwith product */
-	u_long	rtm_sendpipe;	/* outbound delay-bandwith product */
-	u_long	rtm_ssthresh;	/* outbound gateway buffer limit */
-	u_long	rtm_rtt;	/* estimated round trip time */
-	u_long	rtm_rttvar;	/* estimated rtt variance */
-};
-
 struct rt_msghdr {
 	u_short	rtm_msglen;	/* to skip over non-understood messages */
 	u_char	rtm_version;	/* future binary compatability */
 	u_char	rtm_type;	/* message type */
-	u_char	rtm_count;	/* number of sockaddrs */
+	u_short	rtm_index;	/* index for associated ifp */
 	pid_t	rtm_pid;	/* identify sender */
+	int	rtm_addrs;	/* bitmask identifying sockaddrs in msg */
 	int	rtm_seq;	/* for sender to identify action */
 	int	rtm_errno;	/* why failed */
 	int	rtm_flags;	/* flags, incl. kern & message, e.g. DONE */
-	int	rtm_locks;	/* which values kernel can alter */
-	int	rtm_inits;	/* which values we are initializing */
-};
-
-struct rt_chgmsg {		/* Good for RTM_ADD, RTM_CHANGE, RTM_GET */
-	struct	rt_msghdr cm_h;
-	struct	rt_metrics cm_m;
+	int	rtm_use;	/* from rtentry */
+	u_long	rtm_inits;	/* which metrics we are initializing */
+	struct	rt_metrics rtm_rmx; /* metrics themselves */
 };
 
 struct route_cb {
@@ -130,6 +133,7 @@ struct route_cb {
 	int	iso_count;
 	int	any_count;
 };
+#define RTM_VERSION	2	/* Up the ante and ignore older versions */
 
 #define RTM_ADD		0x1	/* Add Route */
 #define RTM_DELETE	0x2	/* Delete Route */
@@ -151,6 +155,14 @@ struct route_cb {
 #define RTV_SSTHRESH	0x20	/* init or lock _ssthresh */
 #define RTV_RTT		0x40	/* init or lock _rtt */
 #define RTV_RTTVAR	0x80	/* init or lock _rttvar */
+
+#define RTA_DST		0x1	/* destination sockaddr present */
+#define RTA_GATEWAY	0x2	/* gateway sockaddr present */
+#define RTA_NETMASK	0x4	/* netmask sockaddr present */
+#define RTA_GENMASK	0x8	/* cloning mask sockaddr present */
+#define RTA_IFP		0x10	/* interface name sockaddr present */
+#define RTA_IFA		0x20	/* interface addr sockaddr present */
+#define RTA_AUTHOR	0x40	/* sockaddr for author of redirect */
 
 #ifdef KERNEL
 struct route_cb route_cb;
