@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.78 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -731,7 +731,7 @@ writable(filename, ctladdr, flags)
 	char *uname;
 
 	if (tTd(29, 5))
-		printf("writable(%s, %x)\n", filename, flags);
+		printf("writable(%s, 0x%x)\n", filename, flags);
 
 #ifdef SUID_ROOT_FILES_OK
 	/* really ought to be passed down -- and not a good idea */
@@ -748,8 +748,7 @@ writable(filename, ctladdr, flags)
 		egid = ctladdr->q_gid;
 		uname = ctladdr->q_user;
 	}
-#ifdef RUN_AS_REAL_UID
-	else
+	else if (bitset(SFF_RUNASREALUID, flags))
 	{
 		extern char RealUserName[];
 
@@ -757,7 +756,6 @@ writable(filename, ctladdr, flags)
 		egid = RealGid;
 		uname = RealUserName;
 	}
-#else
 	else if (FileMailer != NULL)
 	{
 		euid = FileMailer->m_uid;
@@ -767,7 +765,6 @@ writable(filename, ctladdr, flags)
 	{
 		euid = egid = 0;
 	}
-#endif
 	if (euid == 0)
 	{
 		euid = DefUid;
