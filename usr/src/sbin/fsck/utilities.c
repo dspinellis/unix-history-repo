@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -42,15 +42,16 @@ reply(s)
 	char *s;
 {
 	char line[80];
+	int cont = (strcmp(s, "CONTINUE") == 0);
 
 	if (preen)
 		pfatal("INTERNAL ERROR: GOT TO reply()");
 	printf("\n%s? ", s);
-	if (nflag || dfile.wfdes < 0) {
+	if (!cont && (nflag || dfile.wfdes < 0)) {
 		printf(" no\n\n");
 		return (0);
 	}
-	if (yflag) {
+	if (yflag || (cont && nflag)) {
 		printf(" yes\n\n");
 		return (1);
 	}
@@ -111,7 +112,9 @@ flush(fcp, bp)
 	if (!bp->b_dirty)
 		return;
 	if (bp->b_errs != 0)
-		pfatal("WRITING ZERO'ED BLOCK %d TO DISK\n", bp->b_bno);
+		pfatal("WRITING %sZERO'ED BLOCK %d TO DISK\n",
+		    (bp->b_errs == bp->b_size / dev_bsize) ? "" : "PARTIALLY ",
+		    bp->b_bno);
 	bp->b_dirty = 0;
 	bp->b_errs = 0;
 	bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
@@ -142,7 +145,7 @@ ckfini()
 
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
-	if (sblk.b_bno != SBOFF / dev_bsize &&
+	if (dev_bsize && sblk.b_bno != SBOFF / dev_bsize &&
 	    !preen && reply("UPDATE STANDARD SUPERBLOCK")) {
 		sblk.b_bno = SBOFF / dev_bsize;
 		sbdirty();
@@ -172,11 +175,16 @@ bread(fcp, buf, blk, size)
 		rwerr("SEEK", blk);
 	errs = 0;
 	bzero(buf, size);
-	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
-	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize) {
-		if (read(fcp->rfdes, cp, dev_bsize) < 0) {
-			lseek(fcp->rfdes, blk * dev_bsize + i + dev_bsize, 0);
-			printf(" %d,", blk + i / dev_bsize);
+	printf("THE FOLLOWING DISK SECTORS COULD NOT BE READ:");
+	for (cp = buf, i = 0; i < size; i += secsize, cp += secsize) {
+		if (read(fcp->rfdes, cp, secsize) < 0) {
+			lseek(fcp->rfdes, blk * dev_bsize + i + secsize, 0);
+			if (secsize != dev_bsize)
+				printf(" %d (%d),",
+				    (blk * dev_bsize + i) / secsize,
+				    blk + i / dev_bsize);
+			else
+				printf(" %d,", blk + i / dev_bsize);
 			errs++;
 		}
 	}
@@ -204,7 +212,7 @@ bwrite(fcp, buf, blk, size)
 	rwerr("WRITE", blk);
 	if (lseek(fcp->wfdes, blk * dev_bsize, 0) < 0)
 		rwerr("SEEK", blk);
-	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
+	printf("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += dev_bsize, cp += dev_bsize)
 		if (write(fcp->wfdes, cp, dev_bsize) < 0) {
 			lseek(fcp->rfdes, blk * dev_bsize + i + dev_bsize, 0);

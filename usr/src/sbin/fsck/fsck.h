@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fsck.h	5.3 (Berkeley) %G%
+ *	@(#)fsck.h	5.4 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -133,6 +133,7 @@ struct zlncnt *zlnhead;		/* head of zero link count list */
 char	rawflg;
 char	*devname;
 long	dev_bsize;		/* computed value of DEV_BSIZE */
+long	secsize;		/* actual disk sector size */
 char	nflag;			/* assume a no response */
 char	yflag;			/* assume a yes response */
 int	bflag;			/* location of alternate super block */
