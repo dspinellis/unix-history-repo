@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.5	84/07/08	*/
+/*	uipc_usrreq.c	6.6	84/07/26	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -203,7 +203,7 @@ uipc_usrreq(so, req, m, nam, rights)
 /* END UNIMPLEMENTED HOOKS */
 
 	case PRU_RCVOOB:
-		break;
+		return (EOPNOTSUPP);
 
 	case PRU_SENDOOB:
 		break;
