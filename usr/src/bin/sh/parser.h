@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	5.2 (Berkeley) %G%
+ *	@(#)parser.h	5.3 (Berkeley) %G%
  */
 
 /* control characters in argument strings */
@@ -40,12 +40,15 @@
  */
 extern int tokpushback;
 #define NEOF ((union node *)&tokpushback)
+extern int whichprompt;		/* 1 == PS1, 2 == PS2 */
 
 
 #ifdef __STDC__
 union node *parsecmd(int);
 int goodname(char *);
+char *getprompt(void *);
 #else
 union node *parsecmd();
 int goodname();
+char *getprompt();
 #endif
