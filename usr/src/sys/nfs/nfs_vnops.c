@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.76 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.77 (Berkeley) %G%
  */
 
 /*
@@ -105,12 +105,12 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_create_desc, spec_create },		/* create */
 	{ &vop_mknod_desc, spec_mknod },		/* mknod */
 	{ &vop_open_desc, spec_open },		/* open */
-	{ &vop_close_desc, spec_close },		/* close */
+	{ &vop_close_desc, nfsspec_close },		/* close */
 	{ &vop_access_desc, nfs_access },		/* access */
 	{ &vop_getattr_desc, nfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, nfs_setattr },		/* setattr */
-	{ &vop_read_desc, spec_read },		/* read */
-	{ &vop_write_desc, spec_write },		/* write */
+	{ &vop_read_desc, nfsspec_read },		/* read */
+	{ &vop_write_desc, nfsspec_write },		/* write */
 	{ &vop_ioctl_desc, spec_ioctl },		/* ioctl */
 	{ &vop_select_desc, spec_select },		/* select */
 	{ &vop_mmap_desc, spec_mmap },		/* mmap */
@@ -154,12 +154,12 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_create_desc, fifo_create },		/* create */
 	{ &vop_mknod_desc, fifo_mknod },		/* mknod */
 	{ &vop_open_desc, fifo_open },		/* open */
-	{ &vop_close_desc, fifo_close },		/* close */
+	{ &vop_close_desc, nfsfifo_close },		/* close */
 	{ &vop_access_desc, nfs_access },		/* access */
 	{ &vop_getattr_desc, nfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, nfs_setattr },		/* setattr */
-	{ &vop_read_desc, fifo_read },		/* read */
-	{ &vop_write_desc, fifo_write },		/* write */
+	{ &vop_read_desc, nfsfifo_read },		/* read */
+	{ &vop_write_desc, nfsfifo_write },		/* write */
 	{ &vop_ioctl_desc, fifo_ioctl },		/* ioctl */
 	{ &vop_select_desc, fifo_select },		/* select */
 	{ &vop_mmap_desc, fifo_mmap },		/* mmap */
@@ -300,16 +300,17 @@ nfs_close (ap)
 	register struct nfsnode *np = VTONFS(ap->a_vp);
 	int error = 0;
 
-	if ((np->n_flag & NMODIFIED) &&
-	    (VFSTONFS(ap->a_vp->v_mount)->nm_flag & NFSMNT_NQNFS) == 0 &&
-	    ap->a_vp->v_type == VREG) {
+	if (ap->a_vp->v_type == VREG) {
+	    if ((VFSTONFS(ap->a_vp->v_mount)->nm_flag & NFSMNT_NQNFS) == 0 &&
+		(np->n_flag & NMODIFIED)) {
 		np->n_flag &= ~NMODIFIED;
 		vinvalbuf(ap->a_vp, TRUE);
 		np->n_attrstamp = 0;
-		if (np->n_flag & NWRITEERR) {
-			np->n_flag &= ~NWRITEERR;
-			error = np->n_error;
-		}
+	    }
+	    if (np->n_flag & NWRITEERR) {
+		np->n_flag &= ~NWRITEERR;
+		error = np->n_error;
+	    }
 	}
 	return (error);
 }
@@ -1915,8 +1916,10 @@ nfs_fsync (ap)
 		np->n_flag &= ~NMODIFIED;
 		vflushbuf(ap->a_vp, ap->a_waitfor == MNT_WAIT ? B_SYNC : 0);
 	}
-	if (!error && (np->n_flag & NWRITEERR))
+	if (np->n_flag & NWRITEERR) {
 		error = np->n_error;
+		np->n_flag &= ~NWRITEERR;
+	}
 	return (error);
 }
 
@@ -2023,3 +2026,137 @@ nfs_update (ap)
 	printf("nfs_update: need to implement!!");
 	return (EOPNOTSUPP);
 }
+
+/*
+ * Read wrapper for special devices.
+ */
+int
+nfsspec_read(ap)
+	struct vop_read_args *ap;
+{
+	extern int (**spec_vnodeop_p)();
+
+	/*
+	 * Set access flag.
+	 */
+	VTONFS(ap->a_vp)->n_flag |= NACC;
+	return (VOCALL(spec_vnodeop_p, VOFFSET(vop_read), ap));
+}
+
+/*
+ * Write wrapper for special devices.
+ */
+int
+nfsspec_write(ap)
+	struct vop_write_args *ap;
+{
+	extern int (**spec_vnodeop_p)();
+
+	/*
+	 * Set update flags.
+	 */
+	VTONFS(ap->a_vp)->n_flag |= NUPD;
+	return (VOCALL(spec_vnodeop_p, VOFFSET(vop_write), ap));
+}
+
+/*
+ * Close wrapper for special devices.
+ *
+ * Update the times on the nfsnode then do device close.
+ */
+int
+nfsspec_close(ap)
+	struct vop_close_args *ap;
+{
+	USES_VOP_SETATTR;
+	register struct nfsnode *np = VTONFS(ap->a_vp);
+	struct vattr vattr;
+	extern int (**spec_vnodeop_p)();
+
+	if (np->n_flag & (NACC | NUPD)) {
+		if (np->n_flag & NACC)
+			np->n_atim = time;
+		if (np->n_flag & NUPD)
+			np->n_mtim = time;
+		np->n_flag |= NCHG;
+		if (ap->a_vp->v_usecount == 1 &&
+		    (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+			VATTR_NULL(&vattr);
+			if (np->n_flag & NACC)
+				vattr.va_atime = np->n_atim;
+			if (np->n_flag & NUPD)
+				vattr.va_mtime = np->n_mtim;
+			(void)VOP_SETATTR(ap->a_vp, &vattr, ap->a_cred,
+			    ap->a_p);
+		}
+	}
+	return (VOCALL(spec_vnodeop_p, VOFFSET(vop_close), ap));
+}
+
+#ifdef FIFO
+/*
+ * Read wrapper for fifos.
+ */
+int
+nfsfifo_read(ap)
+	struct vop_read_args *ap;
+{
+	extern int (**fifo_vnodeop_p)();
+
+	/*
+	 * Set access flag.
+	 */
+	VTONFS(ap->a_vp)->n_flag |= NACC;
+	return (VOCALL(fifo_vnodeop_p, VOFFSET(vop_read), ap));
+}
+
+/*
+ * Write wrapper for fifos.
+ */
+int
+nfsfifo_write(ap)
+	struct vop_write_args *ap;
+{
+	extern int (**fifo_vnodeop_p)();
+
+	/*
+	 * Set update flag.
+	 */
+	VTONFS(ap->a_vp)->n_flag |= NUPD;
+	return (VOCALL(fifo_vnodeop_p, VOFFSET(vop_write), ap));
+}
+
+/*
+ * Close wrapper for fifos.
+ *
+ * Update the times on the nfsnode then do fifo close.
+ */
+int
+nfsfifo_close(ap)
+	struct vop_close_args *ap;
+{
+	USES_VOP_SETATTR;
+	register struct nfsnode *np = VTONFS(ap->a_vp);
+	struct vattr vattr;
+	extern int (**fifo_vnodeop_p)();
+
+	if (np->n_flag & (NACC | NUPD)) {
+		if (np->n_flag & NACC)
+			np->n_atim = time;
+		if (np->n_flag & NUPD)
+			np->n_mtim = time;
+		np->n_flag |= NCHG;
+		if (ap->a_vp->v_usecount == 1 &&
+		    (ap->a_vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
+			VATTR_NULL(&vattr);
+			if (np->n_flag & NACC)
+				vattr.va_atime = np->n_atim;
+			if (np->n_flag & NUPD)
+				vattr.va_mtime = np->n_mtim;
+			(void)VOP_SETATTR(ap->a_vp, &vattr, ap->a_cred,
+			    ap->a_p);
+		}
+	}
+	return (VOCALL(fifo_vnodeop_p, VOFFSET(vop_close), ap));
+}
+#endif /* FIFO */

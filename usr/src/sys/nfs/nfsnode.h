@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.22 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.23 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,9 @@ struct nfsnode {
 		} un_nqnfs;
 	} n_un;
 	struct	sillyrename n_silly;	/* Silly rename struct */
-	long	n_spare[9];		/* Up to a power of 2 */
+	struct	timeval n_atim;		/* Special file times */
+	struct	timeval n_mtim;
+	long	n_spare[5];		/* Up to a power of 2 */
 };
 
 #define	n_mtime		n_un.un_nfs.un_mtime
@@ -83,6 +85,9 @@ struct nfsnode {
 #define	NQNFSNONCACHE	0x0020	/* Non-cachable lease */
 #define	NQNFSWRITE	0x0040	/* Write lease */
 #define	NQNFSEVICTED	0x0080	/* Has been evicted */
+#define	NACC		0x0100	/* Special file accessed */
+#define	NUPD		0x0200	/* Special file updated */
+#define	NCHG		0x0400	/* Special file times changed */
 
 /*
  * Prototypes for NFS vnode operations
@@ -92,11 +97,21 @@ int	nfs_create __P((struct vop_create_args *));
 int	nfs_mknod __P((struct vop_mknod_args *));
 int	nfs_open __P((struct vop_open_args *));
 int	nfs_close __P((struct vop_close_args *));
+int	nfsspec_close __P((struct vop_close_args *));
+#ifdef FIFO
+int	nfsfifo_close __P((struct vop_close_args *));
+#endif
 int	nfs_access __P((struct vop_access_args *));
 int	nfs_getattr __P((struct vop_getattr_args *));
 int	nfs_setattr __P((struct vop_setattr_args *));
 int	nfs_read __P((struct vop_read_args *));
 int	nfs_write __P((struct vop_write_args *));
+int	nfsspec_read __P((struct vop_read_args *));
+int	nfsspec_write __P((struct vop_write_args *));
+#ifdef FIFO
+int	nfsfifo_read __P((struct vop_read_args *));
+int	nfsfifo_write __P((struct vop_write_args *));
+#endif
 #define nfs_ioctl ((int (*) __P((struct  vop_ioctl_args *)))enoioctl)
 #define nfs_select ((int (*) __P((struct  vop_select_args *)))seltrue)
 int	nfs_mmap __P((struct vop_mmap_args *));
