@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.2 (Berkeley) %G%
+		@(#)README	6.3 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -325,14 +325,11 @@ using UUCP.
 
 A similar macro is LOCAL_CONFIG.  This introduces lines added after the
 boilerplate option setting but before rulesets, and can be used to
-override default options, declare local database maps, or whatever.
-For example:
+declare local database maps or whatever.  For example:
 
 	LOCAL_CONFIG
 	Khostmap hash /etc/hostmap.db
 	Kyplocal nis -m hosts.byname
-	OJ/var/forward/$u:$z/.forward
-	OL3
 
 +---------------------------+
 | MASQUERADING AND RELAYING |
@@ -395,6 +392,89 @@ mammoth.CS.Berkeley.EDU
 
 Both LOCAL_RELAY and	mail.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
 MAIL_HUB set as above
+
++--------------------------------+
+| TWEAKING CONFIGURATION OPTIONS |
++--------------------------------+
+
+There are a large number of configuration options that don't normally
+need to be changed.  However, if you feel you need to tweak them, you
+can define the following M4 variables.  This list is shown in four
+columns:  the name you define, the default value for that definition,
+the option or macro that is affected (either Ox for an option or Dx
+for a macro), and a brief description.  Greater detail of the semantics
+can be found in the Installation and Operations Guide.
+
+M4 Variable Name	Default		Mac/Opt	Description
+confMAILER_NAME		MAILER-DAEMON	Dn	The sender name used for
+						internally generated
+						outgoing messages.
+confFROM_LINE		From $?<$<$|$g$.  $d	The From_ line used when
+					Dl	sending to files or programs.
+confFROM_HEADER		$?x$x <$g>$|$g$.	The format of an internally
+					Dq	generated From: address.
+confOPERATORS		.:%@!^/[]	Do	Address operator characters.
+confSTMP_LOGIN_MSG	$j Sendmail $v/$Z ready at $b
+					De	The initial (spontaneous)
+						SMTP greeting message.
+confEIGHT_BIT_INPUT	False		O8	Use 8-bit input?
+confALIAS_WAIT		10		Oa	Wait (in minutes) for alias
+						file rebuild.
+confBLANK_SUB		.		OB	Blank (space) substitution
+						character.
+confCON_EXPENSIVE	False		Oc	Connect immediately to
+						mailers marked expensive?
+confCHECKPOINT_INTERVAL	10		OC	Checkpoint queue files
+						every N recipients.
+confDELIVERY_MODE	background	Od	Default delivery mode.
+confAUTO_REBUILD	False		OD	Automatically rebuild
+						alias file if needed.
+confERROR_MODE		(undefined)	Oe	Error message mode.
+confERROR_MESSAGE	(undefined)	OE	Error message header/file.
+confSAVE_FROM_LINES	False		Of	Save extra leading
+						From_ lines.
+confTEMP_FILE_MODE	0600		OF	Temporary file mode.
+confDEF_GROUP_ID	1		Og	Default group id.
+confMATCH_GECOS		False		OG	Match GECOS field.
+confMAX_HOP		17		Oh	Maximum hop count.
+confIGNORE_DOTS		False		Oi	Ignore dot as terminator
+						for incoming messages?
+confBIND_OPTS		(empty)		OI	Default options for BIND.
+confMCI_CACHE_SIZE	2		Ok	Size of open connection cache.
+confMCI_CACHE_TIMEOUT	5m		OK	Open connection cache timeout.
+confLOG_LEVEL		9		OL	Log level.
+confME_TOO		False		Om	Include sender in group
+						expansions.
+confCHECK_ALIASES	True		On	Check RHS of aliases when
+						running newaliases.
+confOLD_STYLE_HEADERS	True		Oo	Assume that headers without
+						special chars are old style.
+confCOPY_ERRORS_TO	(undefined)	OP	Address for additional copies
+						of all error messages.
+confQUEUE_FACTOR	(undefined)	Oq	Slope of queue-only function
+confREAD_TIMEOUT	20m		Or	SMTP read timeout.
+confSAFE_QUEUE		True		Os	Commit all messages to disk
+						before forking.
+confMESSAGE_TIMEOUT	3d		OT	Timeout for messages before
+						sending error message.
+confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
+						USE_SYSTEM to use the system's
+						idea, USE_TZ to use the user's
+						TZ envariable, or something
+						else to force that value.
+confDEF_USER_ID		1		Ou	Default user id.
+confNO_WILDCARD_MX	False		Ow	No wildcard MX records matches
+						our domain.
+confQUEUE_LA		8		Ox	Load average at which queue-only
+						function kicks in.
+confREFUSE_LA		12		OX	Load average at which incoming
+						SMTP connections are refused.
+confSEPARATE_PROC	False		Oy	Run all deliveries in a
+						separate process.
+confWORK_RECIPIENT_FACTOR
+			(undefined)	OY	Cost of each recipient.
+confWORK_CLASS_FACTOR	(undefined)	Oz	Priority multiplier for class.
+confWORK_TIME_FACTOR	(undefined)	OZ	Cost of each delivery attempt.
 
 +-----------+
 | HIERARCHY |
