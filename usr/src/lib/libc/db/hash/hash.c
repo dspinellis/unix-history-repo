@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.18 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -67,7 +67,7 @@ long hash_accesses, hash_collisions, hash_expansions, hash_overflows;
 /* OPEN/CLOSE */
 
 extern DB *
-hash_open(file, flags, mode, info)
+__hash_open(file, flags, mode, info)
 	const char *file;
 	int flags, mode;
 	const HASHINFO *info;	/* Special directives for create */
@@ -434,7 +434,7 @@ flush_meta()
 		}
 	for (i = 0; i < NCACHED; i++)
 		if (hashp->mapp[i])
-			if (!__put_page((char *)hashp->mapp[i],
+			if (__put_page((char *)hashp->mapp[i],
 				hashp->BITMAPS[i], 0, 1))
 				return (-1);
 	return (0);
@@ -608,10 +608,10 @@ found:
 		return (ABNORMAL);
 	case HASH_GET:
 		bp = (u_short *)rbufp->page;
-		if (bp[ndx + 1] < REAL_KEY)
+		if (bp[ndx + 1] < REAL_KEY) {
 			if (__big_return(rbufp, ndx, val, 0))
 				return (ERROR);
-		else {
+		} else {
 			val->data = (u_char *)rbufp->page + (int)bp[ndx + 1];
 			val->size = bp[ndx] - bp[ndx + 1];
 		}
