@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	4.8 %G%";
+static char sccsid[] = "@(#)msgs.c	4.9 (Berkeley) %G%";
 #endif lint
 /*
  * msgs - a user bulletin board program
@@ -30,7 +30,7 @@ static char sccsid[] = "@(#)msgs.c	4.8 %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <signal.h>
-#include <dir.h>
+#include <sys/dir.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <pwd.h>
