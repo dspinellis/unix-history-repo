@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.22 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -765,10 +765,43 @@ vprint(label, vp)
 	char *label;
 	register struct vnode *vp;
 {
+	char buf[64];
 
 	if (label != NULL)
 		printf("%s: ", label);
-	printf("type %s, usecount %d, refcount %d,\n\t", typename[vp->v_type],
+	printf("type %s, usecount %d, refcount %d,", typename[vp->v_type],
 		vp->v_usecount, vp->v_holdcnt);
+	buf[0] = '\0';
+	if (vp->v_flag & VROOT)
+		strcat(buf, "|VROOT");
+	if (vp->v_flag & VTEXT)
+		strcat(buf, "|VTEXT");
+	if (vp->v_flag & VXLOCK)
+		strcat(buf, "|VXLOCK");
+	if (vp->v_flag & VXWANT)
+		strcat(buf, "|VXWANT");
+	if (vp->v_flag & VEXLOCK)
+		strcat(buf, "|VEXLOCK");
+	if (vp->v_flag & VSHLOCK)
+		strcat(buf, "|VSHLOCK");
+	if (vp->v_flag & VLWAIT)
+		strcat(buf, "|VLWAIT");
+	if (vp->v_flag & VALIASED)
+		strcat(buf, "|VALIASED");
+	if (vp->v_flag & VBWAIT)
+		strcat(buf, "|VBWAIT");
+	if (buf[0] != '\0')
+		printf(" flags (%s)", &buf[1]);
+	printf("\n\t");
 	VOP_PRINT(vp);
+}
+
+strcat(src, append)
+	register char *src, *append;
+{
+
+	for (; *src; ++src)
+		/* void */;
+	while (*src++ = *append++)
+		/* void */;
 }
