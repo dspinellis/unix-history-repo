@@ -1,4 +1,4 @@
-/*	ubareg.h	6.3	84/02/15	*/
+/*	ubareg.h	6.4	85/01/18	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -30,6 +30,9 @@ struct uba_regs
 #define	UBACNFGR_UBINIT	0x00040000	/* unibus init asserted */
 #define	UBACNFGR_UBPDN	0x00020000	/* unibus power down */
 #define	UBACNFGR_UBIC	0x00010000	/* unibus init complete */
+
+#define UBACNFGR_BITS \
+"\40\40PARFLT\37WSQFLT\36URDFLT\35ISQFLT\34MXTFLT\33XMTFLT\30ADPDN\27ADPUP\23UBINIT\22UBPDN\21UBIC"
 
 /* uba_cr */
 #define	UBACR_MRD16	0x40000000	/* map reg disable bit 4 */
