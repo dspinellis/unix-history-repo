@@ -42,6 +42,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define alloca __builtin_alloca
 #endif
 
+#define ASM_SPEC   " %| %{fpic:-k} %{fPIC:-k}"
+#define LINK_SPEC \
+  "%{!nostdlib:%{!r*:%{!e*:-e start}}} -dc -dp %{static:-Bstatic} %{assert*}"
+
 /* target machine dependencies.
    tm.h is a symbolic link to the actual target specific file.   */
 

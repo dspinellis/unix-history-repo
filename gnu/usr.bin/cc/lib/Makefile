@@ -2,6 +2,7 @@ LIB = gcc2
 
 CFLAGS += -I${.CURDIR} -DNOFPU 
 NOPROFILE=no
+NOPIC=no
 
 SRCS =  aux-output.c c-common.c caller-save.c calls.c combine.c \
 	convert.c cse.c dbxout.c dwarfout.c emit-rtl.c explow.c \
