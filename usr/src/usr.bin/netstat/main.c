@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,6 +35,7 @@ static char sccsid[] = "@(#)main.c	5.14 (Berkeley) %G%";
 #include <netdb.h>
 #include <nlist.h>
 #include <stdio.h>
+#include <paths.h>
 
 struct nlist nl[] = {
 #define	N_MBSTAT	0
@@ -85,6 +86,8 @@ struct nlist nl[] = {
 	{ "_ns_errstat"},
 #define N_NIMP		23
 	{ "_nimp"},
+#define N_RTREE		24
+	{ "_radix_node_head"},
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -160,8 +163,8 @@ struct protox nsprotox[] = {
 
 struct	pte *Sysmap;
 
-char	*system = "/vmunix";
-char	*kmemf = "/dev/kmem";
+char	*system = _PATH_UNIX;
+char	*kmemf = _PATH_KMEM;
 int	kmem;
 int	kflag;
 int	Aflag;
@@ -337,7 +340,8 @@ main(argc, argv)
 		else
 			routepr((off_t)nl[N_RTHOST].n_value, 
 				(off_t)nl[N_RTNET].n_value,
-				(off_t)nl[N_RTHASHSIZE].n_value);
+				(off_t)nl[N_RTHASHSIZE].n_value,
+				(off_t)nl[N_RTREE].n_value);
 		exit(0);
 	}
     if (af == AF_INET || af == AF_UNSPEC) {
