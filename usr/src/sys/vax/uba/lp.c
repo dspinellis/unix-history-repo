@@ -1,4 +1,4 @@
-/*	lp.c	4.17	81/03/21	*/
+/*	lp.c	4.18	81/04/02	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -9,7 +9,6 @@
  * leaving IENABLE set would cause continuous interrupts.
  *
  * TODO:
- *	Test driver
  *	Test driver on multiple printers
  */
 
