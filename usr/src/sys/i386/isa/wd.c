@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)wd.c	5.9 (Berkeley) %G%
+ *	@(#)wd.c	5.10 (Berkeley) %G%
  */
 
 #include "wd.h"
@@ -378,7 +378,7 @@ loop:
 
 	/* Ready to send data?	*/
 	while ((inb(wdc+wd_status) & WDCS_DRQ) == 0)
-		nulldev();		/* So compiler won't optimize out */
+		nullop();		/* So compiler won't optimize out */
 
 	/* ASSUMES CONTIGUOUS MEMORY */
 	outsw (wdc+wd_data, addr+du->dk_skip*512, 256);
@@ -409,7 +409,7 @@ static wd_haderror;
 
 	/* Shouldn't need this, but it may be a slow controller.	*/
 	while ((status = inb(wdc+wd_status)) & WDCS_BUSY)
-		nulldev();
+		nullop();
 	if (!wdtab.b_active) {
 		printf("wd: extra interrupt\n");
 		return;
@@ -479,7 +479,7 @@ outt:
 		chk = min(256,du->dk_bc/2);
 		/* Ready to receive data?	*/
 		while ((inb(wdc+wd_status) & WDCS_DRQ) == 0)
-			nulldev();
+			nullop();
 
 /*dprintf(DDSK,"addr %x\n", (int)bp->b_un.b_addr + du->dk_skip * 512);*/
 		insw(wdc+wd_data,(int)bp->b_un.b_addr + du->dk_skip * 512 ,chk);
@@ -663,7 +663,7 @@ wdcontrol(bp)
 			+ du->dk_dd.dk_ntracks-1);
 		outb(wdc+wd_seccnt, du->dk_dd.dk_nsectors);
 		outb(wdc+wd_command, 0x91);
-		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nulldev();
+		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nullop();
 #endif
 
 		outb(wdc+wd_sdh, WDSD_IBM | (unit << 4));
@@ -735,14 +735,14 @@ if( cyloffset < 0 || cyloffset > 2048) cyloffset=0;
 		}
 
 		s = splbio();		/* not called from intr level ... */
-		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nulldev();
+		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nullop();
 		outb(wdc+wd_sdh, WDSD_IBM | (unit << 4) 
 			+ du->dk_dd.dk_ntracks-1);
 		outb(wdc+wd_cyl_lo, du->dk_dd.dk_ncylinders);
 		outb(wdc+wd_cyl_hi, du->dk_dd.dk_ncylinders>>8);
 		outb(wdc+wd_seccnt, du->dk_dd.dk_nsectors);
 		outb(wdc+wd_command, 0x91);
-		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nulldev();
+		while ((stat = inb(wdc+wd_status)) & WDCS_BUSY) nullop();
 		outb(wdc+wd_seccnt, 0);
 		splx(s);
 
@@ -931,10 +931,10 @@ wddump(dev)			/* dump core after a system crash */
 	/*wdtab.b_active = 1;		/* mark controller active for if we
 					   panic during the dump */
 	wddoingadump = 1  ;  i = 100000 ;
-	while ((wdp->wd_status & WDCS_BUSY) && (i-- > 0)) nulldev() ;
+	while ((wdp->wd_status & WDCS_BUSY) && (i-- > 0)) nullop() ;
 	inb(wdc+wd_sdh = du->dk_sdh ;
 	inb(wdc+wd_command = WDCC_RESTORE | WD_STEP;
-	while (inb(wdc+wd_status & WDCS_BUSY) nulldev() ;
+	while (inb(wdc+wd_status & WDCS_BUSY) nullop() ;
 	
 	blknum = dumplo;
 	while (num > 0) {
@@ -981,7 +981,7 @@ wddump(dev)			/* dump core after a system crash */
 
 		/* select drive.     */
 		inb(wdc+wd_sdh = du->dk_sdh | (head&07);
-		while ((inb(wdc+wd_status & WDCS_READY) == 0) nulldev();
+		while ((inb(wdc+wd_status & WDCS_READY) == 0) nullop();
 
 		/* transfer some blocks */
 		inb(wdc+wd_sector = sector;
@@ -1006,7 +1006,7 @@ wddump(dev)			/* dump core after a system crash */
 		inb(wdc+wd_command = WDCC_WRITE;
 		
 		/* Ready to send data?	*/
-		while ((inb(wdc+wd_status & WDCS_DRQ) == 0) nulldev();
+		while ((inb(wdc+wd_status & WDCS_DRQ) == 0) nullop();
 		if (inb(wdc+wd_status & WDCS_ERR) return(EIO) ;
 
 		end = (char *)addr + du->dk_dd.dk_secsize;
@@ -1027,7 +1027,7 @@ wddump(dev)			/* dump core after a system crash */
 		/* wait for completion */
 		for ( i = 1000000 ; inb(wdc+wd_status & WDCS_BUSY ; i--) {
 				if (i < 0) return (EIO) ;
-				nulldev () ;
+				nullop () ;
 		}
 		/* error check the xfer */
 		if (inb(wdc+wd_status & WDCS_ERR) return(EIO) ;
