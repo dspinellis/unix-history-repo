@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.7 (Berkeley) %G%
+ *	@(#)saio.h	7.8 (Berkeley) %G%
  */
 
 #include "saioctl.h"
@@ -39,6 +39,11 @@ struct iob {
 	} i_un;
 };
 #define	i_fs	i_un.ui_fs
+
+/* codes for sector header word 1 */
+#define	HDR1_FMT22	0x1000	/* standard 16 bit format */
+#define	HDR1_OKSCT	0xc000	/* sector ok */
+#define	HDR1_SSF	0x2000	/* skip sector flag */
 
 #define	F_READ		0x1	/* file opened for reading */
 #define	F_WRITE		0x2	/* file opened for writing */
