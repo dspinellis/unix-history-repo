@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile 1.19 %G%"
+SCCSID = "@(#)Makefile 1.20 %G%"
 
-CFLAGS = -O
+CFLAGS = -O -f
 
 LIB = ${DESTDIR}/usr/lib
 SRCDIR = ${DESTDIR}/usr/ucb
@@ -25,8 +25,8 @@ CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
 	UNIT.c UNPACK.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
 
 SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
-	PFCLOSE.c PERROR.c PFLUSH.c PMFLUSH.c RAND.s SETRACE.s \
-	UNSYNC.c blkclr.c blkcpy.c
+	PFCLOSE.c PERROR.c PFLUSH.c PMFLUSH.c UNSYNC.c \
+	blkclr.c blkcpy.c
 
 EXTN =	APPEND.c SEEK.c TELL.c
 
@@ -45,16 +45,10 @@ OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
 	UNIT.o UNPACK.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
 
 SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o \
-	PFCLOSE.o PERROR.o PFLUSH.o PMFLUSH.o RAND.o SETRACE.o \
-	UNSYNC.o blkclr.o blkcpy.o
+	PFCLOSE.o PERROR.o PFLUSH.o PMFLUSH.o UNSYNC.o \
+	blkclr.o blkcpy.o
 
 EXOBJ =	APPEND.o SEEK.o TELL.o
-
-.s.o:
-	sed -f mcount.sed $*.s | ${AS} -o tmp.o
-	-${LD} -X -r -o profiled/$@ tmp.o
-	${AS} -o tmp.o $*.s
-	-${LD} -x -r -o $@ tmp.o
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
@@ -86,32 +80,31 @@ clean:
 
 print:
 	ls -l >lst
-	${SRCDIR}/vprint lst makefile *.h [A-Z][A-Z]*.[cs] [a-z][a-z]*.[cs]
+	${SRCDIR}/vprint lst Makefile *.h [A-Z][A-Z]*.[cs] [a-z][a-z]*.[cs]
 	${RM} lst
 
 grind: sources
-	${SRCDIR}/ctags -v *.h *.c *.s | sort -f >index
+	${SRCDIR}/ctags -v *.h *.c | sort -f >index
 	${SRCDIR}/vgrind -t -x index >lpr
-	${SRCDIR}/vgrind -t -n makefile >>lpr
+	${SRCDIR}/vgrind -t -n Makefile >>lpr
 	${RM} index
 	${SRCDIR}/vgrind -t *.h *.c >>lpr
-	${SRCDIR}/vgrind -t -n RAND.s SETRACE.s >>lpr
 	${SRCDIR}/vpr -t lpr
 
 depend:	sources
-	/bin/grep '^#[ 	]*include' ${CMDS} ${SYS} ${EXTN} \
-		| sed '/<.*>/d' \
-		| sed 's/:[^"]*"\([^"]*\)".*/: \1/' \
-		| sed 's/\.c/.o/' >makedep
+	/bin/grep '^#[ 	]*include' ${CMDS} ${SYS} ${EXTN} | sed \
+		-e '/<.*>/d' \
+		-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
+		-e 's/\.c/.o/' >makedep
 	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
-	cp makefile makefile.bak
-	ed - makefile < eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
 	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> makefile
-	echo '# see make depend above' >> makefile
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 # DEPENDENCIES MUST END AT END OF FILE
@@ -180,7 +173,6 @@ PCSTART.o: h00vars.h
 PCSTART.o: libpc.h
 PFCLOSE.o: h00vars.h
 PFCLOSE.o: libpc.h
-PERROR.o: h00vars.h
 PFLUSH.o: h00vars.h
 PMFLUSH.o: h00vars.h
 UNSYNC.o: h00vars.h
