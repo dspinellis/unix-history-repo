@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -142,10 +142,12 @@ state(k, v)
 		*cp++ = '<';
 	else if (p->p_nice > NZERO)
 		*cp++ = 'N';
+#ifndef NEWVM
 	if (flag & SUANOM)
 		*cp++ = 'A';
 	else if (flag & SSEQL)
 		*cp++ = 'S';
+#endif
 	if (flag & STRC)
 		*cp++ = 'X';
 	if (flag & SWEXIT && p->p_stat != SZOMB)
@@ -156,7 +158,11 @@ state(k, v)
 	if (flag & SVFORK)
 #endif
 		*cp++ = 'V';
+#ifdef NEWVM
+	if (flag & (SSYS|SLOCK|SKEEP|SPHYSIO))
+#else
 	if (flag & (SSYS|SLOCK|SULOCK|SKEEP|SPHYSIO))
+#endif
 		*cp++ = 'L';
 	if (k->ki_e->e_flag & EPROC_SLEADER)
 		*cp++ = 's';
@@ -297,7 +303,7 @@ wchan(k, v)
 		if (k->ki_p->p_wmesg)
 			(void) printf("%-*.*s", v->width, v->width, k->ki_e->e_wmesg);
 		else
-			(void) printf("%*x", v->width,
+			(void) printf("%-*x", v->width,
 			    (int)k->ki_p->p_wchan &~ KERNBASE);
 	} else
 		(void) printf("%-*s", v->width, "-");
