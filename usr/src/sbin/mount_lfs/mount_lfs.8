@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_lfs.8	8.3 (Berkeley) %G%
+.\"	@(#)mount_lfs.8	8.4 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt MOUNT_LFS 8
@@ -60,6 +60,38 @@ to read data in small chunks when cleaning the file system.
 .Xr fstab 5 ,
 .Xr lfs_cleanerd 8 ,
 .Xr mount 8
+.sp
+.Rs
+.%A Ousterhout and Douglis
+.%D 1989
+.%T "Beating the I/O Bottleneck: A Case for Log-structured File Systems"
+.%J "Operating Systems Review"
+.%V Vol. 23
+.%N No. 1
+.%P pp. 11-27
+.%O "also available as Technical Report UCB/CSD 88/467"
+.Re
+.Rs
+.%A Rosenblum and Ousterhout
+.%D 1991
+.%T "The Design and Implementation of a Log-Structured File System"
+.%J "ACM SIGOPS Operating Systems Review"
+.%V Vol. 25
+.%N No. 5
+.Re
+.Rs
+.%A Seltzer, Bostic, McKusick and Staelin
+.%D 1993
+.%T "An Implementation of a Log-Structured File System for UNIX"
+.%J "Proc. of the Winter 1993 USENIX Conf."
+.%P pp. 315-331
+.Re
+.Rs
+.%A Seltzer
+.%D 1993
+.%T "File System Performance and Transaction Support"
+.%O "PhD Thesis, University of California, Berkeley"
+.Re
 .Sh HISTORY
 The
 .Nm mount_lfs
