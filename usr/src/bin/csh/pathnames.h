@@ -14,17 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	5.4 (Berkeley) %G%
  */
+#include <paths.h>
 
 #define	_PATH_BIN		"/bin"
-#define	_PATH_BSHELL		"/bin/sh"
-#define	_PATH_CSHELL		"/bin/csh"
-#define	_PATH_DEVNULL		"/dev/null"
 #define	_PATH_DOTCSHRC		"/etc/csh.cshrc"
 #define	_PATH_DOTLOGIN		"/etc/csh.login"
 #define	_PATH_DOTLOGOUT		"/etc/csh.logout"
-#define	_PATH_LOGIN		"/bin/login"
-#define	_PATH_LOGIN		"/bin/login"
-#define	_PATH_UCB		"/usr/ucb"
+#define	_PATH_LOGIN		"/usr/bin/login"
 #define	_PATH_USRBIN		"/usr/bin"
