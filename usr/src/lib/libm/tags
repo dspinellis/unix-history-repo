@@ -1,0 +1,9 @@
+Mfmod	common_source/fmod.c	/^main()$/
+atan2	mc68881/atan2.c	/^double atan2(y,x)$/
+cabs	ieee/cabs.c	/^cabs(z)$/
+cbrt	ieee/cbrt.c	/^double cbrt(x) $/
+doit	common_source/fmod.c	/^doit(x,y)$/
+hypot	ieee/cabs.c	/^double hypot(x,y)$/
+pow_p	common_source/pow.c	/^static double pow_p(x,y)       $/
+vc	common_source/acosh.c	/^vc(ln2hi, 6.9314718055829871446E-1  ,7217,4031,000/
+z_abs	ieee/cabs.c	/^z_abs(z)$/
