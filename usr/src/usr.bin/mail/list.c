@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -128,7 +128,7 @@ number:
 				if (check(lexnumber, f))
 					return(-1);
 				for (i = beg; i <= lexnumber; i++)
-					if ((message[i - 1].m_flag & MDELETED) == f)
+					if (f == MDELETED || (message[i - 1].m_flag & MDELETED) == 0)
 						mark(i);
 				beg = 0;
 				break;
@@ -337,8 +337,9 @@ evalcol(col)
 
 /*
  * Check the passed message number for legality and proper flags.
+ * If f is MDELETED, then either kind will do.  Otherwise, the message
+ * has to be undeleted.
  */
-
 check(mesg, f)
 {
 	register struct message *mp;
@@ -348,7 +349,7 @@ check(mesg, f)
 		return(-1);
 	}
 	mp = &message[mesg-1];
-	if ((mp->m_flag & MDELETED) != f) {
+	if (f != MDELETED && (mp->m_flag & MDELETED) != 0) {
 		printf("%d: Inappropriate message\n", mesg);
 		return(-1);
 	}
