@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.20 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.21 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -167,6 +167,7 @@ struct tp_pcb {
 	u_short				tp_maxlcredit;	/* needed for reassembly queue */
 	struct mbuf			**tp_rsyq;		/* unacked stuff recvd out of order */
 	int					tp_rsycnt;		/* number of packets "" "" "" ""    */
+	u_long				tp_rhiwat;		/* remember original RCVBUF size */
 
 	/* receiver congestion state stuff ...  */
 	u_int               tp_win_recv;
@@ -222,15 +223,9 @@ struct tp_pcb {
 	int					tp_idle;		/* last activity, in ticks */
 	short				tp_rxtcur;		/* current retransmit value */
 	short				tp_rxtshift;	/* log(2) of rexmt exp. backoff */
-
-	unsigned 
-		tp_sendfcc:1,			/* shall next ack include FCC parameter? */
-		tp_trace:1,				/* is this pcb being traced? (not used yet) */
-		tp_perf_on:1,			/* 0/1 -> performance measuring on  */
-		tp_reneged:1,			/* have we reneged on cdt since last ack? */
-		tp_decbit:3,			/* dec bit was set, we're in reneg mode  */
-		tp_cebit_off:1,			/* the real DEC bit algorithms not in use */
-		tp_flags:8,				/* values: */
+	u_char				tp_cebit_off;	/* real DEC bit algorithms not in use */
+	u_char				tp_oktonagle;	/* Last unsent pckt may be append to */
+	u_char				tp_flags;		/* values: */
 #define TPF_NLQOS_PDN	 	TPFLAG_NLQOS_PDN
 #define TPF_PEER_ON_SAMENET	TPFLAG_PEER_ON_SAMENET
 #define TPF_GENERAL_ADDR	TPFLAG_GENERAL_ADDR
@@ -240,9 +235,14 @@ struct tp_pcb {
 #define PEER_IS_LOCAL(t)	(((t)->tp_flags & TPF_PEER_ON_SAME_NET) != 0)
 #define USES_PDN(t)			(((t)->tp_flags & TPF_NLQOS_PDN) != 0)
 
-		tp_oktonagle:1,			/* Last unsent packet that may be append to */
-		tp_notdetached:1,		/* Call tp_detach before freeing XXXXXXX */
-		tp_unused:14;
+
+	unsigned 
+		tp_sendfcc:1,			/* shall next ack include FCC parameter? */
+		tp_trace:1,				/* is this pcb being traced? (not used yet) */
+		tp_perf_on:1,			/* 0/1 -> performance measuring on  */
+		tp_reneged:1,			/* have we reneged on cdt since last ack? */
+		tp_decbit:3,			/* dec bit was set, we're in reneg mode  */
+		tp_notdetached:1;		/* Call tp_detach before freeing XXXXXXX */
 
 #ifdef TP_PERF_MEAS
 	/* performance stats - see tp_stat.h */
