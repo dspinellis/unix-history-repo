@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.5	82/03/12	*/
+/*	vm_swap.c	4.6	82/06/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -67,7 +67,7 @@ vswapon()
 		iput(ip);
 		return;
 	}
-	dev = (dev_t)ip->i_un.i_rdev;
+	dev = (dev_t)ip->i_rdev;
 	iput(ip);
 	if (major(dev) >= nblkdev) {
 		u.u_error = ENXIO;
