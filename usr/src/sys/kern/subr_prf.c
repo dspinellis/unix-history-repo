@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.8	%G%	*/
+/*	subr_prf.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -59,7 +59,7 @@ prf(fmt, adx, touser)
 register char *fmt;
 register u_int *adx;
 {
-	register int b, c;
+	register int b, c, i;
 	char *s;
 
 loop:
@@ -87,11 +87,10 @@ number:
 		printn(*adx, b, touser);
 		break;
 	case 'c':
-		c = *adx;
-		while (c) {
-			putchar(c&0x7f, touser);
-			c >>= 8;
-		}
+		b = *adx;
+		for (i = 24; i >= 0; i -= 8)
+			if (c = (b >> i) & 0x7f)
+				putchar(c, touser);
 		break;
 	case 's':
 		s = (char *)*adx;
@@ -107,21 +106,21 @@ number:
 printn(n, b, touser)
 	unsigned long n;
 {
-	char buf[11];
+	char prbuf[11];
 	register char *cp;
 
 	if (b == 10 && (int)n < 0) {
 		putchar('-', touser);
 		n = (unsigned)(-(int)n);
 	}
-	cp = buf;
+	cp = prbuf;
 	do {
 		*cp++ = "0123456789abcdef"[n%b];
 		n /= b;
 	} while (n);
 	do
 		putchar(*--cp, touser);
-	while (cp > buf);
+	while (cp > prbuf);
 }
 
 /*
