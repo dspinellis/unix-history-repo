@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -477,7 +477,7 @@ fail:
 				static char msg[] = SECURE_MESSAGE;
 				(void) close(pv1[1]);
 				(void) close(pv2[1]);
-				des_write(s, msg, sizeof(msg));
+				des_write(s, msg, sizeof(msg) - 1);
 
 			} else
 #endif
