@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.69 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.70 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -563,10 +563,10 @@ R$*			$@ $>0 $1
 S0
 
 R<@>			$#_LOCAL_ $: <@>		special case error msgs
-R$* : $* ;		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
-R<@ $+>			$#error $@ USAGE $: "user address required"
-R$* <$* : $* > $*	$#error $@ USAGE $: "colon illegal in host name part"
-R$* < @ . > $*		$#error $@ USAGE $: "invalid host name"
+R$* : $* ; <@>		$#error $@ 5.1.3 $: "list:; syntax illegal for recipient addresses"
+R<@ $+>			$#error $@ 5.1.1 $: "user address required"
+R$* <$* : $* > $*	$#error $@ 5.1.1 $: "colon illegal in host name part"
+R$* < @ . > $*		$#error $@ 5.1.2 $: "invalid host name"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
@@ -644,7 +644,7 @@ R$* < @ $* > $*		$: $>95 < $S > $1 < @ $2 > $3	glue on smarthost name
 # deal with other remote names
 ifdef(`_MAILER_smtp_',
 `R$* < @$* > $*		$#_SMTP_ $@ $2 $: $1 < @ $2 > $3		user@host.domain',
-`R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')
+`R$* < @$* > $*		$#error $@ 5.1.2 $: Unrecognized host name $2')
 
 # if this is quoted, strip the quotes and try again
 R$+			$: $(dequote $1 $)		strip quotes
