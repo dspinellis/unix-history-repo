@@ -1,4 +1,4 @@
-.\"	@(#)p3	6.1 (Berkeley) %G%
+.\"	@(#)p3	6.2 (Berkeley) %G%
 .\"
 .NH
 THE STANDARD I/O LIBRARY
@@ -87,7 +87,7 @@ is a structure definition called
 The only declaration needed for a file pointer
 is exemplified by
 .P1
-FILE	*fp, *fopen();
+FILE	 *fp, *fopen();
 .P2
 This says that
 .UL fp
@@ -247,15 +247,15 @@ char *argv[];
 	fp = stdin;
 	do {
 		if (argc > 1 && (fp=fopen(argv[i], "r")) == NULL) {
-			fprintf(stderr, "wc: can't open %s\n", argv[i]);
+			fprintf(stderr, "wc: can't open %s\en", argv[i]);
 			continue;
 		}
 		linect = wordct = charct = inword = 0;
 		while ((c = getc(fp)) != EOF) {
 			charct++;
-			if (c == '\n')
+			if (c == '\en')
 				linect++;
-			if (c == ' ' || c == '\t' || c == '\n')
+			if (c == ' ' || c == '\et' || c == '\en')
 				inword = 0;
 			else if (inword == 0) {
 				inword = 1;
@@ -263,14 +263,14 @@ char *argv[];
 			}
 		}
 		printf("%7ld %7ld %7ld", linect, wordct, charct);
-		printf(argc > 1 ? " %s\n" : "\n", argv[i]);
+		printf(argc > 1 ? " %s\en" : "\en", argv[i]);
 		fclose(fp);
 		tlinect += linect;
 		twordct += wordct;
 		tcharct += charct;
 	} while (++i < argc);
 	if (argc > 2)
-		printf("%7ld %7ld %7ld total\n", tlinect, twordct, tcharct);
+		printf("%7ld %7ld %7ld total\en", tlinect, twordct, tcharct);
 	exit(0);
 }
 .P2
