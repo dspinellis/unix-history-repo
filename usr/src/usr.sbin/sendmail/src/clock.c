@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -237,11 +237,12 @@ sleep(intvl)
 	unsigned int intvl;
 {
 	if (intvl == 0)
-		return;
+		return (SLEEP_T) 0;
 	SleepDone = FALSE;
 	(void) setevent((time_t) intvl, endsleep, 0);
 	while (!SleepDone)
 		pause();
+	return (SLEEP_T) 0;
 }
 
 static void
