@@ -38,16 +38,16 @@ astosc.OUT: ${.CURDIR}/../ctlr/${KBD} ${.CURDIR}/../tools/mkastosc/obj/mkastosc
 	    ${.CURDIR}/../ctlr/hostctlr.h \
 	    ${.CURDIR}/../ctlr/function.h < ${.CURDIR}/../ctlr/${KBD} \
 	    > ${.TARGET}
-	ln -s astosc.OUT astosc.out
+	rm -f astosc.out; ln -s astosc.OUT astosc.out
 
 disp_asc.o: asc_disp.OUT disp_asc.OUT
 asc_disp.OUT: ${.CURDIR}/../tools/mkastods/obj/mkastods
 	${.CURDIR}/../tools/mkastods/obj/mkastods > ${.TARGET}
-	ln -s asc_disp.OUT asc_disp.out
+	rm -f asc_disp.out; ln -s asc_disp.OUT asc_disp.out
 
 disp_asc.OUT: ${.CURDIR}/../tools/mkdstoas/obj/mkdstoas
 	${.CURDIR}/../tools/mkdstoas/obj/mkdstoas > ${.TARGET}
-	ln -s disp_asc.OUT disp_asc.out
+	rm -f disp_asc.out; ln -s disp_asc.OUT disp_asc.out
 
 inbound.o: kbd.OUT
 CLEANFILES += kbd.OUT kbd.out
@@ -56,7 +56,7 @@ kbd.OUT: ${.CURDIR}/../tools/mkhits/obj/mkhits
 	${CC} ${CFLAGS} -E ${.CURDIR}/../ctlr/function.c > TMPfunc.out
 	${.CURDIR}/../tools/mkhits/obj/mkhits ${.CURDIR}/../ctlr/hostctlr.h \
 	    TMPfunc.out < ${.CURDIR}/../ctlr/${KBD} > ${.TARGET}
-	ln -s kbd.OUT kbd.out
+	rm -f kbd.out; ln -s kbd.OUT kbd.out
 
 # astosc.out
 # asc_disp.out disp_asc.out
