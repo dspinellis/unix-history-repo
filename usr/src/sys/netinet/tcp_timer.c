@@ -1,4 +1,4 @@
-/*	tcp_timer.c	6.3	84/10/31	*/
+/*	tcp_timer.c	6.4	84/11/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -65,11 +65,11 @@ tcp_slowtimo()
 		splx(s);
 		return;
 	}
-	while (ip != &tcb) {
+	for (; ip != &tcb; ip = ipnxt) {
+		ipnxt = ip->inp_next;
 		tp = intotcpcb(ip);
 		if (tp == 0)
 			continue;
-		ipnxt = ip->inp_next;
 		for (i = 0; i < TCPT_NTIMERS; i++) {
 			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
@@ -83,7 +83,7 @@ tcp_slowtimo()
 		if (tp->t_rtt)
 			tp->t_rtt++;
 tpgone:
-		ip = ipnxt;
+		;
 	}
 	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 	splx(s);
