@@ -1,4 +1,4 @@
-$Id: Changes,v 1.3 1993/12/22 12:51:17 davidg Exp $
+$Id: Changes,v 1.4 1994/01/05 00:22:32 nate Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.
@@ -31,6 +31,11 @@ Since 1.0.2:
 - Update to latest ADO timezone code, and update some timezone files beyond
   that.  (wollman, ache, Adam David)
 
+- Added support in the if_ed driver for the Toshiba ethernet cards.The
+  support must be enabled with an "options TOSH_ETHER" in the config
+  file. Done it this way, because i don't know how widespread this cards
+  are. (ats)
+
 
 Between 1.0.2 and 1.0:
 
@@ -45,7 +50,7 @@ Between 1.0 ALPHA and Patchkit 0.2.4:
 Userids map as follows:
 ache		Andrew Chernov
 alm		Andrew Moore
-ats		Andreas Schultz
+ats		Andreas Schulz
 chmr		Christoph Robitscho
 davidg		David Greenman
 guido		Guido van Rooij
