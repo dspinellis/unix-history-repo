@@ -6,39 +6,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.29 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
-
-/*
- * SYSLOG -- print message on log file
- *
- * This routine looks a lot like printf, except that it outputs to the
- * log file instead of the standard output.  Also:
- *	adds a timestamp,
- *	prints the module name in front of the message,
- *	has some other formatting types (or will sometime),
- *	adds a newline on the end of the message.
- *
- * The output of this routine is intended to be read by syslogd(8).
- *
- * Author: Eric Allman
- * Modified to use UNIX domain IPC by Ralph Campbell
- */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/syslog.h>
 #include <sys/uio.h>
-#include <sys/wait.h>
+#include <sys/errno.h>
 #include <netdb.h>
 #include <string.h>
 #include <varargs.h>
 #include <paths.h>
 #include <stdio.h>
-
-#define	_PATH_LOGNAME	"/dev/log"
 
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
@@ -46,11 +27,15 @@ static int	LogStat = 0;		/* status bits, set by openlog() */
 static char	*LogTag = "syslog";	/* string to tag the entry with */
 static int	LogFacility = LOG_USER;	/* default facility code */
 
+/*
+ * syslog, vsyslog --
+ *	print message on log file; output is intended for syslogd(8).
+ */
 syslog(pri, fmt, args)
 	int pri, args;
 	char *fmt;
 {
-	vsyslog(pri, fmt, &args);
+	return(vsyslog(pri, fmt, &args));
 }
 
 vsyslog(pri, fmt, ap)
@@ -58,7 +43,6 @@ vsyslog(pri, fmt, ap)
 	register char *fmt;
 	va_list ap;
 {
-	extern int errno;
 	register int cnt;
 	register char *p;
 	time_t now, time();
@@ -67,11 +51,9 @@ vsyslog(pri, fmt, ap)
 
 	saved_errno = errno;
 
-	/* see if we should just throw out this message */
-	if (!LOG_MASK(LOG_PRI(pri)) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
-		return;
-	if (LogFile < 0 || !connected)
-		openlog(LogTag, LogStat | LOG_NDELAY, 0);
+	/* discard if invalid bits or no priority set */
+	if (!LOG_PRI(pri) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
+		return(0);
 
 	/* set default facility if none specified */
 	if ((pri & LOG_FACMASK) == 0)
@@ -129,64 +111,81 @@ vsyslog(pri, fmt, ap)
 		(void)writev(2, iov, 2);
 	}
 
-	/* output the message to the local logger */
-	if (send(LogFile, tbuf, cnt, 0) >= 0 || !(LogStat&LOG_CONS))
-		return;
+	/* get connected, output the message to the local logger */
+	if ((connected || !openlog(LogTag, LogStat | LOG_NDELAY, 0)) &&
+	    send(LogFile, tbuf, cnt, 0) >= 0)
+		return(0);
+
+	/* see if should attempt the console */
+	if (!(LogStat&LOG_CONS))
+		return(-1);
 
 	/*
-	 * output the message to the console; don't worry about
-	 * blocking, if console blocks everything will.
+	 * Output the message to the console; don't worry about blocking,
+	 * if console blocks everything will.  Make sure the error reported
+	 * is the one from the syslogd failure.
 	 */
-	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) < 0)
-		return;
-	(void)strcat(tbuf, "\r\n");
-	cnt += 2;
-	p = index(tbuf, '>') + 1;
-	(void)write(fd, p, cnt - (p - tbuf));
-	(void)close(fd);
+	saved_errno = errno;
+	if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) >= 0) {
+		(void)strcat(tbuf, "\r\n");
+		cnt += 2;
+		p = index(tbuf, '>') + 1;
+		(void)write(fd, p, cnt - (p - tbuf));
+		(void)close(fd);
+	} else
+		errno = saved_errno;
+	return(-1);
 }
 
 static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
-/*
- * OPENLOG -- open system log
- */
+
 openlog(ident, logstat, logfac)
 	char *ident;
 	int logstat, logfac;
 {
+	int saved_errno;
+
 	if (ident != NULL)
 		LogTag = ident;
 	LogStat = logstat;
 	if (logfac != 0 && (logfac &~ LOG_FACMASK) == 0)
 		LogFacility = logfac;
+
 	if (LogFile == -1) {
 		SyslogAddr.sa_family = AF_UNIX;
-		strncpy(SyslogAddr.sa_data, _PATH_LOGNAME,
+		(void)strncpy(SyslogAddr.sa_data, _PATH_LOG,
 		    sizeof(SyslogAddr.sa_data));
 		if (LogStat & LOG_NDELAY) {
-			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
-			fcntl(LogFile, F_SETFD, 1);
+			if ((LogFile = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1)
+				return(-1);
+			(void)fcntl(LogFile, F_SETFD, 1);
 		}
 	}
-	if (LogFile != -1 && !connected &&
-	    connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) != -1)
-		connected = 1;
+	if (LogFile != -1 && !connected)
+		if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) == -1) {
+			saved_errno = errno;
+			(void)close(LogFile);
+			errno = saved_errno;
+			LogFile = -1;
+			return(-1);
+		} else
+			connected = 1;
+	return(0);
 }
 
-/*
- * CLOSELOG -- close the system log
- */
 closelog()
 {
-	(void) close(LogFile);
+	int rval;
+
+	rval = close(LogFile);
 	LogFile = -1;
 	connected = 0;
+	return(rval);
 }
 
 static int	LogMask = 0xff;		/* mask of priorities to be logged */
-/*
- * SETLOGMASK -- set the log mask level
- */
+
+/* setlogmask -- set the log mask level */
 setlogmask(pmask)
 	int pmask;
 {
