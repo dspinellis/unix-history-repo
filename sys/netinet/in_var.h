@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_var.h	7.6 (Berkeley) 6/28/90
- *	$Id: in_var.h,v 1.4 1993/11/18 00:08:17 wollman Exp $
+ *	$Id: in_var.h,v 1.5 1993/12/19 00:52:40 wollman Exp $
  */
 
 #ifndef _NETINET_IN_VAR_H_
@@ -75,6 +75,14 @@ struct	in_aliasreq {
 
 struct ip;			/* forward declaration */
 typedef void in_input_t(struct mbuf *, int);
+/*
+ * Grrr... `netstat' expects to be able to include this file
+ * with KERNEL defined, to get all sorts of interesting structures,
+ * but without having to get all these prototypes.  (Well, it's not
+ * really netstat's fault, but this should get fixed when KERNEL gets
+ * changed to _KERNEL.)
+ */
+struct socket;
 typedef int in_output_t(struct mbuf *, struct socket *);
 typedef void in_ctlinput_t(int, struct sockaddr *, struct ip *);
 typedef int in_ctloutput_t(int, struct socket *, int, int, struct mbuf **);
