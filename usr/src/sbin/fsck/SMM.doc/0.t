@@ -1,15 +1,15 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1986, 1993
+.\"  The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	8.2 (Berkeley) %G%
+.\"	@(#)0.t	8.1 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 Fsck \- The UNIX\(dg File System Check Program
-.EH 'SMM:5-%''The \s-2UNIX\s+2 File System Check Program'
-.OH 'The \s-2UNIX\s+2 File System Check Program''SMM:5-%'
+.EH 'SMM:3-%''The \s-2UNIX\s+2 File System Check Program'
+.OH 'The \s-2UNIX\s+2 File System Check Program''SMM:3-%'
 .AU
 Marshall Kirk McKusick
 .AI
