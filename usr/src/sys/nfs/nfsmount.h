@@ -22,21 +22,44 @@
 
 /*
  * Mount structure.
- * One allocated on every nfs mount.
- * Holds nfs specific info for mount (sockets...)
+ * One allocated on every NFS mount.
+ * Holds NFS specific information for mount.
  */
 struct	nfsmount {
 	int	nm_flag;		/* Flags for soft/hard... */
-	struct	mount *nm_mountp;	/* vfs structure for this filesystem */
+	struct	mount *nm_mountp;	/* Vfs structure for this filesystem */
 	nfsv2fh_t nm_fh;		/* File handle of root dir */
-	struct	mbuf *nm_sockaddr;	/* Address of server */
-	struct	socket	*nm_so;		/* rpc socket */
-	int	nm_timeo;		/* Timeout interval */
-	int	nm_retrans;		/* # of retransmits */
+	struct	socket	*nm_so;		/* Rpc socket */
+	struct	nfshost *nm_hostinfo;	/* Host and congestion information */
+	short	nm_retry;		/* Max retry count */
+	short	nm_rexmit;		/* Rexmit on previous request */
+	short	nm_rtt;			/* Round trip timer ticks @ NFS_HZ */
+	short	nm_rto;			/* Current timeout */
+	short	nm_srtt;		/* Smoothed round trip time */
+	short	nm_rttvar;		/* RTT variance */
 	int	nm_rsize;		/* Max size of read rpc */
 	int	nm_wsize;		/* Max size of write rpc */
-	char	nm_path[MNAMELEN];	/* Path mounted on */
 	char	nm_host[MNAMELEN];	/* Remote host name */
+	char	nm_path[MNAMELEN];	/* Path mounted on */
+};
+
+/*
+ * Hostinfo/congestion structure.
+ * One allocated per NFS server.
+ * Holds host address, congestion limits, request count, etc.
+ * Reference count is of nfsmounts which point to it.
+ */
+struct nfshost {
+	struct	nfshost *nh_next, *nh_prev;
+	short	nh_refcnt;		/* Reference count */
+	short	nh_currto;		/* Current rto of any nfsmount */
+	short	nh_currexmit;		/* Max rexmit count of nfsmounts */
+	short	nh_sent;		/* Request send count */
+	short	nh_window;		/* Request send window (max) */
+	short	nh_winext;		/* Window incremental value */
+	short	nh_ssthresh;		/* Slowstart threshold */
+	short	nh_salen;		/* Actual length of nh_sockaddr */
+	struct	mbuf *nh_sockaddr;	/* Address of server */
 };
 
 struct nfsmount *vfs_to_nfs();
