@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -89,7 +89,7 @@ main(argc, argv)
 			exit(1);
 		}
 #endif
-		uname = argv[1];
+		uname = argv[0];
 		break;
 	default:
 		usage();
@@ -143,7 +143,7 @@ main(argc, argv)
 		goto bad;
 	}
 
-	printf("Changing password for %s.\n", pw->pw_name);
+	printf("Changing local password for %s.\n", pw->pw_name);
 	np = getnewpasswd(pw, temp);
 
 	if (!copy(pw->pw_name, np, temp_fp, pw))
@@ -352,7 +352,7 @@ do_krb_passwd()
 	struct hostent *host;
 	struct sockaddr_in sin;
 	int rval;
-	char pass[MAX_PW_LEN], password[MAX_PW_LEN];
+	char pass[_PASSWORD_LEN], password[_PASSWORD_LEN];
 	fd_set readfds;
 	CREDENTIALS	cred;
 
@@ -545,7 +545,7 @@ send_update(dest, pwd, str)
 	char	*pwd, *str;
 {
 	static struct	update_data	ud;
-	strncpy(ud.secure_msg, str, MAX_PW_LEN);
+	strncpy(ud.secure_msg, str, _PASSWORD_LEN);
 	strncpy(ud.pw, pwd, sizeof(ud.pw));
 	if (des_write(dest, &ud, sizeof(ud)) != sizeof(ud)) {
 		fprintf(stderr, "couldn't write pw update (abort)\n");
