@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.7	82/06/14	*/
+/*	ffs_alloc.c	2.8	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -127,7 +127,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			}
 		} while (brealloc(bp, nsize) == 0);
 		bp->b_flags |= B_DONE;
-		blkclr(bp->b_un.b_addr + osize, nsize - osize);
+		bzero(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
 	if (bpref >= fs->fs_size)
@@ -141,7 +141,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		}
 		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
 		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, osize);
-		blkclr(bp->b_un.b_addr + osize, nsize - osize);
+		bzero(bp->b_un.b_addr + osize, nsize - osize);
 		brelse(obp);
 		fre(ip, bprev, (off_t)osize);
 		return (bp);
