@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.13 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1012,7 +1012,7 @@ ffs_clusteralloc(ip, cg, bpref, len)
 	register struct fs *fs;
 	register struct cg *cgp;
 	struct buf *bp;
-	int i, run, bno, bit, map;
+	int i, got, run, bno, bit, map;
 	u_char *mapp;
 	int32_t *lp;
 
@@ -1066,7 +1066,7 @@ ffs_clusteralloc(ip, cg, bpref, len)
 	mapp = &cg_clustersfree(cgp)[bpref / NBBY];
 	map = *mapp++;
 	bit = 1 << (bpref % NBBY);
-	for (run = 0, i = bpref; i < cgp->cg_nclusterblks; i++) {
+	for (run = 0, got = bpref; got < cgp->cg_nclusterblks; got++) {
 		if ((map & bit) == 0) {
 			run = 0;
 		} else {
@@ -1074,22 +1074,25 @@ ffs_clusteralloc(ip, cg, bpref, len)
 			if (run == len)
 				break;
 		}
-		if ((i & (NBBY - 1)) != (NBBY - 1)) {
+		if ((got & (NBBY - 1)) != (NBBY - 1)) {
 			bit <<= 1;
 		} else {
 			map = *mapp++;
 			bit = 1;
 		}
 	}
-	if (i == cgp->cg_nclusterblks)
+	if (got == cgp->cg_nclusterblks)
 		goto fail;
 	/*
 	 * Allocate the cluster that we have found.
 	 */
-	bno = cg * fs->fs_fpg + blkstofrags(fs, i - run + 1);
+	for (i = 1; i <= len; i++)
+		if (!ffs_isblock(fs, cg_blksfree(cgp), got - run + i))
+			panic("ffs_clusteralloc: map mismatch");
+	bno = cg * fs->fs_fpg + blkstofrags(fs, got - run + 1);
 	len = blkstofrags(fs, len);
 	for (i = 0; i < len; i += fs->fs_frag)
-		if (ffs_alloccgblk(fs, cgp, bno + i) != bno + i)
+		if ((got = ffs_alloccgblk(fs, cgp, bno + i)) != bno + i)
 			panic("ffs_clusteralloc: lost block");
 	brelse(bp);
 	return (bno);
