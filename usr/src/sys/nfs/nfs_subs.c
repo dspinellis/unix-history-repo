@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -582,17 +582,18 @@ static char *nfs_unixauth(cr)
  * Iff vap not NULL
  *    copy the attributes to *vaper
  */
-nfs_loadattrcache(vp, mdp, dposp, vaper)
-	register struct vnode *vp;
+nfs_loadattrcache(vpp, mdp, dposp, vaper)
+	struct vnode **vpp;
 	struct mbuf **mdp;
 	caddr_t *dposp;
 	struct vattr *vaper;
 {
+	register struct vnode *vp = *vpp;
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
 	extern struct vnodeops spec_nfsv2nodeops;
+	register struct nfsnode *np;
 	nfsm_vars;
-	struct nfsnode *np;
 	enum vtype type;
 	dev_t rdev;
 	struct timeval mtime;
@@ -633,10 +634,10 @@ nfs_loadattrcache(vp, mdp, dposp, vaper)
 				np->n_attrstamp = 0;
 				np->n_sillyrename = (struct sillyrename *)0;
 				/*
-				 * Discard unneeded vnode
+				 * Discard unneeded vnode and update actual one
 				 */
 				vput(vp);
-				vp = nvp;
+				*vpp = nvp;
 			}
 		}
 		np->n_mtime = mtime.tv_sec;
