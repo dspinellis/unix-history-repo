@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	(Berkeley)	83/07/21
+#	@(#)Makefile	4.2	(Berkeley)	83/07/21
 #
 DESTDIR=
 CFLAGS=	-O
@@ -12,6 +12,8 @@ LIBS=	bigram code
 # Sources
 #
 SRCS=	find.c bigram.c code.c
+
+all: ${PROG} ${LIBS}
 
 find: find.c
 	cc ${CFLAGS} -o find find.c
@@ -27,7 +29,7 @@ install: ${PROG} ${LIBS}
 	-mkdir ${DESTDIR}/usr/lib/find
 	install bigram ${DESTDIR}/usr/lib/find/bigram
 	install code ${DESTDIR}/usr/lib/find/code
-	install -c -m 755 squeeze.csh ${DESTDIR}/usr/lib/find/squeeze.csh
+	install -c -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb
 
 clean:
 	rm -f a.out core ${LIBS} ${PROG}
