@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.4 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.5 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -125,7 +125,7 @@ ktrgenio(vp, fd, rw, iov, len)
 	while (resid > 0) {
 		if ((cnt = iov->iov_len) > resid)
 			cnt = resid;
-		if (copyin(iov->iov_base, cp, cnt))
+		if (copyin(iov->iov_base, cp, (unsigned)cnt))
 			goto done;
 		cp += cnt;
 		resid -= cnt;
@@ -293,7 +293,6 @@ ktrsetchildren(top, ops, facs, vp)
 	struct vnode *vp;
 {
 	register struct proc *p;
-	register int ndx;
 	register int ret = 0;
 
 	p = top;
@@ -329,6 +328,7 @@ ktrwrite(vp, kth)
 {
 	struct uio auio;
 	struct iovec aiov[2];
+	struct proc *p;
 	int error;
 
 	if (vp == NULL)
@@ -350,5 +350,18 @@ ktrwrite(vp, kth)
 	VOP_LOCK(vp);
 	error = VOP_WRITE(vp, &auio, IO_UNIT|IO_APPEND, u.u_cred);
 	VOP_UNLOCK(vp);
+	if (!error)
+		return;
+	/*
+	 * If error encountered, give up tracing on this vnode.
+	 */
+	uprintf("\ntrace write failed with errno %d, tracing stopped\n", error);
+	for (p = allproc; p != NULL; p = p->p_nxt) {
+		if (p->p_tracep == vp) {
+			p->p_tracep = NULL;
+			p->p_traceflag = 0;
+			vrele(vp);
+		}
+	}
 }
 #endif
