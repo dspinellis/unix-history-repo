@@ -12,44 +12,53 @@ IOSYNC(curfile)
 
 	register struct iorec	*curfile;
 {
-	register short		unit = curfile->funit;
 	char			*limit, *ptr;
 
-	if (unit & FWRITE) {
+	if (curfile->funit & FWRITE) {
 		ERROR(EREADIT, curfile->pfname);
 		return;
 	}
-	if ((unit & SYNC) == 0) {
+	if ((curfile->funit & SYNC) == 0) {
 		return;
 	}
-	if (unit & EOFF) {
+	if (curfile->funit & EOFF) {
 		ERROR(EPASTEOF, curfile->pfname);
 		return;
 	}
-	unit &= ~SYNC;
+	curfile->funit &= ~SYNC;
+	if (curfile->funit & SPEOLN) {
+		curfile->funit &= ~(SPEOLN|EOLN);
+		curfile->funit |= EOFF;
+		return;
+	}
 	fread(curfile->fileptr, curfile->fsize, 1, curfile->fbuf);
 	if (ferror(curfile->fbuf)) {
 		ERROR(EPASTEOF, curfile->pfname);
 		return;
 	}
 	if (feof(curfile->fbuf)) {
-		curfile->funit = unit | EOFF;
-		if (unit & FTEXT) {
+		if (curfile->funit & FTEXT) {
 			*curfile->fileptr = ' ';
+			if (curfile->funit & EOLN) {
+				curfile->funit &= ~EOLN;
+				curfile->funit |= EOFF;
+				return;
+			}
+			curfile->funit |= (SPEOLN|EOLN);
 			return;
 		}
+		curfile->funit |= EOFF;
 		limit = &curfile->fileptr[curfile->fsize];
 		for (ptr = curfile->fileptr; ptr < limit; )
 			*ptr++ = 0;
 		return;
 	}
-	if (unit & FTEXT) {
+	if (curfile->funit & FTEXT) {
 		if (*curfile->fileptr == '\n') {
-			unit |= EOLN;
+			curfile->funit |= EOLN;
 			*curfile->fileptr = ' ';
-		} else {
-			unit &= ~EOLN;
+			return;
 		}
+		curfile->funit &= ~EOLN;
 	}
-	curfile->funit = unit;
 }
