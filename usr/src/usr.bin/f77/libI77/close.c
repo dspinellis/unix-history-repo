@@ -1,5 +1,5 @@
 /*
-char id_close[] = "@(#)close.c	1.2";
+char id_close[] = "@(#)close.c	1.3";
  *
  * close.c  -  f77 file close, flush, exit routines
  */
@@ -10,6 +10,8 @@ char id_close[] = "@(#)close.c	1.2";
 
 f_clos(a) cllist *a;
 {	unit *b;
+	int n;
+
 	lfname = NULL;
 	elist = NO;
 	external = YES;
@@ -31,7 +33,7 @@ f_clos(a) cllist *a;
 		default:
 	keep:
 		case 'k':
-			if(b->uwrt) t_runc(b,errflag);
+			if(b->uwrt && (n=t_runc(b,errflag))) return(n);
 			fclose(b->ufd);
 			break;
 		}
@@ -48,7 +50,7 @@ f_exit()
 	ftnint lu, dofirst = YES;
 	cllist xx;
 	xx.cerr=1;
-	xx.csta=NULL;
+	xx.csta="\1";
 	for(lu=STDOUT; (dofirst || lu!=STDOUT); lu = ++lu % MXUNIT)
 	{
 		xx.cunit=lu;
