@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	8.2 (Berkeley) %G%
+ *	@(#)autoconf.c	8.3 (Berkeley) %G%
  *
- * from: $Header: autoconf.c,v 1.35 93/09/27 00:50:04 torek Exp $ (LBL)
+ * from: $Header: autoconf.c,v 1.37 93/09/28 07:19:48 leres Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -55,7 +55,6 @@ void	setroot __P((void));
 static	int getstr __P((char *, int));
 static	int findblkmajor __P((struct dkdevice *));
 static	struct device *getdisk __P((char *, int, int, dev_t *));
-static	struct device *parsedisk __P((char *, int, int, dev_t *));
 
 struct	bootpath bootpath[8];
 
@@ -828,26 +827,27 @@ getdisk(str, len, defpart, devp)
 	return (dv);
 }
 
-static struct device *
+struct device *
 parsedisk(str, len, defpart, devp)
 	char *str;
 	int len, defpart;
 	dev_t *devp;
 {
 	register struct device *dv;
-	register char *cp;
+	register char *cp, c;
 	int majdev, mindev, part;
 
 	if (len == 0)
 		return (NULL);
 	cp = str + len - 1;
-	if (*cp >= 'a' && *cp <= 'h') {
-		part = *cp - 'a';
-		*cp-- = '\0';
+	c = *cp;
+	if (c >= 'a' && c <= 'h') {
+		part = c - 'a';
+		*cp = '\0';
 	} else
 		part = defpart;
 
-	for (dv = alldevs; dv != NULL; dv = dv->dv_next)
+	for (dv = alldevs; dv != NULL; dv = dv->dv_next) {
 		if (dv->dv_class == DV_DISK &&
 		    strcmp(str, dv->dv_xname) == 0) {
 			majdev = findblkmajor((struct dkdevice *)dv);
@@ -855,10 +855,12 @@ parsedisk(str, len, defpart, devp)
 				panic("parsedisk");
 			mindev = (dv->dv_unit << PARTITIONSHIFT) + part;
 			*devp = makedev(majdev, mindev);
-			return (dv);
+			break;
 		}
+	}
 
-	return (NULL);
+	*cp = c;
+	return (dv);
 }
 
 /*
