@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -60,6 +60,9 @@ struct nlist nl[] = {
 
 #if defined(vax)
 #define	clear(x)	((x) &~ 0x80000000)
+#endif
+#if defined(tahoe)
+#define	clear(x)	((x) &~ 0xc0000000)
 #endif
 
 struct	pte *Sysmap;
