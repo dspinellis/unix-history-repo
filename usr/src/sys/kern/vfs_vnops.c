@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,16 +90,17 @@ vn_open(ndp, fmode, cmode)
 	}
 	if ((fmode & FCREAT) == 0) {
 		if (fmode & FREAD) {
-			if (error = vn_access(vp, VREAD, ndp->ni_cred))
+			if (error = VOP_ACCESS(vp, VREAD, ndp->ni_cred))
 				goto bad;
 		}
 		if (fmode & (FWRITE|FTRUNC)) {
-			if (error = vn_access(vp, VWRITE, ndp->ni_cred))
-				goto bad;
 			if (vp->v_type == VDIR) {
 				error = EISDIR;
 				goto bad;
 			}
+			if ((error = vn_writechk(vp)) ||
+			    (error = VOP_ACCESS(vp, VWRITE, ndp->ni_cred)))
+				goto bad;
 		}
 	}
 	if (fmode & FTRUNC) {
@@ -125,38 +126,32 @@ bad:
 }
 
 /*
- * Check mode permission on vnode pointer. Mode is READ, WRITE or EXEC.
- * In the case of WRITE, the read-only status of the file system is
- * checked. Also in WRITE, prototype text segments cannot be written.
+ * Check for write permissions on the specified vnode.
+ * The read-only status of the file system is checked.
+ * Also, prototype text segments cannot be written.
  */
-vn_access(vp, mode, cred)
+vn_writechk(vp)
 	register struct vnode *vp;
-	int mode;
-	struct ucred *cred;
 {
 
-	if (mode & VWRITE) {
-		/*
-		 * Disallow write attempts on read-only file systems;
-		 * unless the file is a socket or a block or character
-		 * device resident on the file system.
-		 */
-		if ((vp->v_mount->m_flag & M_RDONLY) &&
-			vp->v_type != VCHR &&
-			vp->v_type != VBLK &&
-			vp->v_type != VSOCK)
-				return (EROFS);
-		/*
-		 * If there's shared text associated with
-		 * the inode, try to free it up once.  If
-		 * we fail, we can't allow writing.
-		 */
-		if (vp->v_flag & VTEXT)
-			xrele(vp);
-		if (vp->v_flag & VTEXT)
-			return (ETXTBSY);
-	}
-	return (VOP_ACCESS(vp, mode, cred));
+	/*
+	 * Disallow write attempts on read-only file systems;
+	 * unless the file is a socket or a block or character
+	 * device resident on the file system.
+	 */
+	if ((vp->v_mount->m_flag & M_RDONLY) && vp->v_type != VCHR &&
+	    vp->v_type != VBLK && vp->v_type != VSOCK)
+		return (EROFS);
+	/*
+	 * If there's shared text associated with
+	 * the vnode, try to free it up once.  If
+	 * we fail, we can't allow writing.
+	 */
+	if (vp->v_flag & VTEXT)
+		xrele(vp);
+	if (vp->v_flag & VTEXT)
+		return (ETXTBSY);
+	return (0);
 }
 
 /*
