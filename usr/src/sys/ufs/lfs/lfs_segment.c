@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.8 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -610,10 +610,10 @@ lfs_writeseg(fs, sp)
 	for (bpp = sp->bpp, i = nblocks - 1; i--;)
 		*dp++ = (*++bpp)->b_un.b_words[0];
 	ssp = (SEGSUM *)sp->segsum;
+	ssp->ss_create = time.tv_sec;
 	ssp->ss_datasum = cksum(datap, nblocks * sizeof(u_long));
 	ssp->ss_sumsum =
 	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
-	ssp->ss_create = time.tv_sec;
 	free(datap, M_SEGMENT);
 
 	/*
