@@ -48,7 +48,7 @@ SRC2=	ex_data.c ex_get.c ex_io.c ex_put.c ex_re.c
 SRC3=	ex_set.c ex_subr.c ex_temp.c ex_tty.c ex_unix.c
 SRC4=	ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voperate.c
 SRC5=	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c
-SRC6=	printf.c bcopy.c expreserve.c exrecover.c
+SRC6=	printf.c horse.c bcopy.c expreserve.c exrecover.c
 MISC=	makefile READ_ME :rofix
 VGRIND=	csh /usr/ucb/vgrind
 VHDR=	"Ex Version ${VERSION}"
@@ -96,10 +96,19 @@ expreserve: expreserve.o
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
 
-clean:
+simpclean:
 #	If we dont have ex we cant make it so dont rm ex_vars.h
 	-rm -f a.out exrecover expreserve strings core errs trace
 	-rm -f *.o x*.[cs]
+
+clean:	simpclean
+	-rm -f ${HDRS}
+	-rm -f ${SRC1}
+	-rm -f ${SRC2}
+	-rm -f ${SRC3}
+	-rm -f ${SRC4}
+	-rm -f ${SRC5}
+	-rm -f ${SRC6}
 
 # install a new version for testing in /usr/new
 ninstall: a.out
