@@ -1,0 +1,64 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)tmpnam.3	5.1 (Berkeley) %G%
+.\"
+.TH COMPATS5 3 ""
+.UC 7
+.SH NAME
+memccpy, memchr, memcmp, memcpy, memset, strchr, 
+strcspn, strpbrk, strrchr, strspn, strtok, tmpnam \- System V
+compatibility routines
+.SH SYNOPSIS
+.nf
+.B char *memccpy(from, to, ch, count)
+.B char *from, *to;
+.B int ch, count;
+.PP
+.B char *memchr(str, ch, count)
+.B char *str;
+.B int ch, count;
+.PP
+.B int memcmp(str1, str2, count)
+.B char *str1, *str2;
+.B int count;
+.PP
+.B char *memcpy(from, to, count)
+.B char *from, to;
+.B int count;
+.PP
+.B char *memset(str, ch, count)
+.B char *str;
+.B int ch, count;
+.PP
+.B char *strchr(str, ch);
+.B char *str;
+.B int ch;
+.PP
+.B int strcspn(str, chars)
+.B char *str, *chars;
+.PP
+.B char *strpbrk(str, chars)
+.B char *str, *chars;
+.PP
+.B char *strrchr(str, ch);
+.B char *str;
+.B int ch;
+.PP
+.B int strspn(str, chars)
+.B char *str, *chars;
+.PP
+.B char *strtok(str, sep)
+.B char *str, *sep;
+.PP
+.B char *tmpnam(str)
+.B char *str;
+.SH DESCRIPTION
+The above routines are available and behave as in System V.
