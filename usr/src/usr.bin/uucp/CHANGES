@@ -1,0 +1,132 @@
+06/28/82 - dmm (U. of Waterloo)
+Added support for Vadic AD3451 autodialing modem, as well as merged
+in a number of changes made at Waterloo over the past while.  The
+following list may miss some.
+anlwrk.c:	Fixed the order of the tests in the if in iswrk().
+cico.c:		intrEXIT changed to reset whatever signal was
+	caught rather than SIGEMT.  This is because abort() generates SIGILL
+	rather than SIGEMT on the vax, causing infinite looping.
+cntrl.c:	Changed to handle long login names if LONGNAMES is defined.
+	Fixed sprintf(msg, ... to handle the fact that the W_MODE entry of
+	wrkvec is not always used.
+conn.c:		Vadic modem support added.  Changed to handle extensions
+	to getargs().  Expect() now takes an argument specifying timeout
+	period.  Sendthem doesn't scribble on the strings it is passed,
+	and the semantics of backslash processing are changed a bit (I hope
+	this doesn't break anyone's L.sys - the changes are minor).  Also,
+	sendthem sends a CR rather than LF at end of string by default -
+	unix doesn't care, but funny boxes that you may have to talk to
+	probably prefer CR.  The expect strings now take '?' as a wildcard
+	character.  Ifdate() handles times which cross midnight (well, sort of).
+	2400 baud is now a supported speed.  Bugs fixed: login() closes
+	the file descriptor if the login fails, expect() checks for
+	overflow of rdvec before stuffing the null into it and resets the alarm
+	before returning.  A few strings fixed up.
+dial.c:		vadic() added.
+getargs.c:	Now handles quoted strings to allow embedded blanks;
+	supports ^X syntax for entering control characters.
+getprm.c:	Fixed to look for '&' and '`' in command lines properly.
+pk1.c:		GETRIES (maximum retries) changed from 5 to 10 - helps
+	prevent losing connection when other end is just sluggish.
+prefix.c:	added wprefix - prefix match with wildcard.
+uucp.c:		Changed to support LONGNAMES; two additional
+		calls to expfile() added to expand '~' in type 3
+		and 4 transfers.
+uucp.h:		Added support for -n and -z flags of uux; added LONGNAMES.
+uux.c:		Added support for -n and -z flags, and LONGNAMES.
+uuname.c:	Changed to handle longer L.sys entries.
+uuxqt.c:	Added fclose(xfp) near bottom of main() to prevent uuxqt
+	dying after processing 15 X. files (it ran out of file descriptors.)
+	Support for -n and -z flags added.  notify() changed to limit the
+	length of the string it sends back; it used to die on long command
+	strings.
+makefile:	In the dependency list for "install", put "cp" after "cpfiles".
+	This is because "cpfiles" does a chown on INSDIR/*, clobbering
+	all the setuid bits carefully set up by "cp" if you're running
+	Berkeley unix with paranoia turned on.  Also commented out
+	the copy of USERFILE into INSDIR.
+
+06/02/82 - ctc
+uuxqt.c:	Changed the size of the prm arraye from MAXCHARLINE
+to BUFSIZ.  This keeps it from dumping core on large usenet addresses.
+
+05/10/82 - ctc
+uux.c and Makefile: Added a call to logcls in the routine cleanup().
+This fix from Bill Shannon at DEC to get rid of the old log files
+that tend to hang around forever.
+
+04/22/82 - ctc
+uucp.h, uucpname.c: Added support for the new UCB 4.1A and later
+system's gethostname system call.  Added a new macro to define
+this option: GETHOST
+
+03/03/82 - ctc
+uuxqt.c:	Fixed a security hole allowing aribitray users to
+steal any protected file.  One line change.  Not allowing subshells
+to preform the Apersand or Backquote operations from uuxqt.c
+See about line 140.
+
+02/26/82 - ctc
+uucp.h:		Changed the MAXCHARTIME constant from 100 seconds
+to 7 seconds.  This allows us to login on epsvax before it time
+outs.
+
+02/24/82 - ctc
+makefile:	Fixed to do the chown's and chmod's in the right order
+
+conn.c:	Added support for the develcon portselector and added the fix
+	to use the UCB break ioctl instead of the NULL's kludge.
+	An example L.sys entry is:
+ucbtest Any ACU 1200 2%%7773%% quest:-r\ds\c-quest:-r\ds\c tek in:-\b-in:-EOT-in:-\b-in:-EOT-in:-\b-in: tstuucp assword: uucp
+
+02/09/82 - ctc
+cntrl.c:   Added Steve McGeady's fix for long uucp directory searches,
+	the one the corrected a core dump!
+uuxqt.c:   Added finger(1) to the list of allowable commands and
+exported the PATH variable so fix a security hole.  Ala the UUCP net.
+
+/* UCB installed the YALE Changes directly */
+02/08/82 - ctc
+/* Yale changes */
+11/8/81 --asp
+anlwrk.c: Changed LLEN to 100 from 20, and changed line 65 definition of
+	list[LLEN] to lint[LLEN+1] to handle list overflows.
+
+10/6/81  (cico.c)       Import IS/1 code for ventel support
+   dial.c is new code that deals with the ventel.  conn.c has a
+   table so that L-devices says ACUVENTEL (but L.sys says ACU).
+   The ventel senses speed by looking for two carriage returns a
+   10th of a second apart; there's some crock code to send them.
+   The switch settings for the ventel are: (looking at it from the
+   rear)
+	UDUDDDDUUU UUDUDDDDUD
+
+   The IS/1 stuff can handle using a single terminal line for dialin and
+   dialout; routines 'enable' and 'disable' do this.  They also have
+   programs that explicitly reenable the line; also have changed
+   around utmp so that stuff that was in /etc/ttys is now in utmp.
+   All this stuff is currently disabled; the ventel is for dialout only.
+
+        /*  CHANGES 2.9  5/24/79  21:39:26  */
+5/24/79	(uux.c)		add an error message; try to continue if gwd fails;
+5/24/79	(uucp.c)	multi commands/C. file; put -c in command file;
+			use dummy D. name on -c;
+			check for same file on local copy;
+			check ANYREAD/ANYWRITE on local cp
+			check for stat failure on send file;
+5/24/79	(cntrl.c)	don't look for D. if -c option; don't unlink dummy D.;
+			add local notify on file access failures;
+5/23/79	(uucp.h)	add "dialout" routine option
+5/23/79	(conn.c)	add "dialout" routine option
+5/23/79	(uucp.c)	fix sysfile2 system name too long bug
+5/22/79	(anlwrk.c)	fix allocation bug - break loop (gtwrk) when list full
+5/21/79	(chkpth.c)	fix rdpth to use first null in USERFILE for defaults
+5/18/79	(logent.c)	add pid to log entries
+5/18/79	(cico.c)	add 2 logent calls
+5/18/79	(cntrl.c)	touch lock files after each transaction
+5/18/79	(ulockf.c)	add ultouch (touch lock files); reduce lock timeout
+5/16/79	(cntrl.c)	turnoff protocol on message failure
+5/16/79	(pk1.c)		try to fix loop when slave hangs up
+5/16/79	(cico.c)	fix to get core dumps on kill
+5/7/79	(makefile)	add -l option to uuname program
+5/7/79	(uuname.c)	add -l option to uuname.c
