@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)arp.8	6.5 (Berkeley) %G%
+.\"     @(#)arp.8	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ARP 8
@@ -16,8 +16,6 @@
 .Ar hostname
 .Nm arp
 .Fl a
-.Op Ar vmunix
-.Op Ar kmem
 .Nm arp
 .Fl d Ar hostname
 .Nm arp
@@ -45,13 +43,7 @@ Available options:
 .It Fl a
 The program displays all of the current
 .Tn ARP
-entries by reading the table
-from the file
-.Ar kmem
-(default /dev/kmem) based on the kernel file 
-.Ar vmunix
-(default
-.Pa /vmunix ) .
+entries.
 .It Fl d
 A super-user may delete an entry for the host called
 .Ar hostname
