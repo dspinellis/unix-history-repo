@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.3 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.4 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -29,7 +29,6 @@ GETNAME(filep, name, namlim, datasize)
 	struct iorec	*next;
 	register int	cnt;
 	struct iorec	locvar;
-	extern char	*mktemp();
 
 	if (filep->fblk >= MAXFILES || _actfile[filep->fblk] != filep) {
 		/*
@@ -109,23 +108,23 @@ GETNAME(filep, name, namlim, datasize)
 		 * a new one of the form tmp.xxxxxx
 		 */
 		filep->funit |= TEMP;
-		name = mktemp("tmp.XXXXXX");
-		maxnamlen = 10;
-	} else {
-		/*
-		 * trim trailing blanks, and insure that the name 
-		 * will fit into the file structure
-		 */
-		for (cnt = 0; cnt < maxnamlen; cnt++)
-			if (name[cnt] == '\0' || name[cnt] == ' ')
-				break;
-		if (cnt >= NAMSIZ) {
-			ERROR(ENAMESIZE, name);
-			return;
-		}
-		maxnamlen = cnt;
-		filep->funit &= ~TEMP;
+		sprintf(filep->fname, "tmp.%c%d", 'a' + filep->fblk, getpid());
+		filep->pfname = &filep->fname[0];
+		return(filep);
 	}
+	/*
+	 * trim trailing blanks, and insure that the name 
+	 * will fit into the file structure
+	 */
+	for (cnt = 0; cnt < maxnamlen; cnt++)
+		if (name[cnt] == '\0' || name[cnt] == ' ')
+			break;
+	if (cnt >= NAMSIZ) {
+		ERROR(ENAMESIZE, name);
+		return;
+	}
+	maxnamlen = cnt;
+	filep->funit &= ~TEMP;
 	/*
 	 * put the new name into the structure
 	 */
