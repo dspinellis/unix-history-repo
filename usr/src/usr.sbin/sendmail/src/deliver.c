@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.59 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.60 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -129,14 +129,14 @@ deliver(e, firstto)
 	*/
 
 	/* rewrite from address, using rewriting rules */
-	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE));
+	(void) strcpy(rpathbuf, remotename(e->e_returnpath, m, TRUE, TRUE, e));
 	if (e->e_returnpath == e->e_sender)
 	{
 		from = rpathbuf;
 	}
 	else
 	{
-		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE));
+		(void) strcpy(tfrombuf, remotename(e->e_sender, m, TRUE, TRUE, e));
 		from = tfrombuf;
 	}
 
@@ -254,7 +254,7 @@ deliver(e, firstto)
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
 		}
-		if (!checkcompat(to))
+		if (!checkcompat(to, e))
 		{
 			giveresponse(EX_UNAVAILABLE, m, e);
 			continue;
@@ -1359,9 +1359,9 @@ mailfile(filename, ctladdr, e)
 		}
 
 		putfromline(f, ProgMailer, e);
-		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
+		(*e->e_puthdr)(f, ProgMailer, e);
 		putline("\n", f, ProgMailer);
-		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
+		(*e->e_putbody)(f, ProgMailer, e);
 		putline("\n", f, ProgMailer);
 		if (ferror(f))
 		{
@@ -1457,7 +1457,7 @@ sendall(e, mode)
 		extern ADDRESS *recipient();
 
 		e->e_from.q_flags |= QDONTSEND;
-		(void) recipient(&e->e_from, &e->e_sendqueue);
+		(void) recipient(&e->e_from, &e->e_sendqueue, e);
 	}
 
 # ifdef QUEUE
@@ -1622,14 +1622,14 @@ sendall(e, mode)
 				printf("Errors to %s\n", obuf);
 
 			/* owner list exists -- add it to the error queue */
-			sendtolist(obuf, (ADDRESS *) NULL, &e->e_errorqueue);
+			sendtolist(obuf, (ADDRESS *) NULL, &e->e_errorqueue, e);
 			ErrorMode = EM_MAIL;
 			break;
 		}
 
 		/* if we did not find an owner, send to the sender */
 		if (qq == NULL && bitset(QBADADDR, q->q_flags))
-			sendtolist(e->e_from.q_paddr, qq, &e->e_errorqueue);
+			sendtolist(e->e_from.q_paddr, qq, &e->e_errorqueue, e);
 	}
 
 	if (mode == SM_FORK)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -113,8 +113,8 @@ dropenvelope(e)
 	{
 		auto ADDRESS *rlist = NULL;
 
-		sendtolist(CurEnv->e_receiptto, (ADDRESS *) NULL, &rlist);
-		(void) returntosender("Return receipt", rlist, FALSE);
+		sendtolist(e->e_receiptto, (ADDRESS *) NULL, &rlist, e);
+		(void) returntosender("Return receipt", rlist, FALSE, e);
 	}
 
 	/*
@@ -220,7 +220,8 @@ clearenvelope(e, fullclear)
 **		forms is set.
 */
 
-initsys()
+initsys(e)
+	register ENVELOPE *e;
 {
 	static char cbuf[5];			/* holds hop count */
 	static char pbuf[10];			/* holds pid */
@@ -237,8 +238,8 @@ initsys()
 	**	I.e., an id, a transcript, and a creation time.
 	*/
 
-	openxscript(CurEnv);
-	CurEnv->e_ctime = curtime();
+	openxscript(e);
+	e->e_ctime = curtime();
 
 	/*
 	**  Set OutChannel to something useful if stdout isn't it.
@@ -248,7 +249,7 @@ initsys()
 	*/
 
 	if (OpMode == MD_DAEMON && QueueRun)
-		OutChannel = CurEnv->e_xfp;
+		OutChannel = e->e_xfp;
 
 	/*
 	**  Set up some basic system macros.
@@ -256,18 +257,18 @@ initsys()
 
 	/* process id */
 	(void) sprintf(pbuf, "%d", getpid());
-	define('p', pbuf, CurEnv);
+	define('p', pbuf, e);
 
 	/* hop count */
-	(void) sprintf(cbuf, "%d", CurEnv->e_hopcount);
-	define('c', cbuf, CurEnv);
+	(void) sprintf(cbuf, "%d", e->e_hopcount);
+	define('c', cbuf, e);
 
 	/* time as integer, unix time, arpa time */
-	settime();
+	settime(e);
 
 #ifdef TTYNAME
 	/* tty name */
-	if (macvalue('y', CurEnv) == NULL)
+	if (macvalue('y', e) == NULL)
 	{
 		p = ttyname(2);
 		if (p != NULL)
@@ -275,7 +276,7 @@ initsys()
 			if (rindex(p, '/') != NULL)
 				p = rindex(p, '/') + 1;
 			(void) strcpy(ybuf, p);
-			define('y', ybuf, CurEnv);
+			define('y', ybuf, e);
 		}
 	}
 #endif TTYNAME
@@ -293,7 +294,8 @@ initsys()
 **		Sets the various time macros -- $a, $b, $d, $t.
 */
 
-settime()
+settime(e)
+	register ENVELOPE *e;
 {
 	register char *p;
 	auto time_t now;
@@ -308,15 +310,15 @@ settime()
 	tm = gmtime(&now);
 	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon+1,
 			tm->tm_mday, tm->tm_hour, tm->tm_min);
-	define('t', tbuf, CurEnv);
+	define('t', tbuf, e);
 	(void) strcpy(dbuf, ctime(&now));
 	*index(dbuf, '\n') = '\0';
-	if (macvalue('d', CurEnv) == NULL)
-		define('d', dbuf, CurEnv);
+	if (macvalue('d', e) == NULL)
+		define('d', dbuf, e);
 	p = newstr(arpadate(dbuf));
-	if (macvalue('a', CurEnv) == NULL)
-		define('a', p, CurEnv);
-	define('b', p, CurEnv);
+	if (macvalue('a', e) == NULL)
+		define('a', p, e);
+	define('b', p, e);
 }
 /*
 **  OPENXSCRIPT -- Open transcript file
@@ -457,7 +459,7 @@ setsender(from, e)
 	}
 
 	SuprErrs = TRUE;
-	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0') == NULL)
+	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 		if (from != NULL)
@@ -475,8 +477,8 @@ setsender(from, e)
 # endif LOG
 		}
 		from = newstr(realname);
-		if (parseaddr(from, &e->e_from, 1, '\0') == NULL &&
-		    parseaddr("postmaster", &e->e_from, 1, '\0') == NULL)
+		if (parseaddr(from, &e->e_from, 1, '\0', e) == NULL &&
+		    parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)
 		{
 			syserr("setsender: can't even parse postmaster!");
 		}

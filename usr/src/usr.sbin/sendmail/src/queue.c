@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.42 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.43 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.42 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.43 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -297,8 +297,9 @@ queueup(e, queueall, announce)
 		}
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
-			commaize(h, h->h_value, tfp, bitset(EF_OLDSTYLE, e->e_flags),
-				 &nullmailer);
+			commaize(h, h->h_value, tfp,
+				 bitset(EF_OLDSTYLE, e->e_flags),
+				 &nullmailer, e);
 		}
 		else
 			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);
@@ -368,8 +369,9 @@ printctladdr(a, tfp)
 **		runs things in the mail queue.
 */
 
-runqueue(forkflag)
+runqueue(forkflag, e)
 	bool forkflag;
+	register ENVELOPE *e;
 {
 	extern bool shouldqueue();
 
@@ -441,7 +443,7 @@ runqueue(forkflag)
 	**  Make sure the alias database is open.
 	*/
 
-	initaliases(AliasFile, FALSE);
+	initaliases(AliasFile, FALSE, e);
 
 	/*
 	**  Start making passes through the queue.
@@ -459,7 +461,7 @@ runqueue(forkflag)
 		WORK *w = WorkQ;
 
 		WorkQ = WorkQ->w_next;
-		dowork(w);
+		dowork(w, e);
 		free(w->w_name);
 		free((char *) w);
 	}
@@ -670,8 +672,9 @@ workcmpf(a, b)
 **		The work request is satisfied if possible.
 */
 
-dowork(w)
+dowork(w, e)
 	register WORK *w;
+	register ENVELOPE *e;
 {
 	register int i;
 	extern bool shouldqueue();
@@ -721,21 +724,21 @@ dowork(w)
 
 		/* set basic modes, etc. */
 		(void) alarm(0);
-		clearenvelope(CurEnv, FALSE);
+		clearenvelope(e, FALSE);
 		QueueRun = TRUE;
 		ErrorMode = EM_MAIL;
-		CurEnv->e_id = &w->w_name[2];
+		e->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 11)
-			syslog(LOG_DEBUG, "%s: dowork, pid=%d", CurEnv->e_id,
+			syslog(LOG_DEBUG, "%s: dowork, pid=%d", e->e_id,
 			       getpid());
 # endif LOG
 
 		/* don't use the headers from sendmail.cf... */
-		CurEnv->e_header = NULL;
+		e->e_header = NULL;
 
 		/* read the queue control file -- return if locked */
-		if (!readqf(CurEnv))
+		if (!readqf(e))
 		{
 			if (ForkQueueRuns)
 				exit(EX_OK);
@@ -743,18 +746,18 @@ dowork(w)
 				return;
 		}
 
-		CurEnv->e_flags |= EF_INQUEUE;
-		eatheader(CurEnv);
+		e->e_flags |= EF_INQUEUE;
+		eatheader(e);
 
 		/* do the delivery */
-		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
-			sendall(CurEnv, SM_DELIVER);
+		if (!bitset(EF_FATALERRS, e->e_flags))
+			sendall(e, SM_DELIVER);
 
 		/* finish up and exit */
 		if (ForkQueueRuns)
 			finis();
 		else
-			dropenvelope(CurEnv);
+			dropenvelope(e);
 	}
 	else
 	{
@@ -820,10 +823,10 @@ readqf(e)
 	{
 		/* being processed by another queuer */
 		if (Verbose)
-			printf("%s: locked\n", CurEnv->e_id);
+			printf("%s: locked\n", e->e_id);
 # ifdef LOG
 		if (LogLevel > 9)
-			syslog(LOG_DEBUG, "%s: locked", CurEnv->e_id);
+			syslog(LOG_DEBUG, "%s: locked", e->e_id);
 # endif LOG
 		(void) fclose(qfp);
 		return FALSE;
@@ -833,7 +836,7 @@ readqf(e)
 	e->e_lockfp = qfp;
 
 	/* do basic system initialization */
-	initsys();
+	initsys(e);
 
 	FileName = qf;
 	LineNumber = 0;
@@ -855,11 +858,11 @@ readqf(e)
 			break;
 
 		  case 'E':		/* specify error recipient */
-			sendtolist(&buf[1], ctladdr, &e->e_errorqueue);
+			sendtolist(&buf[1], ctladdr, &e->e_errorqueue, e);
 			break;
 
 		  case 'H':		/* header */
-			(void) chompheader(&buf[1], FALSE);
+			(void) chompheader(&buf[1], FALSE, e);
 			break;
 
 		  case 'M':		/* message */
@@ -867,7 +870,7 @@ readqf(e)
 			break;
 
 		  case 'S':		/* sender */
-			setsender(newstr(&buf[1]), CurEnv);
+			setsender(newstr(&buf[1]), e);
 			break;
 
 		  case 'D':		/* data file name */

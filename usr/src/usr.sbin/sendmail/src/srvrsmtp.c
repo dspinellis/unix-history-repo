@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.34 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.35 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.34 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.35 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -89,7 +89,8 @@ bool	OneXact = FALSE;		/* one xaction only this run */
 
 #define EX_QUIT		22		/* special code for QUIT command */
 
-smtp()
+smtp(e)
+	register ENVELOPE *e;
 {
 	register char *p;
 	register struct cmd *c;
@@ -106,7 +107,7 @@ smtp()
 		(void) close(1);
 		(void) dup(fileno(OutChannel));
 	}
-	settime();
+	settime(e);
 	if (RealHostName != NULL)
 	{
 		CurHostName = RealHostName;
@@ -117,7 +118,7 @@ smtp()
 		/* this must be us!! */
 		CurHostName = MyHostName;
 	}
-	expand("\001e", inp, &inp[sizeof inp], CurEnv);
+	expand("\001e", inp, &inp[sizeof inp], e);
 	message("220", inp);
 	SmtpPhase = "startup";
 	sendinghost = NULL;
@@ -131,7 +132,7 @@ smtp()
 		LogUsrErrs = FALSE;
 
 		/* setup for the read */
-		CurEnv->e_to = NULL;
+		e->e_to = NULL;
 		Errors = 0;
 		(void) fflush(stdout);
 
@@ -151,8 +152,8 @@ smtp()
 		fixcrlf(inp, TRUE);
 
 		/* echo command to transcript */
-		if (CurEnv->e_xfp != NULL)
-			fprintf(CurEnv->e_xfp, "<<< %s\n", inp);
+		if (e->e_xfp != NULL)
+			fprintf(e->e_xfp, "<<< %s\n", inp);
 
 		/* break off command */
 		for (p = inp; isspace(*p); p++)
@@ -208,7 +209,7 @@ smtp()
 			SmtpPhase = "MAIL";
 
 			/* force a sending host even if no HELO given */
-			if (RealHostName != NULL && macvalue('s', CurEnv) == NULL)
+			if (RealHostName != NULL && macvalue('s', e) == NULL)
 				sendinghost = RealHostName;
 
 			/* check for validity of this command */
@@ -225,19 +226,19 @@ smtp()
 			}
 
 			/* fork a subprocess to process this command */
-			if (runinchild("SMTP-MAIL") > 0)
+			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
-			define('s', sendinghost, CurEnv);
-			define('r', "SMTP", CurEnv);
-			initsys();
-			setproctitle("%s %s: %s", CurEnv->e_id,
+			define('s', sendinghost, e);
+			define('r', "SMTP", e);
+			initsys(e);
+			setproctitle("%s %s: %s", e->e_id,
 				CurHostName, inp);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
 			if (p == NULL)
 				break;
-			setsender(p, CurEnv);
+			setsender(p, e);
 			if (Errors == 0)
 			{
 				message("250", "Sender ok");
@@ -249,11 +250,11 @@ smtp()
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
 			SmtpPhase = "RCPT";
-			setproctitle("%s %s: %s", CurEnv->e_id,
+			setproctitle("%s %s: %s", e->e_id,
 				CurHostName, inp);
 			if (setjmp(TopFrame) > 0)
 			{
-				CurEnv->e_flags &= ~EF_FATALERRS;
+				e->e_flags &= ~EF_FATALERRS;
 				break;
 			}
 			QuickAbort = TRUE;
@@ -270,7 +271,7 @@ smtp()
 				break;
 
 			/* no errors during parsing, but might be a duplicate */
-			CurEnv->e_to = p;
+			e->e_to = p;
 			if (!bitset(QBADADDR, a->q_flags))
 				message("250", "Recipient ok");
 			else
@@ -278,7 +279,7 @@ smtp()
 				/* punt -- should keep message in ADDRESS.... */
 				message("550", "Addressee unknown");
 			}
-			CurEnv->e_to = NULL;
+			e->e_to = NULL;
 			break;
 
 		  case CMDDATA:		/* data -- text of mail */
@@ -288,7 +289,7 @@ smtp()
 				message("503", "Need MAIL command");
 				break;
 			}
-			else if (CurEnv->e_nrcpts <= 0)
+			else if (e->e_nrcpts <= 0)
 			{
 				message("503", "Need RCPT (recipient)");
 				break;
@@ -296,9 +297,9 @@ smtp()
 
 			/* collect the text of the message */
 			SmtpPhase = "collect";
-			setproctitle("%s %s: %s", CurEnv->e_id,
+			setproctitle("%s %s: %s", e->e_id,
 				CurHostName, inp);
-			collect(TRUE);
+			collect(TRUE, e);
 			if (Errors != 0)
 				break;
 
@@ -321,26 +322,26 @@ smtp()
 			*/
 
 			SmtpPhase = "delivery";
-			if (CurEnv->e_nrcpts != 1)
+			if (e->e_nrcpts != 1)
 			{
 				HoldErrs = TRUE;
 				ErrorMode = EM_MAIL;
 			}
-			CurEnv->e_flags &= ~EF_FATALERRS;
-			CurEnv->e_xfp = freopen(queuename(CurEnv, 'x'), "w", CurEnv->e_xfp);
+			e->e_flags &= ~EF_FATALERRS;
+			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
 
 			/* send to all recipients */
-			sendall(CurEnv, SM_DEFAULT);
-			CurEnv->e_to = NULL;
+			sendall(e, SM_DEFAULT);
+			e->e_to = NULL;
 
 			/* save statistics */
-			markstats(CurEnv, (ADDRESS *) NULL);
+			markstats(e, (ADDRESS *) NULL);
 
 			/* issue success if appropriate and reset */
 			if (Errors == 0 || HoldErrs)
 				message("250", "Ok");
 			else
-				CurEnv->e_flags &= ~EF_FATALERRS;
+				e->e_flags &= ~EF_FATALERRS;
 
 			/* if in a child, pop back to our parent */
 			if (InChild)
@@ -348,9 +349,9 @@ smtp()
 
 			/* clean up a bit */
 			hasmail = 0;
-			dropenvelope(CurEnv);
-			CurEnv = newenvelope(CurEnv);
-			CurEnv->e_flags = BlankEnvelope.e_flags;
+			dropenvelope(e);
+			CurEnv = e = newenvelope(e);
+			e->e_flags = BlankEnvelope.e_flags;
 			break;
 
 		  case CMDRSET:		/* rset -- reset state */
@@ -360,7 +361,7 @@ smtp()
 			break;
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			if (runinchild("SMTP-VRFY") > 0)
+			if (runinchild("SMTP-VRFY", e) > 0)
 				break;
 			setproctitle("%s: %s", CurHostName, inp);
 				paddrtree(a);
@@ -394,7 +395,7 @@ smtp()
 # ifdef SMTPDEBUG
 		  case CMDDBGQSHOW:	/* show queues */
 			printf("Send Queue=");
-			printaddr(CurEnv->e_sendqueue, TRUE);
+			printaddr(e->e_sendqueue, TRUE);
 			break;
 
 		  case CMDDBGDEBUG:	/* set debug mode */
@@ -551,8 +552,9 @@ help(topic)
 **		none.
 */
 
-runinchild(label)
+runinchild(label, e)
 	char *label;
+	register ENVELOPE *e;
 {
 	int childpid;
 
@@ -584,12 +586,12 @@ runinchild(label)
 			/* child */
 			InChild = TRUE;
 			QuickAbort = FALSE;
-			clearenvelope(CurEnv, FALSE);
+			clearenvelope(e, FALSE);
 		}
 	}
 
 	/* open alias database */
-	initaliases(AliasFile, FALSE);
+	initaliases(AliasFile, FALSE, e);
 
 	return (0);
 }
