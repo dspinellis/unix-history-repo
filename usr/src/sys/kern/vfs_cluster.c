@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.47	83/06/14	*/
+/*	vfs_cluster.c	4.48	83/07/01	*/
 
 #include "../machine/pte.h"
 
@@ -414,11 +414,7 @@ getnewbuf()
 
 loop:
 	s = spl6();
-#ifndef sun
 	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
-#else
-	for (dp = &bfreelist[BQ_EMPTY]; dp > bfreelist; dp--)
-#endif
 		if (dp->av_forw != dp)
 			break;
 	if (dp == bfreelist) {		/* no free blocks */

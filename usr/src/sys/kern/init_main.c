@@ -1,4 +1,4 @@
-/*	init_main.c	4.52	83/05/30	*/
+/*	init_main.c	4.53	83/07/01	*/
 
 #include "../machine/pte.h"
 
@@ -44,14 +44,8 @@ extern	struct user u;		/* have to declare it somewhere! */
  * loop at loc 13 (0xd) in user mode -- /etc/init
  *	cannot be executed.
  */
-#ifdef vax
 main(firstaddr)
 	int firstaddr;
-#endif
-#ifdef sun
-main(regs)
-	struct regs regs;
-#endif
 {
 	register int i;
 	register struct proc *p;
@@ -60,12 +54,7 @@ main(regs)
 
 	rqinit();
 #include "loop.h"
-#ifdef vax
 	startup(firstaddr);
-#endif
-#ifdef sun
-	startup();
-#endif
 
 	/*
 	 * set up system process 0 (swapper)
@@ -79,9 +68,6 @@ main(regs)
 	p->p_nice = NZERO;
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
-#ifdef sun
-	u.u_ar0 = &regs.r_r0;
-#endif
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
@@ -184,16 +170,9 @@ main(regs)
 	proc[1].p_stat = 0;
 	proc[0].p_szpt = CLSIZE;
 	if (newproc(0)) {
-#ifdef vax
 		expand(clrnd((int)btoc(szicode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
 		(void) copyout((caddr_t)icode, (caddr_t)0, (unsigned)szicode);
-#endif
-#ifdef sun
-		icode();
-		usetup();
-		regs.r_context = u.u_procp->p_ctx->ctx_context;
-#endif
 		/*
 		 * Return goes to loc. 0 of user init
 		 * code just copied out.
@@ -237,18 +216,12 @@ binit()
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
-#ifndef sun
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
 		if (i < residual)
 			bp->b_bufsize = (base + 1) * CLBYTES;
 		else
 			bp->b_bufsize = base * CLBYTES;
 		binshash(bp, &bfreelist[BQ_AGE]);
-#else
-		bp->b_un.b_addr = (char *)0;
-		bp->b_bufsize = 0;
-		binshash(bp, &bfreelist[BQ_EMPTY]);
-#endif
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}
