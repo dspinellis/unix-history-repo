@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1112,7 +1112,7 @@ gethdir(home)
 
 /*
  * When didfds is set, we do I/O from 0, 1, 2 otherwise from 15, 16, 17
- * We alsocheck if the shell has already chenged the decriptor to point to
+ * We also check if the shell has already changed the decriptor to point to
  * 0, 1, 2 when didfds is set.
  */
 #define DESC(a) (*((int *) (a)) - (didfds && *((int *) a) >= FSHIN ? FSHIN : 0))
