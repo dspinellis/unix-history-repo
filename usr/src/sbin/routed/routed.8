@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)routed.8	6.3 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH ROUTED 8C ""
+.\"	@(#)routed.8	6.4 (Berkeley) %G%
+.\"
+.TH ROUTED 8 ""
 .UC 5
 .SH NAME
 routed \- network routing daemon
@@ -36,7 +47,7 @@ within a cluster of networks.
 In normal operation
 .I routed
 listens on the
-.IR udp (4P)
+.IR udp (4)
 socket for the
 .I route
 service (see
@@ -248,7 +259,7 @@ or
 .IR named (8),
 known to the name server), 
 or an Internet address specified in ``dot'' notation; see
-.IR inet (3N).
+.IR inet (3).
 .PP
 .I Name2
 is the name or address of the gateway to which messages should
@@ -288,7 +299,7 @@ should contact the Computer Systems Research Group at Berkeley.
 ``Internet Transport Protocols'', XSIS 028112, Xerox System Integration
 Standard.
 .br
-udp(4P), icmp(4P), XNSrouted(8C), htable(8)
+udp(4), icmp(4), XNSrouted(8), htable(8)
 .SH BUGS
 The kernel's routing tables may not correspond to those of
 .I routed
@@ -300,7 +311,7 @@ the ICMP packets received via a raw socket.
 .I Routed
 should incorporate other routing protocols,
 such as Xerox NS
-.RI ( XNSrouted (8C))
+.RI ( XNSrouted (8))
 and EGP.
 Using separate processes for each requires configuration options
 to avoid redundant or competing routes.
