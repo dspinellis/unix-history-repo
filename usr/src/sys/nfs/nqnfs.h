@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nqnfs.h	7.1 (Berkeley) %G%
+ *	@(#)nqnfs.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -65,7 +65,7 @@ struct nqhost {
 		} un_connless;
 		struct {
 			u_short conn_flag;
-			u_short conn_sref;
+			u_short conn_spare;
 			struct nfssvc_sock *conn_slp;
 		} un_conn;
 	} lph_un;
@@ -76,7 +76,6 @@ struct nqhost {
 #define	lph_inetaddr	lph_un.un_udp.udp_haddr.had_inetaddr
 #define	lph_claddr	lph_un.un_connless.connless_haddr
 #define	lph_nam		lph_un.un_connless.connless_haddr.had_nam
-#define	lph_sref	lph_un.un_conn.conn_sref
 #define	lph_slp		lph_un.un_conn.conn_slp
 
 struct nqlease {
@@ -104,6 +103,7 @@ struct nqlease {
 #define	LC_LOCAL	0x0100	/* Host is server */
 #define	LC_VACATED	0x0200	/* Host has vacated lease */
 #define	LC_WRITTEN	0x0400	/* Recently wrote to the leased file */
+#define	LC_SREF		0x0800	/* Holds a nfssvc_sock reference */
 
 struct nqm {
 	struct nqm	*lpm_next;
