@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.30 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.31 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -998,10 +998,9 @@ coredump(p)
 		return (EFAULT);
 	nd.ni_segflg = UIO_SYSSPACE;
 	nd.ni_dirp = "core";
-	if (error = vn_open(&nd, p, FCREAT|FWRITE, 0644))
+	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
-	VOP_LOCK(vp);
 	if (vp->v_type != VREG || VOP_GETATTR(vp, &vattr, cred, p) ||
 	    vattr.va_nlink != 1) {
 		vput(vp);
