@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.7 82/12/24";
+static char sccsid[] = "@(#)ruptime.c	4.8 83/04/21";
 #endif
 
 #include <sys/param.h>
@@ -151,7 +151,7 @@ interval(time, updown)
 		(void) sprintf(resbuf, "%s %2d+%02d:%02d",
 		    updown, days, hours, minutes);
 	else
-		(void) sprintf(resbuf, "   %s %2d:%02d",
+		(void) sprintf(resbuf, "%s    %2d:%02d",
 		    updown, hours, minutes);
 	return (resbuf);
 }
