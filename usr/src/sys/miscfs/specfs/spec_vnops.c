@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.41 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.42 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -140,7 +140,7 @@ spec_read(vp, uio, ioflag, cred)
 {
 	struct proc *p = uio->uio_procp;
 	struct buf *bp;
-	daddr_t bn;
+	daddr_t bn, nextbn;
 	long bsize, bscale;
 	struct partinfo dpart;
 	register int n, on;
@@ -180,10 +180,11 @@ spec_read(vp, uio, ioflag, cred)
 			bn = (uio->uio_offset / DEV_BSIZE) &~ (bscale - 1);
 			on = uio->uio_offset % bsize;
 			n = MIN((unsigned)(bsize - on), uio->uio_resid);
-			if (vp->v_lastr + bscale == bn)
-				error = breada(vp, bn, (int)bsize, bn + bscale,
-					(int)bsize, NOCRED, &bp);
-			else
+			if (vp->v_lastr + bscale == bn) {
+				nextbn = bn + bscale;
+				error = breadn(vp, bn, (int)bsize, &nextbn,
+					(int *)&bsize, 1, NOCRED, &bp);
+			} else
 				error = bread(vp, bn, (int)bsize, NOCRED, &bp);
 			vp->v_lastr = bn;
 			n = MIN(n, bsize - bp->b_resid);
