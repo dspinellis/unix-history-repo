@@ -1,21 +1,25 @@
-.\"	@(#)NBSproposal.11.88	1.4	88/12/06
+.\"	@(#)NBSproposal.11.88	1.5	88/12/22
 .\" *troff -ms
 .de CO
 .br
 \s-1\\fI<\\$1: \\$2>\\fR\s+1
 .br
 ..
-.ds DT "
+.de dt
+.if \\n(.$>1 .ds DY "
+..
+.dt 
+.rm dt
 .rm CM
 .sp 2
 .ce 100
 \fB\s+2Berkeley UNIX Project Funding Proposal\s-2\fP
 .sp .5
-\fBDRAFT of \*(DT\fP
+\fBDRAFT of \*(DY\fP
 .ce 0
 .sp 2
 .nf
-.ce 4
+.ce 5
 Marshall Kirk McKusick
 Michael J Karels
 Keith Sklower
@@ -27,20 +31,17 @@ Introduction
 .PP
 This is a proposal for DARPA support of operating system
 and networking research in the UNIX project at UC Berkeley.
-The goal of the project is to apply leading edge research ideas
-into a stable and reliable implementation that solves current problems in
+The goal of the project is to use leading edge research ideas
+in a stable and reliable implementation that solves current problems in
 operating systems research.
 The project also includes incorporation of network protocols and other
-subsystems into the operating system while maintaining a consistent
-interface to the system.
+subsystems into the operating system while maintaining consistency
+with the existing system call interface.
 The resulting system is widely used by other researchers in operating systems
 and network protocols and implementations.
 .PP
 The last major release of Berkeley UNIX,
-in June, 1986, was 4.3BSD.
-.[
-4.3BSD CSRG ???
-.]
+in June, 1986, was 4.3BSD [CSRG86].
 Projects completed since that time have been made available
 in a July, 1988 test release known as the 4.3BSD Tahoe release,
 named for the CCI Power 6/32 processor for which support was added.
@@ -48,7 +49,8 @@ named for the CCI Power 6/32 processor for which support was added.
 Proposed Research
 .PP
 Since the 4.3BSD release,
-we have been working on four major new areas of research:
+we have been working on four major new areas of research,
+which we propose to continue:
 .IP 1)
 Integration of an OSI network protocol suite and
 existing ISO applications into Berkeley UNIX.
@@ -76,7 +78,7 @@ Van Jacobson of the Lawrence Berkeley Laboratory;
 the resulting performance improvements are ready
 to be merged into the Berkeley TCP.
 .IP 4)
-Provide a standard interface to file systems
+Provision of a standard interface to file systems
 so that multiple local and remote file systems can be supported,
 much as multiple networking protocols are supported by 4.3BSD.
 The proposal currently under development
@@ -85,14 +87,16 @@ but otherwise is closely related to Sun's VFS.
 We ultimately hope to support a public domain implementation of Sun's NFS.
 .LP
 In addition to the four projects already underway,
-we propose a fifth additional project:
+we will add a fifth project, expanding on work already done:
 .IP 5)
 The recent invasion of the DARPA Internet by a quickly reproducing worm
-highlighted the need for a through review of the access
+highlighted the need for a thorough review of the access
 safeguards built into the system.
-We are proposing that a complete audit be made of the system
-utilities to check for and eliminate unintended system access mechanisms.
-Part of this proposal would include the addition of a real
+We will conduct a complete audit of the system
+utilities,
+especially network servers,
+to check for and eliminate unintended system access mechanisms.
+Part of this proposal includes the addition and integration of a real
 authentication mechanism for utilities such as
 telnet, login, remote shell, etc.
 .LP
@@ -114,7 +118,7 @@ and the construction of a uniform
 hierarchical routing lookup algorithm.
 We have made alterations to the socket interface to allow
 transmission of record boundaries,
-distinction between dequeueing connection requests and explicit
+distinction between dequeuing connection requests and explicit
 confirmation, and passage of ancillary data such as user connection-
 or disconnection-request data.
 .PP
@@ -141,31 +145,31 @@ and distribution.
 This work will include participation in
 interoperability tests with vendors and users on OSINET.
 .PP
-We are designing additional structures (analogous to the ``Streams''
+We are designing modifications to the current network architecture
+(analogous to the ``Streams''
 concept of Bell Laboratories 9th Edition UNIX or System V.3)
-which will allow uniform the processing of serial data,
-improve communication between protocol layers,
-and provide a more natural framework for
+to improve communication between protocol layers,
+to allow more flexible layering,
+to incorporate terminal and asynchronous serial I/O modules into the same
+processing framework,
+and to provide a more natural framework for
 devices already providing virtual circuit services
 (such as X.25 devices).
-Such structures would provide a natural setting
+Such layering will provide a natural setting
 for kernel-resident virtual terminal services,
-and would allow direct access to communications-layer devices
+and will allow direct access to communications-layer devices
 for network monitoring or prototyping of new protocols.
-This layering would also make it easier to tunnel one protocol through another.
-Additional work may be necessary for IP,
-(in particular, address resolution protocol, ARP) to allow such
+This structure will also make it easier to tunnel one protocol through another.
+Additional work may be necessary for IP
+(in particular for the address resolution protocol, ARP) to allow such
 revisions.
 .PP
 We have become members of the IEEE 1003.8 group working on a POSIX networking
 interface.
 We intend to introduce a proposal for a high-level protocol-independent
 interface for network services suitable for distributed applications.
-This interface will be based on the UNI interface proposed by Marshall Rose.
-.[
-UNI Rose
-.]
-\&
+This interface will be based on the UNI interface proposed by Marshall Rose
+[Rose88].
 .NH 2
 Compliance with POSIX 1003
 .PP
@@ -206,8 +210,8 @@ Improvements to the Networking Architecture and Protocols
 The networking architecture introduced in 4.2BSD
 provided a framework for multiple networking protocols
 using a single consistent user interface.
-This framework includes three distinct layers: socket, protocols,
-and network link layer.
+This framework includes three distinct layers: socket,
+transport and network protocols, and network link layer.
 This framework has been used for implementations of TCP/IP, Xerox NS,
 the OSI protocols, and local interprocess communication.
 Our experience with this framework and in performance analysis
@@ -217,20 +221,18 @@ One refinement is the use of structuring techniques similar to those
 of the Stream I/O system, described in section 2.1,
 unifying two existing interfaces.
 In addition to providing additional flexibility, careful structuring
-will allow improved pipelining of the network protocols using upcalls.
-.[
-Clark SOSP upcalls
-.]
+will allow improved pipelining of the network protocols using upcalls
+[Clark85].
 Such pipelining has been prototyped by Van Jacobson of the Lawrence
 Berkeley Laboratory, along with several caching strategies
 that will also be incorporated.
 With this work, it will be necessary to improve
 communication among the levels of the system to improve performance.
 In particular, the transport protocols must influence the way in which
-data are bufferred by higher layers for optimal performance.
-We plan to investigate layering techniques that are both modular
+data are buffered by higher layers for optimal performance.
+We will investigate layering techniques that are both modular
 and efficient, two conflicting goals.
-At the same time, we plan to modify the current buffer management
+At the same time, we will modify the current buffer management
 to be more portable and to allow efficient use on machines with different
 I/O architectures.
 .PP
@@ -242,7 +244,7 @@ that it detects, and the routing layer needs to use all this information.
 .PP
 The Internet and the Berkeley collection of local-area networks
 have both grown at high rates in the last year.
-The Bay Area Regional Research Network (BARRNet),
+The Bay Area Regional Research Network (BARRNet)
 connects several UC campuses, Stanford and NASA-Ames with the NSF network,
 increasing the complexity
 of the network connectivity.
@@ -256,15 +258,9 @@ In the period covered by this proposal,
 we expect to merge the current version of the Berkeley routing daemon
 \fIrouted\fP with the multi-protocol daemon \fIgated\fP (which currently
 supports the RIP and EGP protocols), and to update the RIP implementation
-for full conformance with the recent specification.
-.[
-RIP hedrick RFC
-.]
+for full conformance with the recent specification [Hedrick88].
 We also expect to collaborate on an implementation of a new EGP protocol,
-version 3
-.[
-Lepp Karels EGP
-.]
+version 3 [Lepp88]
 in a \fIgated\fP framework,
 and may also incorporate or collaborate on an implementation
 of the SPF-based IGP protocol being developed within the Internet Engineering
@@ -272,8 +268,11 @@ Task Force.
 We are continuing our involvement with that group in the evolution of standards
 for the DARPA Internet.
 .PP
-We are also considering adding VMTP and IP multicast support
-from David Cheriton and Steve Deering at Stanford.
+We will review the VMTP and IP multicast support
+done by David Cheriton and Steve Deering at Stanford,
+evaluate the necessary changes to the system layering,
+and then incorporate these modifications into the system
+if the changes are found to be compatible with our goals.
 .NH 2
 Toward a Compatible File System Interface
 .PP
@@ -291,7 +290,7 @@ and allows stateful file systems,
 but otherwise is closely related to Sun's virtual file system interface.
 This interface has been advanced (to Sun, DEC, AT&T and others)
 as a potential standard;
-when the implementation has been completed, we intend to explore
+when the implementation is complete, we intend to explore
 consensus in this area, so that file system implementations could
 be as portable as device drivers.
 We do not intend to develop our own remote file system protocol;
@@ -300,8 +299,9 @@ including the local UNIX file system
 and Sun's network file system (NFS).
 We are currently negotiating with several groups that have
 developed their own implementations of NFS to convince them to
-contribute their code to Berkeley so that BSD
-will not require a Sun NFS license.
+contribute their code to Berkeley;
+we will not include NFS support unless it may be distributed with
+no new licensing requirement.
 We currently expect receipt of an NFS implementation from Apollo
 that uses a different system interface; if feasible, we will adapt it
 to our file system interface. 
@@ -323,15 +323,22 @@ solving known problems as they arise
 (witness its success in handling the recent worm).
 However, we feel that it would be useful to take a more active
 role in identifying problems before they are reported (or exploited).
-We are proposing that a complete audit be made of the system
-utilities to find unintended system access mechanisms.
-Once identified, we expect that they could be corrected
+We will make a complete audit of the system
+utilities and network servers to find unintended system access mechanisms.
+Once identified, we expect that they can be corrected
 through the existing mechanism.
+.PP
+As a part of the work to make the system more resistant to attack
+from local users or via the network, it will be necessary to produce
+additional documentation on the configuration and operation of the system.
+This documentation will cover such topics as file and directory ownership
+and access, network and server configuration,
+and control of privileged operations such as file system backups.
 .PP
 In addition, we have been discussing possible plans for response
 to emergencies such as the recent worm attack with DARPA.
 We believe that a plan such as the proposed Computer Emergency Response
-Team can respond to such attacks effectively, and intend to cooperate
+Team (CERT) can respond to such attacks effectively, and intend to cooperate
 with such a plan.
 We can provide at least two members for a response team
 and can serve as the primary coordinators for problems involving BSD
@@ -342,10 +349,10 @@ a Host Requirements standard for Internet hosts.
 We reviewed this draft recently and joined the working group.
 For the most part, the existing Berkeley TCP/IP and networking application
 software conforms with the draft.
-We propose to review conformance with the Host Requirements standard
+We will review conformance with the Host Requirements standard
 at the same time that we review the robustness of the network software.
 We expect that some additions will have to be made
-in the kernel network protocols to become compliant.
+to the kernel network protocols to make them compliant.
 In particular, support for IP type-of-service options and routing needs
 to be added, and recent proposals for gateway monitoring should be implemented
 and tested.
@@ -355,7 +362,7 @@ over the network is based solely on the privileged port mechanism
 between trusting hosts and users.
 Although privileged ports can only be created by processes running as root,
 such processes are easy for a workstation user to obtain;
-they simply reboot their workstation single user.
+they simply reboot their workstation in single user mode.
 Thus, a real authentication mechanism is needed.
 At present, we believe that the MIT Kerberos authentication
 server provides the best solution to this problem.
@@ -368,18 +375,29 @@ telnet, login, remote shell, etc.
 MIT currently supports the use of Kerberos for authentication
 of rlogin, rsh, certain other servers used at MIT, and the NFS mount
 protocol.
-We propose to add support for telnet (eventually replacing rlogin),
+If we choose Kerberos,
+we will add support for telnet (eventually replacing rlogin),
 the X window system, and the mail system within an authentication
 domain (a Kerberos \fIrealm\fP).
+We would also need to add support for transparent third-party operations.
+(The existing Kerberos software allows a user to connect to a server
+on another system without supplying a password,
+but does not allow processes started on the server to access the network
+without sending another password over the network.)
+We hope to replace the existing password authentication on each host
+with the network authentication system.
 .PP
 Another subject of active work, at MIT and elsewhere, is the interaction
-between servers for different realms.
-Currently, the servers for two realms may be mutually authenticated only by
-a manual exchange of keys.
-We would like to add a mechanism for a user in two realms to establish
-a (semi-)permanent equivalence between his identities in the two realms.
+between servers for different authentication realms.
+Currently, the servers for two Kerberos realms
+may be mutually authenticated only by realm administrators
+with a manual exchange of keys.
+We would like to add a mechanism for a user in two realms to request that
+a equivalence be established
+between his identities in the two realms.
 Such a facility could greatly reduce the need to transmit passwords
 in the clear over wide-area networks.
+.br
 .ne 10
 .sp 2
 .NH
@@ -394,7 +412,10 @@ If major design flaws turn up during the alpha testing,
 we will reenter the development phase to resolve the problems
 resulting in another test release.
 Otherwise, we will incorporate feedback from the testing
-and produce a revised distribution.
+and produce a revised distribution by the end of the period
+covered by this proposal.
+.br
+.ne 10
 .NH
 Statement of Work
 .PP
@@ -412,14 +433,19 @@ Refinement of the network architecture
 and implementation to improve
 its performance and functionality.
 .IP \(bu
-Provide a standard interface to file systems
+Implementation of a standard interface to file systems
 so that multiple local and remote file systems can be supported.
-Pursue the acquisition of a public domain implementation of Sun's NFS.
+Pursue the acquisition and integration
+of a public domain implementation of Sun's NFS.
 .IP \(bu
-Do a complete audit of the system
-utilities to check for and eliminate unintended system access mechanisms.
+Audit of the system
+utilities to check for and eliminate unintended system access mechanisms,
+and to complete conformance with the Internet Host Requirements
+when that standard is released.
 .IP \(bu
 Find, evaluate, and incorporate an authentication mechanism into the system.
+.br
+.ne 10
 .NH
 Deliverables
 .PP
@@ -435,6 +461,23 @@ another release will be made to interested parties
 at the end of the proposal period.
 .NH
 References
-.[
-$LIST$
-.]
+.IP Clark85
+D. Clark, ``The Structuring of Systems Using Upcalls,''
+\fIProceedings of the Tenth ACM Symposium on Operating Systems Principles\fP,
+Association for Computing Machinery, Baltimore, MD, 1985.
+.IP CSRG86
+CSRG, \fI\s-1UNIX\s0 Programmer's Manual, 4.3 Berkeley Software Distribution,
+Virtual VAX-11 Version\fP,
+University of California Computer Systems Research Group,
+Berkeley, CA, 1986.
+.IP Hedrick88
+C. Hedrick, ``Routing Information Protocol,'' RFC-1058,
+SRI Network Information Center, Menlo Park, CA, 1988.
+.IP Lepp88
+M. Lepp and M. Karels, ``Exterior Gateway Protocol, Version 3, Revisions
+and Extensions to EGP,'' IDEA009, Internet Engineering Task Force working
+document, 1988.
+.IP Rose88
+.br
+Marshall T. Rose, UNI network interface, IEEE P1003.8 subcommittee working
+document.
