@@ -6,13 +6,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/mman.h>
 
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
@@ -30,7 +32,7 @@ void	 add_inodes __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t,
 	     daddr_t));
 int	 bi_compare __P((const void *, const void *));
 int	 bi_toss __P((const void *, const void *, const void *));
-void	 get_ifile __P((FS_INFO *));
+void	 get_ifile __P((FS_INFO *, int));
 int	 get_superblock __P((FS_INFO *, struct lfs *));
 int	 pseg_valid __P((FS_INFO *, SEGSUM *));
 
@@ -77,14 +79,15 @@ fs_getmntinfo(buf, type)
  * Returns an array of FS_INFO structures, NULL on error.
  */
 FS_INFO *
-get_fs_info (lstatfsp, count)
+get_fs_info (lstatfsp, count, use_mmap)
 	struct statfs *lstatfsp;	/* IN: array of statfs structs */
 	int count;			/* IN: number of file systems */
+	int use_mmap;			/* IN: mmap or read */
 {
 	FS_INFO	*fp, *fsp;
 	int	i;
 	
-	fsp = (FS_INFO *)malloc(count * sizeof(FS_INFO));
+	fsp = (FS_INFO *)calloc(count, sizeof(FS_INFO));
 
 	for (fp = fsp, i = 0; i < count; ++i, ++fp) {
 		fp->fi_statfsp = lstatfsp++;
@@ -92,7 +95,7 @@ get_fs_info (lstatfsp, count)
 			err(1, "get_fs_info: get_superblock failed");
 		fp->fi_daddr_shift =
 		     fp->fi_lfs.lfs_bshift - fp->fi_lfs.lfs_fsbtodb;
-		get_ifile (fp);
+		get_ifile (fp, use_mmap);
 	}
 	return (fsp);
 }
@@ -103,7 +106,7 @@ get_fs_info (lstatfsp, count)
  * refresh the file system information (statfs) info.
  */
 void
-reread_fs_info(fsp, count)
+reread_fs_info(fsp, count, use_mmap)
 	FS_INFO *fsp;	/* IN: array of fs_infos to free */
 	int count;	/* IN: number of file systems */
 {
@@ -112,13 +115,7 @@ reread_fs_info(fsp, count)
 	for (i = 0; i < count; ++i, ++fsp) {
 		if (statfs(fsp->fi_statfsp->f_mntonname, fsp->fi_statfsp))
 			err(0, "reread_fs_info: statfs failed");
-#ifdef MMAP_WORKS
-		if (munmap(fsp->fi_cip, fsp->fi_ifile_length) < 0)
-			err(0, "reread_fs_info: munmap failed");
-#else
-		free (fsp->fi_cip);
-#endif /* MMAP_WORKS */
-		get_ifile (fsp);
+		get_ifile (fsp, use_mmap);
 	}
 }
 
@@ -152,8 +149,10 @@ get_superblock (fsp, sbp)
  * fatal error on failure.
  */
 void
-get_ifile (fsp)
+get_ifile (fsp, use_mmap)
 	FS_INFO	*fsp;
+	int use_mmap;
+
 {
 	struct stat file_stat;
 	caddr_t ifp;
@@ -172,30 +171,37 @@ get_ifile (fsp)
 	if (fstat (fid, &file_stat))
 		err(1, "get_ifile: fstat failed");
 
-	fsp->fi_ifile_length = file_stat.st_size;
+	if (use_mmap && file_stat.st_size == fsp->fi_ifile_length) {
+		(void) close(fid);
+		return;
+	}
 
 	/* get the ifile */
-#ifndef MMAP_WORKS
-	if (!(ifp = malloc ((size_t)fsp->fi_ifile_length)))
-		err (1, "get_ifile: malloc failed"); 
+	if (use_mmap) {
+		if (fsp->fi_cip)
+			munmap((caddr_t)fsp->fi_cip, fsp->fi_ifile_length);
+		ifp = mmap ((caddr_t)0, file_stat.st_size,
+		    PROT_READ|PROT_WRITE, 0, fid, (off_t)0);
+		if (ifp ==  (caddr_t)(-1))
+			err(1, "get_ifile: mmap failed");
+	} else {
+		if (fsp->fi_cip)
+			free(fsp->fi_cip);
+		if (!(ifp = malloc (file_stat.st_size)))
+			err (1, "get_ifile: malloc failed"); 
 redo_read:
-	count = read (fid, ifp, (size_t) fsp->fi_ifile_length);
+		count = read (fid, ifp, (size_t) file_stat.st_size);
 
-	if (count < 0)
-		err(1, "get_ifile: bad ifile read"); 
-	else if (count < (int)fsp->fi_ifile_length) {
-		err(0, "get_ifile");
-		if (lseek(fid, 0, SEEK_SET) < 0)
-			err(1, "get_ifile: bad ifile lseek"); 
-		goto redo_read;
+		if (count < 0)
+			err(1, "get_ifile: bad ifile read"); 
+		else if (count < file_stat.st_size) {
+			err(0, "get_ifile");
+			if (lseek(fid, 0, SEEK_SET) < 0)
+				err(1, "get_ifile: bad ifile lseek"); 
+			goto redo_read;
+		}
 	}
-#else	/* MMAP_WORKS */
-	ifp = mmap ((caddr_t)0, (size_t) fsp->fi_ifile_length, PROT_READ|PROT_WRITE,
-		MAP_FILE|MAP_SHARED, fid, (off_t)0);
-	if (ifp < 0)
-		err(1, "get_ifile: mmap failed");
-#endif	/* MMAP_WORKS */
-
+	fsp->fi_ifile_length = file_stat.st_size;
 	close (fid);
 
 	fsp->fi_cip = (CLEANERINFO *)ifp;
@@ -420,7 +426,7 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 		} else 
 			++di;
 		
-		inum = di->di_inum;
+		inum = di->di_inumber;
 		bp->bi_lbn = LFS_UNUSED_LBN;
 		bp->bi_inode = inum;
 		bp->bi_daddr = *daddrp;
@@ -483,10 +489,11 @@ pseg_valid (fsp, ssp)
  * read a segment into a memory buffer
  */
 int
-mmap_segment (fsp, segment, segbuf)
+mmap_segment (fsp, segment, segbuf, use_mmap)
 	FS_INFO *fsp;		/* file system information */
 	int segment;		/* segment number */
 	caddr_t *segbuf;	/* pointer to buffer area */
+	int use_mmap;		/* mmap instead of read */
 {
 	struct lfs *lfsp;
 	int fid;		/* fildes for file system device */
@@ -510,53 +517,53 @@ mmap_segment (fsp, segment, segbuf)
 		return (-1);
 	}
 
-#ifdef MMAP_SEGMENT
-	*segbuf = mmap ((caddr_t)0, seg_size(lfsp), PROT_READ,
-	    MAP_FILE, fid, seg_byte);
-	if (*(long *)segbuf < 0) {
-		err(0, "mmap_segment: mmap failed");
-		return (NULL);
-	}
-#else /* MMAP_SEGMENT */
+	if (use_mmap) {
+		*segbuf = mmap ((caddr_t)0, seg_size(lfsp), PROT_READ,
+		    0, fid, seg_byte);
+		if (*(long *)segbuf < 0) {
+			err(0, "mmap_segment: mmap failed");
+			return (NULL);
+		}
+	} else {
 #ifdef VERBOSE
-	printf("mmap_segment\tseg_daddr: %lu\tseg_size: %lu\tseg_offset: %qu\n",
-	    seg_daddr, ssize, seg_byte);
+		printf("mmap_segment\tseg_daddr: %lu\tseg_size: %lu\tseg_offset: %qu\n",
+		    seg_daddr, ssize, seg_byte);
 #endif
-	/* malloc the space for the buffer */
-	*segbuf = malloc(ssize);
-	if (!*segbuf) {
-		err(0, "mmap_segment: malloc failed");
-		return(NULL);
-	}
+		/* malloc the space for the buffer */
+		*segbuf = malloc(ssize);
+		if (!*segbuf) {
+			err(0, "mmap_segment: malloc failed");
+			return(NULL);
+		}
 
-	/* read the segment data into the buffer */
-	if (lseek (fid, seg_byte, SEEK_SET) != seg_byte) {
-		err (0, "mmap_segment: bad lseek");
-		free(*segbuf);
-		return (-1);
+		/* read the segment data into the buffer */
+		if (lseek (fid, seg_byte, SEEK_SET) != seg_byte) {
+			err (0, "mmap_segment: bad lseek");
+			free(*segbuf);
+			return (-1);
+		}
+		
+		if (read (fid, *segbuf, ssize) != ssize) {
+			err (0, "mmap_segment: bad read");
+			free(*segbuf);
+			return (-1);
+		}
 	}
-	
-	if (read (fid, *segbuf, ssize) != ssize) {
-		err (0, "mmap_segment: bad read");
-		free(*segbuf);
-		return (-1);
-	}
-#endif /* MMAP_SEGMENT */
 	close (fid);
 
 	return (0);
 }
 
 void
-munmap_segment (fsp, seg_buf)
+munmap_segment (fsp, seg_buf, use_mmap)
 	FS_INFO *fsp;		/* file system information */
 	caddr_t seg_buf;	/* pointer to buffer area */
+	int use_mmap;		/* mmap instead of read/write */
 {
-#ifdef MMAP_SEGMENT
-	munmap (seg_buf, seg_size(&fsp->fi_lfs));
-#else /* MMAP_SEGMENT */
-	free (seg_buf);
-#endif /* MMAP_SEGMENT */
+	if (use_mmap)
+		munmap (seg_buf, seg_size(&fsp->fi_lfs));
+	else
+		free (seg_buf);
 }
 
 
