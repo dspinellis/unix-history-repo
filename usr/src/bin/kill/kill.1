@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kill.1	6.5 (Berkeley) %G%
+.\"     @(#)kill.1	6.6 (Berkeley) %G%
 .\"
-.Vx
 .Vx
 .Dd 
 .Dt KILL 1
@@ -19,44 +18,42 @@
 .Ar pid
 \&...
 .Nm kill
+.Op Fl signal_number
+.Ar pid
+\&...
+.Nm kill
 .Op Fl l
 .Sh DESCRIPTION
-The kill utility sends a signal to the process(es) specified
-by each pid operand. It is used to kill runaway or misbegotten
-processes, such as those
-.Em backgrounded
-with
-.Sq Li \&& .
-.Nm Kill
-is intelligent about who owns a process.
+The kill utility sends the TERM signal to the processes specified
+by the pid operand(s).
 .Pp
-Options available:
+Only the super-user may send signals to other users' processes.
+.Pp
+The options are as follows:
 .Pp
 .Tw Ds
-.Tp Fl signal_name
-A symbolic signal name. To find out all the possible signal names
-do a
-.Li kill -l .
 .Tp Fl l
-Available signal names are listed and are as found in
-.Pa /usr/include/signal.h ,
-stripped of the common SIG prefix.
+List the signal names.
+.Tp Fl signal_name
+A symbolic signal name specifying the signal to be sent instead of the
+default TERM.
+The
+.Fl l
+option displays the signal names.
 .Tp Fl signal_number
-A (nonnegative) decimal integer, representing the signal
-to be used instead of TERM as the sig argument in
-the effective call to
-.Xr kill 2 .
+A non-negative decimal integer, specifying the signal to be sent instead
+of the default TERM.
 .Tp
 .Pp
-Some of the more commonly used signals with kill:
+Some of the more commonly used signals:
 .Ds I
 .Cw XXX TERM
-.Cl -1	-1	(broadcast to all processes, super user only)
+.Cl -1	-1	(broadcast to all processes, super-user only)
 .Cl 0	0	(sh(1) only, signals all members of process group)
 .Cl 2	INT	(interupt)
 .Cl 3	QUIT	(quit)
 .Cl 6	ABRT	(abort)
-.Cl 9	KILL	(non-catchable non-ignorable kill)
+.Cl 9	KILL	(non-catchable, non-ignorable kill)
 .Cl 14	ALRM	(alarm clock)
 .Cl 15	TERM	(software termination signal)
 .Cw
