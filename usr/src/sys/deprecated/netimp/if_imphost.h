@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imphost.h	7.3 (Berkeley) %G%
+ *	@(#)if_imphost.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -35,10 +35,10 @@ struct host {
  * references to it) for a spell to avoid constant reallocation
  * and also to reflect IMP status back to sites which aren't
  * directly connected to the IMP.  When structures are marked
- * free, a timer is started; when the timer expires the structure
+ * idle, a timer is started; when the timer expires the structure
  * is deallocated.  A structure may be reused before the timer expires.
  * A structure holds a reference on the containing mbuf when it is marked
- * HF_INUSE or its timer is running.
+ * HF_INUSE.
  */
 #define	HF_INUSE	0x1
 #define	HF_DEAD		(1<<IMPTYPE_HOSTDEAD)
@@ -47,12 +47,19 @@ struct host {
 #define	HOSTTIMER	128		/* keep structure around awhile */
 
 /*
- * Mark a host structure free
+ * Mark a host structure free; used if host entry returned by hostlookup 
+ * isn't needed.  h_rfnm must be zero.
  */
 #define	hostfree(hp) { \
-	(hp)->h_flags &= ~HF_INUSE; \
-	(hp)->h_timer = HOSTTIMER; \
+	if ((hp)->h_timer == 0 && (hp)->h_qcnt == 0 && \
+	    (hp)->h_flags & HF_INUSE) \
+		hostrelease(hp); \
 }
+
+/*
+ * Release a host entry when last rfnm is received.
+ */
+#define	hostidle(hp)	{ (hp)->h_timer = HOSTTIMER; }
 
 /*
  * Host structures, as seen inside an mbuf.
@@ -63,10 +70,11 @@ struct host {
  * automatically at the time a structure is freed.
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
+/* don't need to swab as long as HPMBUF is odd */
 #if defined(notdef) && BYTE_ORDER == BIG_ENDIAN
-#define	HOSTHASH(imp, host)	(((imp)+(host)) % HPMBUF)
+#define	HOSTHASH(imp, host)	((unsigned)(ntohs(imp)+(host)) % HPMBUF)
 #else
-#define	HOSTHASH(imp, host)	((ntohs(imp)+(host)) % HPMBUF)
+#define	HOSTHASH(imp, host)	((unsigned)((imp)+(host)) % HPMBUF)
 #endif
 
 /*
