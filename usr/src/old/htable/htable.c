@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -131,6 +131,7 @@ addlocal(arg, nets)
 				myname, arg);
 			exit(1);
 		}
+		arg = p + 1;
 	} while (c);
 	return (nfound);
 }
