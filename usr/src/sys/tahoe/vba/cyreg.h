@@ -1,4 +1,4 @@
-/*	cyreg.h	7.2	86/01/26	*/
+/*	cyreg.h	7.3	87/01/11	*/
 
 /*
  * Tapemaster controller definitions.
@@ -11,12 +11,35 @@
 #define	b_command b_resid
 
 /*
+ * System configuration pointer.
+ * Memory address is jumpered on controller.
+ */
+struct	cyscp {
+	char	csp_buswidth;	/* system bus width */
+#define	CSP_16BITS	1	/* 16-bit system bus */
+#define	CSP_8BITS	0	/* 8-bit system bus */
+	char	csp_unused;
+	u_char	csp_scb[4];	/* point to system config block */
+};
+
+/*
+ * System configuration block
+ */
+struct	cyscb {
+	char	csb_fixed;	/* fixed value code (must be 3) */
+	char	csb_unused;	/* unused */
+	u_char	csb_ccb[4];	/* pointer to channel control block */
+};
+
+#define	CSB_FIXED	0x3
+
+/*
  * Channel control block definitions
  */
 struct	cyccb {
 	char	cbcw;		/* channel control word */
 	char	cbgate;		/* tpb access gate */
-	short	cbtpb[2];	/* first tape parameter block */
+	u_char	cbtpb[4];	/* first tape parameter block */
 };
 
 #define	GATE_OPEN	(char)(0x00)
@@ -37,9 +60,9 @@ struct	cytpb {
 	short	tpcount;	/* return count */
 	short	tpsize;		/* buffer size */
 	short	tprec;		/* records/overrun */
-	short	tpdata[2];	/* pointer to source/dest */
+	u_char	tpdata[4];	/* pointer to source/dest */
 	short	tpstatus;	/* status */
-	short	tplink[2];	/* pointer to next parameter block */
+	u_char	tplink[4];	/* pointer to next parameter block */
 };
 
 /* control field bit definitions */
@@ -63,6 +86,7 @@ struct	cytpb {
 /* control status/commands */
 #define	CY_CONFIG	(0x00<<24)	/* configure */
 #define	CY_NOP		(0x20<<24)	/* no operation */
+#define	CY_SETPAGE	(0x08<<24)	/* set page (addr bits 20-23) */
 #define	CY_SENSE	(0x28<<24)	/* drive status */
 #define	CY_CLRINT	(0x9c<<24)	/* clear Multibus interrupt */
 
@@ -71,7 +95,9 @@ struct	cytpb {
 #define	CY_OFFL		(0x38<<24)	/* off_line and unload */
 #define	CY_WEOF		(0x40<<24)	/* write end-of-file mark */
 #define	CY_SFORW	(0x70<<24)	/* space record forward */
-#define	CY_SREV		(CY_SFORW|CYCW_REV)/* space record backwords */
+#define	CY_SREV		(CY_SFORW|CYCW_REV) /* space record backwards */
+#define	CY_FSF		(0x44<<24)	/* space file forward */
+#define	CY_BSF		(CY_FSF|CYCW_REV) /* space file backwards */
 #define	CY_ERASE	(0x4c<<24)	/* erase record */
 
 /* data transfer commands */
@@ -122,28 +148,30 @@ struct	cytpb {
 
 #ifdef CYERROR
 char	*cyerror[] = {
+	"no error",
 	"timeout",
 	"timeout1",
 	"timeout2",
 	"timeout3",
 	"timeout4", 
-	"non-existant memory",
+	"non-existent memory",
 	"blank tape",
 	"micro-diagnostic",
 	"eot/bot detected",
 	"retry unsuccessful",
 	"fifo over/under-flow",
-	"#12",
+	"#0xc",
 	"drive to controller parity error",
 	"prom checksum",
 	"time out tape strobe (record length error)",
 	"tape not ready",
 	"write protected",
-	"#18",
+	"#0x12",
 	"missing diagnostic jumper",
 	"invalid link pointer",
 	"unexpected file mark",
-	"invalid byte count",
+	"invalid byte count/parameter",
+	"#0x17",
 	"unidentified hardware error",
 	"streaming terminated"
 };
@@ -158,23 +186,3 @@ char	*cyerror[] = {
     CYMASK(TIMOUT3)|CYMASK(TIMOUT4)|CYMASK(NXM)|CYMASK(DIAG)|CYMASK(JUMPER)|\
     CYMASK(STROBE)|CYMASK(PROT)|CYMASK(CKSUM)|CYMASK(HERR)|CYMASK(BLANK))
 #define	CYER_SOFT	(CYMASK(FIFO)|CYMASK(NOTRDY)|CYMASK(PARITY))
-
-/*
- * System configuration block
- */
-struct	cyscb {
-	char	csb_fixed;	/* fixed value code (must be 3) */
-	char	csb_unused;	/* unused */
-	short	csb_ccb[2];	/* pointer to channel control block */
-};
-
-/*
- * System configuration pointer
- */
-struct	cyscp {
-	char	csp_buswidth;	/* system bus width */
-#define	CSP_16BITS	1	/* 16-bit system bus */
-#define	CSP_8BITS	0	/* 8-bit system bus */
-	char	csp_unused;
-	short	csp_scb[2];	/* point to system config block */
-};

@@ -1,4 +1,4 @@
-/*	vd.c	1.12	86/11/03	*/
+/*	vd.c	1.13	87/01/11	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -21,6 +21,8 @@
 #include "vmmac.h"
 #include "proc.h"
 #include "uio.h"
+#include "syslog.h"
+#include "kernel.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
@@ -105,6 +107,10 @@ vdprobe(reg, vm)
 	register ctlr_tab *ci;
 	int i;
 
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+	vdintr(0);
+#endif
 	if (badaddr((caddr_t)reg, 2))
 		return (0);
 	ci = &vdctlr_info[vm->um_ctlr];
@@ -158,7 +164,7 @@ vdslave(vi, addr)
 
 	if (!ci->initdone) {
 		printf("vd%d: %s controller\n", vi->ui_ctlr,
-		    ci->ctlr_type == SMDCTLR ? "smd" : "smde");
+		    ci->ctlr_type == SMDCTLR ? "VDDC" : "SMDE");
 		if (vdnotrailer(addr, vi->ui_ctlr, vi->ui_slave, INIT, 10) &
 		    HRDERR) {
 			printf("vd%d: init error\n", vi->ui_ctlr);
@@ -181,7 +187,7 @@ vdslave(vi, addr)
 		if (ci->ctlr_type == SMDCTLR && vdst[type].nsec != 32)
 			continue;
 		/* XXX */
-		if (!vdconfigure_drive(addr, vi->ui_ctlr, vi->ui_slave, type,0))
+		if (!vdconfigure_drive(addr, vi->ui_ctlr, vi->ui_slave, type))
 			return (0);
 		dcb->opcode = (short)RD;
 		dcb->intflg = NOINT;
@@ -218,9 +224,9 @@ vdslave(vi, addr)
 	return (1);
 }
 
-vdconfigure_drive(addr, ctlr, slave, type, pass)
+vdconfigure_drive(addr, ctlr, slave, type)
 	register cdr *addr;
-	int ctlr, slave, type, pass;
+	int ctlr, slave, type;
 {
 	register ctlr_tab *ci = &vdctlr_info[ctlr];
 
@@ -246,47 +252,38 @@ vdconfigure_drive(addr, ctlr, slave, type, pass)
 		return (0);
 	}
 	if (ci->ctlr_dcb.operrsta & HRDERR) {
+		if (ci->ctlr_type == SMD_ECTLR &&
+		    (addr->cdr_status[slave] & STA_US) == 0) /* not selected */
+			return (0);
 		if ((ci->ctlr_dcb.operrsta & (NOTCYLERR|DRVNRDY)) == 0)
 			printf("vd%d: drive %d: config error\n", ctlr, slave);
-		else if (pass == 0) {
-			vdstart_drive(addr, ctlr, slave);
-			return (vdconfigure_drive(addr, ctlr, slave, type, 1));
-		} else if (pass == 2)
-			return (vdconfigure_drive(addr, ctlr, slave, type, 3));
+		else if (vdctlr_info[ctlr].ctlr_started == 0)
+			return (vdstart_drives(addr, ctlr) &&
+			    vdconfigure_drive(addr, ctlr, slave, type));
 		return (0);
 	}
 	return (1);
 }
 
-vdstart_drive(addr, ctlr, slave)
+vdstart_drives(addr, ctlr)
 	cdr *addr;
-	register int ctlr, slave;
+	register int ctlr;
 {
 	int error = 0;
 
-	printf("vd%d: starting drive %d, wait...", ctlr, slave);
-	if (vdctlr_info[ctlr].ctlr_started) {
-#ifdef notdef
-printf("DELAY(5500000)...");
-		DELAY(5500000);
-#endif
-		goto done;
+	if (vdctlr_info[ctlr].ctlr_started == 0) {
+		printf("vd%d: starting drives, wait ... ", ctlr);
+		vdctlr_info[ctlr].ctlr_started = 1;
+		error = (vdnotrailer(addr, ctlr, 0, VDSTART, 10) & HRDERR);
+		DELAY(62000000);
+		printf("\n");
 	}
-	vdctlr_info[ctlr].ctlr_started = 1;
-	error = vdnotrailer(addr, ctlr, 0, VDSTART, (slave*6)+62) & HRDERR;
-	if (!error) {
-#ifdef notdef
-		DELAY((slave * 5500000) + 62000000);
-#endif
-	}
-done:
-	printf("\n");
 	return (error == 0);
 }
 
-vdnotrailer(addr, ctlr, unit, function, time)
+vdnotrailer(addr, ctlr, unit, function, t)
 	register cdr *addr;
-	int ctlr, unit, function, time;
+	int ctlr, unit, function, t;
 {
 	register ctlr_tab *ci = &vdctlr_info[ctlr];
 	fmt_mdcb *mdcb = &ci->ctlr_mdcb;
@@ -301,7 +298,7 @@ vdnotrailer(addr, ctlr, unit, function, time)
 	mdcb->firstdcb = (fmt_dcb *)(PHYS(dcb));
 	mdcb->vddcstat = 0;
 	VDDC_ATTENTION(addr, (fmt_mdcb *)(PHYS(mdcb)), ci->ctlr_type);
-	if (!vdpoll(ci, addr, time)) {
+	if (!vdpoll(ci, addr, t)) {
 		printf(" during init\n");
 		return (DCBCMP|ANYERR|HRDERR|OPABRT);
 	}
@@ -336,9 +333,8 @@ vdattach(vi)
 		uq->b_forw = &ui->xfer_queue;
 		start_queue->b_back = &ui->xfer_queue;
 	}
-	printf("dk%d: %s <ntrak %d, ncyl %d, nsec %d>\n",
-	    vi->ui_unit, fs->type_name,
-	    ui->info.ntrak, ui->info.ncyl, ui->info.nsec);
+	printf(": %s <ntrak %d, ncyl %d, nsec %d>",
+	    fs->type_name, ui->info.ntrak, ui->info.ncyl, ui->info.nsec);
 	/*
 	 * (60 / rpm) / (number of sectors per track * (bytes per sector / 2))
 	 */
@@ -375,20 +371,12 @@ vdstrategy(bp)
 			bp->b_resid = bp->b_bcount;
 			goto done;
 		}
-#ifdef notdef
-		/*
-		 * I'm not sure I want to smash bp->b_bcount.
-		 */
 		blks = par->par_len - bp->b_blkno;
 		if (blks <= 0) {
 			bp->b_error = EINVAL;
 			goto bad;
 		}
 		bp->b_bcount = blks * DEV_BSIZE;
-#else
-		bp->b_error = EINVAL;
-		goto bad;
-#endif
 	}
 	bn = bp->b_blkno + par->par_start;
 	bn *= ui->sec_per_blk;
@@ -540,7 +528,7 @@ vdexecute(controller_info, uq)
 	mdcb->vddcstat = 0;
    	dk_wds[unit] += bp->b_bcount / 32;
 	ci->int_expected = 1;
-	timeout(vd_int_timeout, (caddr_t)ctlr, 20*60);
+	timeout(vd_int_timeout, (caddr_t)ctlr, 20*hz);
   	dk_busy |= 1 << unit;
 	scope_out(1);
 	VDDC_ATTENTION((cdr *)(vdminfo[ctlr]->um_addr),
@@ -610,23 +598,25 @@ vdintr(ctlr)
 
 	case CTLR_ERROR:
 	case DRIVE_ERROR:
-		if (cq->b_errcnt >= 2)
-			vdhard_error(ci, bp, dcb);
 		if (code == CTLR_ERROR)
 			vdreset_ctlr((cdr *)vdminfo[ctlr]->um_addr, ctlr);
-		else
-			reset_drive((cdr *)vdminfo[ctlr]->um_addr, ctlr,
-			    slave, 2);
-		if (cq->b_errcnt++ < 2) {	/* retry error */
+		else if (reset_drive((cdr *)vdminfo[ctlr]->um_addr,
+		    ctlr, slave) == 0)
+			vddinfo[unit]->ui_alive = 0;
+		/*
+		 * Retry transfer once, unless reset failed.
+		 */
+		if (vddinfo[unit]->ui_alive && cq->b_errcnt++ < 2) {
 			cq->b_forw = uq->b_back;
 			vdstart(vdminfo[ctlr]);
 			return;
 		}
-		bp->b_resid = bp->b_bcount;
+		vdhard_error(ci, bp, dcb);
 		break;
 
 	case HARD_DATA_ERROR:
 	case WRITE_PROTECT:
+	default:				/* shouldn't happen */
 		vdhard_error(ci, bp, dcb);
 		bp->b_resid = 0;
 		break;
@@ -635,7 +625,7 @@ vdintr(ctlr)
 		vdsoft_error(ci, bp, dcb);
 		/* fall thru... */
 
-	default:			/* operation completed */
+	case 0:			/* operation completed */
 		bp->b_error = 0;
 		bp->b_resid = 0;
 		break;
@@ -679,8 +669,11 @@ vddecode_error(dcb)
 	if (dcb->operrsta & HRDERR) {
 		if (dcb->operrsta & WPTERR)
 			return (WRITE_PROTECT);
+	/* this looks wrong...
 		if (dcb->operrsta & (HCRCERR | HCMPERR | UCDATERR |
-		    DSEEKERR | NOTCYLERR |DRVNRDY | INVDADR))
+		    DSEEKERR | NOTCYLERR | DRVNRDY | INVDADR))
+	*/
+		if (dcb->operrsta & (DSEEKERR | NOTCYLERR | DRVNRDY | INVDADR))
 			return (DRIVE_ERROR);
 		if (dcb->operrsta & (CTLRERR | OPABRT | INVCMD | DNEMEM))
 			return (CTLR_ERROR);
@@ -699,14 +692,16 @@ vdhard_error(ci, bp, dcb)
 	register struct buf *bp;
 	register fmt_dcb *dcb;
 {
-	unit_tab *ui = &vdunit_info[VDUNIT(bp->b_dev)];
 
 	bp->b_flags |= B_ERROR;
-	harderr(bp, ui->info.type_name);
+	/* NEED TO ADJUST b_blkno to failed sector */
+	harderr(bp, "dk");
 	if (dcb->operrsta & WPTERR)
 		printf("write protected");
 	else {
-		printf("status %b", dcb->operrsta, ERRBITS);
+		printf("status %x (%b)", dcb->operrsta,
+		   dcb->operrsta & ~(DSERLY|DSLATE|TOPLUS|TOMNUS|DCBUSC|DCBCMP),
+		   ERRBITS);
 		if (ci->ctlr_type == SMD_ECTLR)
 			printf(" ecode %x", dcb->err_code);
 	}
@@ -721,13 +716,16 @@ vdsoft_error(ci, bp, dcb)
 	register struct buf *bp;
 	register fmt_dcb *dcb;
 {
-	unit_tab *ui = &vdunit_info[VDUNIT(bp->b_dev)];
+	int unit = VDUNIT(bp->b_dev);
+	char part = 'a' + FILSYS(bp->b_dev);
 
-	printf("dk%d%c: soft error sn%d status %b", minor(bp->b_dev) >> 3,
-	    'a'+(minor(bp->b_dev)&07), bp->b_blkno, dcb->operrsta, ERRBITS);
-	if (ci->ctlr_type == SMD_ECTLR)
-		printf(" ecode %x", dcb->err_code);
-	printf("\n");
+	if (dcb->operrsta == (DCBCMP | CPDCRT | SFTERR | ANYERR))
+		log(LOG_WARNING, "dk%d%c: soft ecc sn%d\n",
+		    unit, part, bp->b_blkno);
+	else
+		log(LOG_WARNING, "dk%d%c: soft error sn%d status %b ecode %x\n",
+		    unit, part, bp->b_blkno, dcb->operrsta, ERRBITS,
+		    ci->ctlr_type == SMD_ECTLR ? dcb->err_code : 0);
 }
 
 /*ARGSUSED*/
@@ -740,6 +738,13 @@ vdopen(dev, flag)
 
 	if (vi == 0 || vi->ui_alive == 0 || vi->ui_type >= nvddrv)
 		return (ENXIO);
+	if (vi->ui_alive == 0) {
+		if (vdconfigure_drive((cdr *)vdminfo[vi->ui_ctlr]->um_addr,
+		    vi->ui_ctlr, vi->ui_slave, vi->ui_type))
+			vi->ui_alive = 1;
+		else
+			return (ENXIO);
+	}
 	if (vdunit_info[unit].info.partition[FILSYS(dev)].par_len == 0)
 		return (ENXIO);
 	return (0);
@@ -791,7 +796,7 @@ vddump(dev)
 	blkcount = maxfree - 2;		/* In 1k byte pages */
 	if (dumplo + blkcount > fs->partition[filsys].par_len) {
 		blkcount = fs->partition[filsys].par_len - dumplo;
-		printf("vd%d: Dump truncated to %dMB\n", unit, blkcount/1024);
+		printf("truncated to %dMB ", blkcount/1024);
 	}
 	cur_blk = fs->partition[filsys].par_start + dumplo;
 	memaddr = 0;
@@ -882,34 +887,36 @@ vdreset_ctlr(addr, ctlr)
 	}
 	if (vdnotrailer(addr, ctlr, 0, INIT, 10) & HRDERR) {
 		printf("failed to init\n");
-		return (0);
+		return;
 	}
 	if (vdnotrailer(addr, ctlr, 0, DIAG, 10) & HRDERR) {
 		printf("diagnostic error\n");
-		return (0);
+		return;
 	}
 	/*  reset all units attached to controller */
 	uq = cq->b_forw;
 	do {
-		reset_drive(addr, ctlr, uq->b_dev, 0);
+		(void) reset_drive(addr, ctlr, uq->b_dev);
 		uq = uq->b_forw;
 	} while (uq != cq->b_forw);
-	return (1);
 }
 
 /*
  * Perform a reset on a drive.
  */
-reset_drive(addr, ctlr, slave, start)
-	register cdr *addr;
-	register int ctlr, slave, start;
+reset_drive(addr, ctlr, slave)
+	cdr *addr;
+	int ctlr, slave;
 {
-	register int type = vdctlr_info[ctlr].unit_type[slave];
+	int type = vdctlr_info[ctlr].unit_type[slave];
 
 	if (type == UNKNOWN)
-		return;
-	if (!vdconfigure_drive(addr, ctlr, slave, type, start))
+		return (0);
+	if (!vdconfigure_drive(addr, ctlr, slave, type)) {
 		printf("vd%d: drive %d: couldn't reset\n", ctlr, slave);
+		return (0);
+	}
+	return (1);
 }
 
 /*
@@ -924,10 +931,10 @@ vdpoll(ci, addr, t)
 	register fmt_dcb *dcb = &ci->ctlr_dcb;
 
 	t *= 1000;
-	uncache(&dcb->operrsta);
-	while ((dcb->operrsta&(DCBCMP|DCBABT)) == 0) {
-		DELAY(1000);
+	for (;;) {
 		uncache(&dcb->operrsta);
+		if (dcb->operrsta & (DCBCMP|DCBABT))
+			break;
 		if (--t <= 0) {
 			printf("vd%d: controller timeout", ci-vdctlr_info);
 			VDDC_ABORT(addr, ci->ctlr_type);
@@ -935,12 +942,14 @@ vdpoll(ci, addr, t)
 			uncache(&dcb->operrsta);
 			return (0);
 		}
+		DELAY(1000);
 	}
 	if (ci->ctlr_type == SMD_ECTLR) {
-		uncache(&addr->cdr_csr);
-		while (addr->cdr_csr&CS_GO) {
-			DELAY(50);
+		for (;;) {
 			uncache(&addr->cdr_csr);
+			if ((addr->cdr_csr & CS_GO) == 0)
+				break;
+			DELAY(50);
 		}
 		DELAY(300);
 	}

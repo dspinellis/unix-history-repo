@@ -1,4 +1,4 @@
-/*	vx.c	1.9	86/11/03	*/
+/*	vx.c	1.10	87/01/11	*/
 
 #include "vx.h"
 #if NVX > 0
@@ -38,7 +38,6 @@ long	vxdebug = 0;
 #define	VXVCM	1
 #define	VXVCC	2
 #define	VXVCX	4
-#include "../tahoesna/snadebug.h"
 #endif
 
 /*
@@ -47,6 +46,9 @@ long	vxdebug = 0;
 #define	CMDquals 0		/* command completed interrupt */
 #define	RSPquals 1		/* command response interrupt */
 #define	UNSquals 2		/* unsolicited interrupt */
+
+#define	VXUNIT(n)	((n) >> 4)
+#define	VXPORT(n)	((n) & 0xf)
 
 struct	tty vx_tty[NVX*16];
 #ifndef lint
@@ -77,10 +79,10 @@ struct	vx_softc {
 #define	VXV_NEW	1		/* NPVIOCX | NVIOCX */
 	short	vs_xmtcnt;	/* xmit commands pending */
 	short	vs_brkreq;	/* send break requests pending */
-	short	vs_active;	/* active port bit array or flag */
 	short 	vs_state;	/* controller state */
 #define	VXS_READY	0	/* ready for commands */
 #define	VXS_RESET	1	/* in process of reseting */
+	u_short	vs_softCAR;	/* soft carrier */
 	caddr_t vs_mricmd;	/* most recent issued cmd */
 	u_int	vs_ivec;	/* interrupt vector base */
 	struct	vxcmd *vs_avail;/* next available command buffer */
@@ -130,6 +132,7 @@ vxattach(vi)
 	register struct vba_device *vi;
 {
 
+	vx_softc[vi->ui_unit].vs_softCAR = vi->ui_flags;
 	vxinit(vi->ui_unit, 1);
 }
 
@@ -147,17 +150,16 @@ vxopen(dev, flag)
 	int unit, vx, s, error;
 
 	unit = minor(dev);
-	vx = unit >> 4;
-	if (unit >= NVX*16 || (vi = vxinfo[vx])== 0 || vi->ui_alive == 0)
+	vx = VXUNIT(unit);
+	if (vx >= NVX || (vi = vxinfo[vx])== 0 || vi->ui_alive == 0)
 		return (ENXIO);
+	vs = &vx_softc[vx];
 	tp = &vx_tty[unit];
+	unit = VXPORT(unit);
 	if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
-	vs = &vx_softc[vx];
-#ifdef notdef
-	if (unit < vs->vs_loport || vs->vs_hiport < unit)	/* ??? */
+	if (unit < vs->vs_loport || unit > vs->vs_hiport)
 		return (ENXIO);
-#endif
 	tp->t_addr = (caddr_t)vs;
 	tp->t_oproc = vxstart;
 	tp->t_dev = dev;
@@ -172,9 +174,9 @@ vxopen(dev, flag)
 		}
 		vxparam(dev);
 	}
-	if (!vcmodem(dev, VMOD_ON))
-		while ((tp->t_state&TS_CARR_ON) == 0)
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+	vcmodem(dev, VMOD_ON);
+	while ((tp->t_state&TS_CARR_ON) == 0)
+		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
 	splx(s);
 	return (error);
@@ -195,10 +197,8 @@ vxclose(dev, flag)
 	tp = &vx_tty[unit];
 	s = spl8();
 	(*linesw[tp->t_line].l_close)(tp);
-	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0) {
-		if (!vcmodem(dev, VMOD_OFF))
-			tp->t_state &= ~TS_CARR_ON;
-	}
+	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
+		vcmodem(dev, VMOD_OFF);
 	/* wait for the last response */
 	while (tp->t_state&TS_FLUSH)
 		sleep((caddr_t)&tp->t_state, TTOPRI);
@@ -255,18 +255,18 @@ vxrint(vx)
 	case 0:
 		break;
 	case 2:
-		printf("vx%d: vc proc err, ustat %x\n", addr->v_ustat);
+		printf("vx%d: vc proc err, ustat %x\n", vx, addr->v_ustat);
 		vxstreset(vx);
-		return (0);
+		return;
 	case 3:
 		vcmintr(vx);
-		return (1);
+		return;
 	case 4:
-		return (1);
+		return;
 	default:
-		printf("vx%d: vc uqual err, uqual %x\n", addr->v_uqual);
+		printf("vx%d: vc uqual err, uqual %x\n", vx, addr->v_uqual);
 		vxstreset(vx);
-		return (0);
+		return;
 	}
 	vs = &vx_softc[vx];
 	if (vs->vs_vers == VXV_NEW)
@@ -275,7 +275,7 @@ vxrint(vx)
 		sp = (struct silo *)((caddr_t)addr+VX_SILO+(addr->v_usdata[0]<<6));
 	nc = *(osp = (short *)sp);
 	if (nc == 0)
-		return (1);
+		return;
 	if (vs->vs_vers == VXV_NEW && nc > vs->vs_silosiz) {
 		printf("vx%d: %d exceeds silo size\n", nc);
 		nc = vs->vs_silosiz;
@@ -301,6 +301,8 @@ vxrint(vx)
 			if ((tp->t_flags&(EVENP|ODDP)) == EVENP ||
 			    (tp->t_flags&(EVENP|ODDP)) == ODDP)
 				continue;
+		if ((tp->t_flags & (RAW | PASS8)) == 0)
+			c &= 0177;
 		if (sp->port&VX_FE) {
 			/*
 			 * At framing error (break) generate
@@ -315,7 +317,6 @@ vxrint(vx)
 		(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 	*osp = 0;
-	return (1);
 }
 
 /*
@@ -363,6 +364,11 @@ vxcparam(dev, wait)
 	int s, unit = minor(dev);
 
 	tp = &vx_tty[unit];
+	if ((tp->t_ispeed)==0) {
+		tp->t_state |= TS_HUPCLS;
+		vcmodem(dev, VMOD_OFF);
+		return;
+	}
 	vs = (struct vx_softc *)tp->t_addr;
 	cp = vobtain(vs);
 	s = spl8();
@@ -372,22 +378,32 @@ vxcparam(dev, wait)
 	 * and stop bits for the specified port.
 	 */
 	cp->cmd = VXC_LPARAX;
-	cp->par[1] = unit & 017;	/* port number */
+	cp->par[1] = VXPORT(unit);
 	cp->par[2] = (tp->t_flags&RAW) ? 0 : tp->t_startc;
 	cp->par[3] = (tp->t_flags&RAW) ? 0 : tp->t_stopc;
+#ifdef notnow
 	if (tp->t_flags & (RAW|LITOUT|PASS8)) {
-		cp->par[4] = 0xc0;	/* 8 bits of data */
-		cp->par[7] = 0;		/* no parity */
+#endif
+		cp->par[4] = BITS8;		/* 8 bits of data */
+		cp->par[7] = VNOPARITY;		/* no parity */
+#ifdef notnow
 	} else {
-		cp->par[4] = 0x40;	/* 7 bits of data */
+		cp->par[4] = BITS7;		/* 7 bits of data */
 		if ((tp->t_flags&(EVENP|ODDP)) == ODDP)
-			cp->par[7] = 1;		/* odd parity */
+			cp->par[7] = VODDP;	/* odd parity */
 		else
-			cp->par[7] = 3;		/* even parity */
+			cp->par[7] = VEVENP;	/* even parity */
 	}
-	cp->par[5] = 0x4;			/* 1 stop bit - XXX */
-	cp->par[6] = tp->t_ospeed;
-	if (vcmd(vs->vs_nbr, (caddr_t)&cp->cmd) && wait)
+#endif
+	if (tp->t_ospeed == B110)
+		cp->par[5] = VSTOP2;		/* 2 stop bits */
+	else
+		cp->par[5] = VSTOP1;		/* 1 stop bit */
+	if (tp->t_ospeed == EXTA || tp->t_ospeed == EXTB)
+		cp->par[6] = V19200;
+	else
+		cp->par[6] = tp->t_ospeed;
+	if (vcmd((int)vs->vs_nbr, (caddr_t)&cp->cmd) && wait)
 		sleep((caddr_t)cp,TTIPRI);
 	splx(s);
 }
@@ -401,10 +417,9 @@ vxxint(vx, cp)
 	register int vx;
 	register struct vxcmd *cp;
 {
-	register struct vxmit *vp, *pvp;
+	register struct vxmit *vp;
 	register struct tty *tp, *tp0;
 	register struct vx_softc *vs;
-	register struct tty *hp;
 
 	vs = &vx_softc[vx];
 	cp = (struct vxcmd *)((long *)cp-1);
@@ -436,7 +451,6 @@ vxxint(vx, cp)
 	vp = (struct vxmit *)(cp->par + (cp->cmd & 07)*sizeof (struct vxmit));
 	for (; vp >= (struct vxmit *)cp->par; vp--) {
 		tp = tp0 + (vp->line & 017);
-		pvp = vp;
 		tp->t_state &= ~TS_BUSY;
 		if (tp->t_state & TS_FLUSH) {
 			tp->t_state &= ~TS_FLUSH;
@@ -444,31 +458,19 @@ vxxint(vx, cp)
 		} else
 		 	ndflush(&tp->t_outq, vp->bcount+1);
 	}
-	vs->vs_xmtcnt--;
 	vrelease(vs, cp);
-	if (vs->vs_vers == VXV_NEW) {
-		vp = pvp;
-		vs->vs_active |= 1 << ((vp->line & 017) - vs->vs_loport);
-		if (vxstart(tp) && (cp = nextcmd(vs)) != NULL) {
-			vs->vs_xmtcnt++;
-			vcmd(vx, (caddr_t)&cp->cmd);
-			return;
-		}
-		vs->vs_active &= ~(1 << ((vp->line & 017) - vs->vs_loport));
-	} else {
-		vs->vs_active = -1;
+	if (vs->vs_vers == VXV_NEW)
+		vxstart(tp);
+	else {
 		tp0 = &vx_tty[vx*16 + vs->vs_hiport];
 		for(tp = &vx_tty[vx*16 + vs->vs_loport]; tp <= tp0; tp++)
-			if (vxstart(tp) && (cp = nextcmd(vs)) != NULL) {
-				vs->vs_xmtcnt++;
-				vcmd(vx, (caddr_t)&cp->cmd);
-			}
+			vxstart(tp);
 		if ((cp = nextcmd(vs)) != NULL) {	/* command to send? */
 			vs->vs_xmtcnt++;
-			vcmd(vx, (caddr_t)&cp->cmd);
+			(void) vcmd(vx, (caddr_t)&cp->cmd);
 		}
-		vs->vs_active = 0;
 	}
+	vs->vs_xmtcnt--;
 }
 
 /*
@@ -483,7 +485,7 @@ vxforce(vs)
 	s = spl8();
 	if ((cp = nextcmd(vs)) != NULL) {
 		vs->vs_xmtcnt++;
-		vcmd(vs->vs_nbr, (caddr_t)&cp->cmd);
+		(void) vcmd((int)vs->vs_nbr, (caddr_t)&cp->cmd);
 	}
 	splx(s);
 }
@@ -496,7 +498,6 @@ vxstart(tp)
 {
 	register short n;
 	register struct vx_softc *vs;
-	register full;
 	int s, port;
 
 	s = spl8();
@@ -516,43 +517,26 @@ vxstart(tp)
 		}
 		if (tp->t_outq.c_cc == 0) {
 			splx(s);
-			return (0);
+			return;
 		}
 		scope_out(3);
 		if (tp->t_flags & (RAW|LITOUT))
-			full = 0;
-		else
-			full = 0200;
-		if ((n = ndqb(&tp->t_outq, full)) == 0) {
-			if (full) {
+			n = ndqb(&tp->t_outq, 0);
+		else {
+			n = ndqb(&tp->t_outq, 0200);
+			if (n == 0) {
 				n = getc(&tp->t_outq);
 				timeout(ttrstrt, (caddr_t)tp, (n&0177)+6);
 				tp->t_state |= TS_TIMEOUT;
-				full = 0;
+				n = 0;
 			}
-		} else {
-			char *cp = (char *)tp->t_outq.c_cf;
-
+		}
+		if (n) {
 			tp->t_state |= TS_BUSY;
-			full = vsetq(vs, port, cp, n);
-			/*
-			 * If the port is not currently active, try to
-			 * send the data.  We send it immediately if the
-			 * command buffer is full, or if we've nothing
-			 * currently outstanding.  If we don't send it,
-			 * set a timeout to force the data to be sent soon.
-			 */
-			if ((vs->vs_active & (1 << (port-vs->vs_loport))) == 0)
-				if (full || vs->vs_xmtcnt == 0) {
-					cp = (char *)&nextcmd(vs)->cmd;
-					vs->vs_xmtcnt++;
-					vcmd(vs->vs_nbr, cp);
-				} else
-					timeout(vxforce, (caddr_t)vs, 3);
+			vsetq(vs, port, (char *)tp->t_outq.c_cf, n);
 		}
 	}
 	splx(s);
-	return (full);	/* indicate if max commands or not */
 }
 
 /*
@@ -585,7 +569,7 @@ vxinit(vx, wait)
 	register struct vxcmd *cp;
 	register char *resp;
 	register int j;
-	char type;
+	char type, *typestring;
 
 	vs = &vx_softc[vx];
 	vs->vs_type = 0;		/* vioc-x by default */
@@ -598,14 +582,18 @@ vxinit(vx, wait)
 
 	case VXT_VIOCX:
 	case VXT_VIOCX|VXT_NEW:
-		/* set dcd for printer ports */
-		for (j = 0; j < 16;j++)
-			if (addr->v_portyp[j] == 4)
+		typestring = "VIOC-X";
+		/* set soft carrier for printer ports */
+		for (j = 0; j < 16; j++)
+			if (addr->v_portyp[j] == VXT_PARALLEL) {
+				vs->vs_softCAR |= 1 << j;
 				addr->v_dcd |= 1 << j;
+			}
 		break;
 
 	case VXT_PVIOCX:
 	case VXT_PVIOCX|VXT_NEW:
+		typestring = "VIOC-X (old connector panel)";
 		break;
 	case VXT_VIOCBOP:		/* VIOC-BOP */
 		vs->vs_type = 1;
@@ -614,6 +602,7 @@ vxinit(vx, wait)
 
 	default:
 		printf("vx%d: unknown type %x\n", vx, type);
+		vxinfo[vx]->ui_alive = 0;
 		return;
 	}
 	vs->vs_nbr = -1;
@@ -639,7 +628,7 @@ vxinit(vx, wait)
 	cp->par[3] = cp->par[0]+2;	/* unsol intr vector */
 	cp->par[4] = 15;		/* max ports, no longer used */
 	cp->par[5] = 0;			/* set 1st port number */
-	vcmd(vx, (caddr_t)&cp->cmd);
+	(void) vcmd(vx, (caddr_t)&cp->cmd);
 	if (!wait)
 		return;
 	for (j = 0; cp->cmd == VXC_LIDENT && j < 4000000; j++)
@@ -655,6 +644,9 @@ vxinit(vx, wait)
 	}
 	vs->vs_loport = cp->par[5];
 	vs->vs_hiport = cp->par[7];
+	printf("vx%d: %s%s, ports %d-%d\n", vx,
+	    (vs->vs_vers == VXV_NEW) ? "" : "old ", typestring,
+	    vs->vs_loport, vs->vs_hiport);
 	vrelease(vs, cp);
 	vs->vs_nbr = vx;		/* assign board number */
 }
@@ -681,7 +673,7 @@ vobtain(vs)
 		splx(s);
 		return (vobtain(vs));
 	}
-	vs->vs_avail = vs->vs_avail->c_fwd;
+	vs->vs_avail = p->c_fwd;
 	splx(s);
 	return ((struct vxcmd *)p);
 }
@@ -721,7 +713,8 @@ nextcmd(vs)
 
 /*
  * Assemble transmits into a multiple command;
- * up to 8 transmits to 8 lines can be assembled together.
+ * up to 8 transmits to 8 lines can be assembled together
+ * (on PVIOCX only).
  */
 vsetq(vs, line, addr, n)
 	register struct vx_softc *vs;
@@ -740,10 +733,10 @@ vsetq(vs, line, addr, n)
 		vs->vs_build = cp;
 		cp->cmd = VXC_XMITDTA;
 	} else {
-		if ((cp->cmd & 07) == 07) {
+		if ((cp->cmd & 07) == 07 || vs->vs_vers == VXV_NEW) {
 			printf("vx%d: setq overflow\n", vs-vx_softc);
-			vxstreset(vs->vs_nbr);
-			return (0);
+			vxstreset((int)vs->vs_nbr);
+			return;
 		}
 		cp->cmd++;
 	}
@@ -758,13 +751,25 @@ vsetq(vs, line, addr, n)
 	mp->line = line;
 	if (vs->vs_vers == VXV_NEW && n <= sizeof (mp->ostream)) {
 		cp->cmd = VXC_XMITIMM;
-		bcopy(addr, mp->ostream, n);
+		bcopy(addr, mp->ostream, (unsigned)n);
 	} else {
 		/* get system address of clist block */
 		addr = (caddr_t)vtoph((struct proc *)0, (unsigned)addr);
-		bcopy(&addr, mp->ostream, sizeof (addr));
+		bcopy((caddr_t)&addr, mp->ostream, sizeof (addr));
 	}
-	return (vs->vs_vers == VXV_NEW ? 1 : (cp->cmd&07) == 7);
+	/*
+	 * We send the data immediately if a VIOCX,
+	 * the command buffer is full, or if we've nothing
+	 * currently outstanding.  If we don't send it,
+	 * set a timeout to force the data to be sent soon.
+	 */
+	if (vs->vs_vers == VXV_NEW || (cp->cmd & 07) == 7 ||
+	    vs->vs_xmtcnt == 0) {
+		vs->vs_xmtcnt++;
+		(void) vcmd((int)vs->vs_nbr, (char *)&cp->cmd);
+		vs->vs_build = 0;
+	} else
+		timeout(vxforce, (caddr_t)vs, 3);
 }
 
 /*
@@ -838,7 +843,7 @@ vackint(vx)
 		register char *resp;
 		register i;
 
-		printf("vx%d INTR ERR type %x v_dcd %x\n", vx,
+		printf("vx%d: ackint error type %x v_dcd %x\n", vx,
 		    vp->v_vcid & 07, vp->v_dcd & 0xff);
 		resp = (char *)vs->vs_mricmd;
 		for (i = 0; i < 16; i++)
@@ -1164,17 +1169,17 @@ vxrestart(vx)
 {
 	register struct tty *tp, *tp0;
 	register struct vx_softc *vs;
-	register int i, cnt;
+	register int i, count;
 	int s = spl8();
 
-	cnt = vx >> 8;
+	count = vx >> 8;
 	vx &= 0xff;
 	vs = &vx_softc[vx];
 	vs->vs_state = VXS_READY;
 	tp0 = &vx_tty[vx*16];
 	for (i = vs->vs_loport; i <= vs->vs_hiport; i++) {
 		tp = tp0 + i;
-		if (cnt != 0) {
+		if (count != 0) {
 			tp->t_state &= ~(TS_BUSY|TS_TIMEOUT);
 			if (tp->t_state&(TS_ISOPEN|TS_WOPEN))
 				vxstart(tp);	/* restart pending output */
@@ -1183,7 +1188,7 @@ vxrestart(vx)
 				vxcparam(tp->t_dev, 0);
 		}
 	}
-	if (cnt == 0) {
+	if (count == 0) {
 		vs->vs_state = VXS_RESET;
 		timeout(vxrestart, (caddr_t)(vx + 1*256), hz);
 	} else
@@ -1195,9 +1200,10 @@ vxreset(dev)
 	dev_t dev;
 {
 
-	vxstreset(minor(dev) >> 4);	/* completes asynchronously */
+	vxstreset((int)VXUNIT(minor(dev)));	/* completes asynchronously */
 }
 
+#ifdef notdef
 vxfreset(vx)
 	register int vx;
 {
@@ -1209,6 +1215,7 @@ vxfreset(vx)
 	vxstreset(vx);
 	return (0);		/* completes asynchronously */
 }
+#endif
 
 vcmodem(dev, flag)
 	dev_t dev;
@@ -1223,6 +1230,8 @@ vcmodem(dev, flag)
 	unit = minor(dev);
 	tp = &vx_tty[unit];
 	vs = (struct vx_softc *)tp->t_addr;
+	if (vs->vs_state != VXS_READY)
+		return;
 	cp = vobtain(vs);
 	kp = (struct vxdevice *)((struct vba_device *)vxinfo[vs->vs_nbr])->ui_addr;
 
@@ -1231,16 +1240,19 @@ vcmodem(dev, flag)
 	 * Issue MODEM command
 	 */
 	cp->cmd = VXC_MDMCTL;
-	cp->par[0] = (flag == VMOD_ON) ? V_ENAB : V_DISAB;
+	if (flag == VMOD_ON) {
+		if (vs->vs_softCAR & (1 << port))
+			cp->par[0] = V_MANUAL | V_DTR_ON | V_RTS;
+		else
+			cp->par[0] = V_AUTO | V_DTR_ON | V_RTS;
+	} else
+		cp->par[0] = V_DTR_OFF;
 	cp->par[1] = port;
-	vcmd(vs->vs_nbr, (caddr_t)&cp->cmd);
-	port -= vs->vs_loport;
-	if ((kp->v_dcd >> port) & 1) {
-		if (flag == VMOD_ON)
-			tp->t_state |= TS_CARR_ON;
-		return (1);
-	}
-	return (0);
+	(void) vcmd((int)vs->vs_nbr, (caddr_t)&cp->cmd);
+	if (vs->vs_softCAR & (1 << port))
+		kp->v_dcd |= (1 << port);
+	if ((kp->v_dcd | vs->vs_softCAR) & (1 << port) && flag == VMOD_ON)
+		tp->t_state |= TS_CARR_ON;
 }
 
 /*
@@ -1253,21 +1265,22 @@ vcmintr(vx)
 	register struct vxdevice *kp;
 	register struct tty *tp;
 	register port;
+	register struct vx_softc *vs;
 
 	kp = (struct vxdevice *)((struct vba_device *)vxinfo[vx])->ui_addr;
 	port = kp->v_usdata[0] & 017;
 	tp = &vx_tty[vx*16+port];
+	vs = &vx_softc[vx];
 
 	if (kp->v_ustat & DCD_ON)
 		(void)(*linesw[tp->t_line].l_modem)(tp, 1);
 	else if ((kp->v_ustat & DCD_OFF) &&
+	    ((vs->vs_softCAR & (1 << port))) == 0 &&
 	    (*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
-		register struct vx_softc *vs;
 		register struct vcmds *cp;
 		register struct vxcmd *cmdp;
 
-		/* clear all pending trnansmits */
-		vs = &vx_softc[vx];
+		/* clear all pending transmits */
 		if (tp->t_state&(TS_BUSY|TS_FLUSH) &&
 		    vs->vs_vers == VXV_NEW) {
 			int i, cmdfound = 0;
@@ -1292,11 +1305,12 @@ vcmintr(vx)
 				cmdp = vobtain(vs);
 				cmdp->cmd = VXC_FDTATOX;
 				cmdp->par[1] = port;
-				vcmd(vx, (caddr_t)&cmdp->cmd);
+				(void) vcmd(vx, (caddr_t)&cmdp->cmd);
 			}
 		}
 	} else if ((kp->v_ustat&BRK_CHR) && (tp->t_state&TS_ISOPEN)) {
-		(*linesw[tp->t_line].l_rint)(tp->t_intrc & 0377, tp);
+		(*linesw[tp->t_line].l_rint)((tp->t_flags & RAW) ?
+		    0 : tp->t_intrc, tp);
 		return;
 	}
 }

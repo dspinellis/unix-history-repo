@@ -1,12 +1,17 @@
-/*	cy.c	1.8	86/12/15	*/
+/*	cy.c	1.9	87/01/11	*/
 
 #include "yc.h"
 #if NCY > 0
 /*
  * Cipher Tapemaster driver.
  */
+#define CYDEBUG
+#ifdef	CYDEBUG
 int	cydebug = 0;
-#define	dlog	if (cydebug) log
+#define	dlog(params)	if (cydebug) log params
+#else
+#define dlog(params)	/* */
+#endif
 
 #include "param.h"
 #include "systm.h"
@@ -65,8 +70,8 @@ struct	vba_driver cydriver =
 #define	YCUNIT(dev)	(minor(dev)&03)
 #define	CYUNIT(dev)	(yctocy[YCUNIT(dev)])
 #define	T_NOREWIND	0x04
-#define	T_1600BPI	0x08
-#define	T_3200BPI	0x10
+#define	T_1600BPI	0x00		/* pseudo */
+#define	T_3200BPI	0x08		/* unused */
 
 #define	INF	1000000L		/* close to infinity */
 #define	CYMAXIO	(32*NBPG)		/* max i/o size */
@@ -81,12 +86,12 @@ struct cy_softc {
 	struct	pte *cy_map;	/* pte's for mapped buffer i/o */
 	caddr_t	cy_utl;		/* mapped virtual address */
 	int	cy_bs;		/* controller's buffer size */
-	char	cy_buf[CYMAXIO];/* intermediate buffer */
 	struct	cyscp *cy_scp;	/* system configuration block address */
 	struct	cyccb cy_ccb;	/* channel control block */
 	struct	cyscb cy_scb;	/* system configuration block */
 	struct	cytpb cy_tpb;	/* tape parameter block */
 	struct	cytpb cy_nop;	/* nop parameter block for cyintr */
+	char	cy_buf[CYMAXIO];/* intermediate buffer */
 } cy_softc[NCY];
 
 /*
@@ -104,6 +109,9 @@ struct	yc_softc {
 	struct	tty *yc_ttyp;	/* user's tty for errors */
 	daddr_t	yc_blkno;	/* block number, for block device tape */
 	daddr_t	yc_nxrec;	/* position of end of tape, if known */
+	int	yc_blksize;	/* current tape blocksize estimate */
+	int	yc_blks;	/* number of I/O operations since open */
+	int	yc_softerrs;	/* number of soft I/O errors since open */
 } yc_softc[NYC];
 
 /*
@@ -127,6 +135,8 @@ cyprobe(reg, vm)
 	struct vba_ctlr *vm;
 {
 	register br, cvec;			/* must be r12, r11 */
+	register struct cy_softc *cy;
+	int ctlr = vm->um_ctlr;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -134,16 +144,32 @@ cyprobe(reg, vm)
 #endif
 	if (badcyaddr(reg+1))
 		return (0);
-	if (vm->um_ctlr > NCYSCP || cyscp[vm->um_ctlr] == 0)	/* XXX */
-		return (0);					/* XXX */
-	cy_softc[vm->um_ctlr].cy_scp = cyscp[vm->um_ctlr];	/* XXX */
+	if (ctlr > NCYSCP || cyscp[ctlr] == 0)		/* XXX */
+		return (0);
+	cy = &cy_softc[ctlr];
+	cy->cy_scp = cyscp[ctlr];			/* XXX */
 	/*
 	 * Tapemaster controller must have interrupt handler
 	 * disable interrupt, so we'll just kludge things
 	 * (stupid multibus non-vectored interrupt crud).
 	 */
-	br = 0x13, cvec = 0x80;					/* XXX */
-	return (sizeof (struct cyccb));
+	if (cyinit(ctlr, reg)) {
+		uncache(&cy->cy_tpb.tpcount);
+		cy->cy_bs = htoms(cy->cy_tpb.tpcount);
+		/*
+		 * Setup nop parameter block for clearing interrupts.
+		 */
+		cy->cy_nop.tpcmd = CY_NOP;
+		cy->cy_nop.tpcontrol = 0;
+		/*
+		 * Allocate page tables.
+		 */
+		vbmapalloc(btoc(CYMAXIO)+1, &cy->cy_map, &cy->cy_utl);
+
+		br = 0x13, cvec = 0x80;			/* XXX */
+		return (sizeof (struct cyccb));
+	} else
+		return (0);
 }
 
 /*
@@ -170,20 +196,8 @@ cyattach(vi)
 
 	yctocy[vi->ui_unit] = ctlr;
 	cy = &cy_softc[ctlr];
-	if (cy->cy_bs == 0 && cyinit(ctlr)) {
-		uncache(&cy->cy_tpb.tpcount);
-		cy->cy_bs = htoms(cy->cy_tpb.tpcount);
-		printf("cy%d: %dkb buffer\n", ctlr, cy->cy_bs/1024);
-		/*
-		 * Setup nop parameter block for clearing interrupts.
-		 */
-		cy->cy_nop.tpcmd = CY_NOP;
-		cy->cy_nop.tpcontrol = 0;
-		/*
-		 * Allocate page tables.
-		 */
-		vbmapalloc(btoc(CYMAXIO)+1, &cy->cy_map, &cy->cy_utl);
-	}
+	if (vi->ui_slave == 0 && cy->cy_bs)
+		printf("; %dkb buffer", cy->cy_bs/1024);
 }
 
 /*
@@ -192,11 +206,11 @@ cyattach(vi)
  * are initialized and the controller is asked to configure
  * itself for later use.
  */
-cyinit(ctlr)
+cyinit(ctlr, addr)
 	int ctlr;
+	register caddr_t addr;
 {
 	register struct cy_softc *cy = &cy_softc[ctlr];
-	register caddr_t addr = cyminfo[ctlr]->um_addr;
 	register int *pte;
 
 	/*
@@ -216,7 +230,7 @@ cyinit(ctlr)
 	/*
 	 * Init system configuration block.
 	 */
-	cy->cy_scb.csb_fixed = 0x3;
+	cy->cy_scb.csb_fixed = CSB_FIXED;
 	/* set pointer to the channel control block */
 	cyldmba(cy->cy_scb.csb_ccb, (caddr_t)&cy->cy_ccb);
 
@@ -276,10 +290,16 @@ cyopen(dev, flag)
 		return (ENXIO);
 	if ((yc = &yc_softc[ycunit])->yc_openf)
 		return (EBUSY);
+	yc->yc_openf = 1;
 #define	PACKUNIT(vi) \
     (((vi->ui_slave&1)<<11)|((vi->ui_slave&2)<<9)|((vi->ui_slave&4)>>2))
 	/* no way to select density */
 	yc->yc_dens = PACKUNIT(vi)|CYCW_IE|CYCW_16BITS;
+	if (yc->yc_tact == 0) {
+		yc->yc_timo = INF;
+		yc->yc_tact = 1;
+		timeout(cytimer, (caddr_t)dev, 5*hz);
+	}
 	cycommand(dev, CY_SENSE, 1);
 	if ((yc->yc_status&CYS_OL) == 0) {	/* not on-line */
 		uprintf("yc%d: not online\n", ycunit);
@@ -289,18 +309,13 @@ cyopen(dev, flag)
 		uprintf("yc%d: no write ring\n", ycunit);
 		return (ENXIO);
 	}
-	yc->yc_openf = 1;
 	yc->yc_blkno = (daddr_t)0;
 	yc->yc_nxrec = INF;
 	yc->yc_lastiow = 0;
+	yc->yc_blksize = 1024;		/* guess > 0 */
+	yc->yc_blks = 0;
+	yc->yc_softerrs = 0;
 	yc->yc_ttyp = u.u_ttyp;
-	s = splclock();
-	if (yc->yc_tact == 0) {
-		yc->yc_timo = INF;
-		yc->yc_tact = 1;
-		timeout(cytimer, (caddr_t)dev, 5*hz);
-	}
-	splx(s);
 	return (0);
 }
 
@@ -314,9 +329,9 @@ cyopen(dev, flag)
  */
 cyclose(dev, flag)
 	dev_t dev;
-	register int flag;
+	int flag;
 {
-	register struct yc_softc *yc = &yc_softc[YCUNIT(dev)];
+	struct yc_softc *yc = &yc_softc[YCUNIT(dev)];
 
 	if (flag == FWRITE || (flag&FWRITE) && yc->yc_lastiow) {
 		cycommand(dev, CY_WEOF, 2);
@@ -330,6 +345,11 @@ cyclose(dev, flag)
 		 * a CY_SENSE from completing.
 		 */
 		cycommand(dev, CY_REW, 0);
+	if (yc->yc_blks > 10 && yc->yc_softerrs > yc->yc_blks / 10)
+		log(LOG_INFO, "yc%d: %d soft errors in %d blocks\n",
+		    YCUNIT(dev), yc->yc_softerrs, yc->yc_blks);
+	dlog((LOG_INFO, "%d soft errors in %d blocks\n",
+	    yc->yc_softerrs, yc->yc_blks));
 	yc->yc_openf = 0;
 }
 
@@ -345,8 +365,8 @@ cycommand(dev, com, count)
 	
 	bp = &ccybuf[CYUNIT(dev)];
 	s = spl3();
-	dlog(LOG_INFO, "cycommand(%o, %x, %d), b_flags %x\n",
-	    dev, com, count, bp->b_flags);
+	dlog((LOG_INFO, "cycommand(%o, %x, %d), b_flags %x\n",
+	    dev, com, count, bp->b_flags));
 	while (bp->b_flags&B_BUSY) {
 		/*
 		 * This special check is because B_BUSY never
@@ -370,7 +390,7 @@ cycommand(dev, com, count)
 	 */
 	if (count == 0)
 		return;
-	iowait(bp);
+	biowait(bp);
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
 	bp->b_flags &= B_ERROR;
@@ -387,9 +407,10 @@ cystrategy(bp)
 	/*
 	 * Put transfer at end of unit queue.
 	 */
-	dlog(LOG_INFO, "cystrategy(%o, %x)\n", bp->b_dev, bp->b_command);
+	dlog((LOG_INFO, "cystrategy(%o, %x)\n", bp->b_dev, bp->b_command));
 	dp = &ycutab[ycunit];
 	bp->av_forw = NULL;
+	bp->b_errcnt = 0;
 	vm = ycdinfo[ycunit]->ui_mi;
 	/* BEGIN GROT */
 	if (bp == &rcybuf[CYUNIT(bp->b_dev)]) {
@@ -398,7 +419,7 @@ cystrategy(bp)
 			bp->b_error = EIO;
 			bp->b_resid = bp->b_bcount;
 			bp->b_flags |= B_ERROR;
-			iodone(bp);
+			biodone(bp);
 			return;
 		}
 		vbasetup(bp, CYMAXIO);
@@ -439,7 +460,7 @@ cystart(vm)
 	int ycunit;
 	daddr_t blkno;
 
-	dlog(LOG_INFO, "cystart()\n");
+	dlog((LOG_INFO, "cystart()\n"));
 	/*
 	 * Look for an idle transport on the controller.
 	 */
@@ -465,8 +486,8 @@ loop:
 		 * or the tape unit is now unavailable (e.g.
 		 * taken off line).
 		 */
-		dlog(LOG_INFO, "openf %d command %x status %b\n",
-		    yc->yc_openf, bp->b_command, cy->cy_tpb.tpstatus, CYS_BITS);
+		dlog((LOG_INFO, "openf %d command %x status %b\n",
+		   yc->yc_openf, bp->b_command, cy->cy_tpb.tpstatus, CYS_BITS));
 		bp->b_flags |= B_ERROR;
 		goto next;
 	}
@@ -522,14 +543,16 @@ loop:
 
 		/*
 		 * Choose the appropriate i/o command based on the
-		 * transfer size and the controller's internal buffer.
+		 * transfer size, the estimated block size,
+		 * and the controller's internal buffer size.
 		 * If we're retrying a read on a raw device because
 		 * the original try was a buffer request which failed
 		 * due to a record length error, then we force the use
 		 * of the raw controller read (YECH!!!!).
 		 */
 		if (bp->b_flags&B_READ) {
-			if (bp->b_bcount > cy->cy_bs || bp->b_errcnt)
+			if ((bp->b_bcount > cy->cy_bs &&
+			    yc->yc_blksize > cy->cy_bs) || bp->b_errcnt)
 				cmd = CY_RCOM;
 			else
 				cmd = CY_BRCOM;
@@ -558,7 +581,10 @@ loop:
 		cy->cy_tpb.tpcount = 0;
 		cyldmba(cy->cy_tpb.tpdata, (caddr_t)addr);
 		cy->cy_tpb.tprec = 0;
-		cy->cy_tpb.tpsize = htoms(bp->b_bcount);
+		if (cmd == CY_BRCOM && bp->b_bcount > cy->cy_bs)
+			cy->cy_tpb.tpsize = htoms(cy->cy_bs);
+		else
+			cy->cy_tpb.tpsize = htoms(bp->b_bcount);
 		cyldmba(cy->cy_tpb.tplink, (caddr_t)0);
 		do
 			uncache(&cy->cy_ccb.cbgate);
@@ -566,9 +592,9 @@ loop:
 		cyldmba(cy->cy_ccb.cbtpb, (caddr_t)&cy->cy_tpb);
 		cy->cy_ccb.cbcw = CBCW_IE;
 		cy->cy_ccb.cbgate = GATE_CLOSED;
-		dlog(LOG_INFO, "CY_GO(%x) cmd %x control %x size %d\n",
+		dlog((LOG_INFO, "CY_GO(%x) cmd %x control %x size %d\n",
 		    vm->um_addr, cy->cy_tpb.tpcmd, cy->cy_tpb.tpcontrol,
-		    htoms(cy->cy_tpb.tpsize));
+		    htoms(cy->cy_tpb.tpsize)));
 		CY_GO(vm->um_addr);
 		return;
 	}
@@ -609,9 +635,9 @@ dobpcmd:
 	cyldmba(cy->cy_ccb.cbtpb, (caddr_t)&cy->cy_tpb);
 	cy->cy_ccb.cbcw = CBCW_IE;
 	cy->cy_ccb.cbgate = GATE_CLOSED;
-	dlog(LOG_INFO, "CY_GO(%x) cmd %x control %x rec %d\n",
+	dlog((LOG_INFO, "CY_GO(%x) cmd %x control %x rec %d\n",
 	    vm->um_addr, cy->cy_tpb.tpcmd, cy->cy_tpb.tpcontrol,
-	    htoms(cy->cy_tpb.tprec));
+	    htoms(cy->cy_tpb.tprec)));
 	CY_GO(vm->um_addr);
 	return;
 next:
@@ -625,7 +651,7 @@ next:
 		vbadone(bp, cy->cy_buf, (long *)cy->cy_map, cy->cy_utl);
 	vm->um_tab.b_errcnt = 0;
 	dp->b_actf = bp->av_forw;
-	iodone(bp);
+	biodone(bp);
 	goto loop;
 }
 
@@ -643,7 +669,7 @@ cyintr(cipher)
 	int cyunit, err;
 	register state;
 
-	dlog(LOG_INFO, "cyintr(%d)\n", cipher);
+	dlog((LOG_INFO, "cyintr(%d)\n", cipher));
 	/*
 	 * First, turn off the interrupt from the controller
 	 * (device uses Multibus non-vectored interrupts...yech).
@@ -654,7 +680,7 @@ cyintr(cipher)
 	cy->cy_ccb.cbgate = GATE_CLOSED;
 	CY_GO(vm->um_addr);
 	if ((dp = vm->um_tab.b_actf) == NULL) {
-		dlog(LOG_ERR, "cy%d: stray interrupt", vm->um_ctlr);
+		dlog((LOG_ERR, "cy%d: stray interrupt", vm->um_ctlr));
 		return;
 	}
 	bp = dp->b_actf;
@@ -680,9 +706,9 @@ cyintr(cipher)
 	yc->yc_control = cy->cy_tpb.tpcontrol;
 	yc->yc_status = cy->cy_tpb.tpstatus;
 	yc->yc_resid = bp->b_bcount - htoms(cy->cy_tpb.tpcount);
-	dlog(LOG_INFO, "cmd %x control %b status %b resid %d\n",
+	dlog((LOG_INFO, "cmd %x control %b status %b resid %d\n",
 	    cy->cy_tpb.tpcmd, yc->yc_control, CYCW_BITS,
-	    yc->yc_status, CYS_BITS, yc->yc_resid);
+	    yc->yc_status, CYS_BITS, yc->yc_resid));
 	if ((bp->b_flags&B_READ) == 0)
 		yc->yc_lastiow = 1;
 	state = vm->um_tab.b_active;
@@ -692,7 +718,7 @@ cyintr(cipher)
 	 */
 	if (cy->cy_tpb.tpstatus&CYS_ERR) {
 		err = cy->cy_tpb.tpstatus&CYS_ERR;
-		dlog(LOG_INFO, "error %d\n", err);
+		dlog((LOG_INFO, "error %d\n", err));
 		/*
 		 * If we hit the end of tape file, update our position.
 		 */
@@ -717,14 +743,18 @@ cyintr(cipher)
 		if (bp == &rcybuf[cyunit] && (bp->b_flags&B_READ) &&
 		    err == CYER_STROBE) {
 			/*
-			 * Retry reads once with the command changed to
-			 * a raw read (if possible).  Setting b_errcnt
+			 * Retry reads with the command changed to
+			 * a raw read if necessary.  Setting b_errcnt
 			 * here causes cystart (above) to force a CY_RCOM.
 			 */
-			if (bp->b_errcnt++ != 0)
+			if (htoms(cy->cy_tpb.tprec) > cy->cy_bs &&
+			    bp->b_bcount > cy->cy_bs && 
+			    yc->yc_blksize <= cy->cy_bs &&
+			    bp->b_errcnt++ == 0) {
+				yc->yc_blkno++;
+				goto opcont;
+			} else
 				goto ignoreerr;
-			yc->yc_blkno++;
-			goto opcont;
 		}
 		/*
 		 * If error is not hard, and this was an i/o operation
@@ -740,17 +770,15 @@ cyintr(cipher)
 			 * Hard or non-i/o errors on non-raw tape
 			 * cause it to close.
 			 */
-			if (yc->yc_openf>0 && bp != &rcybuf[cyunit])
+			if (yc->yc_openf > 0 && bp != &rcybuf[cyunit])
 				yc->yc_openf = -1;
 		/*
 		 * Couldn't recover from error.
 		 */
 		tprintf(yc->yc_ttyp,
-		    "yc%d: hard error bn%d status=%b", YCUNIT(bp->b_dev),
-		    bp->b_blkno, yc->yc_status, CYS_BITS);
-		if (err < NCYERROR)
-			tprintf(yc->yc_ttyp, ", %s", cyerror[err]);
-		tprintf(yc->yc_ttyp, "\n");
+		    "yc%d: hard error bn%d status=%b, %s\n", YCUNIT(bp->b_dev),
+		    bp->b_blkno, yc->yc_status, CYS_BITS,
+		    (err < NCYERROR) ? cyerror[err] : "");
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
@@ -772,6 +800,11 @@ ignoreerr:
 		 * Read/write increments tape block number.
 		 */
 		yc->yc_blkno++;
+		yc->yc_blks++;
+		if (vm->um_tab.b_errcnt || yc->yc_status & CYS_CR)
+			yc->yc_softerrs++;
+		yc->yc_blksize = htoms(cy->cy_tpb.tpcount);
+		dlog((LOG_ERR, "blocksize %d", yc->yc_blksize));
 		goto opdone;
 
 	case SCOM:
@@ -816,7 +849,7 @@ opdone:
 	bp->b_resid = bp->b_bcount - htoms(cy->cy_tpb.tpcount);
 	if (bp == &rcybuf[CYUNIT(bp->b_dev)])
 		vbadone(bp, cy->cy_buf, (long *)cy->cy_map, cy->cy_utl);
-	iodone(bp);
+	biodone(bp);
 	/*
 	 * Circulate slave to end of controller
 	 * queue to give other slaves a chance.
@@ -841,6 +874,10 @@ cytimer(dev)
 	register struct yc_softc *yc = &yc_softc[YCUNIT(dev)];
 	int s;
 
+	if (yc->yc_openf == 0 && yc->yc_timo == INF) {
+		yc->yc_tact = 0;
+		return;
+	}
 	if (yc->yc_timo != INF && (yc->yc_timo -= 5) < 0) {
 		printf("yc%d: lost interrupt\n", YCUNIT(dev));
 		yc->yc_timo = INF;
@@ -936,7 +973,7 @@ cyioctl(dev, cmd, data, flag)
 	struct mtget *mtget;
 	/* we depend of the values and order of the MT codes here */
 	static cyops[] =
-	{CY_WEOF,CY_SFORW,CY_SREV,CY_SFORW,CY_SREV,CY_REW,CY_OFFL,CY_SENSE};
+	{CY_WEOF,CY_FSF,CY_BSF,CY_SFORW,CY_SREV,CY_REW,CY_OFFL,CY_SENSE};
 
 	switch (cmd) {
 
@@ -945,7 +982,15 @@ cyioctl(dev, cmd, data, flag)
 		switch (op = mtop->mt_op) {
 
 		case MTWEOF:
+			callcount = mtop->mt_count;
+			fcount = 1;
+			break;
+
 		case MTFSR: case MTBSR:
+			callcount = 1;
+			fcount = mtop->mt_count;
+			break;
+
 		case MTFSF: case MTBSF:
 			callcount = mtop->mt_count;
 			fcount = 1;
@@ -962,6 +1007,7 @@ cyioctl(dev, cmd, data, flag)
 		if (callcount <= 0 || fcount <= 0)
 			return (EINVAL);
 		while (--callcount >= 0) {
+#ifdef notdef
 			/*
 			 * Gagh, this controller is the pits...
 			 */
@@ -971,7 +1017,11 @@ cyioctl(dev, cmd, data, flag)
 				while ((bp->b_flags&B_ERROR) == 0 &&
 				 (yc->yc_status&(CYS_EOT|CYS_BOT|CYS_FM)) == 0);
 			} else
+#endif
 				cycommand(dev, cyops[op], fcount);
+			dlog((LOG_INFO,
+			    "cyioctl: status %x, b_flags %x, resid %d\n",
+			    yc->yc_status, bp->b_flags, bp->b_resid));
 			if ((bp->b_flags&B_ERROR) ||
 			    (yc->yc_status&(CYS_BOT|CYS_EOT)))
 				break;
@@ -1011,14 +1061,13 @@ cywait(cp)
 }
 
 /*
- * Load a 20 bit pointer into an i/o register.
+ * Load a 20 bit pointer into a Tapemaster pointer.
  */
-cyldmba(wreg, value)
-	short *wreg;
+cyldmba(reg, value)
+	register caddr_t reg;
 	caddr_t value;
 {
 	register int v = (int)value;
-	register caddr_t reg = (caddr_t)wreg;
 
 	*reg++ = v;
 	*reg++ = v >> 8;
@@ -1039,7 +1088,7 @@ cyreset(vba)
 		if (cyminfo[ctlr] && cyminfo[ctlr]->um_vbanum == vba) {
 			addr = cyminfo[ctlr]->um_addr;
 			CY_RESET(addr);
-			if (!cyinit(ctlr)) {
+			if (!cyinit(ctlr, addr)) {
 				printf("cy%d: reset failed\n", ctlr);
 				cyminfo[ctlr] = NULL;
 			}

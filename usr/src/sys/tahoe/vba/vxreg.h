@@ -1,4 +1,4 @@
-/*	vxreg.h	1.4	86/01/23	*/
+/*	vxreg.h	1.5	87/01/11	*/
 
 /*
  * Vioc hardware interface structure.
@@ -56,15 +56,40 @@ struct	vxdevice {
 
 #define	VX_BISYNC	0x1		/* bisync flag indicator for bscport */
 
+/* connector panel types (per port) */
+#define	VXT_NONE	0		/* no connector panel */
+#define	VXT_8PORT	1		/* 8 port RS-232C */
+#define	VXT_RS422	2		/* 8 port RS-422 (nonexistent) */
+#define	VXT_4PORT	3		/* 4 port RS-232 (with DSR/RING) */
+#define	VXT_PARALLEL	4		/* 4 port panel parallel port */
+
 /* v_fault status values */
 #define	VXF_READY	0x55		/* no err in vioc self-initializaton */
+
+/* line parameters, set with VXC_LPARAX */
+#define	BITS5		0x00		/* 5 bits per character */
+#define	BITS6		0x80		/* 6 bits per character */
+#define	BITS7		0x40		/* 7 bits per character */
+#define	BITS8		0xc0		/* 8 bits per character */
+
+#define	VNOPARITY	0x00		/* no parity bit */
+#define	VODDP		0x01		/* odd parity bit */
+#define	VEVENP		0x03		/* even parity bit */
+
+#define	VSTOP1		0x04		/* 1 stop bit */
+#define	VSTOP2		0x0c		/* 2 stop bit */
+
+#define	V19200		0x13		/* 19.2 kbaud */
 
 /* modem control flags */
 #define	VMOD_ON		1
 #define	VMOD_OFF	0
 
-#define	V_ENAB	0002			/* auto + DTR */
-#define	V_DISAB	0000			/* auto + disable DTR */
+#define	V_AUTO		0x00		/* auto control of RTS, uses CTS */
+#define	V_MANUAL	0x80		/* manual control of RTS, ignore CTS */
+#define	V_DTR_ON	0x02		/* set DTR output */
+#define	V_DTR_OFF	0x00		/* drop DTR output */
+#define	V_RTS		0x01		/* set RTS output (manual only) */
 
 #define	BRK_CHR	040			/* break character */
 #define	DCD_ON	020			/* */
