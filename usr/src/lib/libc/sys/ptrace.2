@@ -3,7 +3,7 @@
 .\"
 .\"     %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ptrace.2	6.6 (Berkeley) %G%
+.\"	@(#)ptrace.2	6.7 (Berkeley) %G%
 .\"
 .TH PTRACE 2 ""
 .UC 4
@@ -12,6 +12,7 @@ ptrace \- process trace
 .SH SYNOPSIS
 .nf
 .ft B
+#include <sys/param.h>
 #include <sys/ptrace.h>
 #include <signal.h>
 .PP
@@ -146,6 +147,28 @@ SIGTRAP.
 (On the VAX-11 the T-bit is used and just one instruction
 is executed.)
 This is part of the mechanism for implementing breakpoints.
+.TP 4
+PT_ATTACH
+The process indicated by 
+.I pid
+is re-parented to the calling process and delivered a SIGSTOP signal.
+The child process may then be traced by the parent, as in PT_TRACE_ME.
+A process already being traced cannot be attached to.
+
+If the calling process is not owned by root,
+it must have the same real user ID as the target process and
+not have used set user or group priviledges.
+.TP 4
+PT_DETACH
+The process indicated by
+.I pid
+is detached from tracing and continues its execution.
+The process, which must be a traced child of the caller, is re-parented
+with the parent it had before tracing began.  The
+.I data
+and
+.I addr
+arguments behave as in PT_CONTINUE.
 .PP
 As indicated,
 these calls
@@ -200,17 +223,16 @@ wait(2), sigvec(2), adb(1)
 .SH BUGS
 .I Ptrace
 is unique and arcane; it should be replaced with a special file that
-can be opened and read and written.  The control functions could then
-be implemented with
+can be opened and read and written.
+The control functions could then be implemented with
 .IR ioctl (2)
-calls on this file.  This would be simpler to understand and have much
-higher performance.
+calls on this file.
+This would be simpler to understand and have much better performance.
 .PP
-The request PT_TRACE_ME call should be able to specify
-signals that are to be treated normally and not cause a stop.
-In this way, for example,
-programs with simulated floating point (which
-use \*(lqillegal instruction\*(rq signals at a very high rate)
+The request PT_TRACE_ME call should be able to specify signals that
+are to be treated normally and not cause a stop.
+In this way, for example, programs with simulated floating point
+(which use \*(lqillegal instruction\*(rq signals at a very high rate)
 could be efficiently debugged.
 .PP
 The error indication, \-1, is a legitimate function value;
@@ -223,3 +245,9 @@ It should be possible to stop a process on occurrence of a system
 call;
 in this way a completely controlled environment could
 be provided.
+.PP
+PT_STEP is not supported on all architectures.
+For example, the SPARC architecture does not have a trace bit, which
+complicates single instruction stepping.
+Debuggers and the like can emulate PT_STEP by placing breakpoints at
+all possible locations of the next instruction.
