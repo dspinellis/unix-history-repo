@@ -1,4 +1,4 @@
-/*	autoconf.c	4.32	81/11/07	*/
+/*	autoconf.c	4.33	82/02/08	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -238,9 +238,7 @@ mbafind(nxv, nxp)
 			for (ms = mbsinit; ms->ms_driver; ms++)
 			if (ms->ms_driver == mi->mi_driver && ms->ms_alive == 0 && 
 			    (ms->ms_ctlr == mi->mi_unit || ms->ms_ctlr=='?')) {
-				mbd->mbd_tc = ms->ms_slave;
-				dt = mbd->mbd_dt;
-				if (dt & MBDT_SPR) {
+				if ((*ms->ms_driver->md_slave)(mi, ms)) {
 					printf("%s%d at %s%d slave %d\n",
 					    ms->ms_driver->md_sname,
 					    ms->ms_unit,
@@ -249,8 +247,6 @@ mbafind(nxv, nxp)
 					    ms->ms_slave);
 					ms->ms_alive = 1;
 					ms->ms_ctlr = mi->mi_unit;
-					(*ms->ms_driver->md_slave)
-					    (mi, ms);
 				}
 			}
 		}
