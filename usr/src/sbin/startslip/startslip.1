@@ -1,13 +1,13 @@
 .\" Copyright (c) 1990, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)startslip.1	5.2 (Berkeley) %G%
+.\"     @(#)startslip.1	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STARTSLIP 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm startslip
 .Nd dial up and login to a slip server
@@ -47,8 +47,10 @@ is written to
 For a dialup modem,
 the string is used to specify a dial sequence.
 .El
-.Pp
 .Sh SEE ALSO
 .Xr sliplogin 8
 .Sh HISTORY
+The
+.Nm startslip
+command is
 .Ud .
