@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.26 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,7 +24,7 @@
 /* ARGSUSED */
 fork(p, uap, retval)
 	struct proc *p;
-	struct args *uap;
+	void *uap;
 	int retval[];
 {
 
@@ -34,7 +34,7 @@ fork(p, uap, retval)
 /* ARGSUSED */
 vfork(p, uap, retval)
 	struct proc *p;
-	struct args *uap;
+	void *uap;
 	int retval[];
 {
 
@@ -203,7 +203,6 @@ again:
 	}
 #endif
 
-	p2->p_regs = p1->p_regs;		 /* XXX move this */
 #if defined(tahoe)
 	p2->p_vmspace->p_ckey = p1->p_vmspace->p_ckey; /* XXX move this */
 #endif
@@ -217,6 +216,9 @@ again:
 	 * Set return values for child before vm_fork,
 	 * so they can be copied to child stack.
 	 * We return parent pid, and mark as child in retval[1].
+	 * NOTE: the kernel stack may be at a different location in the child
+	 * process, and thus addresses of automatic variables (including retval)
+	 * may be invalid after vm_fork returns in the child process.
 	 */
 	retval[0] = p1->p_pid;
 	retval[1] = 1;
@@ -245,7 +247,7 @@ again:
 	p1->p_flag &= ~SKEEP;
 
 	/*
-	 * XXX preserve synchronization semantics of vfork
+	 * Preserve synchronization semantics of vfork.
 	 * If waiting for child to exec or exit, set SPPWAIT
 	 * on child, and sleep on our proc (in case of exit).
 	 */
