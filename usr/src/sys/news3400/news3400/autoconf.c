@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -25,21 +25,21 @@
 
 #include "hb.h"
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "buf.h"
-#include "dkstat.h"
-#include "conf.h"
-#include "dmap.h"
-#include "reboot.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/dmap.h>
+#include <sys/reboot.h>
 
-#include "machid.h"
-#include "../include/adrsmap.h"
-#include "../include/cpu.h"
+#include <news3400/news3400/machid.h>
+#include <machine/adrsmap.h>
+#include <machine/cpu.h>
 
 #if NHB > 0
-#include "../hbdev/hbvar.h"
+#include <news3400/hbdev/hbvar.h>
 #endif
 
 /*

@@ -12,16 +12,16 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.4 (Berkeley) %G%
+ *	@(#)clock.c	7.5 (Berkeley) %G%
  */
 
-#include "../include/fix_machine_type.h"
-#include "../include/adrsmap.h"
+#include <machine/fix_machine_type.h>
+#include <machine/adrsmap.h>
 
-#include "param.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/kernel.h>
 
-#include "clockreg.h"
+#include <news3400/news3400/clockreg.h>
 
 /*
  * Machine-dependent clock routines.

@@ -4,27 +4,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "../include/fix_machine_type.h"
+#include <machine/fix_machine_type.h>
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/dir.h"
-#include "sys/map.h"
-#include "sys/proc.h"
-#include "sys/mbuf.h"
-#include "sys/user.h"
-#include "sys/msgbuf.h"
-#include "sys/syscall.h"
-#include "sys/signal.h"
-#include "vm/vm.h"
-#include "../include/reg.h"
-#include "../include/pte.h"
-#include "../include/pmap.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/dir.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/user.h>
+#include <sys/msgbuf.h>
+#include <sys/syscall.h>
+#include <sys/signal.h>
+#include <vm/vm.h>
+#include <machine/reg.h>
+#include <machine/pte.h>
+#include <machine/pmap.h>
 
 main()
 {

@@ -7,23 +7,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kbms_if.c	7.1 (Berkeley) %G%
+ *	@(#)kbms_if.c	7.2 (Berkeley) %G%
  */
 
 /* Keyboard Mouse Gate-array control routine */
 
-#include "../include/fix_machine_type.h"
-#include "../include/adrsmap.h"
+#include <machine/fix_machine_type.h>
+#include <machine/adrsmap.h>
 
 #include "ms.h"
 #include "bm.h"
 
-#include "param.h"
-#include "../sio/scc.h"
+#include <sys/param.h>
+#include <news3400/sio/scc.h>
 
 #if defined(news1200) || defined(news3200)
-#include "time.h"
-#include "../iop/mouse.h"
+#include <sys/time.h>
+#include <news3400/iop/mouse.h>
 #endif
 
 typedef struct kbm_sw {
