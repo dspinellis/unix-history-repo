@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.8	6.7 (Berkeley) %G%
+.\"     @(#)chown.8	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 8
@@ -13,7 +13,7 @@
 .Nd change file owner and group
 .Sh SYNOPSIS
 .Nm chown
-.Op Fl Rf
+.Op Fl HRfh
 .Ar owner Op Ar :group
 .Ar file ...
 .Nm chown
@@ -36,18 +36,16 @@ in the files instead of just the files themselves.
 Don't report any failure to change file owner or group, nor modify
 the exit status to reflect such failures.
 .It Fl h
-When encountering a symbolic link, change the ownership of the object the link
-points to rather than the link itself.
+When encountering a symbolic link anywhere in the traversal, follow it.
 .El
 .Pp
-With respect to symbolic links, unless the
+The ownership of a symbolic link is immutable, so that unless the
 .Fl h
 or 
 .Fl H 
 flags are set,
 .Nm chown
-changes the ownership of the link itself rather than the object it 
-points to.
+on a symbolic link is a no-op.
 .Pp
 The
 .Ar owner
@@ -71,9 +69,6 @@ group name.
 .Pp
 The ownership of a file may only be altered by a super-user for
 obvious security reasons.
-.Pp
-The owner and group of symbolic links are themselves changed instead
-of the file to which the link points.
 .Pp
 The
 .Nm chown
