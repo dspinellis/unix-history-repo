@@ -4,11 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.5 (Berkeley) %G%
+ *	@(#)sysctl.h	7.6 (Berkeley) %G%
  */
-
-#ifndef _KINFO_H_
-#define	_KINFO_H_
 
 /*
  * Get kernel info
@@ -54,5 +51,3 @@ struct kinfo_lock {
 #ifdef KERNEL
 extern struct kinfo_lock kinfo_lock;
 #endif
-
-#endif /* !_KINFO_H_ */
