@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.4	%G%";
+static char	SccsId[] = "@(#)err.c	3.5	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -56,7 +56,7 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 	if (ArpaFmt)
-		printf("%s\n", errbuf);
+		printf("%s\r\n", errbuf);
 	else
 		printf("sendmail: %s\n", &errbuf[4]);
 	fflush(stdout);
@@ -139,6 +139,8 @@ message(num, msg, a, b, c, d, e)
 	if (To != NULL && To[0] != '\0')
 		printf("%s... ", To);
 	printf(msg, a, b, c, d, e);
+	if (ArpaFmt)
+		printf("\r");
 	printf("\n");
 	fflush(stdout);
 }
