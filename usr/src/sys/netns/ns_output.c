@@ -1,4 +1,4 @@
-/*      ns_output.c     6.1     85/05/30     */
+/*      ns_output.c     6.2     85/06/01     */
 
 #include "param.h"
 #include "mbuf.h"
@@ -17,11 +17,11 @@
 #ifdef vax
 #include "../vax/mtpr.h"
 #endif
-int ns_hold_output = 1;
-int ns_copy_output = 1;
+int ns_hold_output = 0;
+int ns_copy_output = 0;
+int ns_output_cnt = 0;
 struct mbuf *ns_lastout;
 
-int ns_output_cnt = 0;
 ns_output(m0, ro, flags)
 	struct mbuf *m0;
 	struct route *ro;
