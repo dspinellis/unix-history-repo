@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.64	82/10/05	*/
+/*	tcp_usrreq.c	1.65	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,20 +6,20 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../net/in.h"
+#include "../netinet/in.h"
 #include "../net/route.h"
-#include "../net/in_pcb.h"
-#include "../net/in_systm.h"
+#include "../netinet/in_pcb.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/tcp.h"
-#include "../net/tcp_fsm.h"
-#include "../net/tcp_seq.h"
-#include "../net/tcp_timer.h"
-#include "../net/tcp_var.h"
-#include "../net/tcpip.h"
-#include "../net/tcp_debug.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netinet/tcp.h"
+#include "../netinet/tcp_fsm.h"
+#include "../netinet/tcp_seq.h"
+#include "../netinet/tcp_timer.h"
+#include "../netinet/tcp_var.h"
+#include "../netinet/tcpip.h"
+#include "../netinet/tcp_debug.h"
 #include <errno.h>
 
 /*
