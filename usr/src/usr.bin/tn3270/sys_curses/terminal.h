@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)terminal.h	4.1 (Berkeley) %G%
+ *	@(#)terminal.h	4.2 (Berkeley) %G%
  */
 
 #define	INCLUDED_TERMINAL
@@ -37,6 +37,13 @@
 
 #define TerminalCharacterAttr(c,p,a)	(IsNonDisplayAttr(a) ? ' ':c)
 #define TerminalCharacter(c,p)	TerminalCharacterAttr(c,p,FieldAttributes(p))
+
+	/*
+	 * Is the screen formatted?  Some algorithms change depending
+	 * on whether there are any attribute bytes lying around.
+	 */
+#define	TerminalFormattedScreen() \
+	    ((WhereTermAttrByte(0) != 0) || ((GetTerminal(0)&ATTR_MASK) == ATTR_MASK))
 
 #define NeedToRedisplayFields(p) ((TermIsNonDisplay(p) != IsNonDisplay(p)) || \
 				(TermIsHighlighted(p) != IsHighlighted(p)))
