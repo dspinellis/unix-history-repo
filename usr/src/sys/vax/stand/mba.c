@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.5 (Berkeley) %G%
+ *	@(#)mba.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -99,8 +99,11 @@ mbawait(io, unit)
 mbainit(mbanum)
 	int mbanum;
 {
-	register struct mba_regs *mba = mbaddr[mbanum];
+	register struct mba_regs *mba;
 
+	if (mbanum >= nmba)
+		return (0);
+	mba = mbaddr[mbanum];
 	if (badaddr((char *)mba, sizeof(long)))
 		return (0);
 	if ((mbaact & (1<<mbanum)) == 0) {

@@ -1,19 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.4 (Berkeley) %G%
+ *	@(#)tm.c	7.5 (Berkeley) %G%
  */
 
 /*
  * TM11/TE??
  */
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
+
+#include "../vax/pte.h"
 
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/tmreg.h"
@@ -29,6 +30,8 @@ tmopen(io)
 {
 	register int skip;
 
+	if ((u_int)io->i_adapt >= nuba)
+		return (EADAPT);
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
 	if (badaddr((char *)ubamem(io->i_adapt, tmstd[io->i_ctlr]), sizeof(short)))

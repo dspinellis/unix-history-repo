@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.6 (Berkeley) %G%
+ *	@(#)rk.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -25,8 +25,9 @@
 #define	SECTSIZ		512		/* sector size in bytes */
 
 #define	MAXCTLR		1		/* all addresses must be specified */
+#define	MAXUNIT		8
 u_short	rkstd[MAXCTLR] = { 0777440 };
-struct	disklabel rklabel[MAXNUBA][MAXCTLR][8];
+struct	disklabel rklabel[MAXNUBA][MAXCTLR][MAXUNIT];
 char	lbuf[SECTSIZ];
 
 rkopen(io)
@@ -36,8 +37,12 @@ rkopen(io)
 	register struct disklabel *lp;
 	struct iob tio;
 
+	if ((u_int)io->i_adapt >= nuba)
+		return (EADAPT);
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
+	if ((u_int)io->i_unit >= MAXUNIT)
+		return (EUNIT);
 	rkaddr = (struct rkdevice *)ubamem(io->i_adapt, rkstd[io->i_ctlr]);
 	if (badaddr((char *)rkaddr, sizeof(short)))
 		return (ENXIO);

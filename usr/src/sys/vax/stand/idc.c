@@ -1,20 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	7.3 (Berkeley) %G%
+ *	@(#)idc.c	7.4 (Berkeley) %G%
  */
 
 /*
  * IDC (RB730)
  */
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
 
+#include "../vax/pte.h"
 #include "../vaxuba/idcreg.h"
 #include "../vaxuba/ubareg.h"
 
@@ -36,7 +36,7 @@ idcopen(io)
 	register struct idcdevice *idcaddr;
 	register int i;
 
-	if ((u_int)io->i_adapt >= MAXNUBA)
+	if (io->i_adapt != 0)
 		return (EADAPT);
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);

@@ -1,19 +1,20 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.4 (Berkeley) %G%
+ *	@(#)ts.c	7.5 (Berkeley) %G%
  */
 
 /*
  * TS11 tape driver
  */
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
+
+#include "../vax/pte.h"
 
 #include "../vaxuba/tsreg.h"
 #include "../vaxuba/ubareg.h"
@@ -41,10 +42,12 @@ tsopen(io)
 	register struct tsdevice *tsaddr;
 	long i = 0;
 
+	if ((u_int)io->i_adapt >= nuba)
+		return (EADAPT);
 	if ((u_int)io->i_ctlr >= MAXCTLR)
 		return (ECTLR);
 	/* TS11 only supports one transport per formatter */
-	if ((u_int)io->i_unit)
+	if (io->i_unit)
 		return(EUNIT);
 	tsaddr = (struct tsdevice *)ubamem(io->i_adapt, tsstd[io->i_ctlr]);
 	if (badaddr((char *)tsaddr, sizeof (short)))
