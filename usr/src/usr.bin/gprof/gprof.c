@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.19 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.20 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -461,7 +461,34 @@ readsamples(pfile)
 }
 
 /*
- * Assign samples to the procedures to which they belong.
+ *	Assign samples to the procedures to which they belong.
+ *
+ *	There are three cases as to where pcl and pch can be
+ *	with respect to the routine entry addresses svalue0 and svalue1
+ *	as shown in the following diagram.  overlap computes the
+ *	distance between the arrows, the fraction of the sample
+ *	that is to be credited to the routine which starts at svalue0.
+ *
+ *	    svalue0                                         svalue1
+ *	       |                                               |
+ *	       v                                               v
+ *
+ *	       +-----------------------------------------------+
+ *	       |					       |
+ *	  |  ->|    |<-		->|         |<-		->|    |<-  |
+ *	  |         |		  |         |		  |         |
+ *	  +---------+		  +---------+		  +---------+
+ *
+ *	  ^         ^		  ^         ^		  ^         ^
+ *	  |         |		  |         |		  |         |
+ *	 pcl       pch		 pcl       pch		 pcl       pch
+ *
+ *	For the vax we assert that samples will never fall in the first
+ *	two bytes of any routine, since that is the entry mask, thus we give
+ *	ourselves a little room and use svalue0+2 when assigning samples.
+ *	In conjunction with the alignment of routine addresses, this 
+ *	should allow us to have one sample for every four bytes of text
+ *	space and never have any overlap (the two end cases, above).
  */
 asgnsamples()
 {
@@ -480,8 +507,8 @@ asgnsamples()
 	ccnt = samples[i];
 	if (ccnt == 0)
 		continue;
-	pcl = lowpc + scale*i;
-	pch = lowpc + scale*(i+1);
+	pcl = lowpc + scale * i;
+	pch = lowpc + scale * (i + 1);
 	time = ccnt;
 #	ifdef DEBUG
 	    if ( debug & SAMPLEDEBUG ) {
@@ -497,22 +524,26 @@ asgnsamples()
 		    break;
 	    if (pcl >= svalue1)
 		    continue;
-	    overlap=min(pch,svalue1) - max(pcl,svalue0);
-	    if (overlap>0) {
+#	    ifdef vax
+	        overlap = min(pch, svalue1) - max(pcl, svalue0 + 2);
+#	    else
+	        overlap = min(pch, svalue1) - max(pcl, svalue0);
+#	    endif vax
+	    if (overlap > 0) {
 #		ifdef DEBUG
-		    if ( debug & SAMPLEDEBUG ) {
-			printf( "[asgnsamples] (0x%x-0x%x) %s gets %f ticks\n" ,
-				svalue0 , svalue1 , nl[j].name , 
-				overlap*time/scale );
+		    if (debug & SAMPLEDEBUG) {
+			printf("[asgnsamples] (0x%x-0x%x) %s gets %f ticks\n",
+				svalue0, svalue1, nl[j].name, 
+				overlap * time / scale);
 		    }
 #		endif DEBUG
-		nl[j].time += overlap*time/scale;
+		nl[j].time += overlap * time / scale;
 	    }
 	}
     }
 #   ifdef DEBUG
-	if ( debug & SAMPLEDEBUG ) {
-	    printf( "[asgnsamples] totime %f\n" , totime );
+	if (debug & SAMPLEDEBUG) {
+	    printf("[asgnsamples] totime %f\n", totime);
 	}
 #   endif DEBUG
 }
