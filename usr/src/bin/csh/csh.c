@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -166,6 +166,18 @@ main(argc, argv)
      * prefer to use these.
      */
     initdesc();
+    /*
+     * XXX: This is to keep programs that use stdio happy.
+     *	    what we really want is freunopen() ....
+     *	    Closing cshin cshout and csherr (which are really stdin stdout
+     *	    and stderr at this point and then reopening them in the same order
+     *	    gives us again stdin == cshin stdout == cshout and stderr == csherr.
+     *	    If that was not the case builtins like printf that use stdio
+     *	    would break. But in any case we could fix that with memcpy and
+     *	    a bit of pointer manipulation...
+     *	    Fortunately this is not needed under the current implementation
+     *	    of stdio.
+     */
     (void) fclose(cshin);
     (void) fclose(cshout);
     (void) fclose(csherr);
@@ -178,7 +190,6 @@ main(argc, argv)
     (void) setvbuf(cshin,  NULL, _IOLBF, 0);
     (void) setvbuf(cshout, NULL, _IOLBF, 0);
     (void) setvbuf(csherr, NULL, _IOLBF, 0);
-
 
     /*
      * Initialize the shell variables. ARGV and PROMPT are initialized later.
@@ -830,7 +841,7 @@ phup(sig)
 int sig;
 {
     rechist();
-    xexit(sig);
+    _exit(sig);
 }
 
 Char   *jobargv[2] = {STRjobs, 0};
