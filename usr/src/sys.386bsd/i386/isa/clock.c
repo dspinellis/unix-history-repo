@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)clock.c	7.2 (Berkeley) 5/12/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00044
+ * --------------------         -----   ----------------------
+ *
+ * 14 Aug 92	Arne Henrik Juul	Added code for the kernel to
+ *					allow for DST in the BIOS.
  */
 
 /*
@@ -147,15 +155,13 @@ inittodr(base)
 	sec += bcd(rtcin(RTC_SEC));				/* seconds */
 	sec -= 24*60*60; /* XXX why ??? */
 
-#ifdef notdef
 	/* XXX off by one? Need to calculate DST on SUNDAY */
 	/* Perhaps we should have the RTC hold GMT time to save */
 	/* us the bother of converting. */
-	yd = yd / 24*60*60;
+	yd = yd / (24*60*60);
 	if ((yd >= DAYST) && ( yd <= DAYEN)) {
 		sec -= 60*60;
 	}
-#endif
 	sec += tz.tz_minuteswest * 60;
 
 	time.tv_sec = sec;
