@@ -194,7 +194,7 @@ main(argc, argv)
 			goto rebuild;
 		   }
                    pw->pw_passwd = "*";
-	           pw_copy(pfd, tfd, pw);
+	           pw_copy_insecure(pfd, tfd, pw);
 	           mv(tempname, _PATH_PASSWD);
                      
         }

@@ -48,9 +48,19 @@ extern char *progname, *tempname;
 
 int globcnt;
 
-pw_copy(ffd, tfd, pw)
+/*
+ * NB: Use of pw_copy() to update the insecure passwd file
+ * necessitates that this routine be wrapperized
+ * so that it can handle the formats used by both 
+ * /etc/master.passwd and /etc/passwd
+ *
+ * pw_copy() and pw_copy_insecure() both call pw_copy_drv(), which
+ * does the work.
+ */
+static pw_copy_drv(ffd, tfd, pw, secure_format)
 	int ffd, tfd;
 	struct passwd *pw;
+	int secure_format;
 {
 	register FILE *from, *to;
 	register int done;
@@ -91,10 +101,21 @@ pw_copy(ffd, tfd, pw)
 			continue;
 		}
                 globcnt = tmpcnt;
-		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
-		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
-		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
-		    pw->pw_dir, pw->pw_shell);
+		/*
+		 * NB: /etc/passwd: insecure format does not have
+		 * class, change and expire fields !
+		 */
+		if(secure_format)
+			(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		    		pw->pw_name, pw->pw_passwd, pw->pw_uid, 
+				pw->pw_gid, pw->pw_class, pw->pw_change, 
+				pw->pw_expire, pw->pw_gecos, pw->pw_dir, 
+				pw->pw_shell);
+		else
+			(void)fprintf(to, "%s:%s:%d:%d:%s:%s:%s\n",
+				pw->pw_name, pw->pw_passwd, pw->pw_uid,
+				pw->pw_gid, pw->pw_gecos, pw->pw_dir,
+				pw->pw_shell);
 		done = 1;
 		if (ferror(to))
 			goto err;
@@ -102,13 +123,46 @@ pw_copy(ffd, tfd, pw)
 	if (!done)
         {
                 globcnt = tmpcnt+1;
-		(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
-		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
-		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
-		    pw->pw_dir, pw->pw_shell);
+		/*
+		 * NB: /etc/passwd: insecure format does not have
+		 * class, change and expire fields !
+		 */
+		if(secure_format)
+			(void)fprintf(to, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		    		pw->pw_name, pw->pw_passwd, pw->pw_uid, 
+				pw->pw_gid, pw->pw_class, pw->pw_change, 
+				pw->pw_expire, pw->pw_gecos, pw->pw_dir, 
+				pw->pw_shell);
+		else
+			(void)fprintf(to, "%s:%s:%d:%d:%s:%s:%s\n",
+				pw->pw_name, pw->pw_passwd, pw->pw_uid,
+				pw->pw_gid, pw->pw_gecos, pw->pw_dir,
+				pw->pw_shell);
         }
 
 	if (ferror(to))
 err:		pw_error(NULL, 1, 1);
 	(void)fclose(to);
+}
+
+
+/*
+ * Standard pw_copy routine - used to update master.passwd
+ */
+pw_copy(ffd, tfd, pw)
+	int ffd, tfd;
+	struct passwd *pw;
+{
+	pw_copy_drv(ffd, tfd, pw, 1);
+}
+
+
+/*
+ * Special pw_copy routine used to update insecure passwd file
+ */
+pw_copy_insecure(ffd, tfd, pw)
+	int ffd, tfd;
+	struct passwd *pw;
+{
+	pw_copy_drv(ffd, tfd, pw, 0);
 }
