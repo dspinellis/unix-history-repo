@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.19 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,10 +69,10 @@ sysacct(p, uap, retval)
 	if (uap->fname == NULL) {
 		if (vp = acctp) {
 			acctp = NULL;
-			vrele(vp);
+			error = vn_close(vp, FWRITE, p->p_ucred, p);
 			untimeout(acctwatch, (caddr_t)&chk);
 		}
-		return (0);
+		return (error);
 	}
 	nd.ni_segflg = UIO_USERSPACE;
 	nd.ni_dirp = uap->fname;
@@ -81,15 +81,15 @@ sysacct(p, uap, retval)
 	vp = nd.ni_vp;
 	VOP_UNLOCK(vp);
 	if (vp->v_type != VREG) {
-		vrele(vp);
+		(void) vn_close(vp, FWRITE, p->p_ucred, p);
 		return (EACCES);
 	}
 	oacctp = acctp;
 	acctp = vp;
 	if (oacctp)
-		vrele(oacctp);
+		error = vn_close(oacctp, FWRITE, p->p_ucred, p);
 	acctwatch(&chk);
-	return (0);
+	return (error);
 }
 
 /*

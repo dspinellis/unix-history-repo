@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.32 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.33 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -995,8 +995,8 @@ coredump(p)
 		return (0);
 	u.u_error = 0;
 	ndp->ni_nameiop = CREATE | FOLLOW;
-		vput(vp);
-		return (EFAULT);
+		error = EFAULT;
+		goto out;
 	}
 	itrunc(ip, (u_long)0);
 	VOP_SETATTR(vp, &vattr, cred, p);
