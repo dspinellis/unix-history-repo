@@ -3,12 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	7.9 (Berkeley) %G%
+ *	@(#)sys.c	7.10 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "ufs/dinode.h"
-#include "ufs/fs.h"
 #include "ufs/dir.h"
 #include "sys/reboot.h"
 #include "saio.h"
