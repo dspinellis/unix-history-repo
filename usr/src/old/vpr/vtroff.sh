@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.1	(Berkeley)	%G%
+#	@(#)vtroff.sh	4.2	(Berkeley)	%G%
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
@@ -73,14 +73,16 @@ top:
 	endif
 if ($#argv == 0) then
 	set argv=(-)
+	set banner=vtroff
+else
+	set banner=$argv[1]
 endif
 if ($?t) then
-    /usr/ucb/soelim $macp $fontf $argv[*] \
-    | /usr/bin/troff -t -rv1 $flags | $sort $length
+    /usr/bin/troff -t -rv1 $flags $macp $fontf $* | $sort $length
 else
-    /usr/ucb/soelim $macp $fontf $argv[*] \
-    | /usr/bin/troff -t -rv1 $flags | $sort $length | $lpr -Jvtroff -t $fonts
+    /usr/bin/troff -t -rv1 $flags $macp $fontf $* | $sort $length |\
+	$lpr -J$banner -t $fonts
 endif
 if ($#fontf) then
-	/bin/rm $fontf
+    /bin/rm $fontf
 endif
