@@ -2,15 +2,15 @@
 #
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
-# Copyright (c) 1989 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1989, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # This code is derived from software contributed to Berkeley by
 # Jan-Simon Pendry at Imperial College, London.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)amd.start.ex	5.4 (Berkeley) %G%
+#	@(#)amd.start.ex	8.1 (Berkeley) %G%
 #
 # Start amd
 #
