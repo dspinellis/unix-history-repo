@@ -1,75 +1,117 @@
-static	char *sccsid = "@(#)kill.c	4.4 (Berkeley) %G%";
 /*
- * kill - send signal to process
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)kill.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <signal.h>
+#include <stdio.h>
 #include <ctype.h>
 
-char *signm[] = { 0,
-"HUP", "INT", "QUIT", "ILL", "TRAP", "IOT", "EMT", "FPE",	/* 1-8 */
-"KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG",	/* 9-16 */
-"STOP", "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",	/* 17-24 */
-"XFSZ", "VTALRM", "PROF", "WINCH", 0, "USR1", "USR2", 0,	/* 25-31 */
-};
+static char *signals[] = {
+	"hup", "int", "quit", "ill", "trap", "iot",		/*  1 - 6  */
+	"emt", "fpe", "kill", "bus", "segv", "sys",		/*  7 - 12 */
+	"pipe", "alrm",  "term", "urg", "stop", "tstp",		/* 13 - 18 */
+	"cont", "chld", "ttin", "ttou", "io", "xcpu",		/* 19 - 24 */
+	"xfsz", "vtalrm", "prof", "winch", "29", "usr1",	/* 25 - 30 */
+	"usr2", NULL,						/* 31 - 32 */
+	};
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	register signo, pid, res;
-	int errlev;
-	extern char *sys_errlist[];
-	extern errno;
+	register int numsig;
+	register char **p;
+	int errors;
 
-	errlev = 0;
-	if (argc <= 1) {
-	usage:
-		printf("usage: kill [ -sig ] pid ...\n");
-		printf("for a list of signals: kill -l\n");
-		exit(2);
+	if (argc < 2)
+		usage();
+
+	if (!strcmp(*++argv, "-l")) {
+		printsig();
+		exit(0);
 	}
-	if (*argv[1] == '-') {
-		if (argv[1][1] == 'l') {
-			for (signo = 0; signo <= NSIG; signo++) {
-				if (signm[signo])
-					printf("%s ", signm[signo]);
-				if (signo == 16)
-					printf("\n");
+
+	numsig = SIGTERM;
+	if (**argv == '-') {
+		++*argv;
+		if (isalpha(**argv)) {
+			if (!strncasecmp(*argv, "sig", 3))
+				*argv += 3;
+			for (p = signals;; ++p) {
+				if (!*p)
+					goto error;
+				if (!strcasecmp(*p, *argv)) {
+					numsig = p - signals + 1;
+					break;
+				}
 			}
-			printf("\n");
-			exit(0);
-		} else if (isdigit(argv[1][1])) {
-			signo = atoi(argv[1]+1);
-			if (signo < 0 || signo > NSIG) {
-				printf("kill: %s: number out of range\n",
-				    argv[1]);
-				exit(1);
-			}
-		} else {
-			char *name = argv[1]+1;
-			for (signo = 0; signo <= NSIG; signo++)
-				if (signm[signo] && !strcmp(signm[signo], name))
-					goto foundsig;
-			printf("kill: %s: unknown signal; kill -l lists signals\n", name);
+		}
+		else if (isdigit(**argv)) {
+			numsig = atoi(*argv);
+			if (numsig <= 0 || numsig > NSIG)
+				goto error;
+		}
+		else {
+error:			printf("kill: unknown signal %s; valid signals:\n", *argv);
+			printsig();
 			exit(1);
-foundsig:
-			;
 		}
-		argc--;
-		argv++;
-	} else
-		signo = SIGTERM;
-	argv++;
-	while (argc > 1) {
-		if (!(isdigit(**argv) || **argv == '-'))
-			goto usage;
-		res = kill(pid = atoi(*argv), signo);
-		if (res<0) {
-			printf("%u: %s\n", pid, sys_errlist[errno]);
-			errlev = 1;
-		}
-		argc--;
-		argv++;
+		++argv;
 	}
-	return(errlev);
+
+	if (!*argv)
+		usage();
+
+	for (errors = 0; *argv; ++argv) {
+		if (!isdigit(**argv))
+			usage();
+		if (kill(atoi(*argv), numsig) == -1) {
+			perror(*argv);
+			errors = 1;
+		}
+	}
+	exit(errors);
+}
+
+static
+printsig()
+{
+	register char **p;
+
+	for (p = signals; *p; ++p) {
+		printf("%s ", *p);
+		if ((p - signals) == NSIG / 2 - 1)
+			printf("\n");
+	}
+	printf("\n");
+}
+
+static
+usage()
+{
+	printf("usage: kill [-l] [-sig] pid ...\n");
+	exit(2);
 }
