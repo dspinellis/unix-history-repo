@@ -11,7 +11,7 @@
 #include <machine/machAsmDefs.h>
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)bzero.s	5.3 (Berkeley) %G%")
+	ASMSTR("@(#)bzero.s	5.4 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /* bzero(s1, n) */
@@ -32,8 +32,8 @@ LEAF(bzero)
 	addu	a3, a3, a0		# compute ending address
 2:
 	addu	a0, a0, 4		# clear words
-	bne	a0, a3, 2b		#   unrolling loop doesn't help
-	sw	zero, -4(a0)		#   since we're limited by memory speed
+	bne	a0, a3, 2b		#   unrolling loop doesnt help
+	sw	zero, -4(a0)		#   since we are limited by memory speed
 smallclr:
 	ble	a1, zero, 2f
 	addu	a3, a1, a0		# compute ending address
