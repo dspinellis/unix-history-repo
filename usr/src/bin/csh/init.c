@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #if __STDC__
@@ -106,39 +106,3 @@ struct srch srchn[] =
 };
 int     nsrchn = sizeof srchn / sizeof *srchn;
 
-struct mesg mesg[] =
-{
-     /*  0 */ 	0, 		"",
-     /*  1 */ 	"HUP", 		"Hangup",
-     /*  2 */ 	"INT", 		"Interrupt",
-     /*  3 */ 	"QUIT", 	"Quit",
-     /*  4 */ 	"ILL", 		"Illegal instruction",
-     /*  5 */ 	"TRAP", 	"Trace/BPT trap",
-     /*  6 */ 	"IOT", 		"IOT trap",
-     /*  7 */ 	"EMT", 		"EMT trap",
-     /*  8 */ 	"FPE", 		"Floating exception",
-     /*  9 */ 	"KILL", 	"Killed",
-     /* 10 */ 	"BUS", 		"Bus error",
-     /* 11 */ 	"SEGV", 	"Segmentation fault",
-     /* 12 */ 	"SYS", 		"Bad system call",
-     /* 13 */ 	"PIPE", 	"Broken pipe",
-     /* 14 */ 	"ALRM", 	"Alarm clock",
-     /* 15 */ 	"TERM", 	"Terminated",
-     /* 16 */ 	"URG", 		"Urgent condition on IO channel",
-     /* 17 */ 	"STOP", 	"Suspended (signal)",
-     /* 18 */ 	"TSTP", 	"Suspended",
-     /* 19 */ 	"CONT", 	"Continued",
-     /* 20 */ 	"CHLD", 	"Child exited",
-     /* 21 */ 	"TTIN", 	"Suspended (tty input)",
-     /* 22 */ 	"TTOU", 	"Suspended (tty output)",
-     /* 23 */ 	"IO", 		"IO possible interrupt",
-     /* 24 */ 	"XCPU", 	"Cputime limit exceeded",
-     /* 25 */ 	"XFSZ", 	"Filesize limit exceeded",
-     /* 26 */ 	"VTALRM", 	"Virtual time alarm",
-     /* 27 */ 	"PROF", 	"Profiling time alarm",
-     /* 28 */ 	"WINCH", 	"Window changed",
-     /* 29 */ 	"INFO", 	"Information request",
-     /* 30 */ 	"USR1", 	"User signal 1",
-     /* 31 */ 	"USR2", 	"User signal 2",
-     /* 32 */ 	0, 		"Signal 32",
-};

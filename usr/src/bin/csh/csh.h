@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.17 (Berkeley) %G%
+ *	@(#)csh.h	5.18 (Berkeley) %G%
  */
 
 /*
@@ -490,11 +490,6 @@ char  **Vt;
 
 Char  **evalvec;
 Char   *evalp;
-
-extern struct mesg {
-    char   *iname;		/* name from /usr/include */
-    char   *pname;		/* print name */
-}       mesg[];
 
 /* word_chars is set by default to WORD_CHARS but can be overridden by
    the worchars variable--if unset, reverts to WORD_CHARS */
