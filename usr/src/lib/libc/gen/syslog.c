@@ -6,26 +6,28 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.36 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/file.h>
 #include <sys/syslog.h>
 #include <sys/uio.h>
-#include <sys/errno.h>
 #include <netdb.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <paths.h>
+#include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
+
 #if __STDC__
 #include <stdarg.h>
 #else
 #include <varargs.h>
 #endif
-#include <time.h>
-#include <unistd.h>
-#include <paths.h>
-#include <stdio.h>
 
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
