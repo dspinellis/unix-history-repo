@@ -10,7 +10,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm.c	5.30 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -416,11 +416,11 @@ ssize_t
 kvm_read(kd, kva, buf, len)
 	kvm_t *kd;
 	register u_long kva;
-	register char *buf;
+	register void *buf;
 	register size_t len;
 {
 	register int cc;
-	register char *cp;
+	register void *cp;
 
 	if (ISALIVE(kd)) {
 		/*
@@ -459,11 +459,11 @@ kvm_read(kd, kva, buf, len)
 				_kvm_syserr(kd, kd->program, "kvm_read");
 				break;
 			}
-			cp += cc;
+			(char *)cp += cc;
 			kva += cc;
 			len -= cc;
 		}
-		return (cp - buf);
+		return ((char *)cp - (char *)buf);
 	}
 	/* NOTREACHED */
 }
@@ -472,7 +472,7 @@ ssize_t
 kvm_write(kd, kva, buf, len)
 	kvm_t *kd;
 	register u_long kva;
-	register const char *buf;
+	register const void *buf;
 	register size_t len;
 {
 	register int cc;
