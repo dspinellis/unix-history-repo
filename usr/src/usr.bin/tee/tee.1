@@ -1,27 +1,60 @@
-.\"	@(#)tee.1	6.3 (Berkeley) %G%
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH TEE 1 ""
-.AT 3
-.SH NAME
-tee \- pipe fitting
-.SH SYNOPSIS
-.B tee
-[
-.B \-i
-] [
-.B \-a
-]
-[ file ] ...
-.SH DESCRIPTION
-.I Tee
-transcribes the standard input to the standard
-output and makes copies in the 
-.I files.
-Option
-.B \-i
-ignores interrupts;
-option
-.B \-a
-causes the output to be appended to the
-.I files
-rather than overwriting them.
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)tee.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TEE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm tee
+.Nd pipe fitting
+.Sh SYNOPSIS
+.Nm tee
+.Op Fl ai
+.Op Ar file ...
+.Sh DESCRIPTION
+The
+.Nm tee
+utility copies standard input to standard output,
+making a copy in zero or more files.
+The output is unbuffered.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl a
+Append the output to the files rather than
+overwriting them.
+.It Fl i
+Ignore the
+.Dv SIGINT
+signal.
+.El
+.Pp
+The following operands are available:
+.Bl -tag -width file
+.It file
+A pathname of an input
+.Ar file .
+If no file operands
+are specified, the standard input is used.
+.El
+.Pp
+The
+.Nm tee
+utility takes the default action for all signals,
+except in the event of the
+.Fl i
+option.
+.Pp
+The
+.Nm tee
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
+The
+.Nm tee
+function is expected to be
+.Tn POSIX
+1003.2 compatible.
