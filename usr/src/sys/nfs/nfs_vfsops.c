@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.22 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,7 +101,7 @@ nfs_statfs(mp, sbp)
 	cred->cr_ngroups = 1;
 	nfsm_reqhead(nfs_procids[NFSPROC_STATFS], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp, NFSPROC_STATFS, u.u_procp);
+	nfsm_request(vp, NFSPROC_STATFS, u.u_procp, 0);
 	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
 	sbp->f_type = MOUNT_NFS;
 	sbp->f_flags = nmp->nm_flag;
@@ -246,7 +246,7 @@ mountnfs(argp, mp, nam, pth, hst)
 		nmp->nm_rttvar = nmp->nm_rto << 1;
 	}
 
-	if ((argp->flags & NFSMNT_RETRANS) && argp->retrans >= 0) {
+	if ((argp->flags & NFSMNT_RETRANS) && argp->retrans > 1) {
 		nmp->nm_retry = argp->retrans;
 		if (nmp->nm_retry > NFS_MAXREXMIT)
 			nmp->nm_retry = NFS_MAXREXMIT;
@@ -261,6 +261,8 @@ mountnfs(argp, mp, nam, pth, hst)
 		else if (nmp->nm_wsize > NFS_MAXDATA)
 			nmp->nm_wsize = NFS_MAXDATA;
 	}
+	if (nmp->nm_wsize > MAXBSIZE)
+		nmp->nm_wsize = MAXBSIZE;
 
 	if ((argp->flags & NFSMNT_RSIZE) && argp->rsize > 0) {
 		nmp->nm_rsize = argp->rsize;
@@ -271,6 +273,8 @@ mountnfs(argp, mp, nam, pth, hst)
 		else if (nmp->nm_rsize > NFS_MAXDATA)
 			nmp->nm_rsize = NFS_MAXDATA;
 	}
+	if (nmp->nm_rsize > MAXBSIZE)
+		nmp->nm_rsize = MAXBSIZE;
 	/* Set up the sockets and per-host congestion */
 	nmp->nm_sotype = argp->sotype;
 	nmp->nm_soproto = argp->proto;

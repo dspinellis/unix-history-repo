@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.41 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.42 (Berkeley) %G%
  */
 
 /*
@@ -241,7 +241,7 @@ nfs_null(vp, cred)
 	struct mbuf *mreq, *mrep, *md, *mb;
 	
 	nfsm_reqhead(nfs_procids[NFSPROC_NULL], cred, 0);
-	nfsm_request(vp, NFSPROC_NULL, u.u_procp);
+	nfsm_request(vp, NFSPROC_NULL, u.u_procp, 0);
 	nfsm_reqdone;
 	return (error);
 }
@@ -268,7 +268,7 @@ nfs_access(vp, mode, cred)
 	if (cred->cr_uid == 0)
 		return (0);
 	vap = &vattr;
-	if (error = nfs_getattr(vp, vap, cred))
+	if (error = nfs_dogetattr(vp, vap, cred, 0))
 		return (error);
 	/*
 	 * Access check is based on only one of owner, group, public.
@@ -344,6 +344,15 @@ nfs_getattr(vp, vap, cred)
 	struct vattr *vap;
 	struct ucred *cred;
 {
+	return (nfs_dogetattr(vp, vap, cred, 0));
+}
+
+nfs_dogetattr(vp, vap, cred, tryhard)
+	register struct vnode *vp;
+	struct vattr *vap;
+	struct ucred *cred;
+	int tryhard;
+{
 	register caddr_t cp;
 	register long t1;
 	caddr_t bpos, dpos;
@@ -357,7 +366,7 @@ nfs_getattr(vp, vap, cred)
 	nfsstats.rpccnt[NFSPROC_GETATTR]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_GETATTR], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp, NFSPROC_GETATTR, u.u_procp);
+	nfsm_request(vp, NFSPROC_GETATTR, u.u_procp, tryhard);
 	nfsm_loadattr(vp, vap);
 	nfsm_reqdone;
 	return (error);
@@ -408,7 +417,7 @@ nfs_setattr(vp, vap, cred)
 	sp->sa_atime.tv_sec = txdr_unsigned(vap->va_atime.tv_sec);
 	sp->sa_atime.tv_usec = txdr_unsigned(vap->va_flags);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	nfsm_request(vp, NFSPROC_SETATTR, u.u_procp);
+	nfsm_request(vp, NFSPROC_SETATTR, u.u_procp, 1);
 	nfsm_loadattr(vp, (struct vattr *)0);
 	/* should we fill in any vap fields ?? */
 	nfsm_reqdone;
@@ -468,7 +477,7 @@ nfs_lookup(vp, ndp)
 		}
 		if (!error) {
 			if (vpid == vdp->v_id) {
-			   if (!nfs_getattr(vdp, &vattr, ndp->ni_cred) &&
+			   if (!nfs_dogetattr(vdp, &vattr, ndp->ni_cred, 0) &&
 			       vattr.va_ctime.tv_sec == VTONFS(vdp)->n_ctime) {
 				nfsstats.lookupcache_hits++;
 				return (0);
@@ -490,7 +499,7 @@ nfs_lookup(vp, ndp)
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 	nfsm_fhtom(vp);
 	nfsm_strtom(ndp->ni_ptr, len, NFS_MAXNAMLEN);
-	nfsm_request(vp, NFSPROC_LOOKUP, u.u_procp);
+	nfsm_request(vp, NFSPROC_LOOKUP, u.u_procp, 0);
 nfsmout:
 	if (error) {
 		if (lockparent || (flag != CREATE && flag != RENAME) ||
@@ -649,7 +658,7 @@ nfs_readlinkrpc(vp, uiop, cred, procp)
 	nfs_unlock(vp);
 	nfsm_reqhead(nfs_procids[NFSPROC_READLINK], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp, NFSPROC_READLINK, procp);
+	nfsm_request(vp, NFSPROC_READLINK, procp, 0);
 	nfsm_strsiz(len, NFS_MAXPATHLEN);
 	nfsm_mtouio(uiop, len);
 	nfsm_reqdone;
@@ -688,7 +697,7 @@ nfs_readrpc(vp, uiop, cred, procp)
 		*p++ = txdr_unsigned(uiop->uio_offset);
 		*p++ = txdr_unsigned(len);
 		*p = 0;
-		nfsm_request(vp, NFSPROC_READ, procp);
+		nfsm_request(vp, NFSPROC_READ, procp, 1);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		nfsm_strsiz(retlen, nmp->nm_rsize);
 		nfsm_mtouio(uiop, retlen);
@@ -733,7 +742,7 @@ nfs_writerpc(vp, uiop, cred, procp)
 		*(p+1) = txdr_unsigned(uiop->uio_offset);
 		*(p+3) = txdr_unsigned(len);
 		nfsm_uiotom(uiop, len);
-		nfsm_request(vp, NFSPROC_WRITE, procp);
+		nfsm_request(vp, NFSPROC_WRITE, procp, 1);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		m_freem(mrep);
 		tsiz -= len;
@@ -787,7 +796,7 @@ nfs_mknod(ndp, vap, cred)
 	/* or should these be VNOVAL ?? */
 	txdr_time(&vap->va_atime, &sp->sa_atime);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	nfsm_request(ndp->ni_dvp, NFSPROC_CREATE, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_CREATE, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
 	nfs_nput(ndp->ni_dvp);
@@ -823,7 +832,7 @@ nfs_create(ndp, vap)
 	/* or should these be VNOVAL ?? */
 	txdr_time(&vap->va_atime, &sp->sa_atime);
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);
-	nfsm_request(ndp->ni_dvp, NFSPROC_CREATE, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_CREATE, u.u_procp, 1);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
@@ -864,7 +873,7 @@ nfs_remove(ndp)
 			NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 		nfsm_fhtom(ndp->ni_dvp);
 		nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-		nfsm_request(ndp->ni_dvp, NFSPROC_REMOVE, u.u_procp);
+		nfsm_request(ndp->ni_dvp, NFSPROC_REMOVE, u.u_procp, 1);
 		nfsm_reqdone;
 		VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
 		/*
@@ -904,7 +913,7 @@ nfs_removeit(ndp)
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(ndp->ni_dvp, NFSPROC_REMOVE, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_REMOVE, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
 	return (error);
@@ -932,7 +941,7 @@ nfs_rename(sndp, tndp)
 	nfsm_strtom(sndp->ni_dent.d_name,sndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_fhtom(tndp->ni_dvp);
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
-	nfsm_request(sndp->ni_dvp, NFSPROC_RENAME, u.u_procp);
+	nfsm_request(sndp->ni_dvp, NFSPROC_RENAME, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(sndp->ni_dvp)->n_flag |= NMODIFIED;
 	VTONFS(tndp->ni_dvp)->n_flag |= NMODIFIED;
@@ -978,7 +987,7 @@ nfs_renameit(sndp, tndp)
 	nfsm_strtom(sndp->ni_dent.d_name,sndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
 	nfsm_fhtom(tndp->ni_dvp);
 	nfsm_strtom(tndp->ni_dent.d_name,tndp->ni_dent.d_namlen,NFS_MAXNAMLEN);
-	nfsm_request(sndp->ni_dvp, NFSPROC_RENAME, u.u_procp);
+	nfsm_request(sndp->ni_dvp, NFSPROC_RENAME, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(sndp->ni_dvp)->n_flag |= NMODIFIED;
 	VTONFS(tndp->ni_dvp)->n_flag |= NMODIFIED;
@@ -1008,7 +1017,7 @@ nfs_link(vp, ndp)
 	nfsm_fhtom(vp);
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(vp, NFSPROC_LINK, u.u_procp);
+	nfsm_request(vp, NFSPROC_LINK, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(vp)->n_attrstamp = 0;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
@@ -1053,7 +1062,7 @@ nfs_symlink(ndp, vap, nm)
 	sp->sa_size = txdr_unsigned(VNOVAL);
 	txdr_time(&vap->va_atime, &sp->sa_atime);	/* or VNOVAL ?? */
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);	/* or VNOVAL ?? */
-	nfsm_request(ndp->ni_dvp, NFSPROC_SYMLINK, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_SYMLINK, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
 	nfs_nput(ndp->ni_dvp);
@@ -1095,7 +1104,7 @@ nfs_mkdir(ndp, vap)
 	sp->sa_size = txdr_unsigned(VNOVAL);
 	txdr_time(&vap->va_atime, &sp->sa_atime);	/* or VNOVAL ?? */
 	txdr_time(&vap->va_mtime, &sp->sa_mtime);	/* or VNOVAL ?? */
-	nfsm_request(ndp->ni_dvp, NFSPROC_MKDIR, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_MKDIR, u.u_procp, 1);
 	nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
@@ -1114,7 +1123,7 @@ nfs_mkdir(ndp, vap)
 		    NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 		nfsm_fhtom(ndp->ni_dvp);
 		nfsm_strtom(ndp->ni_dent.d_name, len, NFS_MAXNAMLEN);
-		nfsm_request(ndp->ni_dvp, NFSPROC_LOOKUP, u.u_procp);
+		nfsm_request(ndp->ni_dvp, NFSPROC_LOOKUP, u.u_procp, 1);
 		nfsm_mtofh(ndp->ni_dvp, ndp->ni_vp);
 		if (ndp->ni_vp->v_type != VDIR) {
 			vput(ndp->ni_vp);
@@ -1150,7 +1159,7 @@ nfs_rmdir(ndp)
 		NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(ndp->ni_dent.d_namlen));
 	nfsm_fhtom(ndp->ni_dvp);
 	nfsm_strtom(ndp->ni_dent.d_name, ndp->ni_dent.d_namlen, NFS_MAXNAMLEN);
-	nfsm_request(ndp->ni_dvp, NFSPROC_RMDIR, u.u_procp);
+	nfsm_request(ndp->ni_dvp, NFSPROC_RMDIR, u.u_procp, 1);
 	nfsm_reqdone;
 	VTONFS(ndp->ni_dvp)->n_flag |= NMODIFIED;
 	cache_purge(ndp->ni_dvp);
@@ -1188,7 +1197,7 @@ nfs_readdir(vp, uiop, cred, eofflagp)
 	 */
 	if (uiop->uio_offset != 0 && uiop->uio_offset == np->n_direofoffset &&
 	    (np->n_flag & NMODIFIED) == 0 &&
-	    nfs_getattr(vp, &vattr, cred) == 0 &&
+	    nfs_dogetattr(vp, &vattr, cred, 0) == 0 &&
 	    np->n_mtime == vattr.va_mtime.tv_sec) {
 		*eofflagp = 1;
 		nfsstats.direofcache_hits++;
@@ -1254,7 +1263,7 @@ nfs_readdirrpc(vp, uiop, cred, procp)
 		*p++ = txdr_unsigned(uiop->uio_offset);
 		*p = txdr_unsigned(((uiop->uio_resid > nmp->nm_rsize) ?
 			nmp->nm_rsize : uiop->uio_resid) & ~(DIRBLKSIZ-1));
-		nfsm_request(vp, NFSPROC_READDIR, procp);
+		nfsm_request(vp, NFSPROC_READDIR, procp, 0);
 		siz = 0;
 		nfsm_disect(p, u_long *, NFSX_UNSIGNED);
 		more_dirs = fxdr_unsigned(int, *p);
@@ -1437,7 +1446,7 @@ nfs_lookitup(vp, ndp, fhp)
 	nfsm_reqhead(nfs_procids[NFSPROC_LOOKUP], ndp->ni_cred, NFSX_FH+NFSX_UNSIGNED+nfsm_rndup(len));
 	nfsm_fhtom(vp);
 	nfsm_strtom(ndp->ni_dent.d_name, len, NFS_MAXNAMLEN);
-	nfsm_request(vp, NFSPROC_LOOKUP, u.u_procp);
+	nfsm_request(vp, NFSPROC_LOOKUP, u.u_procp, 1);
 	if (fhp != NULL) {
 		nfsm_disect(cp, caddr_t, NFSX_FH);
 		bcopy(cp, (caddr_t)fhp, NFSX_FH);
@@ -1591,7 +1600,8 @@ nfs_doio(bp)
 		 */
 		while ((reg = rmalloc(nfsmap, (long)npf)) == 0) {
 			nfsmap_want++;
-			sleep((caddr_t)&nfsmap_want, PZERO-1);
+			(void) tsleep((caddr_t)&nfsmap_want, PZERO-1, "nfsmap",
+					0);
 		}
 		reg--;
 		if (bp->b_flags & B_PAGET)
