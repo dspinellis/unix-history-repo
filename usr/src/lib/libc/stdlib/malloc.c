@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -73,9 +73,10 @@ static	u_int nmalloc[NBUCKETS];
 #define	ASSERT(p)   if (!(p)) botch("p"); else
 static
 botch(s)
-char *s;
+	char *s;
 {
-	printf("assertion botched: %s\n",s);
+
+	printf("assertion botched: %s\n", s);
 	abort();
 }
 #else
@@ -221,7 +222,7 @@ free(cp)
  * is extern so the caller can modify it).  If that fails we just copy
  * however many bytes was given to realloc() and hope it's not huge.
  */
-int realloc_srchlen = 4;	/* 4 should be plenty.  -1 means whole list */
+int realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
 
 char *
 realloc(cp, nbytes)
@@ -240,14 +241,25 @@ realloc(cp, nbytes)
 	if (op->ov_magic == MAGIC) {
 		was_alloced++;
 		i = op->ov_index;
-	}
-	else {		/* already free: he is doing "compaction" (tee hee) */
+	} else {
+		/*
+		 * Already free, doing "compaction".
+		 *
+		 * Search for the old block of memory on the
+		 * free list.  First, check the most common
+		 * case (last element free'd), then (this failing)
+		 * the last ``realloc_srchlen'' items free'd.
+		 * If all lookups fail, then assume the size of
+		 * the memory block being realloc'd is the
+		 * smallest possible.
+		 */
 		if ((i = findbucket(op, 1)) < 0 &&
 		    (i = findbucket(op, realloc_srchlen)) < 0)
-			i = 0;		/* assume shortest possible */
+			i = 0;
 	}
 	onb = (1 << (i + 3)) - sizeof (*op) - RSLOP;
-	if (was_alloced &&		/* avoid the copy if same size block */
+	/* avoid the copy if same size block */
+	if (was_alloced &&
 	    nbytes <= onb && nbytes > (onb >> 1) - sizeof(*op) - RSLOP)
 		return(cp);
   	if ((res = malloc(nbytes)) == NULL)
@@ -266,16 +278,20 @@ realloc(cp, nbytes)
  */
 static
 findbucket(freep, srchlen)
-union overhead *freep;
-int srchlen;
+	union overhead *freep;
+	int srchlen;
 {
 	register union overhead *p;
 	register int i, j;
 
-	for (i = 0; i < NBUCKETS; i++)
-		for (j = 0, p = nextf[i]; p && j != srchlen; j++, p = p->ov_next)
+	for (i = 0; i < NBUCKETS; i++) {
+		j = 0;
+		for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
 			if (p == freep)
 				return (i);
+			j++;
+		}
+	}
 	return (-1);
 }
 
@@ -307,6 +323,7 @@ mstats(s)
   		fprintf(stderr, " %d", nmalloc[i]);
   		totused += nmalloc[i] * (1 << (i + 3));
   	}
-  	fprintf(stderr, "\n\tTotal in use: %d, total free: %d\n", totused, totfree);
+  	fprintf(stderr, "\n\tTotal in use: %d, total free: %d\n",
+	    totused, totfree);
 }
 #endif
