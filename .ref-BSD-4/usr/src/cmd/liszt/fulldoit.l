@@ -1,7 +1,0 @@
-(load "backquote")
-(load "auxfns0")
-(load "auxfns1")
-(load "top-level")
-(load "camacs")
-(load "car")
-(load "cdr")

@@ -1,6 +1,0 @@
-# this script sends its args to the machine its first argument represents
-set mach=$1
-shift
-foreach i ($argv)
-	netcp -q $i $mach\:upd/$i
-end

@@ -1,5 +1,0 @@
-default Cory
-machine Cory  local CSVAX  link /dev/ttyny  speed 9 time 20 count 3
-machine Ing70 local CSVAX  link /dev/ttyni  speed 9 time 15 count 2 length 100
-machine v local r link /dev/null speed 13 vaxtovax time 3 count 1 length 758
-machine r local v link /dev/null speed 13 vaxtovax time 3 count 1 length 758
