@@ -2,8 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.ms	5.1 (Berkeley) %G%
+.\"	@(#)f77.ms	5.2 (Berkeley) %G%
 .\"
+.hw name-list
 .de XX
 .ne 3
 .sp .3
@@ -75,7 +76,7 @@ and some added at Berkeley).
 .LP
 June 1983
 .LP
-Revised for 4.3 BSD, June, 1985.
+Revised for 4.3 BSD, September, 1985 by J. Berkman.
 .AE
 .CS 9 10 19 0 0 8
 .NH 0
@@ -150,12 +151,12 @@ for \f3.f\f1.
 .IP
 Arguments whose names end with \f3.F\f1
 are also taken to be Fortran 77 source programs; these are first
-processed by the C preprocessor before being compiled by f77.
+processed by the C preprocessor before being compiled by \fBf77\fP.
 .IP
 Arguments whose names end with \f3.r\f1 or \f3.e\f1
 are taken to be Ratfor or \s-1EFL\s0
 source programs, respectively; these are first transformed by the
-appropriate preprocessor, then compiled by f77.
+appropriate preprocessor, then compiled by \fBf77\fP.
 .IP
 In the same way,
 arguments whose names end 
@@ -182,11 +183,8 @@ Used in debugging the compiler.
 .XX \(mi\f3g\f1
 Have the compiler produce additional
 symbol table information for \fIdbx(1)\fR.
-Enable memory dumps on abnormal terminations.
-This only applies on the Vax
-\s-1UNIX\s0
-system.
-Incompatible with \(mi\f3O\f1.
+This flag is incompatible with \(mi\f3O\f1.
+See section 1.4 for more details.
 .XX \(mi\f3i2\f1
 On machines which support short integers,
 make the default integer constants and variables short
@@ -201,8 +199,9 @@ before using the appropriate compiler.
 Put executable module on file
 .I file .
 (Default is \fBa.out\fR).
-.XX \(mi\f3onetrip\f1
-.XX \(mi\f31\f1
+.ne 6
+.XX \(mi\f3onetrip\f1\ or\ \(mi\f31\f1
+.br
 Compile code that performs every
 .B do
 loop at least once
@@ -212,8 +211,15 @@ Generate code to produce usage profiles.
 .XX \(mi\f3pg\f1
 Generate code in the manner of \fB\(mip\fR, but invoke a run-time
 recording mechanism that keeps more extensive statistics.
+See
+.I gprof (1).
 .XX \(mi\f3q\f1
 Suppress printing of file names and program unit names during compilation.
+.XX \(mi\f3r8\f1
+Treat all floating point variables,
+constants, functions and intrinsics
+as double precision and all complex
+quantities as double complex.  See section 2.17.
 .XX \(mi\f3u\f1
 Make the default type of a variable
 .B undefined
@@ -308,16 +314,33 @@ for transferring data.
 With the few exceptions described below, only documented calls are used,
 so it should be relatively easy to modify to run on other operating
 systems.
-.Nh 2 Debugging\ and\ Memory\ Dumps
-When the \fB\(mig\fP flag is specified during loading,
-abnormal terminations cause a memory image to be written to the file \fBcore\fP.
-The \fBf77_dump_flag\fP2 environment variable may be used to specify
-at execution time whether to generate a \fBcore\fP file on abnormal termination.
+.Nh 2 Debugging\ Aids
+A memory image is sometimes
+written to a file \fBcore\fP in the current directory
+upon abnormal termination for errors caught by the \fBf77\fP libraries,
+user calls to \fBabort\fP, and certain signals (see \fBsigvec\fP\|(2)
+in the \fI\s-1UNIX\s0 Programmer's Manual\fP).
+\fBCore\fP is normally created only if
+the \fB\(mig\fP flag was specified to \fBf77\fP during loading.\(dg
+.FS
+\(dgSpecify \fB\(mig\fP when loading with \fBcc\fP or \fBf77\fP;
+specify \fB\(milg\fP as a library
+when using \fBld\fP directly.
+.FE
+The source-level debugger
+.I dbx (1)
+may be used with the executable and the
+.B core
+file to examine the image and
+determine what went wrong.
+.IP
+In the event that it is necessary to override this default behavior,
+the user may set the environment variable \fBf77_dump_flag\fP.
 If \fBf77_dump_flag\fP is set to a value beginning
-with \fBn\fI, \fBcore\fP is not produced regardless of whether
-\fB\(mig\fP was specified, and
-if the value of \fBf77_dump_flag\fP begins with \fBy\fP,
-the file \fBcore\fP is always produced for abnormal terminations.
+with \fBn\fP, a \fBcore\fP file is not produced regardless of whether
+\fB\(mig\fP was specified at compile time,
+and if the value begins with \fBy\fP,
+dumps are produced even if \fB\(mig\fP was not specified.
 .NH 1
 LANGUAGE EXTENSIONS
 .XS
@@ -348,17 +371,18 @@ z1 = ( 0.1d0, 0.2d0 )
 z2 = dcmplx( dx, dy )
 .DE
 assign double complex values to \fBz1\fP and \fBz2\fP.
-The double precision values which compose the double complex
-value may be isolated by using \fBdreal\fP or \fBdble\fP for
+The double precision values which constitute the double complex
+value may be isolated by using \fBdreal\fP or \fBdble\fP for the
 real part and \fBimag\fP or \fBdimag\fP for the
-imaginary part.  Use \fBconjg\fP or \fBdconjg\fP to compute the
-double complex conjugate of a double comple value.
-There are \fBdouble complex\fP versions of each of the
-\fBcomplex\fP intrinsic functions.  They may be accessed using their
-generic names: \fBabs\fP, \fBsqrt\fP, \fBexp\fP,
+imaginary part.
+To compute the double complex conjugate of a double complex value,
+use \fBconjg\fP or \fBdconjg\fP.
+The other \fBdouble complex\fP intrinsic functions may be
+accessed using their generic names or specific names.
+The generic names are: \fBabs\fP, \fBsqrt\fP, \fBexp\fP,
 \fBlog\fP, \fBsin\fP, and \fBcos\fP.
 The specific names are the same as the generic names preceded by
-either \fBcd\fP or \fBz\fP, e.g. you may use either \fBsqrt\fP,
+either \fBcd\fP or \fBz\fP, e.g. you may code \fBsqrt\fP,
 \fBzsqrt\fP or \fBcdsqrt\fP to compute the square root of a double
 complex value.
 .Nh 2 Internal\ Files
@@ -392,7 +416,14 @@ Specifying the
 .B \(miu
 compiler flag is equivalent to beginning each procedure with this statement.
 .Nh 2 Recursion
-Procedures may call themselves, directly or through a chain of other procedures.
+Procedures may call themselves,
+directly or through a chain of other procedures.
+Since Fortran variables are by default
+.B static ,
+it is often necessary to use the
+.B automatic
+storage extension to prevent unexpected results
+from recursive functions.
 .Nh 2 Automatic\ Storage
 Two new keywords are recognized,
 .B static
@@ -402,16 +433,19 @@ These keywords may appear as ``types'' in type statements and in
 .B implicit
 statements.
 Local variables are static by default;
-there is exactly one copy of the datum, and its value is retained between calls.
-There is one copy of each variable declared
-.B automatic
-for each invocation of the procedure.
+there is only one instance of the variable.
+For variables declared
+.B automatic,
+there is a separate instance of the variable for each
+invocation of the procedure.
 Automatic variables may not appear in
 .B equivalence,
 .B data,
 or
 .B save
 statements.
+Neither type of variable is guaranteed to retain its value between
+calls to a subprogram (see the \fBsave\fP statement in Appendix A).
 .Nh 2 Source\ Input\ Format
 The Standard expects input to the compiler to be in 72-column format:
 except in comment lines,
@@ -440,12 +474,12 @@ However, if the
 compiler flag is specified, upper case letters are not transformed.
 In this mode, it is possible to specify external names with upper case letters in them,
 and to have distinct variables differing only in case.
-Regardless of the setting of the flag,
+If \(mi\f3U\f1 is specified, 
 keywords will only be recognized in lower case.
 .Nh 2 Include\ Statement
 The statement
 .DS
-include \(fmstuff\(fm
+include \(fmstuff\|\(fm
 .DE
 is replaced by the contents of the file
 .B stuff ;
@@ -462,7 +496,7 @@ If the letter is \fBz\fR or \fBx\fR, the string is hexadecimal, with digits \fB0
 Thus, the statements
 .DS
 integer a(3)
-data a / b\(fm1010\(fm, o\(fm12\(fm, z\(fma\(fm /
+data a / b\(fm1010\|\(fm, o\(fm12\|\(fm, z\(fma\|\(fm /
 .DE
 initialize all three elements of
 .B a
@@ -553,7 +587,7 @@ On machines that support halfword integers,
 the compiler accepts declarations of type
 .B integer\(**2.
 (Ordinary integers follow the Fortran rules about occupying the same
-space as a REAL variable; they are assumed to be of C type
+space as a real variable; they are assumed to be of C type
 .B "long int" ;
 halfword integers are of C type
 .B "short int" .)
@@ -581,12 +615,214 @@ intrinsic functions specified in the Fortran 77 Standard.
 In addition, there are built-in functions
 for performing bitwise logical and boolean operations on
 integer and logical values
-(\fBor\fR, \fBand\fR, \fBxor\fR, and \fBnot\fR, \fBlshift\fP, and \fBrshift\fP),
+(\fBor\fR, \fBand\fR, \fBxor\fR, \fBnot\fR, \fBlshift\fP, and \fBrshift\fP),
 and intrinsic functions for \fBdouble complex\fP values (see section 2.1).
 The \fBf77\fP library contains many other functions, such as accessing
-The \s-1UNIX\s0 command arguments (\fBgetarg\fR and \fBiargc\fR)
+the \s-1UNIX\s0 command arguments (\fBgetarg\fR and \fBiargc\fR)
 and environment (\fBgetenv\fR).
-See \fBintro\fP(3f) for a list of additional functions.
+See \fBintro\fP(3f) and \fBbit\fP(3f) in the \fI\s-1UNIX\s0
+Programmer's Manual\fP
+for more information.
+.Nh 2 Namelist\ \s-1I/O\s0
+Namelist \s-1I/O\s0 provides an easy way to input and output information without
+formats.
+Although not part of the standard, namelist \s-1I/O\s0 was part of many
+Fortran 66 systems and is a common extension to Fortran 77 systems.
+.IP
+Variables and arrays to be used in namelist \s-1I/O\s0 are declared as part of
+a namelist in a \fBnamelist\fP statement, e.g.:
+.DS
+	character str\(**12
+	logical flags(20)
+	complex c(2)
+	real arr1(2,3), arr2(0:3,4)
+	namelist /basic/  arr1, arr2, key, str, c /flglst/ key, flags
+.DE
+This defines two namelists: list \fBbasic\fP consists of variables
+\fBkey\fP and \fBstr\fP and arrays \fBarr1\fP, \fBarr2\fP,
+and \fBc\fP; list \fBflglst\fP consists of variable \fBkey\fP and
+array \fBflags\fP.
+A namelist can include variables and arrays of any type, and
+a variable or array may be in several different namelists.
+However dummy arguments and array elements may not be in a namelist.
+A namelist name may be used in external sequential \fBread\fP, \fBwrite\fP
+and \fBprint\fP statements wherever a format could be used.
+.IP
+In a namelist \fBread\fP, column one of each data record is ignored.
+The data begins with an ampersand in column 2 followed by
+the namelist name and a blank.
+Then there is a sequence of value assignments separated by commas
+and finally an ``&end''.
+A simple example of input data corresponding to namelist \fBbasic\fP is:
+.DS
+\ &basic key=5, str=\(fmhi there\(fm &end
+.DE
+.EQ
+delim off
+.EN
+For compatibility with other systems, dollar signs
+may be used instead of the ampersands:
+.DS
+\ $basic key=5, str=\(fmhi there\(fm $end
+.DE
+.IP
+.EQ
+delim $$
+.EN
+A value assignment in the data record must be one of three forms.
+The simplest is a variable name followed by an equal sign
+followed by a data value which is assigned to that variable,
+e.g. ``key=5''.
+The second form consists of an array name followed by ``=''
+followed by one or more values to be assigned to the array,
+e.g.:
+.DS
+c=(1.1,\-2.9),(\-1.8e+10,14.0e\-3)
+.DE
+assigns values to c(1) and c(2) in the complex array c.
+.IP
+As in other \fBread\fP statements, values are assigned in the order of the
+array in memory, i.e. column-major order for two dimensional arrays.
+Multiple copies of a value may be represented by a repetition count
+followed by an asterisk followed by the value; e.g. ``3*55.4'' is the
+same as ``55.4, 55.4, 55.4''.
+It is an error to specify more values than the array can hold;
+if less are specified, only that number of elements of the array
+are changed.
+The third form of a value assignment is a subscripted variable
+name followed by ``='' followed by a value or values,
+e.g.: ``arr2(0,4)=15.2''.
+Only integer constant subscripts may be used.
+The correct number of subscripts must be used and the subscripts
+must be legal.
+This form is the same as the form with an array name except the
+array is filled starting at the named element.
+.IP
+In all three forms, the variable or array name must be declared
+in the namelist.  The form of the data values is the same as in
+list directed input except that in namelist \s-1I/O\s0,
+character strings in the data must be enclosed in apostrophes or
+double quotes, and
+repetition counts must be followed by data values.
+.IP
+One use of namelist input is to read in a list of options or flags.
+For example:
+.DS
+	logical flags(14)
+	namelist /pars/ flags, iters, xlow, xhigh, xinc
+	data flags/14*.false./
+
+10	read(5,pars,end=900)
+	print pars
+	call calc( xlow, xhigh, xinc, flags, iters )
+	go to 10
+900	continue
+	end
+.DE
+could be run with the following data (each record begins with a space):
+.DS
+\ &pars iters=10, xlow=0.0, xhigh=1.0, xinc=0.1 &end
+\ &pars xinc=0.2,
+\ \ \ flags(2)=2*.true., flags(8)=.true. &end
+\ &pars xlow=2.0, xhigh=8.0 &end
+.DE
+The program reads parameters for the run from the first data set
+and computes using them.
+Then it loops and each successive set of namelist input data
+specifies only those data items which need to be changed.
+Note the second data set sets the $2 sup nd$, $3 sup rd$,
+and $8 sup th$ elements in the array \fBflags\fP to \fB.true.\fP.
+.IP
+When a namelist name is used in a \fBwrite\fP or \fBprint\fP statement,
+all the values in the namelist are output together with their names.
+For example the \fBprint\fP in the program above prints the following:
+.DS
+\ &pars  flags=  f,  f,  f,  f,  f,  f,  f,  f,  f,  f,  f,  f,  f,  f, iters=
+\   10, xlow=  0., xhigh=   1.00000, xinc=  0.100000
+\ &end
+\ &pars  flags=  f,  t,  t,  f,  f,  f,  f,  t,  f,  f,  f,  f,  f,  f, iters=
+\   10, xlow=  0., xhigh=   1.00000, xinc=  0.200000
+\ &end
+\ &pars  flags=  f,  t,  t,  f,  f,  f,  f,  t,  f,  f,  f,  f,  f,  f, iters=
+\   10, xlow=   2.00000, xhigh=   8.00000, xinc=  0.200000
+\ &end
+.DE
+.IP
+Each line begins with a space so that namelist output can be used as input to 
+a namelist \fBread\fP.
+The default is to use ampersands in namelist \fBprint\fP and
+\fBwrite\fP.
+However, dollar signs will be used if the last preceding namelist \fBread\fP
+data set used dollar signs.
+The character to be used is stored as the first character of the common
+block \fBnamelistkey\fP.
+.Nh 2 Automatic\ Precision\ Increase
+The \(mi\fBr8\fP flag allows a user to run a program with increased
+precision without changing any of the program source,
+i.e. it allows a user to take a program coded in
+single precision and compile and execute it as if it had
+been coded in double precision.
+The option extends the precision of all single precision real
+and complex constants, variables, external functions, and intrinsic functions.
+For example, the source:
+.DS
+	implicit complex(c)
+	real last
+	intrinsic sin, csin
+	data last/0.3/
+
+	x = 0.1
+	y = sqrt(x)+sqrt(last)
+	c1 = (0.1,0.2)
+	c2 = sqrt(c1)
+	x = real(i)
+	y = aimag(c1)
+	call fun(sin,csin)
+.DE
+is compiled under this flag as if it had been written as:
+.DS
+	implicit double precision (a-b,d-h,o-z), double complex(c)
+	double precision last
+	intrinsic dsin, cdsin
+	data last/0.3d0/
+
+	x = 0.1d0
+	y = sqrt(x)+sqrt(last)
+	c1 = (0.1d0,0.2d0)
+	c2 = sqrt(c1)
+	x = dreal(i)
+	y = dimag(c1)
+	call fun(dsin,cdsin)
+.DE
+When the \(mi\fBr8\f flag is invoked,
+the calls using the generic name \fBsqrt\fP will refer to a different
+specific function since the types of the arguments have changed.
+This option extends the precision of all single precision \fBreal\fP
+and \fBcomplex\fP variables and functions,
+including those declared \fBreal\(**4\fP and \fBcomplex\(**8\fP.
+.IP
+In order to successfully use this flag to increase precision,
+the entire program including
+all the subroutines and functions it calls must be recompiled.
+Programs which use dynamic memory allocation or
+use equivalence or common statements to associate variables of different types
+may have to be changed by hand.
+Similar caveats apply to the sizes of records
+in unformatted \s-1I/O\s0.
+.Nh 2 Characters\ and\ Integers
+A character constant of integer length or less
+may be assigned to an integer variable.
+Individual bytes are packed into
+the integer in the native byte order.
+The character constant is padded with blanks
+to the width of the integer during the assignment.
+Use of this feature is deprecated;
+it is intended only as a porting aid
+for extended Fortran 66 programs.
+Note that the intrinsic
+.B ichar
+function behaves as the standard requires,
+converting only single bytes to integers.
 .NH 1
 VIOLATIONS OF THE STANDARD
 .XS
@@ -825,18 +1061,19 @@ and then calls \fBf_exit\fP to close any Fortran files opened.
 .IP
 \fBf_init\fP initializes Fortran units 0, 5, and 6 to standard error,
 standard input, and standard output respectively.
-It also calls \fBsetlinebuf()\fP(3S) to initiate line buffering 
+It also calls \fBsetlinebuf\fP to initiate line buffering 
 of standard error.
 If you are using Fortran subroutines which may do \s-1I/O\s0
 and you have a C main program,
-call \fBf_init()\fP before calling the Fortran subroutines.
+call \fBf_init\fP before calling the Fortran subroutines.
 Otherwise, Fortran units 0, 5, and 6 will be connected to files
 \fBfort.0\fP, \fBfort.5\fP, and \fBfort.6\fP,
-and error messages from the Fortran libraries will be written
+and error messages from the \fBf77\fP libraries will be written
 to \fBfort.0\fP instead of to standard error.
-All files are automatically closed if you terminate execution by calling
-\fIexit\fP(3).
-\fIf_exit()\fP is needed if you have Fortran scratch files to be deleted.
+If your C program terminates by calling the C function \fBexit\fP,
+all files are automatically closed.
+If there are Fortran scratch files to be deleted, first call \fBf_exit\fP.
+\fBF_init\fP and \fBf_exit\fP do not have any arguments.
 .IP
 The \fB\(mid\fP flag will show what libraries are used in loading Fortran
 programs.
@@ -928,10 +1165,10 @@ runs on the \s-1PDP-11\s0, \s-1VAX-11/780\s0, and Interdata 8/32
 \s-1UNIX\s0
 systems.
 .Nh 2 Logical\ Units\ and\ Files
-Fortran unit numbers may be any integer between 0 and 99.
+Fortran logical unit numbers may be any integer between 0 and 99.
 The number of simultaneously open files is currently limited to 48.
 .IP
-Units 5, 6, and 0 are connected when the program starts to
+Units 5, 6, and 0 are connected before the program begins to
 standard input, standard output, and standard error respectively.
 .IP
 If an unit is opened explicitly by an \fBopen\fP statement with
@@ -956,7 +1193,7 @@ will destroy any data already in the file, but a
 .B read
 will work reasonably.
 To position a file to its end,
-use a \fBread\fP loop, or the system dependent function \fBfseek\fP(3f).
+use a \fBread\fP loop, or the system dependent function \fBfseek\fP.
 The preconnected units
 0, 5, and 6 are positioned as they come
 from the program's parent process.
@@ -1156,13 +1393,13 @@ It is still poor practice to depend on implicit typing, but this statement is an
 .Nh 2 PARAMETER\ Statement
 It is now possible to give a constant a symbolic name, as in
 .DS
-character str*(*)
+character str\(**(\(**)
 parameter (x=17, y=x/3, pi=3.14159d0, str=\(fmhello\(fm)
 .DE
 The type of each parameter name is governed
 by the same implicit and explicit rules as for a variable.
 Symbolic names for \fBcharacter\fP constants may be declared with
-an implied length ``(*)''.
+an implied length ``(\(**)''.
 The right side of each equal sign must be a constant expression
 (an expression made up of constants, operators, and already defined parameters).
 .Nh 2 Array\ Declarations
@@ -1183,18 +1420,19 @@ to indicate that the upper bound is not specified:
 integer a(5, \(**),  b(\(**), c(0:1, \(mi2:\(**)
 .DE
 .Nh 2 SAVE\ Statement
-A poorly known rule of Fortran 66 is that local variables in a procedure do not necessarily retain their values between
-invocations of that procedure.
+A little known rule of Fortran 66 is that variables in a procedure do
+not necessarily retain their values between invocations of that procedure.
+This rule permits overlay and stack implementations for the affected variables.
+In Fortran 77, three types of variables automatically keep there values:
+variables in blank common,
+variables defined in \fBdata\fP statements and never changed, and 
+variables in named common blocks which have not become undefined.
 At any instant in the execution of a program,
-if a common block is declared neither in the currently executing procedure
+if a named common block is declared neither in the currently executing procedure
 nor in any of the procedures in the chain of callers,
-all of the variables in that common block also become undefined.
-(The only exceptions are variables that have been defined in a
-.B data
-statement and never changed.)
-These rules permit overlay and stack implementations for the affected variables.
-Fortran 77 permits one to specify that certain variables and common blocks are to retain their
-values between invocations.
+all of the variables in that common block become undefined.
+Fortran 77 permits one to specify that certain variables and common blocks are
+to retain their values between invocations.
 The declaration
 .DS
 save a, /b/, c
@@ -1205,13 +1443,14 @@ and
 .B c
 and all of the contents of common block
 .B b
-unaffected by a return.
+unaffected by an exit from the procedure.
 The simple declaration
 .DS
 save
 .DE
 has this effect on all variables and common blocks in the procedure.
-A common block must be \fBsave\fRd in every procedure in which it is declared if the desired effect is to occur.
+A common block must be \fBsave\fRd in every procedure in which it is declared
+if the desired effect is to occur.
 .Nh 2 INTRINSIC\ Statement
 All of the functions specified in the Standard are in a single category,
 ``intrinsic functions'', rather than being divided into ``intrinsic'' and ``basic external'' functions.
@@ -1233,7 +1472,7 @@ If an apostrophe is to be included in a constant, it is repeated:
  \(fmain\(fm\(fmt\(fm
 .DE
 Although null (zero-length) character strings are not allowed in the
-standard Fortran, they may be used with \fBf77\fI.
+standard Fortran, they may be used with \fBf77\fP.
 Our compiler has two different quotation marks, `` \(fm '' and `` " ''.
 (See section 2.9 in the main text.)
 .Nh 2 Concatenation
@@ -1255,7 +1494,7 @@ Dummy arguments of type character may be declared with implied
 lengths:
 .DS
 subroutine s ( a, b )
-character a*(*), b*(*)
+character a\(**(\(**), b\(**(\(**)
 .DE
 Such dummy arguments may be used in concatenations in assign statements:
 .DS
@@ -1263,19 +1502,28 @@ s = a // b
 .DE
 but not in other contexts.  For example:
 .DS
-if( a // b .eq. "abc" ) key = 1
+if( a // b .eq. \(fmabc\(fm ) key = 1
 call sub( a // b )
 .DE
-are legal statements if ``a'' and ``b'' are dummy arguments with
+are legal statements if ``a'' and ``b'' are dummy arguments
 declared with explicit lengths, or if they are not arguments.
-These are illegal if they are delcared with impled lengths.
+These are illegal if they are declared with implied lengths.
 .Nh 2 Character\ String\ Assignment
 The left and right sides of a character assignment may not share storage.
 (The assumed implementation of character assignment is to copy characters from the right to the left side.)
 If the left side is longer than the right, it is padded with blanks.
 If the left side is shorter than the right, trailing characters are discarded.
+Since the two sides of a character assignment must be disjoint, the
+following are illegal:
+.DS
+str = \(fm\ \(fm // str
+str = str(2:)
+.DE
+These are not flagged as errors during compilation or execution,
+however the result is undefined.
 .Nh 2 Substrings
-It is possible to extract a substring of a character variable or character array element, using the colon notation:
+It is possible to extract a substring of a character variable or character
+array element, using the colon notation:
 .DS
 a(i,\|j) (m:n)
 .DE
@@ -1329,7 +1577,7 @@ Executable Statements
 At last, the
 if-then-else
 branching structure has been added to Fortran.
-It is called a ``Block If''.
+It is called a ``Block If\|''.
 A Block If begins with a statement of the form
 .DS
 if ( . . . ) then
@@ -1434,7 +1682,7 @@ and
 .B a
 and
 .B x
-are integer variables
+are integer variables.
 If an error occurs during \s-1I/O\s0,
 control returns to the program at statement 20.
 If the end of the file is reached,
@@ -1460,17 +1708,17 @@ or
 .B write
 statement.
 .DS
-write(6,\|\(fm(i2,\|\(fm\|\(fm isn\|\(fm\|\(fm\|\(fm\|\(fmt \|\(fm\|\(fm,i1)\|\(fm) 7, 4
+write(6,\|\(fm(i2,\|\(fm\|\(fm isn\|\(fm\|\(fm\|\(fm\|\(fm\|t \|\(fm\|\(fm,i1)\|\(fm) 7, 4
 .DE
 produces
 .DS
- 7 isn\|\(fmt 4
+ 7 isn\|\(fm\|t 4
 .DE
 In the example above, the format is the character constant
 .DS
 (i2,\|\(fm isn\|\(fm\|\(fmt \|\(fm,i1)
 .DE
-and the imbedded character constant
+and the embedded character constant
 .DS
  isn\|\(fmt
 .DE
@@ -1479,14 +1727,14 @@ is copied into the output.
 The example could have been written more legibly by taking advantage
 of the two types of quote marks.
 .DS
-write(6,\|\(fm(i2," isn\|\(fm\|\(fmt ",i1)\|\(fm) 7, 4
+write(6,\|\(fm(i2," isn\|\(fm\|\|\(fm\|t ",i1)\|\(fm) 7, 4
 .DE
 However, the double quote is not standard Fortran 77.
 .IP
 The standard does not allow reading into character constants or
-hollerith fields.
+Hollerith fields.
 In order to facilitate running older programs, the Fortran \s-1I/O\s0 library
-allows reading into hollerith fields; however this is a practice to be
+allows reading into Hollerith fields; however this is a practice to be
 avoided.
 .NH 3
 Positional Editing Codes
@@ -1652,7 +1900,7 @@ read 10, a, b
 reads from the standard unit using format statement 10.
 The default unit may be explicitly specified by an asterisk, as in
 .DS
-read(\(**, 10) a,b
+read(\(**, 10) a, b
 .DE
 Similarly, the standard output unit is specified by a
 .B print
@@ -1690,7 +1938,7 @@ means the corresponding variable in the
 Values may be preceded by repetition counts,
 as in
 .DS
-4\(**(3.,2.)  2\(**, 4\(**\(fmhello\(fm
+4\(**(3.,2.)  2\(**, 4\(**\|\(fm\|hello\|\(fm
 .DE
 which stands for 4 complex constants, 2 null values,
 and 4 string constants.
@@ -1850,7 +2098,7 @@ or
 a character expression,
 which when stripped of trailing blanks,
 is the name of the file to be connected to the unit.
-The filename should not be given if the
+The file name should not be given if the
 .B status=\(fmscratch\(fm.
 .HP status=
 one of
@@ -1960,7 +2208,7 @@ or a file (``inquire by file'').
 Simple examples are:
 .DS
 inquire(unit=3, name=xx)
-inquire(file=\(fmjunk\(fm, number=n, exist=l)
+inquire(file=\(fm\|junk\|\(fm, number=n, exist=l)
 .DE
 .RS
 .HP file=
@@ -2013,7 +2261,6 @@ otherwise.
 a character variable to which is assigned the name
 of the file (inquire by file) or the name of the
 file connected to the unit (inquire by unit).
-The name will be the full name of the file.
 .HP access=
 a character variable to which will be assigned
 the value
@@ -2021,8 +2268,9 @@ the value
 if the connection is for
 sequential \s-1I/O\s0,
 .B \(fmdirect\(fm
-if the connection is for direct \s-1I/O\s0.
-The value becomes undefined if there is no connection.
+if the connection is for direct \s-1I/O\s0,
+.B \(fmunknown\(fm
+if not connected.
 .HP sequential=
 a character variable to which is assigned the
 value
@@ -2049,9 +2297,10 @@ a character variable to which is assigned the value
 if the file is connected for unformatted \s-1I/O\s0,
 .B \(fmformatted\(fm
 if the file is connected for formatted \s-1I/O\s0,
-or
 .B \(fmprint\(fm
-for formatted \s-1I/O\s0 with vertical format control.
+for formatted \s-1I/O\s0 with vertical format control, or
+.B \(fmunknown\(fm
+if not connected.
 .HP formatted=
 a character variable to which is assigned the value
 .B \(fmyes\(fm
@@ -2089,37 +2338,8 @@ if blanks are being converted to zeros and
 the file is connected for formatted \s-1I/O\s0.
 .RE
 .IP
-.I "The gentle reader"
-will remember that the people who wrote the Standard
-probably weren't thinking of his needs.
-Here is an example.
-The declarations are omitted.
-.DS
-open(1, file=\(fm/dev/console\(fm)
-.DE
-On a
-\s-1UNIX\s0
-system this statement opens the console for formatted sequential
-\s-1I/O\s0.
-An
-.B inquire
-statement for either unit 1 or file "/dev/console"
-would reveal that the file exists, is connected to unit 1,
-has a name, namely "/dev/console",
-is opened for sequential \s-1I/O\s0,
-could be connected for sequential \s-1I/O\s0,
-could not be connected for direct \s-1I/O\s0 (can't seek),
-is connected for formatted \s-1I/O\s0,
-could be connected for formatted \s-1I/O\s0,
-could not be connected for unformatted \s-1I/O\s0
-(can't seek),
-has neither a record length nor a next record number,
-and is ignoring blanks in numeric fields.
-.IP
-The
-.B inquire
-statement does not give a way of determining file permissions;
-instead use \fBaccess\fP(3f).
+For information on file permissions, ownership, etc.,
+use the Fortran library routines \fBstat\fP and \fBaccess\fP.
 .IP
 For further discussion of the \s-1UNIX\s0 Fortran \s-1I/O\s0 system
 see ``Introduction to the f77 I/O Library'' [9].
@@ -2163,7 +2383,7 @@ Technical Report #55\f1.  1977.
 Ritchie, D. M.  Private communication.
 .IP 9.
 Wasley, D. L. ``Introduction to the f77 I/O Library'',
-\fIUNIX Programmer's Manual, Volume 2c\fR.
+\fI\s-1UNIX\s0 Programmer's Manual, Volume 2c\fR.
 .sp
 .LP
 .B

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77IO.ms	5.1 (Berkeley) %G%
+.\"	@(#)f77IO.ms	5.2 (Berkeley) %G%
 .\"
 .de Fo
 Fortran\\$1
@@ -56,7 +56,7 @@ by this author.
 .LP
 April 1983
 .LP
-Revised for 4.3 BSD, June, 1985.
+Revised for 4.3 BSD, September, 1985 by J. Berkman.
 .LP
 .AE
 .PP
@@ -80,27 +80,28 @@ Because of the complexity of
 .Fo
 I/O,
 some general concepts deserve clarification.
-.Nh 2 "Types of I/O"
-There are three forms of I/O:
+.Nh 2 "Types of I/O and logical records"
+There are four forms of I/O:
 .B formatted,
 .B unformatted,
+.B list\ directed,
 and
-.B list-directed.
-The last is
-related to formatted but does not obey all the rules for formatted I/O.
-There are two modes of access to
+.B namelist.
+The last two are
+related to formatted but do not obey all the rules for formatted I/O.
+There are two types of ``files'':
 .B external
 and
 .B internal
-files:
+and two modes of access to files:
 .B direct
 and
 .B sequential.
 The definition of a logical record depends upon the
-combination of I/O form and mode specified by the
+combination of I/O form, file type, and access mode specified by the
 .Fo
 I/O statement.
-.Nh 3 "Direct access"
+.Nh 3 "Direct access external I/O"
 A logical record in a
 .B direct
 access
@@ -113,7 +114,7 @@ the original record size definition. Shorter logical records are allowed.
 direct writes leave the unfilled part of the record undefined.
 .B Formatted
 direct writes cause the unfilled record to be padded with blanks.
-.Nh 3 "Sequential access"
+.Nh 3 "Sequential access external I/O"
 Logical records in
 .B sequentially
 accessed
@@ -133,16 +134,20 @@ the format statement interacting with the iolist at execution time.
 The ``newline'' character is the logical record delimiter.
 Formatted sequential access causes one or more logical records
 ending with ``newline'' characters to be read or written.
-.Nh 3 "List directed I/O"
+.Nh 3 "List directed and namelist sequential external I/O"
 Logical record length for
-.B list-directed
+.B list\ directed
+and
+.B namelist
 I/O is relatively meaningless.
 On output, the record length is dependent on the magnitude of the
 data items.
 On input, the record length is determined by the data types and the file
 contents.
 By ANSI definition, a slash, ``/'', terminates execution of a
-list-directed input operation.
+list directed input operation.
+Namelist input is terminated by ``&end'' or ``$end'' (depending on whether
+the character before the namelist name was ``&'' or ``$'').
 .Nh 3 "Internal I/O"
 The logical record length for an
 .B internal
@@ -151,7 +156,9 @@ character variable or array element. Thus a simple character variable
 is a single logical record. A character variable array is similar to
 a fixed length direct access file, and obeys the same rules.
 .B Unformatted
-I/O is not allowed on "internal" files.
+and
+.B namelist
+I/O are not allowed on ``internal'' files.
 .Nh 2 "I/O execution"
 Note that each execution of a
 .Fo
@@ -164,31 +171,37 @@ I/O statement causes one or more logical records to be read or written.
 .PP
 A slash, ``/'', will terminate assignment of
 values to the input list during
-.B list-directed
+.B list\ directed
 input and the remainder of the current input line is skipped.
 The standard is rather vague on this point but seems to require that
 a new external logical record be found at the start of any formatted
 input. Therefore data following the slash is ignored and may be used
 to comment the data file.
 .PP
-.B "Direct access list-directed"
+.B "Direct access list directed"
 I/O is not allowed.
 .B "Unformatted internal"
 I/O is not allowed.
-Both the above will be caught by the compiler.
+.B Namelist
+I/O is allowed only with
+.B "external sequential"
+files.
 All other flavors of I/O are allowed, although some are not part of the
 .Sm ANSI
 standard.
 .PP
-Any error detected during I/O processing will cause the program to abort
-unless alternative action has been provided specifically in the program.
 Any I/O statement may include an
 .B err=
-clause (and
+clause to specify an alternative branch to be taken on errors
+and/or an
 .B iostat=
-clause)
-to specify an
-alternative branch to be taken on errors (and return the specific error code).
+clause to return the specific error code.
+Any error detected during I/O processing will cause the program to abort
+unless either
+.B err=
+or
+.B iostat=
+has been specificed in the program.
 Read statements may include
 .B end=
 to branch on end-of-file.
@@ -246,6 +259,13 @@ with ``\\n'' and ``\\f'' respectively.
 The control character ``+'' is not implemented and, like
 any other character in the first position of a record
 written to a ``print'' file, is dropped.
+The
+.B "form = \(fmprint\(fm"
+mode does not recognize vertical format control for
+.B "direct formatted, list directed,"
+or
+.B "namelist"
+output.
 .PP
 An alternative is to use
 the filter \fIfpr\fP(1) for vertical format control.
@@ -255,32 +275,28 @@ Unlike
 .B "form = \(fmprint\(fm"
 which drops unrecognized form control characters, \fIfpr\fP copies those
 characters to the output file.
-.PP
-No vertical format control is recognized for
-.B "direct formatted"
-output
-or
-.B "list directed"
-output.
 .Nh 2 "File names and the open statement"
 A file name may be specified in an \fBopen\fP statement for the
 logical unit.
 If a logical unit is opened by an \fBopen\fP statement which does
 not specify a file name, or it is opened implicitly by the execution
-of a \fBread\fP, \fBwrite\fP, \fBbackspace\fP or \fBrewind\fP
-statement, then the default file name is ``fort.N'' where N is
-the logical unit number.
+of a \fBread\fP, \fBwrite\fP, or \fBendfile\fP
+statement, then the default file name is
+.I fort.N
+where
+.I N
+is the logical unit number.
 Before opening the file, the library checks for an environment
 variable with a name identical to the tail of the
 file name with periods removed.\(dg
 .FS
 \(dgPeriods are deleted because they can not be part of environment variable names in the Bourne shell.
 .FE
-If it finds such an environment variable, it uses it's value
+If it finds such an environment variable, it uses its value
 as the actual name of the file.
 For example, a program containing:
 .DS
-open(32,file="/usr/guest/census/data.d")
+open(32,file=\(fm/usr/guest/census/data.d\(fm)
 read(32,100) vec
 write(44) vec
 .DE
@@ -313,7 +329,9 @@ redefined without affecting the current file position.
 Otherwise, if
 .B "status = \(fmscratch\(fm"
 is specified, a temporary file with a
-name of the form ``tmp.FXXXXXX'' will be opened,
+name of the form
+.I tmp.FXXXXXX
+will be opened,
 and, by default, will be deleted when closed or during
 termination of program execution.
 .PP
@@ -385,15 +403,14 @@ will write blanks on the output.
 In formatting list directed output, the I/O system tries to prevent
 output lines longer than 80 characters.
 Each external datum will be separated by two spaces.
-List-directed output of
+List directed output of
 .B complex
 values includes an appropriate comma.
-List-directed output distinguishes between
+List directed output distinguishes between
 .B real
 and
 .B "double precision"
-values
-and formats them differently.
+values and formats them differently.
 Output of a character string that includes ``\\n''
 is interpreted reasonably by the output system.
 .Nh 2 "I/O errors"
@@ -408,7 +425,10 @@ introduction to chapter 2 of the
 .UX
 Programmer's Manual.
 Error numbers \(>= 100 come from the I/O library, and are described
-further in the appendix to this writeup.
+further in the appendix to this writeup\(dd.
+.FS
+\(dd On many systems, these are also available in \fIhelp f77 io_err_msgs\fP.
+.FE
 For internal I/O, part of the string will be printed with ``|'' at the
 current position in the string.
 For external I/O, part of the current record will be displayed if
@@ -420,7 +440,7 @@ for functions omitted or poorly defined in the standard.
 Programmers should be aware that these are non-portable.
 .Nh 2 "Format specifiers"
 .B B
-is an acceptable edit control specifier. It causes return to the
+is an acceptable edit control specifier. It causes return to the logical unit's
 default mode of blank interpretation.
 This is consistent with
 .B S
@@ -494,7 +514,16 @@ conversion. The specifier is
 .B SU
 and remains in effect until another
 sign control specifier is encountered, or format interpretation is
-complete.
+complete.\(dg
+.FS
+\(dgNote: Unsigned integer values greater than (2\(**\(**31 - 1),
+can be read and written using \fBSU\fP.
+However they can not be used in
+computations because
+.Fo
+uses signed arithmetic and such values appear to the arithmetic unit
+as negative numbers.
+.FE
 Radix and ``unsigned'' specifiers could be used to format
 a hexadecimal dump, as follows:
 
@@ -502,11 +531,6 @@ a hexadecimal dump, as follows:
 2000  format ( SU, 8Z10.8 )
 .DE
 
-Note: Unsigned integer values greater than (2\(**\(**30 - 1),
-i.e. any signed negative value, can not be read by
-.Fo
-input routines.
-All internal values will be output correctly.
 .Nh 2 "Print files"
 The
 .Sm ANSI
@@ -577,7 +601,7 @@ A newline will terminate the string unless escaped with \\.
 Any string not meeting the above restrictions
 must be enclosed in quotes (`` " '' or `` \(fm '').
 .PP
-Internal list-directed I/O has been implemented. During internal list reads,
+Internal list directed I/O has been implemented. During internal list reads,
 bytes are consumed until the iolist is satisfied, or the ``end-of-file''
 is reached.
 During internal list writes, records are filled until the iolist is satisfied.
@@ -585,6 +609,12 @@ The length of an internal array element should be at least 20 bytes to
 avoid logical record overflow when writing double precision values.
 Internal list read was implemented to make command line decoding easier.
 Internal list write should be avoided.
+.Nh 2 "Namelist I/O"
+Namelist I/O is a common extension in Fortran systems.
+The \fBf77\fP version was designed to be compatible with other
+vendors versions;
+it is described in ``A Portable Fortran 77 Compiler'',
+by Feldman and Weinberger, August, 1985.
 .sp 1
 .Nh 1 "Running older programs"
 Traditional
@@ -657,17 +687,18 @@ X3.9\-1978 document and keep it compatible with the
 file system.
 Exceptions to the standard are noted in appendix B.
 .bp
-.ce 3
-Appendix A
+.DS C
+.B "Appendix A"
 
-I/O Library Error Messages
+.B "I/O Library Error Messages"
+.DE
 .XS
 Appendix A: I/O Library Error Messages
 .XE
 .sp 1
 .PP
 The following error messages are generated by the I/O library.
-The error numbers are returned in the \fBiostat=\fP.
+The error numbers are returned in the \fBiostat=\fP variable.
 Error numbers < 100 are generated by the
 .UX
 kernel.
@@ -678,7 +709,7 @@ Programmers Manual for their description.
 .de Er
 .ne 4v
 .IP \\$1
-"\\$2"
+\fI\\$2\fP
 .br
 ..
 .RS
@@ -723,9 +754,9 @@ The system can't return status information
 about the file. Perhaps the directory is
 unreadable.
 
-.Er 109 "no * after repeat count"
-Repeat counts in list-directed I/O must be
-followed by an * with no blank spaces.
+.Er 109 "no \(** after repeat count"
+Repeat counts in list directed I/O must be
+followed by an \(** with no blank spaces.
 
 .Er 110 "off end of record"
 A formatted write tried to go beyond the
@@ -734,7 +765,12 @@ or write will also cause this.
 
 .Er 111 "truncation failed"
 The truncation of an external sequential file on
-``close'', ``backspace'', ``rewind'' or ``endfile'' failed.
+.B close ,
+.B backspace ,
+.B rewind ,
+or
+.B endfile
+failed.
 
 .Er 112 "incomprehensible list input"
 List input has to be just right.
@@ -754,13 +790,13 @@ Only spaces, a leading sign and digits are allowed.
 Legal input consists of spaces (optional), a period (optional), and then
 a ``t'', ``T'', ``f'', or ``F''.
 
-.Er 117 "\(fmnew\(fm file exists"
+.Er 117 "\|\(fmnew\|\(fm file exists"
 You tried to open an existing file with
-"status=\(fmnew\(fm".
+``status=\|\(fmnew\|\(fm''.
 
-.Er 118 "can't find \(fmold\(fm file"
+.Er 118 "can't find \|\(fmold\|\(fm file"
 You tried to open a non-existent file
-with "status=\(fmold\(fm".
+with ``status=\|\(fmold\|\(fm''.
 
 .Er 119 "opening too many files or unknown system error"
 Either you are trying to open too many files
@@ -774,9 +810,11 @@ data structure required. Tabbing left
 also requires seek ability.
 
 .Er 121 "illegal argument"
-Certain arguments to 'open', etc. will be
-checked for legitimacy. Often only non-
-default forms are looked for.
+Certain arguments to
+.B open ,
+etc. will be
+checked for legitimacy. Often only non-default
+forms are looked for.
 
 .Er 122 "negative repeat count"
 The repeat count for list directed input
@@ -789,16 +827,23 @@ was not possible. This error is returned
 by the tape I/O routines if attempting to
 read past end-of-tape, etc.
 
-.Er 124 "invalid data for d,e,f or g format term"
+.Er 124 "invalid data for d, e, f or g format term"
 Input data must be legal.
+
+.Er 125 "illegal input for namelist"
+Column one of input is ignored, the namelist name
+must match, the variables must be in the namelist,
+and the data must be of the right type.
 .if n .nr PD 1v
 .if t .nr PD 0.3v
 .RE
 .bp
-.ce 3
-Appendix B
+.LP
+.DS C
+.B "Appendix B"
 
-Exceptions to the ANSI Standard
+.B "Exceptions to the ANSI Standard"
+.DE
 .XS
 Appendix B: Exceptions to the ANSI Standard
 .XE
@@ -807,8 +852,9 @@ Appendix B: Exceptions to the ANSI Standard
 A few exceptions to the
 .Sm ANSI
 standard remain.
+.sp 1
 .LP
-1) Vertical format control
+.B "Vertical format control"
 .PP
 The ``+'' carriage control specifier is not fully implemented
 (see \(sc\|2.3).
@@ -828,11 +874,9 @@ of carriage control and include terminal dependent processing.
 One such filter is \fIfpr\fP(1).
 .sp 1
 .LP
-2) Default files
+.B "Default files"
 .PP
 Files created by default use of
-.B rewind
-or
 .B endfile
 statements are opened for
 .B "sequential formatted"
@@ -843,7 +887,7 @@ or
 access.
 .sp 1
 .LP
-3) Lower case strings
+.B "Lower case strings"
 .PP
 It is not clear if the
 .Sm ANSI
@@ -853,13 +897,24 @@ As currently written, the
 statement will return lower case strings for any alphanumeric data.
 .sp 1
 .LP
-4) Exponent representation on Ew.dEe output
+.B "Exponent representation on Ew.dEe output"
 .PP
 If the field width for the exponent is too small, the standard
 allows dropping the exponent character but only if the exponent
 is > 99. This system does not enforce that restriction.
-Further, the standard implies that the entire field, `w', should be
+Further, the standard implies that the entire field, ``w'', should be
 filled with asterisks if the exponent can not be displayed.
 This system fills only the exponent field in the above case since
 that is more diagnostic.
+.sp 1
+.LP
+.B "Pre-connection of files"
+.PP
+The standard says units must be pre-connected to files before the program
+starts or must be explicitly opened.
+Instead, the I/O library
+connects the unit to a file on its first use in a
+\fBread\fP, \fBwrite\fP, \fBprint\fP, or \fBendfile\fP statement.
+Thus \fBinquire\fP by unit can not tell prior to a unit number use the
+characteristics or name of the file corresponding to a unit.
 .TC
