@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	7.35 (Berkeley) %G%
+ *	@(#)machdep.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,6 +48,9 @@
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
 #include <vm/vm_kern.h>
+
+/* the following is used externally (sysctl_hw) */
+char machine[] = "hp300";		/* cpu "architecture" */
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;
@@ -376,81 +379,89 @@ setregs(p, entry, retval)
 #endif
 }
 
+extern	char machine[];
+char	cpu_model[120];
+extern	char ostype[], osrelease[], version[];
+
 identifycpu()
 {
+	char *t, *mc;
+	int len;
 
-	printf("HP9000/");
 	switch (machineid) {
 	case HP_320:
-		printf("320 (16.67Mhz");
+		t = "320 (16.67MHz";
 		break;
 	case HP_330:
-		printf("318/319/330 (16.67Mhz");
+		t = "318/319/330 (16.67MHz";
 		break;
 	case HP_340:
-		printf("340 (16.67Mhz");
+		t = "340 (16.67MHz";
 		break;
 	case HP_350:
-		printf("350 (25Mhz");
+		t = "350 (25MHz";
 		break;
 	case HP_360:
-		printf("360 (25Mhz");
+		t = "360 (25MHz";
 		break;
 	case HP_370:
-		printf("370 (33.33Mhz");
+		t = "370 (33.33MHz";
 		break;
 	case HP_375:
-		printf("345/375 (50Mhz");
+		t = "345/375 (50MHz";
 		break;
 	case HP_380:
-		printf("380/425 (25Mhz)");
+		t = "380/425 (25MHz";
 		break;
 	case HP_433:
-		printf("433 (33Mhz)");
+		t = "433 (33MHz";
 		break;
 	default:
 		printf("\nunknown machine type %d\n", machineid);
 		panic("startup");
 	}
-	printf(" MC680%s CPU",
-	       mmutype == MMU_68040 ? "40" :
+	mc = (mmutype == MMU_68040 ? "40" :
 	       (mmutype == MMU_68030 ? "30" : "20"));
+	sprintf(cpu_model, "HP9000/%s MC680%s CPU", t, mc);
 	switch (mmutype) {
 	case MMU_68040:
 	case MMU_68030:
-		printf("+MMU");
+		strcat(cpu_model, "+MMU");
 		break;
 	case MMU_68851:
-		printf(", MC68851 MMU");
+		strcat(cpu_model, ", MC68851 MMU");
 		break;
 	case MMU_HP:
-		printf(", HP MMU");
+		strcat(cpu_model, ", HP MMU");
 		break;
 	default:
-		printf("\nunknown MMU type %d\n", mmutype);
+		printf("%s\nunknown MMU type %d\n", cpu_model, mmutype);
 		panic("startup");
 	}
+	len = strlen(cpu_model);
 	if (mmutype == MMU_68040)
-		printf("+FPU, 4k on-chip physical I/D caches");
+		len += sprintf(cpu_model + len,
+		    "+FPU, 4k on-chip physical I/D caches");
 	else if (mmutype == MMU_68030)
-		printf(", %sMhz MC68882 FPU",
+		len += sprintf(cpu_model + len, ", %sMHz MC68882 FPU",
 		       machineid == HP_340 ? "16.67" :
 		       (machineid == HP_360 ? "25" :
 			(machineid == HP_370 ? "33.33" : "50")));
 	else
-		printf(", %sMhz MC68881 FPU",
+		len += sprintf(cpu_model + len, ", %sMHz MC68881 FPU",
 		       machineid == HP_350 ? "20" : "16.67");
 	switch (ectype) {
 	case EC_VIRT:
-		printf(", %dK virtual-address cache",
+		sprintf(cpu_model + len, ", %dK virtual-address cache",
 		       machineid == HP_320 ? 16 : 32);
 		break;
 	case EC_PHYS:
-		printf(", %dK physical-address cache",
+		sprintf(cpu_model + len, ", %dK physical-address cache",
 		       machineid == HP_370 ? 64 : 32);
 		break;
 	}
-	printf(")\n");
+	strcat(cpu_model, ")");
+	printf("%s\n", cpu_model);
 	/*
 	 * Now that we have told the user what they have,
 	 * let them know if that machine type isn't configured.
