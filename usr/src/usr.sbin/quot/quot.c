@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.5 (Berkeley) 83/08/14";
+static char *sccsid = "@(#)quot.c	4.6 (Berkeley) 83/08/16";
 #endif
 
 /*
@@ -8,27 +8,34 @@ static char *sccsid = "@(#)quot.c	4.5 (Berkeley) 83/08/14";
 
 #include <stdio.h>
 #include <ctype.h>
-#include <pwd.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
+#include <sys/file.h>
 
 #define	ISIZ	(MAXBSIZE/sizeof(struct dinode))
-#define	NUID	1000
 union {
 	struct fs u_sblock;
 	char dummy[SBSIZE];
 } sb_un;
 #define sblock sb_un.u_sblock
 struct dinode itab[MAXBSIZE/sizeof(struct dinode)];
-struct du
-{
+
+struct du {
+	struct	du *next;
 	long	blocks;
-	long	blocks30,blocks60,blocks90;
+	long	blocks30;
+	long	blocks60;
+	long	blocks90;
 	long	nfiles;
 	int	uid;
-	char	*name;
-} du[NUID];
+#define	NDU	2048
+} du[NDU];
+int	ndu;
+#define	DUHASH	8209	/* smallest prime >= 4 * NDU */
+#define	HASH(u)	((u) % DUHASH)
+struct	du *duhash[DUHASH];
+
 #define	TSIZE	500
 int	sizes[TSIZE];
 long	overflow;
@@ -40,116 +47,149 @@ int	vflg;
 int	hflg;
 long	now;
 
-int	fi;
 unsigned	ino;
-unsigned	nfiles;
 
-struct	passwd	*getpwent();
 char	*malloc();
-char	*copy();
+char	*getname();
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char *argv[];
 {
 	register int n;
-	register struct passwd *lp;
-	register char **p;
 
 	now = time(0);
-	for(n=0; n<NUID; n++)
-		du[n].uid = n;
-	while((lp=getpwent()) != 0) {
-		n = lp->pw_uid;
-		if (n>NUID)
-			continue;
-		if(du[n].name)
-			continue;
-		du[n].name = copy(lp->pw_name);
+	argc--, argv++;
+	while (argc > 0 && argv[0][0] == '-') {
+		register char *cp;
+
+		for (cp = &argv[0][1]; *cp; cp++)
+			switch (*cp) {
+			case 'n':
+				nflg++; break;
+			case 'f':
+				fflg++; break;
+			case 'c':
+				cflg++; break;
+			case 'v':
+				vflg++; break;
+			case 'h':
+				hflg++; break;
+			default:
+				fprintf(stderr,
+				    "usage: quot [ -nfcvh ] [ device ... ]\n");
+				exit(1);
+			}
+		argc--, argv++;
 	}
-	if (argc == 1) {
-		fprintf(stderr, "usage: df device ...\n");
+	if (argc == 0)
+		quotall();
+	while (argc-- > 0)
+		if (check(*argv++) == 0)
+			report();
+	exit (0);
+}
+
+#include <fstab.h>
+
+quotall()
+{
+	register struct fstab *fs;
+	register char *cp;
+	char dev[80], *rindex();
+
+	if (setfsent() == 0) {
+		fprintf(stderr, "quot: no %s file\n", FSTAB);
 		exit(1);
 	}
-	while (--argc) {
-		argv++;
-		if (argv[0][0]=='-') {
-			if (argv[0][1]=='n')
-				nflg++;
-			else if (argv[0][1]=='f')
-				fflg++;
-			else if (argv[0][1]=='c')
-				cflg++;
-			else if (argv[0][1]=='v')
-				vflg++;
-			else if (argv[0][1]=='h')
-				hflg++;
-		} else {
-			if (check(*argv) == 0)
-				report();
-		}
+	while (fs = getfsent()) {
+		if (strcmp(fs->fs_type, FSTAB_RO) &&
+		    strcmp(fs->fs_type, FSTAB_RW) &&
+		    strcmp(fs->fs_type, FSTAB_RQ))
+			continue;
+		cp = rindex(fs->fs_spec, '/');
+		if (cp == 0)
+			continue;
+		sprintf(dev, "/dev/r%s", cp + 1);
+		if (check(dev) == 0)
+			report();
 	}
-	return(0);
+	endfsent();
 }
 
 check(file)
-char *file;
+	char *file;
 {
-	register unsigned i, j;
+	register int i, j, nfiles;
+	register struct du **dp;
 	daddr_t iblk;
-	int c;
+	int c, fd;
 
-	fi = open(file, 0);
-	if (fi < 0) {
-		printf("cannot open %s\n", file);
+	/*
+	 * Initialize tables between checks;
+	 * because of the qsort done in report()
+	 * the hash tables must be rebuilt each time.
+	 */
+	for (i = 0; i < TSIZE; i++)
+		sizes[i] = 0;
+	overflow = 0;
+	for (dp = duhash; dp < &duhash[DUHASH]; dp++)
+		*dp = 0;
+	ndu = 0;
+	fd = open(file, O_RDONLY);
+	if (fd < 0) {
+		fprintf(stderr, "quot: ");
+		perror(file);
 		return (-1);
 	}
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, SBSIZE);
+	bread(fd, SBLOCK, (char *)&sblock, SBSIZE);
 	if (nflg) {
 		if (isdigit(c = getchar()))
 			ungetc(c, stdin);
-		else while (c!='\n' && c != EOF)
+		else while (c != '\n' && c != EOF)
 			c = getchar();
 	}
 	nfiles = sblock.fs_ipg * sblock.fs_ncg;
 	for (ino = 0; ino < nfiles; ) {
 		iblk = fsbtodb(&sblock, itod(&sblock, ino));
-		bread(iblk, (char *)itab, sblock.fs_bsize);
+		bread(fd, iblk, (char *)itab, sblock.fs_bsize);
 		for (j = 0; j < INOPB(&sblock) && ino < nfiles; j++) {
 			if (ino++ < ROOTINO)
 				continue;
 			acct(&itab[j]);
 		}
 	}
+	close(fd);
 }
 
 acct(ip)
 	register struct dinode *ip;
 {
-	register char *np;
+	register struct du *dp;
+	struct du **hp;
 	long blks, frags, size;
 	char n;
 	static fino;
 
-	if ((ip->di_mode&IFMT) == 0)
+	if ((ip->di_mode & IFMT) == 0)
 		return;
-	if (hflg) {
-		/*
-		 * Blocks based on number of 512 byte blocks claimed by inode.
-		 */
+	/*
+	 * By default, take block count in inode.  Otherwise (-h),
+	 * take the size field and estimate the blocks allocated.
+	 * The latter does not account for holes in files.
+	 */
+	if (!hflg)
 		size = ip->di_blocks / 2;
-	} else {
-		/*
-		 * Estimate based on size of file.
-		 */
+	else {
 		blks = lblkno(&sblock, ip->di_size);
 		frags = blks * sblock.fs_frag +
 			numfrags(&sblock, dblksize(&sblock, ip, blks));
 		size = frags * sblock.fs_fsize / 1024;
 	}
 	if (cflg) {
-		if ((ip->di_mode&IFMT)!=IFDIR && (ip->di_mode&IFMT)!=IFREG)
+		if ((ip->di_mode&IFMT) != IFDIR && (ip->di_mode&IFMT) != IFREG)
 			return;
 		if (size >= TSIZE) {
 			overflow += size;
@@ -158,114 +198,189 @@ acct(ip)
 		sizes[size]++;
 		return;
 	}
-	if (ip->di_uid >= NUID)
-		return;
-	du[ip->di_uid].blocks += size;
+	hp = &duhash[HASH(ip->di_uid)];
+	for (dp = *hp; dp; dp = dp->next)
+		if (dp->uid == ip->di_uid)
+			break;
+	if (dp == 0) {
+		if (ndu >= NDU)
+			return;
+		dp = &du[ndu++];
+		dp->next = *hp;
+		*hp = dp;
+		dp->uid = ip->di_uid;
+		dp->nfiles = 0;
+		dp->blocks = 0;
+		dp->blocks30 = 0;
+		dp->blocks60 = 0;
+		dp->blocks90 = 0;
+	}
+	dp->blocks += size;
 #define	DAY (60 * 60 * 24)	/* seconds per day */
 	if (now - ip->di_atime > 30 * DAY)
-		du[ip->di_uid].blocks30 += size;
+		dp->blocks30 += size;
 	if (now - ip->di_atime > 60 * DAY)
-		du[ip->di_uid].blocks60 += size;
+		dp->blocks60 += size;
 	if (now - ip->di_atime > 90 * DAY)
-		du[ip->di_uid].blocks90 += size;
-	du[ip->di_uid].nfiles++;
-	if (nflg) {
-	tryagain:
-		if (fino==0)
-			if (scanf("%d", &fino)<=0)
+		dp->blocks90 += size;
+	dp->nfiles++;
+	while (nflg) {
+		register char *np;
+
+		if (fino == 0)
+			if (scanf("%d", &fino) <= 0)
 				return;
 		if (fino > ino)
 			return;
-		if (fino<ino) {
-			while ((n=getchar())!='\n' && n!=EOF)
+		if (fino < ino) {
+			while ((n = getchar()) != '\n' && n != EOF)
 				;
 			fino = 0;
-			goto tryagain;
+			continue;
 		}
-		if (np = du[ip->di_uid].name)
+		if (np = getname(dp->uid))
 			printf("%.7s	", np);
 		else
 			printf("%d	", ip->di_uid);
-		while ((n = getchar())==' ' || n=='\t')
+		while ((n = getchar()) == ' ' || n == '\t')
 			;
 		putchar(n);
-		while (n!=EOF && n!='\n') {
+		while (n != EOF && n != '\n') {
 			n = getchar();
 			putchar(n);
 		}
 		fino = 0;
+		break;
 	}
 }
 
-bread(bno, buf, cnt)
-unsigned bno;
-char *buf;
+bread(fd, bno, buf, cnt)
+	unsigned bno;
+	char *buf;
 {
 
-	lseek(fi, (long)bno*DEV_BSIZE, 0);
-	if (read(fi, buf, cnt) != cnt) {
-		printf("read error %u\n", bno);
+	lseek(fd, (long)bno * DEV_BSIZE, L_SET);
+	if (read(fd, buf, cnt) != cnt) {
+		fprintf(stderr, "quot: read error at block %u\n", bno);
 		exit(1);
 	}
 }
 
 qcmp(p1, p2)
-register struct du *p1, *p2;
+	register struct du *p1, *p2;
 {
+	char *s1, *s2;
+
 	if (p1->blocks > p2->blocks)
-		return(-1);
+		return (-1);
 	if (p1->blocks < p2->blocks)
-		return(1);
-	if (p1->name == 0 || p2->name == 0)
-		return(0);	/* doesn't matter */
-	return(strcmp(p1->name, p2->name));
+		return (1);
+	s1 = getname(p1->uid);
+	if (s1 == 0)
+		return (0);
+	s2 = getname(p2->uid);
+	if (s2 == 0)
+		return (0);
+	return (strcmp(s1, s2));
 }
 
 report()
 {
 	register i;
+	register struct du *dp;
 
 	if (nflg)
 		return;
 	if (cflg) {
-		long t = 0;
-		for (i=0; i<TSIZE-1; i++)
+		register long t = 0;
+
+		for (i = 0; i < TSIZE - 1; i++)
 			if (sizes[i]) {
 				t += i*sizes[i];
 				printf("%d	%d	%D\n", i, sizes[i], t);
 			}
-		printf("%d	%d	%D\n", TSIZE-1, sizes[TSIZE-1], overflow+t);
+		printf("%d	%d	%D\n",
+		    TSIZE - 1, sizes[TSIZE - 1], overflow + t);
 		return;
 	}
-	qsort(du, NUID, sizeof(du[0]), qcmp);
-	for (i=0; i<NUID; i++) {
-		if (du[i].blocks==0)
+	qsort(du, ndu, sizeof (du[0]), qcmp);
+	for (dp = du; dp < &du[ndu]; dp++) {
+		register char *cp;
+
+		if (dp->blocks == 0)
 			return;
-		printf("%5D\t", du[i].blocks);
+		printf("%5D\t", dp->blocks);
 		if (fflg)
-			printf("%5D\t", du[i].nfiles);
-		if (du[i].name)
-			printf("%-8.8s", du[i].name);
+			printf("%5D\t", dp->nfiles);
+		if (cp = getname(dp->uid))
+			printf("%-8.8s", cp);
 		else
-			printf("#%-8d", du[i].uid);
+			printf("#%-8d", dp->uid);
 		if (vflg)
 			printf("\t%5D\t%5D\t%5D",
-			    du[i].blocks30, du[i].blocks60, du[i].blocks90);
+			    dp->blocks30, dp->blocks60, dp->blocks90);
 		printf("\n");
 	}
 }
 
-char *
-copy(s)
-char *s;
-{
-	register char *p;
-	register n;
+#include <pwd.h>
+#include <utmp.h>
 
-	for(n=0; s[n]; n++)
-		;
-	p = malloc((unsigned)n+1);
-	for(n=0; p[n] = s[n]; n++)
-		;
-	return(p);
+struct	utmp utmp;
+
+#define NUID	2048
+#define	NMAX	(sizeof (utmp.ut_name))
+
+char	names[NUID][NMAX+1];
+char	outrangename[NMAX+1];
+int	outrangeuid = -1;
+
+char *
+getname(uid)
+	int uid;
+{
+	register struct passwd *pw;
+	static init;
+	struct passwd *getpwent();
+
+	if (uid >= 0 && uid < NUID && names[uid][0])
+		return (&names[uid][0]);
+	if (uid >= 0 && uid == outrangeuid)
+		return (outrangename);
+	if (init == 2) {
+		if (uid < NUID)
+			return (0);
+		setpwent();
+		while (pw = getpwent()) {
+			if (pw->pw_uid != uid)
+				continue;
+			outrangeuid = pw->pw_uid;
+			strncpy(outrangename, pw->pw_name, NUID);
+			endpwent();
+			return (outrangename);
+		}
+		endpwent();
+		return (0);
+	}
+	if (init == 0)
+		setpwent(), init = 1;
+	while (pw = getpwent()) {
+		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
+			if (pw->pw_uid == uid) {
+				outrangeuid = pw->pw_uid;
+				strncpy(outrangename, pw->pw_name, NUID);
+				return (outrangename);
+			}
+			continue;
+		}
+		if (names[pw->pw_uid][0])
+			continue;
+		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
+		if (pw->pw_uid == uid) {
+			return (&names[uid][0]);
+		}
+	}
+	init = 2;
+	endpwent();
+	return (0);
 }
