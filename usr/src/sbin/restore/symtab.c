@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.10	(Berkeley)	83/05/03";
+static char sccsid[] = "@(#)symtab.c	3.11	(Berkeley)	83/05/14";
 #endif
 
 /*
@@ -504,7 +504,7 @@ initsymtable(filename)
 		panic("cannot stat symbol table file %s\n", filename);
 	}
 	tblsize = stbuf.st_size - sizeof(struct symtableheader);
-	base = calloc(sizeof(char *), (unsigned)tblsize);
+	base = calloc(sizeof(char), (unsigned)tblsize);
 	if (base == NULL)
 		panic("cannot allocate space for symbol table\n");
 	if (read(fd, base, (int)tblsize) < 0 ||
