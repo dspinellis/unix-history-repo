@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	7.6 (Berkeley) %G%
+ *	@(#)time.h	7.7 (Berkeley) %G%
  */
 
 #ifndef _SYS_TIME_H_
@@ -53,6 +53,16 @@ struct timezone {
 struct	itimerval {
 	struct	timeval it_interval;	/* timer interval */
 	struct	timeval it_value;	/* current value */
+};
+
+/*
+ * Getkerninfo clock information structure
+ */
+struct clockinfo {
+	int hz;		/* clock frequency */
+	int tick;	/* micro-seconds per hz tick */
+	int phz;	/* alternate clock frequency */
+	int profhz;	/* profiling clock frequency */
 };
 
 #ifndef KERNEL
