@@ -1,24 +1,25 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+#	@(#)Makefile	4.4	(Berkeley)	%G%
 #
-CFLAGS=
+DESTDIR=
+CFLAGS= -O
 
 all: rrestor restor
 
 restor: restor.c
-	cc -o restor restor.c
+	cc ${LDFLAGS} ${CFLAGS} -o restor restor.c
 
 rrestor: dumprmt.o rrestor.o
-	cc -o rrestor dumprmt.o rrestor.o -ljobs
+	cc ${LDFLAGS} -o rrestor dumprmt.o rrestor.o -ljobs
 
 rrestor.o: restor.c
-	cc -c -DRRESTOR restor.c
+	cc ${CFLAGS} -c -DRRESTOR restor.c
 	mv restor.o rrestor.o
 
 install: rrestor restor
-	cp rrestor /etc
-	cp restor /etc
+	install rrestor ${DESTDIR}/etc/rrestor
+	install restor ${DESTDIR}/etc/restor
 
 clean:
 	rm -f restor rrestor *.o errs
