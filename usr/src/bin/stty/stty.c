@@ -366,6 +366,7 @@ prmodes(all)
 		int newcrt = (lmode&(LCTLECH|LCRTBS)) == (LCTLECH|LCRTBS) &&
 		    (lmode&(LCRTERA|LCRTKIL)) ==
 		      ((mode.sg_ospeed > B300) ? LCRTERA|LCRTKIL : 0);
+		int nothing = 1;
 		if (newcrt) {
 			if (all==2)
 				fprintf(stderr, "crt: (crtbs crterase crtkill ctlecho) ");
@@ -383,6 +384,7 @@ prmodes(all)
 		if (all==2) {
 			fprintf(stderr, "\n");
 			any = 0;
+			nothing = 0;
 		}
 		lpit(LTILDE, "-tilde ");
 		lpit(LFLUSHO, "-flusho ");
@@ -392,6 +394,7 @@ prmodes(all)
 		if (any) {
 			fprintf(stderr,"\n");
 			any = 0;
+			nothing = 0;
 		}
 #ifdef notdef
 		lpit(LETXACK, "-etxack ");
@@ -399,7 +402,7 @@ prmodes(all)
 		lpit(LPENDIN, "-pendin ");
 		lpit(LDECCTQ, "-decctlq ");
 		lpit(LNOFLSH, "-noflsh ");
-		if (any)
+		if (any || nothing)
 			fprintf(stderr,"\n");
 	} else if (!all)
 		fprintf(stderr,"\n");
@@ -440,6 +443,7 @@ erase  kill   werase rprnt  flush  lnext  susp   intr   quit   stop   eof\
 	} else if (ldisc != NETLDISC) {
 		register struct special *sp;
 		int first = 1;
+
 		for (sp = special; sp->name; sp++) {
 			if ((*sp->cp&0377) != (sp->def&0377)) {
 				pit(*sp->cp, sp->name, first ? "" : ", ");
@@ -448,7 +452,7 @@ erase  kill   werase rprnt  flush  lnext  susp   intr   quit   stop   eof\
 			if (sp->cp == &tc.t_brkc && ldisc == 0)
 				break;
 		}
-		if (first == 0)
+		if (!first)
 			fprintf(stderr, "\n");
 	}
 }
