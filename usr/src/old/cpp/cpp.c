@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.19 %G%";
+static char sccsid[] = "@(#)cpp.c	1.20 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -121,7 +121,7 @@ char *malloc(), *realloc();
 # define DROP 0xFE	/* special character not legal ASCII or EBCDIC */
 # define WARN DROP
 # define SAME 0
-# define MAXINC 10
+# define MAXINC 15
 # define MAXFRE 14	/* max buffers of macro pushback */
 # define MAXFRM 31	/* max number of formals/actuals to a macro */
 
