@@ -1,4 +1,4 @@
-.\" Copyright (c) 1989, 1990, 1993
+.\" Copyright (c) 1989, 1990, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)chmod.1	8.1 (Berkeley) %G%
+.\"	@(#)chmod.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHMOD 1
@@ -92,7 +92,7 @@ action       ::= op [perm ...]
 last_action  ::= op [perm ...]
 who          ::= a | u | g | o
 op           ::= + | \- | =
-perm         ::= r | s | t | w | x | X
+perm         ::= r | s | t | w | x | X | u | g | o
 .Ed
 .Pp
 The
@@ -127,6 +127,12 @@ Operations with the
 symbol ``X'' are only meaningful in conjunction with the
 .Ar op
 symbol ``+'', and are ignored in all other cases.
+.It u
+The user permission bits in the mode of the original file.
+.It g
+The group permission bits in the mode of the original file.
+.It o
+The other permission bits in the mode of the original file.
 .El
 .Pp
 The
@@ -154,9 +160,10 @@ If no value is supplied for
 the ``\-'' operation has no effect.
 If no value is supplied for
 .Ar who ,
-the mode bits represented by
-.Ar perm
-are cleared for the owner, group and other permissions.
+each permission bit specified in
+.Ar perm ,
+for which the corresponding bit in the file mode creation mask
+is clear, is cleared.
 Otherwise, the mode bits represented by the specified
 .Ar who
 and
