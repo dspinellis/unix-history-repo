@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.15 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -554,7 +554,7 @@ out1b:
 			break;
 		}
 	}
-	if (imax - n_files != sblock.fs_cstotal.cs_nifree) {
+	if (imax - ROOTINO - n_files != sblock.fs_cstotal.cs_nifree) {
 		pwarn("FREE INODE COUNT WRONG IN SUPERBLK");
 		if (preen)
 			printf(" (FIXED)\n");
@@ -1229,7 +1229,8 @@ setup(dev)
 		{ badsb("BLKNO CORRUPTED"); return (0); }
 	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
 		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
-	if (sblock.fs_cgsize != cgsize(&sblock))
+	if (sblock.fs_cgsize !=
+	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY))
 		{ badsb("CGSIZE INCORRECT"); return (0); }
 	if (sblock.fs_cssize != sblock.fs_ncg * sizeof(struct csum))
 		{ badsb("CSSIZE INCORRECT"); return (0); }
@@ -1266,7 +1267,7 @@ ginode()
 {
 	daddr_t iblk;
 
-	if (inum > imax)
+	if (inum < ROOTINO || inum > imax)
 		return (NULL);
 	if (inum < startinum || inum >= startinum + INOPB(&sblock)) {
 		iblk = itod(inum, &sblock);

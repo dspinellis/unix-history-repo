@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.11 (Berkeley) %G%";
 
 /*
  * icheck
@@ -460,6 +460,11 @@ makecg()
 			clrbit(cgrp.cg_iused, i);
 			i++;
 		}
+		if (c == 0)
+			for (i = 0; i < ROOTINO; i++) {
+				setbit(cgrp.cg_iused, i);
+				cgrp.cg_cs.cs_nifree--;
+			}
 		for (s = 0; s < MAXCPG; s++)
 			for (i = 0; i < NRPOS; i++)
 				cgrp.cg_b[s][i] = 0;
