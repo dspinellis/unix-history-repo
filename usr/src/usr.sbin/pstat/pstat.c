@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -829,13 +829,13 @@ filemode()
 	 * structure, and then an array of file structs (whose addresses are
 	 * derivable from the previous entry).
 	 */
-	addr = *((struct file **)buf);
-	fp = (struct file *)(buf + sizeof(struct file *));
-	nfile = (len - sizeof(struct file *)) / sizeof(struct file);
+	addr = ((struct filelist *)buf)->lh_first;
+	fp = (struct file *)(buf + sizeof(struct filelist));
+	nfile = (len - sizeof(struct filelist)) / sizeof(struct file);
 	
 	(void)printf("%d/%d open files\n", nfile, maxfile);
 	(void)printf("   LOC   TYPE    FLG     CNT  MSG    DATA    OFFSET\n");
-	for (; (char *)fp < buf + len; addr = fp->f_filef, fp++) {
+	for (; (char *)fp < buf + len; addr = fp->f_list.le_next, fp++) {
 		if ((unsigned)fp->f_type > DTYPE_SOCKET)
 			continue;
 		(void)printf("%x ", addr);
