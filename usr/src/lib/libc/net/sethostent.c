@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sethostent.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sethostent.c	6.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -24,12 +24,4 @@ endhostent()
 {
 	_res.options &= ~(RES_STAYOPEN | RES_USEVC);
 	_res_close();
-}
-
-sethostfile(name)
-char *name;
-{
-#ifdef lint
-name = name;
-#endif
 }
