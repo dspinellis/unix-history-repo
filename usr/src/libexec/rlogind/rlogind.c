@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -67,7 +67,7 @@ KTEXT		ticket;
 u_char		auth_buf[sizeof(AUTH_DAT)];
 u_char		tick_buf[sizeof(KTEXT_ST)];
 Key_schedule	schedule;
-int		encrypt, retval, use_kerberos = 0, vacuous = 0;
+int		encrypt = 0, retval, use_kerberos = 0, vacuous = 0;
 int		do_krb_login();
 
 #define		OLD_RCMD		0x00
@@ -169,11 +169,11 @@ doit(f, fromp)
 
 #ifdef	KERBEROS
 	/*
-	 * XXX 1st char tells us which client we're talking to
+	 * XXX: 1st char tells us which client we're talking to
 	 */
 	switch (c) {
 
-	case OLD_RCMD:		/* OLD_RCMD is same as KERB_RCMD */
+	case OLD_RCMD:		/* NB: OLD_RCMD == KERB_RCMD */
 		if (vacuous)
 			fatal(f, "Remote host requires Kerberos authentication");
 		break;
@@ -225,27 +225,31 @@ doit(f, fromp)
 	if (use_kerberos) {
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
 		write(f, &c, 1);
-		if (retval == 0)
+		if (retval == 0 && hostok)
 			authenticated++;
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval]);
+		else if(!hostok)
+			fatal(f, "krlogind: Host address mismatch.\r\n");
 	} else
 #endif
-	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED ||
-	    fromp->sin_port < IPPORT_RESERVED/2) {
-		syslog(LOG_NOTICE, "Connection from %s on illegal port",
-			inet_ntoa(fromp->sin_addr));
-		fatal(f, "Permission denied");
-	}
-	write(f, "", 1);
-
-	if (do_rlogin(hp->h_name) == 0) {
-		if (hostok)
-			authenticated++;
-		else
-			write(f, "rlogind: Host address mismatch.\r\n",
-			    sizeof("rlogind: Host address mismatch.\r\n") - 1);
+	{
+	    if (fromp->sin_family != AF_INET ||
+	        fromp->sin_port >= IPPORT_RESERVED ||
+	        fromp->sin_port < IPPORT_RESERVED/2) {
+		    syslog(LOG_NOTICE, "Connection from %s on illegal port",
+			    inet_ntoa(fromp->sin_addr));
+		    fatal(f, "Permission denied");
+	    }
+	    write(f, "", 1);
+    
+	    if (do_rlogin(hp->h_name) == 0) {
+		    if (hostok)
+			    authenticated++;
+		    else
+			    write(f, "rlogind: Host address mismatch.\r\n",
+			     sizeof("rlogind: Host address mismatch.\r\n") - 1);
+	    }
 	}
 
 	for (c = 'p'; c <= 's'; c++) {
