@@ -1,4 +1,4 @@
-/*	vfs_bio.c	4.4	%G%	*/
+/*	vfs_bio.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -294,7 +294,8 @@ daddr_t blkno;
 
 	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
 	    bp = &buf[bp->b_hlink])
-		if (bp->b_blkno == dblkno && bp->b_dev == dev)
+		if (bp->b_blkno == dblkno && bp->b_dev == dev
+					&& !(bp->b_flags & B_INVAL))
 			return (1);
 	return (0);
 }
@@ -330,7 +331,8 @@ daddr_t blkno;
 	(void) spl0();
 	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
 	    bp = &buf[bp->b_hlink]) {
-		if (bp->b_blkno != dblkno || bp->b_dev != dev)
+		if (bp->b_blkno != dblkno || bp->b_dev != dev
+					|| bp->b_flags & B_INVAL)
 			continue;
 		(void) spl6();
 		if (bp->b_flags&B_BUSY) {
@@ -793,4 +795,27 @@ register struct buf *bp;
 	if (bp->b_flags&B_ERROR)
 		if ((u.u_error = bp->b_error)==0)
 			u.u_error = EIO;
+}
+
+/*
+ * Invalidate in core blocks belonging to closed or umounted filesystem
+ *
+ * This is not nicely done at all - the buffer ought to be removed from the
+ * hash chains & have its dev/blkno fields clobbered, but unfortunately we
+ * can't do that here, as it is quite possible that the block is still
+ * being used for i/o. Eventually, all disc drivers should be forced to
+ * have a close routine, which ought ensure that the queue is empty, then
+ * properly flush the queues. Until that happy day, this suffices for
+ * correctness.						... kre
+ */
+binval(dev)
+dev_t dev;
+{
+	register struct buf *bp, *dp;
+
+	dp = bdevsw[major(dev)].d_tab;
+
+	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
+		if (bp->b_dev == dev)
+			bp->b_flags |= B_INVAL;
 }
