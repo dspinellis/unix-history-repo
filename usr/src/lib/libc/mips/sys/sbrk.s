@@ -11,12 +11,12 @@
 #include "SYS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)sbrk.s	5.1 (Berkeley) %G%")
+	ASMSTR("@(#)sbrk.s	5.2 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 #define	SYS_brk		17
 
-	.sdata
+	.data
 	.globl	_minbrk
 _minbrk:
 	.word	end
