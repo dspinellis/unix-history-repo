@@ -224,7 +224,7 @@ try_connect:
 	if(use_kerberos) {
 		rem = KSUCCESS;
 		if(krb_realm[0] == '\0') {
-			rem = get_krbrlm(krb_realm, 1);
+			rem = krb_get_lrealm(krb_realm, 1);
 		}
 		if(rem == KSUCCESS) {
 			if(encrypt) {
@@ -251,6 +251,11 @@ try_connect:
 		}
 		if((rem < 0) && errno == ECONNREFUSED) {
 			use_kerberos = 0;
+			sp = getservbyname("login", "tcp");
+			if(sp == NULL) {
+				fprintf(stderr, "unknown service login/tcp\n");
+				exit(1);
+			}
 			old_warning("remote host doesn't support Kerberos");
 			goto try_connect;
 		}
