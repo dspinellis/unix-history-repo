@@ -1,0 +1,182 @@
+trap "" 1
+CHOWN=/etc/chown
+DESTDIR=${DESTDIR-/}
+CC=cc
+if [ ! -d $DESTDIR/bin ] 
+then
+: make sure directory hierarchy exists
+(	cd $DESTDIR
+	for i in bin etc lib sys usr
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+	cd $DESTDIR/usr
+	for i in bin dict games include lib net spool ucb vpd
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+	cd $DESTDIR/usr/include
+	for i in local sys
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+	cd $DESTDIR/usr/lib
+	for i in learn lex lisp lint refer struct term tmac uucp
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+	cd $DESTDIR/usr/net
+	for i in bin network
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+	cd $DESTDIR/usr/spool
+	for i in lpd mail secretmail uucp uucppublic vpd
+	do	if [ ! -d $i ]
+		then rm -f $i; mkdir $i
+		fi
+	done
+)
+fi
+
+for i in $*
+do 	echo "	======== $i"
+
+	CFLAGS='-O -d2'
+	case $i in
+	512restor.c|analyze.c|arff.c|colcrt.c|dump.c|dumpdir.c|egrep.y|fgrep.c|\
+	ld.c|ndump.c|ncheck.c|ps.c|quot.c|ranlib.c|restor.c|sa.c|sort.c|\
+	tar.c|w.c|wc.c)\
+	CFLAGS='-O';;
+	esac
+
+	case $i in
+
+	clean)	rm -f *.o core y.tab.c lex.yy.c  ;: Clean unwanted files.
+		;;
+
+	*.y)	B=`basename $i .y`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   yacc $B.y  \
+		&& $CC $CFLAGS -o $B y.tab.c -lln \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f y.tab.[co] $B
+		;;
+
+	*.l)	B=`basename $i .l`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   lex $B.l  \
+		&& $CC $CFLAGS -o $B lex.yy.c -lln \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f lex.yy.[co] $B
+		;;
+
+	clear.c|more.c|ul.c)
+		B=`basename $i .c`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   $CC $CFLAGS -o $B $B.c -ltermlib \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f $B.o $B
+		;;
+	
+	comsat.c|lock.c)
+		B=`basename $i .c`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   $CC $CFLAGS -o $B $B.c -ljobs \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f $B.o $B
+		;;
+
+	*.c)	B=`basename $i .c`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   $CC $CFLAGS -o $B $B.c -lm \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f $B.o $B
+		;;
+
+	mklost+found.s|*.sh)	B=`basename $i .sh`
+		eval D=`grep " $B\$" DESTINATIONS`
+		install -c $B.sh $DESTDIR$D/$B
+		;;
+
+	*.s)	B=`basename $i .s`
+		eval D=`grep " $B\$" DESTINATIONS`
+		   as -o $B.o $B.s \
+		&& $CC -o $B $B.o \
+		&& install -s $B $DESTDIR$D/$B
+		rm -f $B.o $B
+		;;
+
+	MAKE|DESTINATIONS|SCCS|mip)
+		echo Do nothing.
+		;;
+
+	MODES)
+		BINF="	df login mail mkdir mv passwd rmdir su"
+		UBINF="	at newgrp"
+		UCBF="	chfn chsh"
+		LIBF="	atrun ex3.6preserve ex3.6recover"
+		UULIBF="uucp/uuxqt uucp/uucico uucp/uuclean uucp/uusub"
+		UUBINF="uucp uux uulog uuname"
+		TMPF="	tmp usr/tmp usr/lib/uucp/.XQTDIR usr/msgs"
+		TSPOOL="lpd mail secretmail uucp uucppublic"
+		ATDIR="at at/past"
+		BNETBF="v6mail"
+		cd $DESTDIR/bin; $CHOWN root $BINF; chmod 4755 $BINF
+		cd $DESTDIR/usr/bin; $CHOWN root $UBINF; chmod 4755 $UBINF
+		cd $DESTDIR/usr/ucb; $CHOWN root $UCBF; chmod 4755 $UCBF
+		cd $DESTDIR/usr/lib; $CHOWN root $LIBF; chmod 4755 $LIBF
+		cd $DESTDIR/usr/lib; $CHOWN uucp $UULIBF; chmod 4755 $UULIBF
+		cd $DESTDIR/usr/bin; $CHOWN uucp $UUBINF; chmod 4755 $UUBINF
+		if [ -f $DESTDIR/usr/net/bin/net ];
+		then
+			cd $DESTDIR/usr/net/bin;
+			   $CHOWN root $BNETBF; chmod 4755 $BNETBF;
+			cd $DESTIDR/usr/ucb;
+		fi
+		cd $DESTDIR; chmod 777 $TMPF
+		cd $DESTDIR/usr/spool; chmod 777 $TSPOOL; chmod 755 $ATDIR;\
+		$CHOWN root $ATDIR
+
+		;;
+
+	ALIASES) echo Establish alias names.
+		rm -f $DESTDIR/bin/[
+		ln $DESTDIR/bin/test $DESTDIR/bin/[
+		rm -f $DESTDIR/usr/ucb/l $DESTDIR/usr/ucb/f $DESTDIR/usr/ucb/u
+		rm -f $DESTDIR/usr/ucb/page
+		ln $DESTDIR/usr/ucb/ls $DESTDIR/usr/ucb/l
+		ln $DESTDIR/usr/ucb/finger $DESTDIR/usr/ucb/f
+		ln $DESTDIR/usr/ucb/users $DESTDIR/usr/ucb/u
+		ln $DESTDIR/usr/ucb/more $DESTDIR/usr/ucb/page
+		ln $DESTDIR/bin/ps $DESTDIR/bin/ss
+		cp $DESTDIR/usr/ucb/ls $DESTDIR/bin/ucbls
+		rm $DESTDIR/usr/bin/uuclean
+		ln $DESTDIR/usr/lib/uucp/uuclean $DESTDIR/usr/bin/uuclean
+		rm -f $DESTDIR/usr/ucb/uptime
+		ln $DESTDIR/usr/ucb/w $DESTDIR/usr/ucb/uptime
+		(cd $DESTDIR/usr/ucb ; rm vi view edit e ../bin/ex)
+		(cd $DESTDIR/usr/ucb ; ln ex vi ; ln ex view ; ln ex edit )
+		(cd $DESTDIR/usr/ucb ; ln ex e ; ln ex ../bin/ex)
+		(cd $DESTDIR/usr/ucb ; rm -f mail ; ln Mail mail)
+		;;
+
+	*)	if [ ! -d $i ]
+		then	echo "Don't know what to do with $i."
+		else
+			date
+			cd $i
+			   make CC=$CC DESTDIR=$DESTDIR \
+			&& make install DESTDIR=$DESTDIR \
+			&& make clean
+			date
+			cd ..
+		fi
+
+	esac
+done
