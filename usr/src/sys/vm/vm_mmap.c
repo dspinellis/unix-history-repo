@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.28 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -481,11 +481,11 @@ mlock(p, uap, retval)
 		return (EINVAL);
 	size = round_page((vm_size_t)uap->len);
 	if (atop(size) + cnt.v_wire_count > vm_page_max_wired)
-		return (ENOMEM);
+		return (EAGAIN);
 #ifdef pmap_wired_count
 	if (size + ptoa(pmap_wired_count(vm_map_pmap(&p->p_vmspace->vm_map))) >
 	    p->p_rlimit[RLIMIT_MEMLOCK].rlim_cur)
-		return (ENOMEM);
+		return (EAGAIN);
 #else
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
