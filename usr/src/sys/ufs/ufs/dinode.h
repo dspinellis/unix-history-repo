@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	8.3 (Berkeley) %G%
+ *	@(#)dinode.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -29,11 +29,11 @@
 #define	NIADDR	3			/* Indirect addresses in inode. */
 
 struct dinode {
-	u_short		di_mode;	/*   0: IFMT and permissions. */
-	short		di_nlink;	/*   2: File link count. */
+	u_int16_t	di_mode;	/*   0: IFMT, permissions; see below. */
+	int16_t		di_nlink;	/*   2: File link count. */
 	union {
-		u_short	oldids[2];	/*   4: Ffs: old user and group ids. */
-		ino_t	inumber;	/*   4: Lfs: inode number. */
+		u_int16_t oldids[2];	/*   4: Ffs: old user and group ids. */
+		ino_t	  inumber;	/*   4: Lfs: inode number. */
 	} di_u;
 	u_quad_t	di_size;	/*   8: File byte count. */
 	struct timespec	di_atime;	/*  16: Last access time. */
@@ -41,12 +41,12 @@ struct dinode {
 	struct timespec	di_ctime;	/*  32: Last inode change time. */
 	daddr_t		di_db[NDADDR];	/*  40: Direct disk blocks. */
 	daddr_t		di_ib[NIADDR];	/*  88: Indirect disk blocks. */
-	u_long		di_flags;	/* 100: Status flags (chflags). */
-	long		di_blocks;	/* 104: Blocks actually held. */
-	long		di_gen;		/* 108: Generation number. */
-	u_long		di_uid;		/* 112: File owner. */
-	u_long		di_gid;		/* 116: File group. */
-	long		di_spare[2];	/* 120: Reserved; currently unused */
+	u_int32_t	di_flags;	/* 100: Status flags (chflags). */
+	int32_t		di_blocks;	/* 104: Blocks actually held. */
+	int32_t		di_gen;		/* 108: Generation number. */
+	u_int32_t	di_uid;		/* 112: File owner. */
+	u_int32_t	di_gid;		/* 116: File group. */
+	int32_t		di_spare[2];	/* 120: Reserved; currently unused */
 };
 
 /*
@@ -63,7 +63,7 @@ struct dinode {
 #define	di_shortlink	di_db
 #define	MAXSYMLINKLEN	((NDADDR + NIADDR) * sizeof(daddr_t))
 
-/* File modes. */
+/* File permissions. */
 #define	IEXEC		0000100		/* Executable. */
 #define	IWRITE		0000200		/* Writeable. */
 #define	IREAD		0000400		/* Readable. */

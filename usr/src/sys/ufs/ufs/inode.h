@@ -9,59 +9,57 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	8.4 (Berkeley) %G%
+ *	@(#)inode.h	8.5 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
 
 /*
  * Theoretically, directories can be more than 2Gb in length, however, in
- * practice this seems unlikely. So, we define the type doff_t as a long
- * to keep down the cost of doing lookup on a 32-bit machine. If you are
- * porting to a 64-bit architecture, you should make doff_t the same as off_t.
+ * practice this seems unlikely. So, we define the type doff_t as a 32-bit
+ * quantity to keep down the cost of doing lookup on a 32-bit machine.
  */
-#define	doff_t	long
+#define	doff_t	int32_t
 
 /*
- * The inode is used to describe each active (or recently active)
- * file in the UFS filesystem. It is composed of two types of
- * information. The first part is the information that is needed
- * only while the file is active (such as the identity of the file
- * and linkage to speed its lookup). The second part is the 
- * permannent meta-data associated with the file which is read
- * in from the permanent dinode from long term storage when the
- * file becomes active, and is put back when the file is no longer
- * being used.
+ * The inode is used to describe each active (or recently active) file in the
+ * UFS filesystem. It is composed of two types of information. The first part
+ * is the information that is needed only while the file is active (such as
+ * the identity of the file and linkage to speed its lookup). The second part
+ * is * the permanent meta-data associated with the file which is read in
+ * from the permanent dinode from long term storage when the file becomes
+ * active, and is put back when the file is no longer being used.
  */
 struct inode {
-	struct	inode *i_next;	/* Hash chain forward. */
+	struct	inode  *i_next;	/* Hash chain forward. */
 	struct	inode **i_prev;	/* Hash chain back. */
-	struct	vnode *i_vnode;	/* Vnode associated with this inode. */
-	struct	vnode *i_devvp;	/* Vnode for block I/O. */
-	u_long	i_flag;		/* I* flags. */
-	dev_t	i_dev;		/* Device associated with the inode. */
-	ino_t	i_number;	/* The identity of the inode. */
+	struct	vnode  *i_vnode;/* Vnode associated with this inode. */
+	struct	vnode  *i_devvp;/* Vnode for block I/O. */
+	u_int32_t i_flag;	/* flags, see below */
+	dev_t	  i_dev;	/* Device associated with the inode. */
+	ino_t	  i_number;	/* The identity of the inode. */
+
 	union {			/* Associated filesystem. */
 		struct	fs *fs;		/* FFS */
 		struct	lfs *lfs;	/* LFS */
 	} inode_u;
 #define	i_fs	inode_u.fs
 #define	i_lfs	inode_u.lfs
-	struct	dquot *i_dquot[MAXQUOTAS];	/* Dquot structures. */
-	u_quad_t i_modrev;	/* Revision level for lease. */
-	struct	lockf *i_lockf;	/* Head of byte-level lock list. */
-	pid_t	i_lockholder;	/* DEBUG: holder of inode lock. */
-	pid_t	i_lockwaiter;	/* DEBUG: latest blocked for inode lock. */
+
+	struct	 dquot *i_dquot[MAXQUOTAS]; /* Dquot structures. */
+	u_quad_t i_modrev;	/* Revision level for NFS lease. */
+	struct	 lockf *i_lockf;/* Head of byte-level lock list. */
+	pid_t	 i_lockholder;	/* DEBUG: holder of inode lock. */
+	pid_t	 i_lockwaiter;	/* DEBUG: latest blocked for inode lock. */
 	/*
 	 * Side effects; used during directory lookup.
 	 */
-	long	i_count;	/* Size of free slot in directory. */
-	doff_t	i_endoff;	/* End of useful stuff in directory. */
-	doff_t	i_diroff;	/* Offset in dir, where we found last entry. */
-	doff_t	i_offset;	/* Offset of free space in directory. */
-	ino_t	i_ino;		/* Inode number of found directory. */
-	u_long	i_reclen;	/* Size of found directory entry. */
-	long	i_spare[11];	/* Spares to round up to 128 bytes. */
+	int32_t	  i_count;	/* Size of free slot in directory. */
+	doff_t	  i_endoff;	/* End of useful stuff in directory. */
+	doff_t	  i_diroff;	/* Offset in dir, where we found last entry. */
+	doff_t	  i_offset;	/* Offset of free space in directory. */
+	ino_t	  i_ino;	/* Inode number of found directory. */
+	u_int32_t i_reclen;	/* Size of found directory entry. */
 	/*
 	 * The on-disk dinode itself.
 	 */
@@ -128,9 +126,9 @@ struct indir {
 
 /* This overlays the fid structure (see mount.h). */
 struct ufid {
-	u_short	ufid_len;	/* Length of structure. */
-	u_short	ufid_pad;	/* Force long alignment. */
-	ino_t	ufid_ino;	/* File number (ino). */
-	long	ufid_gen;	/* Generation number. */
+	u_int16_t ufid_len;	/* Length of structure. */
+	u_int16_t ufid_pad;	/* Force 32-bit alignment. */
+	ino_t	  ufid_ino;	/* File number (ino). */
+	int32_t	  ufid_gen;	/* Generation number. */
 };
 #endif /* KERNEL */
