@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)cu.c	4.3 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)cu.c	4.4 (Berkeley) 81/07/02";
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -185,7 +185,7 @@ char *av[];
 	ioctl(ln, TIOCHPCL, (struct sgttyb *)NULL);
 	prf("Connected");
 	if (dout)
-		fk = -1;
+		fk = -12345;
 	else
 		fk = fork();
 	nhup = (int)signal(SIGINT, SIG_IGN);
