@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -29,16 +29,13 @@ static char sccsid[] = "@(#)man.c	5.12 (Berkeley) %G%";
 #define	LOCAL_PATH	"/usr/local/man"
 #define	NEW_PATH	"/usr/new/man"
 
-#define	NO		0
-#define	YES		1
-
-typedef struct {
-	char	*name, *msg;
-} DIR;
+#define	NO	0
+#define	YES	1
 
 static int	nomore,			/* copy file to stdout */
 		where;			/* just tell me where */
-static char	*defpath,		/* default search path */
+static char	*command,		/* command buffer */
+		*defpath,		/* default search path */
 		*locpath,		/* local search path */
 		*machine,		/* machine type */
 		*manpath,		/* current search path */
@@ -71,9 +68,9 @@ main(argc, argv)
 			}
 			break;
 		/*
-		 * "man -f" and "man -k" are undocumented ways of calling
-		 * whatis(1) and apropos(1).  Just strip out the flag
-		 * argument and jump.
+		 * "man -f" and "man -k" are backward contemptible,
+		 * undocumented ways of calling whatis(1) and apropos(1).
+		 * Just strip out the flag argument and jump.
 		 */
 		case 'f':
 			for (arg = argv; arg[0] = arg[1]; ++arg);
@@ -142,9 +139,15 @@ usage:		fputs("usage: man [-] [-M path] [section] title ...\n", stderr);
 	locpath = LOCAL_PATH;
 	newpath = NEW_PATH;
 	man(argv);
+	/* use system(3) in case someone's pager is "foo arg1 arg2" */
+	if (command)
+		(void)system(command);
 	exit(0);
 }
 
+typedef struct {
+	char	*name, *msg;
+} DIR;
 static DIR	list1[] = {		/* section one list */
 	"cat1", "1st",		"cat8", "8th",		"cat6", "6th",
 	"cat.old", "old",	NULL, NULL,
@@ -207,9 +210,13 @@ argtest:		if (!*++argv) {
 			}
 		}
 
-		res = section ? manual(section, *argv) :
-		    manual(list1, *argv) || manual(list2, *argv);
-		if (!res && !where)
+		if (section)
+			res = manual(section, *argv);
+		else {
+			res = manual(list1, *argv);
+			res += manual(list2, *argv);
+		}
+		if (!res && !where) {
 			if (manpath == locpath)
 				if (section)
 					fprintf(stderr, "No entry for %s in the %s section of the local manual.\n", *argv, section->msg);
@@ -224,13 +231,16 @@ argtest:		if (!*++argv) {
 				fprintf(stderr, "No entry for %s in the %s section of the manual.\n", *argv, section->msg);
 			else
 				fprintf(stderr, "No entry for %s in the manual.\n", *argv);
+			exit(1);
+		}
 	}
 }
 
 /*
  * manual --
- *	given a section number and a file name go through the directory
- *	list and find a file that matches.
+ *	given a directory list and a file name find a file that
+ *	matches; check ${directory}/${dir}/{file name} and
+ *	${directory}/${dir}/${machine}/${file name}.
  */
 static
 manual(section, name)
@@ -239,84 +249,96 @@ manual(section, name)
 {
 	register char *beg, *end;
 	register DIR *dp;
-	char *index();
+	register int res;
+	char fname[MAXPATHLEN + 1], *index();
 
-	for (beg = manpath;; beg = end + 1) {
+	for (beg = manpath, res = 0;; beg = end + 1) {
 		if (end = index(beg, ':'))
 			*end = '\0';
-		for (dp = section; dp->name; ++dp)
-			if (find(beg, dp->name, name)) {
-				if (end)
-					*end = ':';
-				return(YES);
+		for (dp = section; dp->name; ++dp) {
+			(void)sprintf(fname, "%s/%s/%s.0", beg, dp->name, name);
+			if (access(fname, R_OK)) {
+				(void)sprintf(fname, "%s/%s/%s/%s.0", beg,
+				    dp->name, machine, name);
+				if (access(fname, R_OK))
+					continue;
 			}
+			if (where)
+				printf("man: found in %s.\n", fname);
+			else if (nomore)
+				cat(fname);
+			else
+				add(fname);
+			res = 1;
+		}
 		if (!end)
-			return(NO);
+			return(res);
 		*end = ':';
 	}
 	/*NOTREACHED*/
 }
 
 /*
- * find --
- *	given a directory path, a sub-directory and a file name,
- *	see if a file exists in ${directory}/${dir}/{file name}
- *	or in ${directory}/${dir}/${machine}/${file name}.
+ * cat --
+ *	cat out the file
  */
 static
-find(beg, dir, name)
-	char *beg, *dir, *name;
-{
-	char fname[MAXPATHLEN + 1];
-
-	(void)sprintf(fname, "%s/%s/%s.0", beg, dir, name);
-	if (access(fname, R_OK)) {
-		(void)sprintf(fname, "%s/%s/%s/%s.0", beg, dir, machine, name);
-		if (access(fname, R_OK))
-			return(NO);
-	}
-	if (where)
-		printf("man: found in %s.\n", fname);
-	else
-		show(fname);
-	return(!where);
-}
-
-/*
- * show --
- *	display the file
- */
-static
-show(fname)
+cat(fname)
 	char *fname;
 {
 	register int fd, n;
 	char buf[BUFSIZ];
 
-	if (nomore) {
-		if (!(fd = open(fname, O_RDONLY, 0))) {
-			perror("man: open");
+	if (!(fd = open(fname, O_RDONLY, 0))) {
+		perror("man: open");
+		exit(1);
+	}
+	while ((n = read(fd, buf, sizeof(buf))) > 0)
+		if (write(1, buf, n) != n) {
+			perror("man: write");
 			exit(1);
 		}
-		while ((n = read(fd, buf, sizeof(buf))) > 0)
-			if (write(1, buf, n) != n) {
-				perror("man: write");
-				exit(1);
-			}
-		if (n == -1) {
-			perror("man: read");
+	if (n == -1) {
+		perror("man: read");
+		exit(1);
+	}
+	(void)close(fd);
+}
+
+/*
+ * add --
+ *	add a file name to the list for future paging
+ */
+static
+add(fname)
+	char *fname;
+{
+	static u_int buflen;
+	static int len;
+	static char *cp;
+	int flen;
+	char *malloc(), *realloc(), *strcpy();
+
+	if (!command) {
+		if (!(command = malloc(buflen = 1024))) {
+			fputs("man: out of space.\n", stderr);
 			exit(1);
 		}
-		(void)close(fd);
+		len = strlen(strcpy(command, pager));
+		cp = command + len;
 	}
-	else {
-		/*
-		 * use system(3) in case someone's pager is
-		 * "command arg1 arg2"
-		 */
-		(void)sprintf(buf, "%s %s", pager, fname);
-		(void)system(buf);
+	flen = strlen(fname);
+	if (len + flen + 2 > buflen) {		/* +2 == space, EOS */
+		if (!(command = realloc(command, buflen += 1024))) {
+			fputs("man: out of space.\n", stderr);
+			exit(1);
+		}
+		cp = command + len;
 	}
+	*cp++ = ' ';
+	len += flen + 1;			/* +1 = space */
+	(void)strcpy(cp, fname);
+	cp += flen;
 }
 
 /*
