@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.17 (Berkeley) %G%";
 #endif
 
 /*
@@ -995,6 +995,7 @@ static
 openpr()
 {
 	register int i, n;
+	char resp;
 
 	if (*LP) {
 		for (i = 1; ; i = i < 32 ? i << 1 : i) {
@@ -1014,23 +1015,32 @@ openpr()
 		status("%s is ready and printing", printer);
 	} else if (RM != NULL) {
 		for (i = 1; ; i = i < 512 ? i << 1 : i) {
+			resp = '\0';
 			pfd = getport(RM);
 			if (pfd >= 0) {
 				(void) sprintf(line, "\2%s\n", RP);
 				n = strlen(line);
 				if (write(pfd, line, n) != n)
 					break;
-				if (noresponse())
+				if (read(pfd, &resp, 1) != 1) {
+					log("lost connection");
 					(void) close(pfd);
-				else
+				} else if (resp == '\0')
 					break;
+				(void) close(pfd);
 			}
-			if (i == 1)
-				status("waiting for %s to come up", RM);
+			if (i == 1) {
+				if (resp == '\0')
+					status("waiting for %s to come up", RM);
+				else
+					status("waiting for queue to be enabled on %s", RM);
+			}
 			sleep(i);
 		}
 		status("sending to %s", RM);
 		remote = 1;
+		if (setsockopt(pfd, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
+			log("setsockopt (SO_KEEPALIVE) failed");
 	} else {
 		log("no line printer device or remote machine name");
 		exit(1);
