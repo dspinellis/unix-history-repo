@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.18 (Berkeley) %G%
+ *	@(#)proc.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -35,9 +35,6 @@ struct	pgrp {
  * Other per process data (user.h)
  * is swapped with the process.
  */
-
-#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(ac_comm) */
-#define	MAXLOGNAME	12		/* >= UT_NAMESIZE */
 
 struct	proc {
 	struct	proc *p_link;	/* linked list of running processes */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.15 (Berkeley) %G%
+ *	@(#)param.h	7.16 (Berkeley) %G%
  */
 
 #define	BSD	199003		/* system version (year & month) */
@@ -17,11 +17,14 @@
  */
 #define	MAXUPRC		CHILD_MAX	/* max processes per user */
 #define	NOFILE		OPEN_MAX	/* max open files per process */
-#define	CANBSIZ		256		/* max size of tty input line */
 #define	NCARGS		ARG_MAX		/* # characters in exec arglist */
 #define	MAXINTERP	32		/* max interpreter file name length */
 #define	NGROUPS		NGROUPS_MAX	/* max number groups */
-#define MAXHOSTNAMELEN	64		/* maximum hostname size */
+#define MAXHOSTNAMELEN	256		/* maximum hostname size */
+#define	MAXCOMLEN	16		/* maximum command name remembered */
+	/* MAXCOMLEN should be >= sizeof(ac_comm) (acct.h)  */
+#define	MAXLOGNAME	12		/* maximum login name length */
+	/* MAXLOGNAME must be >= UT_NAMESIZE (<utmp.h>) */
 
 #define	NOGROUP		65535		/* marker for empty group set member */
 
