@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -109,6 +109,7 @@ struct nlist nl[] = {
 #define	SNQD	(SNPTY+12)
 	{ "_nNQD" },
 #endif
+
 #ifdef tahoe
 #define	SVX	(SNPTY+1)
 	{ "_vx_tty" },
@@ -118,6 +119,25 @@ struct nlist nl[] = {
 	{ "_mp_tty" },
 #define SNMP	(SNPTY+4)
 	{ "_nmp" },
+#endif
+
+#ifdef hp300
+#define	SDCA	(SNPTY+1)
+	{ "_dca_tty" },
+#define	SNDCA	(SNPTY+2)
+	{ "_ndca" },
+#define	SDCM	(SNPTY+3)
+	{ "_dcm_tty" },
+#define	SNDCM	(SNPTY+4)
+	{ "_dcm_cnt" },
+#define	SDCL	(SNPTY+5)
+	{ "_dcl_tty" },
+#define	SNDCL	(SNPTY+6)
+	{ "_ndcl" },
+#define	SITE	(SNPTY+7)
+	{ "_ite_tty" },
+#define	SNITE	(SNPTY+8)
+	{ "_nite" },
 #endif
 	{ "" }
 };
@@ -151,7 +171,7 @@ main(argc, argv)
 
         Program = argv[0];
 	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case 'T':
 			totflg++;
 			break;
@@ -205,7 +225,9 @@ main(argc, argv)
 	}
 	if (kvm_nlist(nl) != 0) {
 		syserror("kvm_nlist: %s", kvm_geterr());
+		/*
 		exit(1);
+		*/
 	}
 	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf)) {
 		printf("pstat: one or more of -[aivxptfsU] is required\n");
@@ -299,7 +321,7 @@ dovnode()
 
 vnode_header()
 {
-	printf("ADDR     TYP VFLAG  USE  REF");
+	printf("ADDR     TYP VFLAG  USE HOLD");
 }
 
 vnode_print(avnode, vp)
@@ -785,7 +807,7 @@ doproc()
 	free(xproc);
 }
 
-char mesg[] = "  LINE RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGID DISC\n";
+char mesg[] = "  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
 int ttyspace = 128;
 struct tty *tty;
 
@@ -796,10 +818,12 @@ dotty()
 		printf("pstat: out of memory\n");
 		return;
 	}
+#ifndef hp300
 	printf("1 cons\n");
 	kvm_read((long)nl[SCONS].n_value, tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
+#endif
 #ifdef vax
 	if (nl[SNQD].n_type != 0) 
 		doqdss();
@@ -819,6 +843,16 @@ dotty()
 		dottytype("vx", SVX, SNVX);
 	if (nl[SNMP].n_type != 0)
 		dottytype("mp", SMP, SNMP);
+#endif
+#ifdef hp300
+	if (nl[SNITE].n_type != 0)
+		dottytype("ite", SITE, SNITE);
+	if (nl[SNDCA].n_type != 0)
+		dottytype("dca", SDCA, SNDCA);
+	if (nl[SNDCM].n_type != 0)
+		dottytype("dcm", SDCM, SNDCM);
+	if (nl[SNDCL].n_type != 0)
+		dottytype("dcl", SDCL, SNDCL);
 #endif
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
@@ -910,21 +944,22 @@ struct tty *atp;
 	else
 		printf("%7s ", name);
 	printf("%2d %3d ", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	printf("%3d %6d %6d %6d %4d %3d %8x %3d ", tp->t_outq.c_cc, 
-		tp->t_rawcc, tp->t_cancc, tp->t_outcc, 
+	printf("%3d %4d %3d %8x %3d ", tp->t_outq.c_cc, 
 		tp->t_hiwat, tp->t_lowat, tp->t_addr, tp->t_col);
 	for (i = j = 0; ttystates[i].flag; i++)
 		if (tp->t_state&ttystates[i].flag)
 			state[j++] = ttystates[i].val;
+	if (j == 0)
+		state[j++] = '-';
 	state[j] = '\0';
-	printf("%-4s ", state);
+	printf("%-4s %6x", state, (u_long)tp->t_session & ~KERNBASE);
 	if (tp->t_pgrp == NULL || kvm_read(&tp->t_pgrp->pg_id, &pgid, 
 	    sizeof (pid_t)) != sizeof (pid_t))
 		pgid = 0;
 	printf("%6d ", pgid);
 	switch (tp->t_line) {
 
-	case 0:
+	case TTYDISC:
 		printf("term\n");
 		break;
 
