@@ -1,4 +1,4 @@
-/*	if_ether.c	6.6	84/08/29	*/
+/*	if_ether.c	6.7	85/03/18	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -106,14 +106,14 @@ arpwhohas(ac, addr)
 	eh = (struct ether_header *)sa.sa_data;
 	bzero((caddr_t)ea, sizeof (*ea));
 	eh->ether_dhost = etherbroadcastaddr;
-	eh->ether_type = ETHERPUP_ARPTYPE;	/* if_output will swap */
+	eh->ether_type = ETHERTYPE_ARP;		/* if_output will swap */
 	ea->arp_hrd = htons(ARPHRD_ETHER);
-	ea->arp_pro = htons(ETHERPUP_IPTYPE);
+	ea->arp_pro = htons(ETHERTYPE_IP);
 	ea->arp_hln = sizeof arp_sha(ea);	/* hardware address length */
 	ea->arp_pln = sizeof arp_spa(ea);	/* protocol address length */
 	ea->arp_op = htons(ARPOP_REQUEST);
 	arp_sha(ea) = ac->ac_enaddr;
-	arp_spa(ea) = ((struct sockaddr_in *)&ac->ac_if.if_addr)->sin_addr;
+	arp_spa(ea) = ac->ac_ipaddr;
 	arp_tpa(ea) = *addr;
 	sa.sa_family = AF_UNSPEC;
 	return ((*ac->ac_if.if_output)(&ac->ac_if, m, &sa));
@@ -128,7 +128,7 @@ arpwhohas(ac, addr)
  *
  * We do some (conservative) locking here at splimp, since
  * arptab is also altered from input interrupt service (ecintr/ilintr
- * calls arpinput when ETHERPUP_ARPTYPE packets come in).
+ * calls arpinput when ETHERTYPE_ARP packets come in).
  */
 arpresolve(ac, m, destip, desten)
 	register struct arpcom *ac;
@@ -142,15 +142,14 @@ arpresolve(ac, m, destip, desten)
 	struct sockaddr_in sin;
 	int s, lna;
 
-	lna = in_lnaof(*destip);
-	if (lna == INADDR_ANY) {	/* broadcast address */
+	if (in_broadcast(*destip)) {	/* broadcast address */
 		*desten = etherbroadcastaddr;
 		return (1);
 	}
+	lna = in_lnaof(*destip);
 	ifp = &ac->ac_if;
 	/* if for us, then use software loopback driver */
-	if (destip->s_addr ==
-	    ((struct sockaddr_in *)&ifp->if_addr)-> sin_addr.s_addr &&
+	if (destip->s_addr == ac->ac_ipaddr.s_addr &&
 	    (loif.if_flags & IFF_UP)) {
 		sin.sin_family = AF_INET;
 		sin.sin_addr = *destip;
@@ -199,7 +198,8 @@ arpresolve(ac, m, destip, desten)
 }
 
 /*
- * Called from ecintr/ilintr when ether packet type ETHERPUP_ARP
+ * Called from 10 Mb/s Ethernet interrupt handlers
+ * when ether packet type ETHERTYPE_ARP
  * is received.  Algorithm is that given in RFC 826.
  * In addition, a sanity check is performed on the sender
  * protocol address, to catch impersonators.
@@ -220,9 +220,9 @@ arpinput(ac, m)
 		goto out;
 	if (ac->ac_if.if_flags & IFF_NOARP)
 		goto out;
-	myaddr = ((struct sockaddr_in *)&ac->ac_if.if_addr)->sin_addr;
+	myaddr = ac->ac_ipaddr;
 	ea = mtod(m, struct ether_arp *);
-	if (ntohs(ea->arp_pro) != ETHERPUP_IPTYPE)
+	if (ntohs(ea->arp_pro) != ETHERTYPE_IP)
 		goto out;
 	isaddr = arp_spa(ea);
 	itaddr = arp_tpa(ea);
@@ -278,7 +278,7 @@ reply:
 	ea->arp_op = htons(ARPOP_REPLY);
 	eh = (struct ether_header *)sa.sa_data;
 	eh->ether_dhost = arp_tha(ea);
-	eh->ether_type = ETHERPUP_ARPTYPE;
+	eh->ether_type = ETHERTYPE_ARP;
 	sa.sa_family = AF_UNSPEC;
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
 	return;
@@ -364,7 +364,7 @@ arpioctl(cmd, data)
 			splx(s);
 			return (ENXIO);
 		}
-		if (if_ifwithnet(&ar->arp_pa) == NULL) {
+		if (ifa_ifwithnet(&ar->arp_pa) == NULL) {
 			splx(s);
 			return (ENETUNREACH);
 		}
