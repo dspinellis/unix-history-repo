@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	2.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	2.16 (Berkeley) %G%";
 #endif
 
 /*
@@ -48,6 +48,7 @@ collect(hp)
 	extern char tempMail[];
 	int notify();
 	extern collintsig(), collhupsig();
+	char getsub;
 
 	noreset++;
 	ibuf = obuf = NULL;
@@ -89,15 +90,13 @@ collect(hp)
 	 */
 
 	t = GTO|GSUBJECT|GCC|GNL;
-	c = 0;
+	getsub = 0;
 	if (intty && sflag == NOSTR && hp->h_subject == NOSTR && value("ask"))
-		t &= ~GNL, c++;
+		t &= ~GNL, getsub++;
 	if (hp->h_seq != 0) {
 		puthead(hp, stdout, t);
 		fflush(stdout);
 	}
-	if (c)
-		grabh(hp, GSUBJECT);
 	escape = ESCAPE;
 	if ((cp = value("escape")) != NOSTR)
 		escape = *cp;
@@ -115,6 +114,11 @@ collect(hp)
 			signal(SIGHUP, collhupsig);
 # endif VMUNIX
 		flush();
+		if (getsub) {
+			grabh(hp, GSUBJECT);
+			getsub = 0;
+			continue;
+		}
 		if (readline(stdin, linebuf) <= 0) {
 			if (intty && value("ignoreeof") != NOSTR) {
 				if (++eof > 35)
@@ -389,7 +393,6 @@ collect(hp)
 			newo = obuf;
 			ibuf = newi;
 			printf("(continue)\n");
-			break;
 			break;
 		}
 	}

@@ -1,4 +1,4 @@
-#	Makefile	2.15	83/08/18
+#	Makefile	2.16	84/07/19
 #
 # Berkeley Mail
 #
@@ -17,11 +17,11 @@ AS=	-as
 RM=	-rm
 OBJS=	version.o aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o \
 	config.o edit.o fio.o \
-	getname.o head.o v7.local.o lock.o lex.o list.o main.o \
+	getname.o head.o v7.local.o lex.o list.o main.o \
 	names.o optim.o popen.o quit.o send.o strings.o temp.o tty.o \
 	vars.o str.o
 SRCS=	aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
-	getname.c head.c v7.local.c lock.c lex.c list.c main.c \
+	getname.c head.c v7.local.c lex.c list.c main.c \
 	names.c optim.c popen.c quit.c send.c strings.c temp.c tty.c vars.c \
 	version.c
 HDRS=	rcv.h configdefs.h def.h glob.h v7.local.h local.h

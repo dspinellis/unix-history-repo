@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	2.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	2.13 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -31,7 +31,6 @@ main(argc, argv)
 	register int i, argp;
 	int mustsend, uflag, hdrstop(), (*prevint)(), f;
 	FILE *ibuf, *ftat;
-	extern char _sobuf[];
 	struct sgttyb tbuf;
 
 #ifdef signal
@@ -60,7 +59,6 @@ main(argc, argv)
 	else
 		baud = B9600;
 	image = -1;
-	setbuf(stdout, _sobuf);
 
 	/*
 	 * Now, determine how we are being used.
