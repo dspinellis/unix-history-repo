@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.2 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.3 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -434,10 +434,11 @@ pcproc(r)
 				fmt = 'c';
 				break;
 			case TSCAL:
+				warning();
 				if (opt('s')) {
 					standard();
-					error("Writing scalars to text files is non-standard");
 				}
+				error("Writing scalars to text files is non-standard");
 			case TBOOL:
 				fmt = 's';
 				break;
@@ -1025,10 +1026,11 @@ pcproc(r)
 				putleaf( P2ICON , 0 , 0 , P2PTR | P2CHAR
 					, format );
 				putop( P2LISTOP , P2INT );
+				warning();
 				if (opt('s')) {
 					standard();
-					error("Reading of enumerated types is non-standard");
 				}
+				error("Reading scalars from text files is non-standard");
 			}
 			putop( P2CALL , readtype );
 			if ( isa( ap , "bcsi" ) ) {

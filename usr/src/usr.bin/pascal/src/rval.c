@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.4 %G%";
+static	char sccsid[] = "@(#)rval.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -13,6 +13,9 @@ static	char sccsid[] = "@(#)rval.c 1.4 %G%";
 #endif PC
 
 extern	char *opnames[];
+
+    /* line number of the last record comparison warning */
+short reccompline = 0;
 
 #ifdef PC
     char	*relts[] =  {
@@ -737,9 +740,7 @@ cstrng:
 				}
 				contype = p;
 			    }
-			} else {
-			    contype = p;
-			}
+			} 
 			    /*
 			     *	put out the width of the comparison.
 			     */
@@ -1016,8 +1017,12 @@ nocomp(c)
 
 	switch (c) {
 		case TREC:
-			if ( opt( 's' ) ) {
-			    standard();
+			if ( line != reccompline ) {
+			    reccompline = line;
+			    warning();
+			    if ( opt( 's' ) ) {
+				standard();
+			    }
 			    error("record comparison is non-standard");
 			}
 			break;

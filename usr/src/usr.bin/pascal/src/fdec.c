@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.6 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -138,10 +138,11 @@ funchdr(r)
 			    case TREC:
 			    case TSET:
 			    case TSTR:
+				    warning();
 				    if (opt('s')) {
 					    standard();
-					    error("Functions should not return %ss", clnames[o]);
 				    }
+				    error("Functions should not return %ss", clnames[o]);
 		    }
 #		    ifdef PC
 			enclosing[ cbn ] = r[2];
