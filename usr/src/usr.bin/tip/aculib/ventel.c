@@ -1,4 +1,4 @@
-/*	ventel.c	1.1	82/04/19	*/
+/*	ventel.c	1.2	82/07/29	*/
 
 #if VENTEL
 /*
@@ -20,6 +20,7 @@ ven_dialer(num, acu)
 {
 	register char *cp;
 	register int connected = 0;
+	char c;
 #ifdef ACULOG
 	char line[80];
 #endif
@@ -33,12 +34,15 @@ ven_dialer(num, acu)
 #endif
 		return (0);
 	}
+	if (boolean(value(VERBOSE)))
+		printf("\ndialing...");
+	fflush(stdout);
 	ioctl(FD, TIOCHPCL, 0);
-	echo("k$\n$D$I$A$L$:$ <");
+	echo("k$\r$\n$D$I$A$L$:$ <");
 	for (cp = num; *cp; cp++) {
 		sleep(1);
 		write(FD, cp, 1);
-		read(FD, cp, 1);
+		read(FD, &c, 1);
 	}
 	echo(">\r$\n");
 	if (gobble('\n'))
@@ -111,11 +115,11 @@ gobble(s)
 		alarm(number(value(DIALTIMEOUT)));
 		read(FD, &c, 1);
 		c &= 0177;
+		alarm(0);
 #ifdef notdef
 		if (boolean(value(VERBOSE)))
-#endif
 			putchar(c);
-		alarm(0);
+#endif
 		if (timeout)
 			return (0);
 	} while (c != '\n' && c != s);
