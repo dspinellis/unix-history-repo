@@ -1,4 +1,4 @@
-/*	vba.c	1.5	87/03/10	*/
+/*	vba.c	1.6	87/04/01	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
@@ -34,6 +34,7 @@ vbainit(vb, xsize, flags)
 	vb->vb_flags = flags;
 	vbmapalloc(btoc(xsize)+1, &vb->vb_map, &vb->vb_utl);
 	n = roundup(xsize, NBPG);
+	vb->vb_bufsize = n;
 	if (vb->vb_rawbuf == 0)
 		vb->vb_rawbuf = calloc(n);
 	if ((int)vb->vb_rawbuf & PGOFSET)
@@ -57,7 +58,7 @@ vbainit(vb, xsize, flags)
 
 /*
  * Next piece of logic takes care of unusual cases when less (or more) than
- * a full block (or sector) are required. This is done by the swaping
+ * a full block (or sector) are required. This is done by the swapping
  * logic, when it brings page table pages from the swap device.
  * Since some controllers can't read less than a sector, the
  * only alternative is to read the disk to a temporary buffer and
@@ -118,32 +119,31 @@ vbasetup(bp, vb, sectsize)
 			goto copy;
 	}
 	vb->vb_copy = 0;
-	if ((bp->b_flags & BREAD) == 0)
-		if (vb->vb_iskernel)
-			vbastat.kw_raw++;
-		else
-			vbastat.uw_raw++;
+	if (vb->vb_iskernel)
+		vbastat.k_raw++;
+	else
+		vbastat.u_raw++;
 	return ((spte->pg_pfnum << PGSHIFT) + o);
 
 copy:
 	vb->vb_copy = 1;
+	if (bp->b_bcount > vb->vb_bufsize)
+		panic("vba xfer too large");
 	if (vb->vb_iskernel) {
-		if ((bp->b_flags & B_READ) == 0) {
+		if ((bp->b_flags & B_READ) == 0)
 			bcopy(bp->b_un.b_addr, vb->vb_rawbuf,
 			    (unsigned)bp->b_bcount);
-			vbastat.kw_copy++;
-		}
+		vbastat.k_copy++;
 	} else  {
 		dpte = vb->vb_map;
 		for (i = npf, p = (int)vb->vb_utl; i--; p += NBPG) {
 			*(int *)dpte++ = (spte++)->pg_pfnum | PG_V | PG_KW;
 			mtpr(TBIS, p);
 		}
-		if ((bp->b_flags & B_READ) == 0) {
+		if ((bp->b_flags & B_READ) == 0)
 			bcopy(vb->vb_utl + o, vb->vb_rawbuf,
 			    (unsigned)bp->b_bcount);
-			vbastat.uw_copy++;
-		}
+		vbastat.u_copy++;
 	}
 	return (vb->vb_physbuf);
 }
@@ -165,26 +165,66 @@ vbadone(bp, vb)
 	if (bp->b_flags & B_READ) {
 		o = (int)bp->b_un.b_addr & PGOFSET;
 		if (vb->vb_copy) {
-			if (vb->vb_iskernel) {
+			if (vb->vb_iskernel)
 				bcopy(vb->vb_rawbuf, bp->b_un.b_addr,
 				    (unsigned)(bp->b_bcount - bp->b_resid));
-				vbastat.kr_copy++;
-			} else {
+			else {
 				bcopy(vb->vb_rawbuf, vb->vb_utl + o,
 				    (unsigned)(bp->b_bcount - bp->b_resid));
 				dkeyinval(bp->b_proc);
-				vbastat.ur_copy++;
 			}
 		} else {
 			if (vb->vb_iskernel) {
 				npf = btoc(bp->b_bcount + o);
 				for (v = bp->b_un.b_addr; npf--; v += NBPG)
 					mtpr(P1DC, (int)v);
-				vbastat.kr_raw++;
-			} else {
+			} else
 				dkeyinval(bp->b_proc);
-				vbastat.ur_raw++;
-			}
 		}
 	}
+}
+
+/*
+ * Set up a scatter-gather operation for SMD/E controller.
+ * This code belongs half-way between vd.c and this file.
+ */
+#include "vdreg.h"
+
+vba_sgsetup(bp, vb, sg)
+	register struct buf *bp;
+	struct vb_buf *vb;
+	struct trsg *sg;
+{
+	register struct pte *spte;
+	register struct addr_chain *adr;
+	register int npf, i;
+	int o;
+
+	o = (int)bp->b_un.b_addr & PGOFSET;
+	npf = btoc(bp->b_bcount + o);
+	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
+	vb->vb_copy = 0;
+	if (vb->vb_iskernel) {
+		spte = kvtopte(bp->b_un.b_addr);
+		vbastat.k_sg++;
+	} else {
+		spte = vtopte((bp->b_flags&B_DIRTY) ? &proc[2] : bp->b_proc,
+		    btop(bp->b_un.b_addr));
+		vbastat.u_sg++;
+	}
+
+	i = min(NBPG - o, bp->b_bcount);
+	sg->start_addr.wcount = (i + 1) >> 1;
+	sg->start_addr.memadr = ((spte++)->pg_pfnum << PGSHIFT) + o;
+	i = bp->b_bcount - i;
+	if (i > VDMAXPAGES * NBPG)
+		panic("vba xfer too large");
+	i = (i + 1) >> 1;
+	for (adr = sg->addr_chain; i > 0; adr++, i -= NBPG / 2) {
+		adr->nxt_addr = (spte++)->pg_pfnum << PGSHIFT;
+		adr->nxt_len = min(i, NBPG / 2);
+	}
+	adr->nxt_addr = 0;
+	adr++->nxt_len = 0;
+	return ((adr - sg->addr_chain) * sizeof(*adr) / sizeof(long));
 }

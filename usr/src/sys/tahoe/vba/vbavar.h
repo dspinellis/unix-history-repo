@@ -1,4 +1,4 @@
-/*	vbavar.h	1.5	87/03/10	*/
+/*	vbavar.h	1.6	87/04/01	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -110,6 +110,7 @@ struct vb_buf {
 	caddr_t	vb_utl;			/* virtual addresses mapped by vb_map */
 	caddr_t	vb_rawbuf;		/* intermediate buffer */
 	u_long	vb_physbuf;		/* phys addr of intermediate buffer */
+	u_long	vb_bufsize;		/* intermediate buffer size */
 	u_long	vb_maxphys;		/* physical address limit */
 	/* remaining fields apply to current transfer: */
 	int	vb_copy;		/* copy to/from intermediate buffer */
@@ -135,14 +136,12 @@ struct vb_buf {
  * Statistics on vba operations.
  */
 struct vbastat {
-	u_long	kw_raw;			/* wrote from kernel DMA buffer */
-	u_long	uw_raw;			/* wrote from user DMA buffer */
-	u_long	kw_copy;		/* write copied from kernel */
-	u_long	uw_copy;		/* write copied from user */
-	u_long	kr_raw;			/* read, purged kernel DMA buffer */
-	u_long	ur_raw;			/* invalidated key on user DMA buffer */
-	u_long	kr_copy;		/* read copied to kernel */
-	u_long	ur_copy;		/* read copied to user & inval'd key */
+	u_long	k_raw;		/* to/from contiguous kernel DMA buffer */
+	u_long	u_raw;		/* to/from contiguous user DMA buffer */
+	u_long	k_copy;		/* copied to/from kernel */
+	u_long	u_copy;		/* copied to/from user */
+	u_long	k_sg;		/* scatter-gather to/from kernel */
+	u_long	u_sg;		/* scatter-gather to/from user */
 };
 
 #ifndef LOCORE
