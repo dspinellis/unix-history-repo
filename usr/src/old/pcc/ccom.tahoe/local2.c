@@ -1,11 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.7 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
 # include <ctype.h>
 
 # define putstr(s)	fputs((s), stdout)
+# define ISCHAR(p)	(p->in.type == UCHAR || p->in.type == CHAR)
 
 # ifdef FORT
 int ftlab1, ftlab2;
@@ -383,6 +384,29 @@ zzzcode( p, c ) register NODE *p; {
 	case 'S':  /* structure assignment */
 		stasg(p);
 		break;
+
+	case 'X':	/* multiplication for short and char */
+		if (ISUNSIGNED(p->in.left->in.type)) 
+			printf("\tmovz");
+		else
+			printf("\tcvt");
+		zzzcode(p, 'L');
+		printf("l\t");
+		adrput(p->in.left);
+		printf(",");
+		adrput(&resc[0]);
+		printf("\n");
+		if (ISUNSIGNED(p->in.right->in.type)) 
+			printf("\tmovz");
+		else
+			printf("\tcvt");
+		zzzcode(p, 'R');
+		printf("l\t");
+		adrput(p->in.right);
+		printf(",");
+		adrput(&resc[1]);
+		printf("\n");
+		return;
 
 	default:
 		cerror( "illegal zzzcode" );
@@ -996,7 +1020,9 @@ hardops(p)  register NODE *p; {
 	t = p->in.type;
 	t1 = p->in.left->in.type;
 	t2 = p->in.right->in.type;
-	if ( t1 != UNSIGNED && (t2 != UNSIGNED)) return;
+
+	if (!((ISUNSIGNED(t1) && !(ISUNSIGNED(t2))) || 
+	     ( t2 == UNSIGNED))) return;
 
 	/* need to rewrite tree for ASG OP */
 	/* must change ASG OP to a simple OP */
