@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfb.c	7.4 (Berkeley) %G%
+ *	@(#)mfb.c	7.5 (Berkeley) %G%
  */
 
 /* 
@@ -130,7 +130,7 @@ struct	driver mfbdriver = {
 #define MFB_OFFSET_BT455	0x100000	/* Bt455 registers */
 #define MFB_OFFSET_IREQ		0x080000	/* Interrupt req. control */
 #define MFB_OFFSET_ROM		0x0		/* Diagnostic ROM */
-#define MFB_FB_SIZE		0x100000	/* frame buffer size */
+#define MFB_FB_SIZE		0x200000	/* frame buffer size */
 
 /*
  * Test to see if device is present.
