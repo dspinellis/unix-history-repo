@@ -1,0 +1,41 @@
+.th COMM I 5/15/74
+.sh NAME
+comm \*- print lines common to two files
+.sh SYNOPSIS
+.bd comm
+[
+.bd \*-
+[
+.bd 123
+]
+] file1 file2
+.sh DESCRIPTION
+.it Comm
+reads
+.it file1
+and
+.it file2,
+which should be in sort,
+and produces a three column output: lines only in
+.it file1;
+lines only in
+.it file2;
+and lines in both files.
+The filename `\*-' means the standard input.
+.s3
+Flags 1, 2, or 3 suppress printing of the corresponding
+column.
+Thus
+.bd comm
+.bd \*-12
+prints only the lines common to the two files;
+.bd comm
+.bd \*-23
+prints only lines in the first file but not in the second;
+.bd comm
+.bd \*-123
+is a no-op.
+.s3
+.sh "SEE ALSO"
+cmp (I), diff (I)
+.sh BUGS
