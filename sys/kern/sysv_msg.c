@@ -319,7 +319,7 @@ msgget(p, uap, retval)
     int key = uap->key;
     int msgflg = uap->msgflg;
     struct ucred *cred = p->p_ucred;
-    register struct msqid_ds *msqptr;
+    register struct msqid_ds *msqptr = NULL;
 
 #ifdef MSG_DEBUG
     printf("msgget(0x%x,0%o)\n",key,msgflg);

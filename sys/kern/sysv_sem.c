@@ -195,7 +195,7 @@ semu_alloc(struct proc *p)
     }
 
     /* NOTREACHED */
-
+    while (1);
 }
 
 /*
