@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -196,7 +196,7 @@ dd_in()
 		 * lose the minimum amount of data.  If doing block operations
 		 * use spaces.
 		 */
-		if (flags & (C_NOERROR|C_SYNC))
+		if ((flags & (C_NOERROR|C_SYNC)) == (C_NOERROR|C_SYNC))
 			if (flags & (C_BLOCK|C_UNBLOCK))
 				memset(in.dbp, ' ', in.dbsz);
 			else
@@ -290,6 +290,10 @@ dd_close()
 		block_close();
 	else if (cfunc == unblock)
 		unblock_close();
+	if (ddflags & C_OSYNC && out.dbcnt < out.dbsz) {
+		bzero(out.dbp, out.dbsz - out.dbcnt);
+		out.dbcnt = out.dbsz;
+	}
 	if (out.dbcnt)
 		dd_out(1);
 }
