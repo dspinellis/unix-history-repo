@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1594,7 +1594,7 @@ domap(name)
 	static char new[MAXPATHLEN];
 	register char *cp1 = name, *cp2 = mapin;
 	char *tp[9], *te[9];
-	int i, toks[9], toknum, match = 1;
+	int i, toks[9], toknum = 0, match = 1;
 
 	for (i=0; i < 9; ++i) {
 		toks[i] = 0;
@@ -1625,12 +1625,16 @@ domap(name)
 				}
 				break;
 		}
-		if (*cp1) {
+		if (match && *cp1) {
 			cp1++;
 		}
-		if (*cp2) {
+		if (match && *cp2) {
 			cp2++;
 		}
+	}
+	if (!match && *cp1) /* last token mismatch */
+	{
+		toks[toknum] = 0;
 	}
 	cp1 = new;
 	*cp1 = '\0';
