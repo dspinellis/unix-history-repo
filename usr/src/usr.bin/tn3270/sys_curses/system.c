@@ -34,7 +34,7 @@ static int
     storage_must_send = 0,	/* Storage belongs on other side of wire */
     storage_accessed = 0;	/* The storage is accessed (so leave alone)! */
 
-static long storage[250];
+static long storage[1000];
 
 static union REGS inputRegs;
 static struct SREGS inputSregs;
@@ -191,7 +191,7 @@ freestorage()
 
     if (storage_accessed) {
 	fprintf(stderr, "Internal error - attempt to free accessed storage.\n");
-	fprintf(stderr, "(Enountered in file %s at line %s.)\n",
+	fprintf(stderr, "(Encountered in file %s at line %d.)\n",
 			__FILE__, __LINE__);
 	quit();
     }
@@ -229,7 +229,7 @@ getstorage(address, length)
     if (storage_accessed) {
 	fprintf(stderr,
 		"Internal error - attempt to get while storage accessed.\n");
-	fprintf(stderr, "(Enountered in file %s at line %s.)\n",
+	fprintf(stderr, "(Encountered in file %s at line %d.)\n",
 			__FILE__, __LINE__);
 	quit();
     }
@@ -248,7 +248,7 @@ getstorage(address, length)
     }
     if (api_exch_incommand(EXCH_CMD_HEREIS) == -1) {
 	fprintf(stderr, "Bad data from other side.\n");
-	fprintf(stderr, "(Encountered at %s, %s.)\n", __FILE__, __LINE__);
+	fprintf(stderr, "(Encountered at %s, %d.)\n", __FILE__, __LINE__);
 	return -1;
     }
     if (nextstore() == -1) {
@@ -312,13 +312,13 @@ int
 {
     if (storage_accessed) {
 	fprintf(stderr, "Internal error - storage accessed twice\n");
-	fprintf(stderr, "(Encountered in file %s, line %s.)\n",
+	fprintf(stderr, "(Encountered in file %s, line %d.)\n",
 				__FILE__, __LINE__);
 	quit();
     } else if (length != 0) {
-	storage_accessed = 1;
 	freestorage();
 	getstorage(location, length);
+	storage_accessed = 1;
     }
     return (char *) storage;
 }
@@ -330,7 +330,7 @@ int	length;
 {
     if (storage_accessed == 0) {
 	fprintf(stderr, "Internal error - unnecessary unaccess_api call.\n");
-	fprintf(stderr, "(Encountered in file %s, line %s.)\n",
+	fprintf(stderr, "(Encountered in file %s, line %d.)\n",
 			__FILE__, __LINE__);
 	quit();
     }
@@ -447,9 +447,13 @@ shell_continue()
 	    kill_connection();
 	    break;
 	default:
-	    fprintf(stderr, "Looking for a REQUEST or DISASSOCIATE command\n");
-	    fprintf(stderr, "\treceived 0x%02x.\n", i);
+	    if (i != -1) {
+		fprintf(stderr,
+			"Looking for a REQUEST or DISASSOCIATE command\n");
+		fprintf(stderr, "\treceived 0x%02x.\n", i);
+	    }
 	    kill_connection();
+	    break;
 	}
     }
     return shell_active;
