@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.6		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.7		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.6		%G%);
+SCCSID(@(#)usersmtp.c	4.7		%G%);
 
 
 
@@ -289,7 +289,7 @@ smtpdata(m, e)
 **  SMTPQUIT -- close the SMTP connection.
 **
 **	Parameters:
-**		name -- name of mailer we are quitting.
+**		m -- a pointer to the mailer.
 **
 **	Returns:
 **		none.
@@ -298,8 +298,7 @@ smtpdata(m, e)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(name, m)
-	char *name;
+smtpquit(m)
 	register MAILER *m;
 {
 	int i;
@@ -324,9 +323,9 @@ smtpquit(name, m)
 	SmtpState = SMTP_CLOSED;
 
 	/* and pick up the zombie */
-	i = endmailer(SmtpPid, name);
+	i = endmailer(SmtpPid, m->m_argv[0]);
 	if (i != EX_OK)
-		syserr("smtpquit %s: stat %d", name, i);
+		syserr("smtpquit %s: stat %d", m->m_argv[0], i);
 }
 /*
 **  REPLY -- read arpanet reply
@@ -383,7 +382,7 @@ reply(m)
 			syslog(LOG_ERR, "%s", &MsgBuf[4]);
 # endif LOG
 			SmtpState = SMTP_CLOSED;
-			smtpquit("reply error", m);
+			smtpquit(m);
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
@@ -419,7 +418,7 @@ reply(m)
 		{
 			/* send the quit protocol */
 			SmtpState = SMTP_SSD;
-			smtpquit("SMTP Shutdown", m);
+			smtpquit(m);
 		}
 
 		return (r);

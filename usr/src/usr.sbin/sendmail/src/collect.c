@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	4.1		%G%);
+SCCSID(@(#)collect.c	4.2		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -58,8 +58,7 @@ maketemp(from)
 	**  Try to read a UNIX-style From line
 	*/
 
-	if (sfgets(buf, sizeof buf, InChannel) == NULL)
-		return;
+	(void) sfgets(buf, sizeof buf, InChannel);
 	fixcrlf(buf, FALSE);
 # ifndef NOTUNIX
 	if (!SaveFrom && strncmp(buf, "From ", 5) == 0)
@@ -77,16 +76,15 @@ maketemp(from)
 	**	like UNIX "From" lines are deleted in the header.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
-				 sfgets(buf, MAXFIELD, InChannel) != NULL)
+	do
 	{
-		register char c;
+		int c;
 		extern bool isheader();
 
 		/* if the line is too long, throw the rest away */
 		if (index(buf, '\n') == NULL)
 		{
-			while ((c = getc(InChannel)) != '\n')
+			while ((c = getc(InChannel)) != '\n' && c != EOF)
 				continue;
 			/* give an error? */
 		}
@@ -118,7 +116,7 @@ maketemp(from)
 
 		if (bitset(H_EOH, chompheader(buf, FALSE)))
 			break;
-	}
+	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
 
 # ifdef DEBUG
 	if (tTd(30, 1))
@@ -127,17 +125,13 @@ maketemp(from)
 
 	/* throw away a blank line */
 	if (buf[0] == '\0')
-	{
 		(void) sfgets(buf, MAXFIELD, InChannel);
-		fixcrlf(buf, TRUE);
-	}
 
 	/*
 	**  Collect the body of the message.
 	*/
 
-	for (; !feof(InChannel); !feof(InChannel) && !ferror(InChannel) &&
-				 sfgets(buf, sizeof buf, InChannel) != NULL)
+	do
 	{
 		register char *bp = buf;
 
@@ -161,7 +155,7 @@ maketemp(from)
 		fputs("\n", tf);
 		if (ferror(tf))
 			tferror(tf);
-	}
+	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
 	if (fflush(tf) != 0)
 		tferror(tf);
 	(void) fclose(tf);
