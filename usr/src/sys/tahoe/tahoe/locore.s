@@ -1,4 +1,4 @@
-/*	locore.s	1.13	87/02/26	*/
+/*	locore.s	1.14	87/05/27	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
