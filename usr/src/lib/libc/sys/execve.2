@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)execve.2	8.3 (Berkeley) %G%
+.\"     @(#)execve.2	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXECVE 2
@@ -40,9 +40,11 @@ An interpreter file begins with a line of the form:
 .Ed
 .Pp
 When an interpreter file is
-.Fn execve Ap d ,
+.\" was .Fn execve Ap d ,
+\fBexecve\fP'd,
 the system
-.Fn execve Ap s
+.\" was .Fn execve Ap s
+\fBexecve\fP's
 runs the specified
 .Em interpreter .
 If the optional
@@ -50,13 +52,16 @@ If the optional
 is specified, it becomes the first argument to the
 .Em interpreter ,
 and the name of the originally
-.Fn execve Ap d
+.\" was .Fn execve Ap d
+\fBexecve\fP'd
 file becomes the second argument;
 otherwise, the name of the originally
-.Fn execve Ap d
+.\" was .Fn execve Ap d
+\fBexecve\fP'd
 file becomes the first argument.  The original arguments are shifted over to
 become the subsequent arguments.  The zeroth argument, normally the name of the
-.Fn execve Ap d
+.\" was .Fn execve Ap d
+\fBexecve\fP'd
 file, is left unchanged.
 .Pp
 The argument
