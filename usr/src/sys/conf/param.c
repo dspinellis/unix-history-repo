@@ -38,7 +38,7 @@ char copyright[] =
 #define	HZ 100
 int	hz = HZ;
 int	tick = 1000000 / HZ;
-int	tickadj = 1000000 / HZ / 10;
+int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
@@ -64,7 +64,8 @@ int	nbuf, nswbuf;
 
 /*
  * These have to be allocated somewhere; allocating
- * them here forces loader errors if this file is omitted.
+ * them here forces loader errors if this file is omitted
+ * (if they've been externed everywhere else; hah!).
  */
 struct	proc *proc, *procNPROC;
 struct	text *text, *textNTEXT;
@@ -77,7 +78,7 @@ short	*swsize;
 int	*swpf;
 char	*buffers;
 struct	cmap *cmap, *ecmap;
-struct	nch *nch;
+struct	namecache *namecache;
 #ifdef QUOTA
 struct	quota *quota, *quotaNQUOTA;
 struct	dquot *dquot, *dquotNDQUOT;
