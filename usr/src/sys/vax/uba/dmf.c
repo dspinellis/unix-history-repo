@@ -538,7 +538,7 @@ dmfparam(unit)
 		lpar |= TWOSB;
 	lpar |= (unit&07);
 	addr->dmflpr = lpar;
-	SETLCR(addr, lcr);
+	addr->dmflctms = (addr->dmflctms &~ 0xff) | lcr;
 	splx(s);
 }
 
@@ -751,7 +751,7 @@ dmfmctl(dev, bits, how)
 	dmfaddr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
 	mbits = dmfaddr->dmfrms << 8;
 	dmfaddr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
-	lcr = dmfaddr->dmflcmts;
+	lcr = dmfaddr->dmflctms;
 	mbits |= (lcr & 0xff00) >> 8;
 	switch (how) {
 	case DMSET:
