@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -27,11 +27,15 @@ char copyright[] =
 #include <sys/file.h>
 #include <sys/mount.h>
 
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #include <paths.h>
 
-#define COMPAT			/* allow non-labeled disks */
+#define	COMPAT			/* allow non-labeled disks */
 
 /*
  * The following two constants set the default block and fragment sizes.
@@ -140,21 +144,19 @@ u_long	memleft;		/* virtual memory available */
 caddr_t	membase;		/* start address of memory based filesystem */
 #ifdef COMPAT
 char	*disktype;
-int	unlabelled;
+int	unlabeled;
 #endif
 
 char	device[MAXPATHLEN];
 char	*progname;
 
-extern	int errno;
-char	*index();
-char	*rindex();
-
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	char *cp, *special, *rindex();
+	extern char *optarg;
+	extern int optind;
+	register int ch;
 	register struct partition *pp;
 	register struct disklabel *lp;
 	struct disklabel *getdisklabel();
@@ -162,311 +164,158 @@ main(argc, argv)
 	struct mfs_args args;
 	struct stat st;
 	int fsi, fso;
-	register int i;
-	int status;
-	char buf[BUFSIZ];
+	char *cp, *special, *opstring, buf[BUFSIZ];
 
-	if ((progname = rindex(*argv, '/') + 1) == (char *)1)
+	if (progname = rindex(*argv, '/'))
+		++progname;
+	else
 		progname = *argv;
+
 	if (!strcmp(progname, "mfs")) {
+		mfs = 1;
 		Nflag++;
-		mfs++;
 	}
-	argc--, argv++;
-	while (argc > 0 && argv[0][0] == '-') {
-		for (cp = &argv[0][1]; *cp; cp++)
-			switch (*cp) {
 
-			case 'F':
-				if (!mfs)
-					fatal("-F: unknown flag");
-				if (argc < 1)
-					fatal("-F: mount flags");
-				argc--, argv++;
-				mntflags = atoi(*argv);
-				if (mntflags == 0)
-					fatal("%s: bad mount flags", *argv);
-				goto next;
+	opstring = "F:NS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
+	if (!mfs)
+		opstring += 2;		/* -F is mfs only */
 
-			case 'N':
-				Nflag++;
-				break;
-
-			case 'S':
-				if (argc < 1)
-					fatal("-S: missing sector size");
-				argc--, argv++;
-				sectorsize = atoi(*argv);
-				if (sectorsize <= 0)
-					fatal("%s: bad sector size", *argv);
-				goto next;
-
+	while ((ch = getopt(argc, argv, opstring)) != EOF)
+		switch(ch) {
+		case 'F':
+			if ((mntflags = atoi(optarg)) == 0)
+				fatal("%s: bad mount flags", optarg);
+			break;
+		case 'N':
+			Nflag++;
+			break;
+		case 'S':
+			if ((sectorsize = atoi(optarg)) <= 0)
+				fatal("%s: bad sector size", optarg);
+			break;
 #ifdef COMPAT
-			case 'T':
-				if (argc < 1)
-					fatal("-T: missing disk type");
-				argc--, argv++;
-				disktype = *argv;
-				goto next;
+		case 'T':
+			disktype = optarg;
+			break;
 #endif
+		case 'a':
+			if ((maxcontig = atoi(optarg)) <= 0)
+				fatal("%s: bad max contiguous blocks\n",
+				    optarg);
+			break;
+		case 'b':
+			if ((bsize = atoi(optarg)) < MINBSIZE)
+				fatal("%s: bad block size", optarg);
+			break;
+		case 'c':
+			if ((cpg = atoi(optarg)) <= 0)
+				fatal("%s: bad cylinders/group", optarg);
+			cpgflg++;
+			break;
+		case 'd':
+			if ((rotdelay = atoi(optarg)) < 0)
+				fatal("%s: bad rotational delay\n", optarg);
+			break;
+		case 'e':
+			if ((maxbpg = atoi(optarg)) <= 0)
+				fatal("%s: bad blocks per file in a cyl group\n",
+				    optarg);
+			break;
+		case 'f':
+			if ((fsize = atoi(optarg)) <= 0)
+				fatal("%s: bad frag size", optarg);
+			break;
+		case 'i':
+			if ((density = atoi(optarg)) <= 0)
+				fatal("%s: bad bytes per inode\n", optarg);
+			break;
+		case 'k':
+			if ((trackskew = atoi(optarg)) < 0)
+				fatal("%s: bad track skew", optarg);
+			break;
+		case 'l':
+			if ((interleave = atoi(optarg)) <= 0)
+				fatal("%s: bad interleave", optarg);
+			break;
+		case 'm':
+			if ((minfree = atoi(optarg)) < 0 || minfree > 99)
+				fatal("%s: bad free space %%\n", optarg);
+			break;
+		case 'n':
+			if ((nrpos = atoi(optarg)) <= 0)
+				fatal("%s: bad rotational layout count\n",
+				    optarg);
+			break;
+		case 'o':
+			if (strcmp(optarg, "space") == 0)
+				opt = FS_OPTSPACE;
+			else if (strcmp(optarg, "time") == 0)
+				opt = FS_OPTTIME;
+			else
+				fatal("%s: bad optimization preference %s",
+				    optarg, "(options are `space' or `time')");
+			break;
+		case 'p':
+			if ((trackspares = atoi(optarg)) < 0)
+				fatal("%s: bad spare sectors per track",
+				    optarg);
+			break;
+		case 'r':
+			if ((rpm = atoi(optarg)) <= 0)
+				fatal("%s: bad revs/minute\n", optarg);
+			break;
+		case 's':
+			if ((fssize = atoi(optarg)) <= 0)
+				fatal("%s: bad file system size", optarg);
+			break;
+		case 't':
+			if ((ntracks = atoi(optarg)) <= 0)
+				fatal("%s: bad total tracks", optarg);
+			break;
+		case 'u':
+			if ((nsectors = atoi(optarg)) <= 0)
+				fatal("%s: bad sectors/track", optarg);
+			break;
+		case 'x':
+			if ((cylspares = atoi(optarg)) < 0)
+				fatal("%s: bad spare sectors per cylinder",
+				    optarg);
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
 
-			case 'a':
-				if (argc < 1)
-					fatal("-a: missing max contiguous blocks\n");
-				argc--, argv++;
-				maxcontig = atoi(*argv);
-				if (maxcontig <= 0)
-					fatal("%s: bad max contiguous blocks\n",
-						*argv);
-				goto next;
+	if (argc != 2 && (mfs || argc != 1))
+		usage();
 
-			case 'b':
-				if (argc < 1)
-					fatal("-b: missing block size");
-				argc--, argv++;
-				bsize = atoi(*argv);
-				if (bsize < MINBSIZE)
-					fatal("%s: bad block size", *argv);
-				goto next;
-
-			case 'c':
-				if (argc < 1)
-					fatal("-c: missing cylinders/group");
-				argc--, argv++;
-				cpg = atoi(*argv);
-				if (cpg <= 0)
-					fatal("%s: bad cylinders/group", *argv);
-				cpgflg++;
-				goto next;
-
-			case 'd':
-				if (argc < 1)
-					fatal("-d: missing rotational delay\n");
-				argc--, argv++;
-				rotdelay = atoi(*argv);
-				if (rotdelay < 0)
-					fatal("%s: bad rotational delay\n",
-						*argv);
-				goto next;
-
-			case 'e':
-				if (argc < 1)
-					fatal("-e: missing blocks pre file in a cyl group\n");
-				argc--, argv++;
-				maxbpg = atoi(*argv);
-				if (maxbpg <= 0)
-					fatal("%s: bad blocks per file in a cyl group\n",
-						*argv);
-				goto next;
-
-			case 'f':
-				if (argc < 1)
-					fatal("-f: missing frag size");
-				argc--, argv++;
-				fsize = atoi(*argv);
-				if (fsize <= 0)
-					fatal("%s: bad frag size", *argv);
-				goto next;
-
-			case 'i':
-				if (argc < 1)
-					fatal("-i: missing bytes per inode\n");
-				argc--, argv++;
-				density = atoi(*argv);
-				if (density <= 0)
-					fatal("%s: bad bytes per inode\n",
-						*argv);
-				goto next;
-
-			case 'k':
-				if (argc < 1)
-					fatal("-k: track skew");
-				argc--, argv++;
-				trackskew = atoi(*argv);
-				if (trackskew < 0)
-					fatal("%s: bad track skew", *argv);
-				goto next;
-
-			case 'l':
-				if (argc < 1)
-					fatal("-l: interleave");
-				argc--, argv++;
-				interleave = atoi(*argv);
-				if (interleave <= 0)
-					fatal("%s: bad interleave", *argv);
-				goto next;
-
-			case 'm':
-				if (argc < 1)
-					fatal("-m: missing free space %%\n");
-				argc--, argv++;
-				minfree = atoi(*argv);
-				if (minfree < 0 || minfree > 99)
-					fatal("%s: bad free space %%\n",
-						*argv);
-				goto next;
-
-			case 'n':
-				if (argc < 1)
-					fatal("-n: missing rotational layout count\n");
-				argc--, argv++;
-				nrpos = atoi(*argv);
-				if (nrpos <= 0)
-					fatal("%s: bad rotational layout count\n",
-						*argv);
-				goto next;
-
-			case 'o':
-				if (argc < 1)
-					fatal("-o: missing optimization preference");
-				argc--, argv++;
-				if (strcmp(*argv, "space") == 0)
-					opt = FS_OPTSPACE;
-				else if (strcmp(*argv, "time") == 0)
-					opt = FS_OPTTIME;
-				else
-					fatal("%s: bad optimization preference %s",
-					    *argv,
-					    "(options are `space' or `time')");
-				goto next;
-
-			case 'p':
-				if (argc < 1)
-					fatal("-p: spare sectors per track");
-				argc--, argv++;
-				trackspares = atoi(*argv);
-				if (trackspares < 0)
-					fatal("%s: bad spare sectors per track", *argv);
-				goto next;
-
-			case 'r':
-				if (argc < 1)
-					fatal("-r: missing revs/minute\n");
-				argc--, argv++;
-				rpm = atoi(*argv);
-				if (rpm <= 0)
-					fatal("%s: bad revs/minute\n", *argv);
-				goto next;
-
-			case 's':
-				if (argc < 1)
-					fatal("-s: missing file system size");
-				argc--, argv++;
-				fssize = atoi(*argv);
-				if (fssize <= 0)
-					fatal("%s: bad file system size",
-						*argv);
-				goto next;
-
-			case 't':
-				if (argc < 1)
-					fatal("-t: missing track total");
-				argc--, argv++;
-				ntracks = atoi(*argv);
-				if (ntracks <= 0)
-					fatal("%s: bad total tracks", *argv);
-				goto next;
-
-			case 'u':
-				if (argc < 1)
-					fatal("-u: missing sectors/track");
-				argc--, argv++;
-				nsectors = atoi(*argv);
-				if (nsectors <= 0)
-					fatal("%s: bad sectors/track", *argv);
-				goto next;
-
-			case 'x':
-				if (argc < 1)
-					fatal("-x: spare sectors per cylinder");
-				argc--, argv++;
-				cylspares = atoi(*argv);
-				if (cylspares < 0)
-					fatal("%s: bad spare sectors per cylinder", *argv);
-				goto next;
-
-			default:
-				fatal("-%c: unknown flag", *cp);
-			}
-next:
-		argc--, argv++;
-	}
-	if (argc < 1) {
-		if (mfs)
-			fprintf(stderr,
-			    "usage: mfs [ fsoptions ] special-device %s\n",
-			    "mount-point");
-		else
-#ifdef COMPAT
-			fprintf(stderr, "usage: %s\n",
-			    "newfs [ fsoptions ] special-device [device-type]");
-#else
-			fprintf(stderr,
-			    "usage: newfs [ fsoptions ] special-device\n");
-#endif
-		fprintf(stderr, "where fsoptions are:\n");
-		fprintf(stderr, "\t-N do not create file system, %s\n",
-			"just print out parameters");
-#ifdef COMPAT
-		fprintf(stderr, "\t-T disktype\n");
-#endif
-		fprintf(stderr, "\t-b block size\n");
-		fprintf(stderr, "\t-f frag size\n");
-		fprintf(stderr, "\t-m minimum free space %%\n");
-		fprintf(stderr, "\t-o optimization preference %s\n",
-			"(`space' or `time')");
-		fprintf(stderr, "\t-a maximum contiguous blocks\n");
-		fprintf(stderr, "\t-d rotational delay between %s\n",
-			"contiguous blocks");
-		fprintf(stderr, "\t-e maximum blocks per file in a %s\n",
-			"cylinder group");
-		fprintf(stderr, "\t-i number of bytes per inode\n");
-		fprintf(stderr, "\t-c cylinders/group\n");
-		fprintf(stderr, "\t-n number of distinguished %s\n",
-			"rotational positions");
-		fprintf(stderr, "\t-s file system size (sectors)\n");
-		fprintf(stderr, "\t-r revolutions/minute\n");
-		fprintf(stderr, "\t-S sector size\n");
-		fprintf(stderr, "\t-u sectors/track\n");
-		fprintf(stderr, "\t-t tracks/cylinder\n");
-		fprintf(stderr, "\t-p spare sectors per track\n");
-		fprintf(stderr, "\t-x spare sectors per cylinder\n");
-		fprintf(stderr, "\t-l hardware sector interleave\n");
-		fprintf(stderr, "\t-k sector 0 skew, per track\n");
-		exit(1);
-	}
 	special = argv[0];
 	cp = rindex(special, '/');
 	if (cp != 0)
 		special = cp + 1;
 	if (*special == 'r'
 #if defined(vax) || defined(tahoe)
-	    && special[1] != 'a' && special[1] != 'b'
+	    && special[1] != 'a' && special[1] != 'b')
 #endif
 #if defined(hp300)
-	    && special[1] != 'd'
+	    && special[1] != 'd')
 #endif
-	   )
 		special++;
 	(void)sprintf(device, "%s/r%s", _PATH_DEV, special);
 	special = device;
 	if (!Nflag) {
 		fso = open(special, O_WRONLY);
-		if (fso < 0) {
-			perror(special);
-			exit(2);
-		}
+		if (fso < 0)
+			fatal("%s: %s", special, strerror(errno));
 	} else
 		fso = -1;
 	fsi = open(special, O_RDONLY);
-	if (fsi < 0) {
-		perror(special);
-		exit(3);
-	}
-	if (fstat(fsi, &st) < 0) {
-		fprintf(stderr, "%s: ", progname); perror(special);
-		exit(4);
-	}
+	if (fsi < 0)
+		fatal("%s: %s", special, strerror(errno));
+	if (fstat(fsi, &st) < 0)
+		fatal("%s: %s", special, strerror(errno));
 	if ((st.st_mode & S_IFMT) != S_IFCHR)
 		fatal("%s: not a character device", special);
 	cp = index(argv[0], '\0') - 1;
@@ -548,7 +397,7 @@ next:
 	}
 	secpercyl = nsectors * ntracks - cylspares;
 	if (secpercyl != lp->d_secpercyl)
-		fprintf(stderr, "%s (%d) %s (%d)\n",
+		fprintf(stderr, "%s (%d) %s (%lu)\n",
 			"Warning: calculated sectors per cylinder", secpercyl,
 			"disagrees with disk label", lp->d_secpercyl);
 	if (maxbpg == 0)
@@ -586,10 +435,8 @@ next:
 		args.name = buf;
 		args.base = membase;
 		args.size = fssize * sectorsize;
-		if (mount(MOUNT_MFS, argv[1], mntflags, &args) < 0) {
-			perror("mfs: mount");
-			exit(5);
-		}
+		if (mount(MOUNT_MFS, argv[1], mntflags, &args) < 0)
+			fatal("%s: %s", argv[1], strerror(errno));
 	}
 	exit(0);
 }
@@ -612,11 +459,12 @@ getdisklabel(s, fd)
 		if (disktype) {
 			struct disklabel *getdiskbyname();
 
-			unlabelled++;
+			unlabeled++;
 			return (getdiskbyname(disktype));
 		}
 #endif
-		perror("ioctl (GDINFO)");
+		(void)fprintf(stderr,
+		    "%s: ioctl (GDINFO): %s\n", progname, strerror(errno));
 		fatal(lmsg, s);
 	}
 	return (&lab);
@@ -627,15 +475,15 @@ rewritelabel(s, fd, lp)
 	int fd;
 	register struct disklabel *lp;
 {
-
 #ifdef COMPAT
-	if (unlabelled)
+	if (unlabeled)
 		return;
 #endif
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	if (ioctl(fd, DIOCWDINFO, (char *)lp) < 0) {
-		perror("ioctl (WDINFO)");
+		(void)fprintf(stderr,
+		    "%s: ioctl (WDINFO): %s\n", progname, strerror(errno));
 		fatal("%s: can't rewrite disk label", s);
 	}
 #if vax
@@ -655,24 +503,19 @@ rewritelabel(s, fd, lp)
 		if (!isdigit(*cp))
 			*cp = 'c';
 		cfd = open(specname, O_WRONLY);
-		if (cfd < 0) {
-			perror(specname);
-			exit(6);
-		}
+		if (cfd < 0)
+			fatal("%s: %s", specname, strerror(errno));
 		bzero(blk, sizeof(blk));
 		*(struct disklabel *)(blk + LABELOFFSET) = *lp;
 		alt = lp->d_ncylinders * lp->d_secpercyl - lp->d_nsectors;
 		for (i = 1; i < 11 && i < lp->d_nsectors; i += 2) {
 			if (lseek(cfd, (off_t)(alt + i) * lp->d_secsize, L_SET) == -1) {
-				perror("lseek to badsector area");
-				exit(7);
-			}
-			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize) {
-				int oerrno = errno;
-				fprintf(stderr, "alternate label %d ", i/2);
-				errno = oerrno;
-				perror("write");
-			}
+				fatal("lseek to badsector area: %s",
+				    strerror(errno));
+			if (write(cfd, blk, lp->d_secsize) < lp->d_secsize)
+				fprintf(stderr,
+				    "%s: alternate label %d write: %s\n",
+				    progname, i/2, strerror(errno));
 		}
 		close(cfd);
 	}
@@ -680,12 +523,56 @@ rewritelabel(s, fd, lp)
 }
 
 /*VARARGS*/
-fatal(fmt, arg1, arg2)
+fatal(fmt)
 	char *fmt;
 {
+	va_list ap;
 
 	fprintf(stderr, "%s: ", progname);
-	fprintf(stderr, fmt, arg1, arg2);
+	va_start(ap, fmt);
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
 	putc('\n', stderr);
-	exit(8);
+	exit(1);
+}
+
+usage()
+{
+	if (mfs) {
+		fprintf(stderr,
+		    "usage: mfs [ -fsoptions ] special-device mount-point\n");
+	} else
+		fprintf(stderr,
+		    "usage: newfs [ -fsoptions ] special-device%s\n",
+#ifdef COMPAT
+		    " [device-type]");
+#else
+		    "");
+#endif
+	fprintf(stderr, "where fsoptions are:\n");
+	fprintf(stderr,
+	    "\t-N do not create file system, just print out parameters\n");
+	fprintf(stderr, "\t-S sector size\n");
+#ifdef COMPAT
+	fprintf(stderr, "\t-T disktype\n");
+#endif
+	fprintf(stderr, "\t-a maximum contiguous blocks\n");
+	fprintf(stderr, "\t-b block size\n");
+	fprintf(stderr, "\t-c cylinders/group\n");
+	fprintf(stderr, "\t-d rotational delay between contiguous blocks\n");
+	fprintf(stderr, "\t-e maximum blocks per file in a cylinder group\n");
+	fprintf(stderr, "\t-f frag size\n");
+	fprintf(stderr, "\t-i number of bytes per inode\n");
+	fprintf(stderr, "\t-k sector 0 skew, per track\n");
+	fprintf(stderr, "\t-l hardware sector interleave\n");
+	fprintf(stderr, "\t-m minimum free space %%\n");
+	fprintf(stderr, "\t-n number of distinguished rotational positions\n");
+	fprintf(stderr, "\t-o optimization preference (`space' or `time')\n");
+	fprintf(stderr, "\t-p spare sectors per track\n");
+	fprintf(stderr, "\t-s file system size (sectors)\n");
+	fprintf(stderr, "\t-r revolutions/minute\n");
+	fprintf(stderr, "\t-t tracks/cylinder\n");
+	fprintf(stderr, "\t-u sectors/track\n");
+	fprintf(stderr, "\t-x spare sectors per cylinder\n");
+	exit(1);
 }
