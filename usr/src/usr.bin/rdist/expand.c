@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.7 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)expand.c	4.8 (Berkeley) 83/11/30";
 #endif
 
 #include "defs.h"
@@ -15,7 +15,7 @@ static char	**argv;		/* expanded arg vectors */
 static char	*path;
 static char	*pathp;
 static char	*lastpathp;
-static char	*tilde;		/* null if expanding tilde */
+static char	*tilde;		/* "~user" if not expanding tilde, else "" */
 static char	*tpathp;
 static int	nleft;
 
@@ -55,7 +55,7 @@ expand(list, wh)
 	path = tpathp = pathp = pathbuf;
 	*pathp = '\0';
 	lastpathp = &path[sizeof pathbuf - 2];
-	tilde = NULL;
+	tilde = "";
 	argc = 0;
 	argv = sortbase = argvbuf;
 	*argv = 0;
@@ -171,8 +171,10 @@ expstr(s)
 		for (cp = path; *cp++ = *cp1++; )
 			;
 		tpathp = pathp = cp - 1;
-	} else
-		pathp = path;
+	} else {
+		tpathp = pathp = path;
+		tilde = "";
+	}
 	*pathp = '\0';
 	if (!(which & E_SHELL)) {
 		if (which & E_TILDE)
