@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
+ *	@(#)vm_glue.c	7.8 (Berkeley) 5/15/91
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -58,7 +58,15 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00137
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
+static char rcsid[] = "$Header: /tmp/vm_glue.c,v 1.1 1993/06/12 14:57:39 rgrimes Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -119,9 +127,9 @@ useracc(addr, len, rw)
 	 * only used (as an end address) in trap.c.  Use it as an end
 	 * address here too.
 	 */
-	if ((vm_offset_t) addr > VM_MAXUSER_ADDRESS
-	    || (vm_offset_t) addr + (len-1) > VM_MAXUSER_ADDRESS
-	    || (vm_offset_t) addr + (len-1) < (vm_offset_t) addr)
+	if ((vm_offset_t) addr >= VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	    || (vm_offset_t) addr + len > VM_MAXUSER_ADDRESS + UPAGES * NBPG
+	    || (vm_offset_t) addr + len <= (vm_offset_t) addr)
 		return (FALSE);
 
 	rv = vm_map_check_protection(&curproc->p_vmspace->vm_map,
@@ -235,12 +243,6 @@ vm_fork(p1, p2, isvfork)
 	/* ream out old pagetables and kernel stack */
 	(void)vm_deallocate(vp, addr, UPT_MAX_ADDRESS - addr);
 	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
-
-	/* protect from the user area from user accesses. :-)
-	   addr -> addr + UPAGES*NBPG don't seem to be protected without
-	   this; the rest seems to be OK, and doesn't like being protected
-	   - andrew@werple.apana.org.au */
-	vm_protect(vp, addr, UPAGES*NBPG, FALSE, VM_PROT_NONE);
 	}
 #endif
 	/*
@@ -257,7 +259,6 @@ vm_fork(p1, p2, isvfork)
  * Set default limits for VM system.
  * Called for proc 0, and then inherited by all others.
  */
-void
 vm_init_limits(p)
 	register struct proc *p;
 {
@@ -294,7 +295,6 @@ int	swapdebug = 0;
  *	2. If not enough memory, wake the pageout daemon and let it
  *	   clear some space.
  */
-void
 sched()
 {
 	register struct proc *p;
