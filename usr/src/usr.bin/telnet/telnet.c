@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -52,6 +52,8 @@ int	showoptions = 0;
 int	options;
 int	debug = 0;
 int	crmod = 0;
+int	printnet = 0;
+static FILE	*NetTrace;
 int	telnetport = 1;
 char	*prompt;
 char	escape = CTRL(]);
@@ -68,6 +70,7 @@ extern	int errno;
 int	tn(), quit(), suspend(), bye(), help();
 int	setescape(), status(), toggle(), setoptions();
 int	setcrmod(), setdebug(), sendesc(), ayt(), intp();
+int	setprintnet();
 
 #define HELPINDENT (sizeof ("connect"))
 
@@ -75,6 +78,7 @@ struct cmd {
 	char	*name;		/* command name */
 	char	*help;		/* help string */
 	int	(*handler)();	/* routine which executes command */
+	int	dohelp;		/* Should we give general help information? */
 };
 
 char	openhelp[] =	"connect to a site";
@@ -90,22 +94,24 @@ char	crmodhelp[] =	"toggle mapping of received carriage returns";
 char	sendeschelp[] =	"send escape character";
 char	aythelp[] =	"send \"Are You There\"";
 char	intphelp[] =	"send \"Interrupt Process\"";
+char	printnethelp[] ="toggle printing of raw network data";
 
 struct cmd cmdtab[] = {
-	{ "open",	openhelp,	tn },
-	{ "close",	closehelp,	bye },
-	{ "quit",	quithelp,	quit },
-	{ "z",		zhelp,		suspend },
-	{ "escape",	escapehelp,	setescape },
-	{ "status",	statushelp,	status },
-	{ "options",	optionshelp,	setoptions },
-	{ "crmod",	crmodhelp,	setcrmod },
-	{ "debug",	debughelp,	setdebug },
-	{ "ayt",	aythelp,	ayt },
-	{ "interrupt",	intphelp,	intp },
-	{ "passthru",	sendeschelp,	sendesc },
-	{ "help",	helphelp,	help },
-	{ "?",		helphelp,	help },
+	{ "open",	openhelp,	tn, 1 },
+	{ "close",	closehelp,	bye, 1 },
+	{ "quit",	quithelp,	quit, 1 },
+	{ "z",		zhelp,		suspend, 1 },
+	{ "escape",	escapehelp,	setescape, 1 },
+	{ "status",	statushelp,	status, 1 },
+	{ "crmod",	crmodhelp,	setcrmod, 1 },
+	{ "ayt",	aythelp,	ayt, 1 },
+	{ "interrupt",	intphelp,	intp, 1 },
+	{ "passthru",	sendeschelp,	sendesc, 1 },
+	{ "help",	helphelp,	help, 1 },
+	{ "?",		helphelp,	help, 0 },
+	{ "options",	optionshelp,	setoptions, 0 },
+	{ "debug",	debughelp,	setdebug, 0 },
+	{ "printnet",	printnethelp,	setprintnet, 0 },
 	0
 };
 
@@ -129,6 +135,7 @@ main(argc, argv)
 		fprintf(stderr, "telnet: tcp/telnet: unknown service\n");
 		exit(1);
 	}
+	NetTrace = stdout;
 	ioctl(0, TIOCGETP, (char *)&ottyb);
 	ioctl(0, TIOCGETC, (char *)&otc);
 	ioctl(0, TIOCGLTC, (char *)&oltc);
@@ -139,6 +146,18 @@ main(argc, argv)
 		debug = 1;
 		argv++;
 		argc--;
+	}
+	if (argc > 1 && !strcmp(argv[1], "-n")) {
+	    argv++;
+	    argc--;
+	    if (argc > 1) {		/* get file name */
+		NetTrace = fopen(argv[1], "w");
+		argv++;
+		argc--;
+		if (NetTrace == NULL) {
+		    NetTrace = stdout;
+		}
+	    }
 	}
 	if (argc != 1) {
 		if (setjmp(toplevel) != 0)
@@ -210,43 +229,41 @@ tn(argc, argv)
 		}
 		telnetport = 0;
 	}
-	net = socket(AF_INET, SOCK_STREAM, 0);
-	if (net < 0) {
-		perror("telnet: socket");
-		return;
-	}
-	if (debug &&
-	    setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug, sizeof(debug)) < 0)
-		perror("setsockopt (SO_DEBUG)");
 	signal(SIGINT, intr);
 	signal(SIGPIPE, deadpeer);
 	printf("Trying...\n");
-	while (connect(net, (caddr_t)&sin, sizeof (sin)) < 0) {
-		if (host && host->h_addr_list[1]) {
-			int oerrno = errno;
-
-			fprintf(stderr, "telnet: connect to address %s: ",
-				inet_ntoa(sin.sin_addr));
-			errno = oerrno;
-			perror(0);
-			host->h_addr_list++;
-			bcopy(host->h_addr_list[0], (caddr_t)&sin.sin_addr,
-				host->h_length);
-			fprintf(stderr, "Trying %s...\n",
-				inet_ntoa(sin.sin_addr));
-			(void) close(net);
-			net = socket(AF_INET, SOCK_STREAM, 0);
-			if (net < 0) {
-				perror("telnet: socket");
-				return;
-			}
-			continue;
+	do {
+		net = socket(AF_INET, SOCK_STREAM, 0);
+		if (net < 0) {
+			perror("telnet: socket");
+			return;
 		}
-		perror("telnet: connect");
-		signal(SIGINT, SIG_DFL);
-		return;
-	}
-	connected++;
+		if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, &debug,
+		    sizeof(debug)) < 0)
+			perror("setsockopt (SO_DEBUG)");
+		if (connect(net, (caddr_t)&sin, sizeof (sin)) < 0) {
+			if (host && host->h_addr_list[1]) {
+				int oerrno = errno;
+
+				fprintf(stderr,
+				    "telnet: connect to address %s: ",
+				    inet_ntoa(sin.sin_addr));
+				errno = oerrno;
+				perror(0);
+				host->h_addr_list++;
+				bcopy(host->h_addr_list[0],
+				    (caddr_t)&sin.sin_addr, host->h_length);
+				fprintf(stderr, "Trying %s...\n",
+					inet_ntoa(sin.sin_addr));
+				(void) close(net);
+				continue;
+			}
+			perror("telnet: connect");
+			signal(SIGINT, SIG_DFL);
+			return;
+		}
+		connected++;
+	} while (connected == 0);
 	call(status, "status", 0);
 	if (setjmp(peerdied) == 0)
 		telnet(net);
@@ -340,7 +357,10 @@ help(argc, argv)
 	if (argc == 1) {
 		printf("Commands may be abbreviated.  Commands are:\n\n");
 		for (c = cmdtab; c->name; c++)
-			printf("%-*s\t%s\n", HELPINDENT, c->name, c->help);
+			if (c->dohelp) {
+				printf("%-*s\t%s\n", HELPINDENT, c->name,
+								    c->help);
+			}
 		return;
 	}
 	while (--argc > 0) {
@@ -469,6 +489,9 @@ telnet(s)
 				if (scc <= 0)
 					break;
 				sbp = sibuf;
+				if (printnet) {
+					Dump('<', sbp, scc);
+				}
 			}
 		}
 
@@ -498,21 +521,25 @@ telnet(s)
 				break;
 			}
 			switch (c) {
+			case '\n'|0x80:
 			case '\n':
+				/*
+				 * If echoing is happening locally,
+				 * then a newline (unix) is CRLF (TELNET).
+				 */
 				if (!hisopts[TELOPT_ECHO])
 					*nfrontp++ = '\r';
 				*nfrontp++ = '\n';
 				break;
+			case '\r'|0x80:
 			case '\r':
 				*nfrontp++ = '\r';
-				if (hisopts[TELOPT_ECHO])
-					*nfrontp++ = '\n';
-				else
-					*nfrontp++ = '\0';
+				*nfrontp++ = '\0';
 				break;
 			case IAC:
 				*nfrontp++ = IAC;
-				/* fall into ... */
+				*nfrontp++ = IAC;
+				break;
 			default:
 				*nfrontp++ = c;
 				break;
@@ -578,6 +605,7 @@ command(top)
 #define	TS_WONT		3
 #define	TS_DO		4
 #define	TS_DONT		5
+#define	TS_CR		6
 
 telrcv()
 {
@@ -588,21 +616,47 @@ telrcv()
 		c = *sbp++ & 0377, scc--;
 		switch (state) {
 
+		case TS_CR:
+			state = TS_DATA;
+			if ((c == '\0') || (c == '\n')) {
+			    break;	/* by now, we ignore \n */
+			}
+
 		case TS_DATA:
 			if (c == IAC) {
 				state = TS_IAC;
 				continue;
 			}
-			*tfrontp++ = c;
-			/*
-			 * This hack is needed since we can't set
-			 * CRMOD on output only.  Machines like MULTICS
-			 * like to send \r without \n; since we must
-			 * turn off CRMOD to get proper input, the mapping
-			 * is done here (sigh).
-			 */
-			if (c == '\r' && crmod)
-				*tfrontp++ = '\n';
+			if (c == '\r') {
+				if (scc > 0) {
+					c = *sbp&0377;
+					if (c == 0) {
+						sbp++, scc--;
+						*tfrontp++ = '\r';
+				/*
+				 * The following hack is needed since we can't
+				 * set CRMOD on output only.  Machines like
+				 * MULTICS like to send \r without \n; since
+				 * we must turn off CRMOD to get proper input,
+				 * the mapping is done here (sigh).
+				 */
+						if (crmod) {
+							*tfrontp++ = '\n';
+						}
+					} else if (!hisopts[TELOPT_ECHO] &&
+								(c == '\n')) {
+						sbp++, scc--;
+						*tfrontp++ = '\n';
+					} else {
+						*tfrontp++ = '\r';
+					}
+				} else {
+					state = TS_CR;
+					*tfrontp++ = '\r';
+				}
+			} else {
+				*tfrontp++ = c;
+			}
 			continue;
 
 		case TS_IAC:
@@ -808,6 +862,16 @@ setdebug()
 		perror("setsockopt (SO_DEBUG)");
 }
 
+/*VARARGS*/
+static
+setprintnet()
+{
+
+	printnet = !printnet;
+	printf("%s turn on printing of raw network traffic.\n",
+		printnet ? "Will" : "Wont");
+}
+
 sendesc()
 {
 	*nfrontp++ = escape;
@@ -918,10 +982,46 @@ netflush(fd)
 		}
 		n = 0;
 	}
+	if (printnet) {
+		Dump('>', nbackp, n);
+	}
 	nbackp += n;
 	if (nbackp == nfrontp)
 		nbackp = nfrontp = netobuf;
 }
+
+static
+Dump(direction, buffer, length)
+char	direction;
+char	*buffer;
+int	length;
+{
+#   define BYTES_PER_LINE	32
+#   define min(x,y)	((x<y)? x:y)
+    char *pThis;
+    int offset;
+
+    offset = 0;
+
+    while (length) {
+	/* print one line */
+	fprintf(NetTrace, "%c 0x%x\t", direction, offset);
+	pThis = buffer;
+	buffer = buffer+min(length, BYTES_PER_LINE);
+	while (pThis < buffer) {
+	    fprintf(NetTrace, "%.2x", (*pThis)&0xff);
+	    pThis++;
+	}
+	fprintf(NetTrace, "\n");
+	length -= BYTES_PER_LINE;
+	offset += BYTES_PER_LINE;
+	if (length < 0) {
+	    return;
+	}
+	/* find next unique line */
+    }
+}
+
 
 /*VARARGS*/
 printoption(direction, fmt, option, what)
