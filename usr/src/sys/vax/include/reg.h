@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)reg.h	7.1 (Berkeley) %G%
+ *	@(#)reg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -31,3 +31,9 @@
 #define	SP	(-5)
 #define	PS	(-1)
 #define	PC	(-2)
+
+#ifdef IPCREG
+#define	NIPCREG 16
+int ipcreg[NIPCREG] =
+	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
+#endif
