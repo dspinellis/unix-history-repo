@@ -1,0 +1,29 @@
+#
+#  Aliases in this file will NOT be expanded in the header from
+#  Mail, but WILL be visible over networks or from /bin/mail.
+#
+#	>>>>>>>>>>	The program "newaliases" must be run after
+#	>> NOTE >>	this file is updated for any changes to
+#	>>>>>>>>>>	show through to sendmail.
+#
+
+# Basic system aliases -- these MUST be present
+MAILER-DAEMON: postmaster
+postmaster: root
+postmistress: miriam
+
+# Aliases to handle mail to msgs and news
+msgs: "|/usr/ucb/msgs -s"
+root: karels, bostic
+manager: karels, bostic
+dumper: bostic
+
+# Misc aliases for various things...
+fortune: fortune@ucbvax.berkeley.edu
+
+# OFFICIAL BUG ADDRESSES
+
+# BUG PERSON
+ucb-fixes: bigbug@ucbvax.berkeley.edu
+ucb-fixes-request: bigbug@ucbvax.berkeley.edu
+
