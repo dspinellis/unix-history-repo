@@ -9,7 +9,7 @@
  */
 
 #if !defined(lint) && !defined(SCCSID)
-static char sccsid[] = "@(#)map.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.3 (Berkeley) %G%";
 #endif /* not lint && not SCCSID */
 
 /*
@@ -637,7 +637,7 @@ private el_action_t  el_map_vi_command[] = {
     /*  44 */	VI_REPEAT_PREV_CHAR,	/* , */	
     /*  45 */	ED_PREV_HISTORY,	/* - */	
     /*  46 */	ED_UNASSIGNED,		/* . */
-    /*  47 */	VI_SEARCH_NEXT,		/* / */
+    /*  47 */	VI_SEARCH_PREV,		/* / */
     /*  48 */	VI_ZERO,		/* 0 */
     /*  49 */	ED_ARGUMENT_DIGIT,	/* 1 */
     /*  50 */	ED_ARGUMENT_DIGIT,	/* 2 */
@@ -653,7 +653,7 @@ private el_action_t  el_map_vi_command[] = {
     /*  60 */	ED_UNASSIGNED,		/* < */
     /*  61 */	ED_UNASSIGNED,		/* = */
     /*  62 */	ED_UNASSIGNED,		/* > */
-    /*  63 */	VI_SEARCH_PREV,		/* ? */
+    /*  63 */	VI_SEARCH_NEXT,		/* ? */
     /*  64 */	ED_UNASSIGNED,		/* @ */
     /*  65 */	VI_ADD_AT_EOL,		/* A */
     /*  66 */	VI_PREV_SPACE_WORD,	/* B */
