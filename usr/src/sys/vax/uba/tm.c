@@ -1,4 +1,4 @@
-/*	tm.c	4.29	81/03/11	*/
+/*	tm.c	4.30	81/03/21	*/
 
 #include "te.h"
 #if NTM > 0
@@ -858,10 +858,7 @@ tmdump()
 		return (ENXIO);
 	ui = phys(tedinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
-#if VAX780
-	if (cpu == VAX_780)
-		ubainit(up);
-#endif
+	ubainit(up);
 	DELAY(1000000);
 	addr = (struct device *)ui->ui_physaddr;
 	tmwait(addr);
