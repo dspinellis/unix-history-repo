@@ -1,0 +1,53 @@
+
+   PROCEDURE vms_include_fix (
+      oldstring, !
+      newstring)  !
+      LOCAL range2, count ;
+      position (beginning_of (current_buffer)) ;
+      count := 0 ;
+      LOOP
+         range2 := search_quietly (LINE_BEGIN & "#include" & SPAN(" ")
+		& newstring, FORWARD, EXACT) ;
+	 IF (range2 <> 0) THEN
+	   message("This file has already been fixed.");
+	   exit;
+	   endif;
+         range2 := search_quietly (LINE_BEGIN & "#include" & SPAN(" ")
+		& oldstring, FORWARD, EXACT) ;
+         EXITIF range2 = 0 ;
+         position (beginning_of (range2)) ;
+	 copy_text ("#ifdef VMS");
+	 split_line;
+	 copy_text ("#include ");
+         copy_text (newstring) ;
+	 split_line;
+	 copy_text ("#else");
+	 split_line;
+	 move_vertical(1);
+	 copy_text ("#endif");
+	 split_line;
+         count := count + 1 ;
+         ENDLOOP ;
+      IF (count > 0) THEN
+         message (fao('Replaced pattern !UL time!%S', count)) ;
+      ENDIF ;
+   ENDPROCEDURE ;
+    
+   old_string := read_line ("old pattern: ") ;
+   new_string := read_line ("new string: ") ;
+   filename := GET_INFO (COMMAND_LINE, 'file_name') ;
+   LOOP
+      exp_filename := FILE_SEARCH (filename) ;
+      EXITIF exp_filename = "" ;
+      mainbuffer := CREATE_BUFFER (exp_filename, exp_filename) ;
+      position (mainbuffer) ;
+      vms_include_fix ("<Regex.h>","<rregex.h>");
+      vms_include_fix ("<String.h>","<sstring.h>");
+      vms_include_fix ("<Complex.h>","<ccomplex.h>");
+      IF get_info (mainbuffer, "modified") THEN
+         write_file (mainbuffer)
+      ELSE
+         message ('No changes made.') ENDIF ;
+      delete (mainbuffer) ;
+      ENDLOOP ;
+   quit ;
