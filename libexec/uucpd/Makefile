@@ -3,6 +3,8 @@
 PROG=	uucpd
 NOMAN=	noman
 
+CFLAGS+=-DBSDINETD -DBSD4_2
+
 .if exists(/usr/lib/libcrypt.a)
 DPADD+= ${LIBCRYPT}
 LDADD+= -lcrypt

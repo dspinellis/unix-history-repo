@@ -67,9 +67,9 @@ static char sccsid[] = "@(#)uucpd.c	5.10 (Berkeley) 2/26/91";
 #include <string.h>
 #include "pathnames.h"
 
-struct	sockaddr_in hisctladdr;
+struct  sockaddr hisctladdr;
 int hisaddrlen = sizeof hisctladdr;
-struct	sockaddr_in myctladdr;
+struct  sockaddr myctladdr;
 int mypid;
 
 char Username[64];
@@ -155,6 +155,18 @@ char **argv;
 #endif	!BSDINETD
 }
 
+login_incorrect()
+{
+	char passwd[64];
+
+	printf("Password: "); fflush(stdout);
+	if (readline(passwd, sizeof passwd, 1) < 0) {
+		fprintf(stderr, "passwd read\n");
+		return;
+	}
+	fprintf(stderr, "Login incorrect.\n");
+}
+
 doit(sinp)
 struct sockaddr_in *sinp;
 {
@@ -164,7 +176,7 @@ struct sockaddr_in *sinp;
 
 	alarm(60);
 	printf("login: "); fflush(stdout);
-	if (readline(user, sizeof user) < 0) {
+	if (readline(user, sizeof user, 0) < 0) {
 		fprintf(stderr, "user read\n");
 		return;
 	}
@@ -172,22 +184,22 @@ struct sockaddr_in *sinp;
 	user[8] = '\0';
 	pw = getpwnam(user);
 	if (pw == NULL) {
-		fprintf(stderr, "user unknown\n");
+		login_incorrect();
 		return;
 	}
 	if (strcmp(pw->pw_shell, _PATH_UUCICO)) {
-		fprintf(stderr, "Login incorrect.");
+		login_incorrect();
 		return;
 	}
 	if (pw->pw_passwd && *pw->pw_passwd != '\0') {
 		printf("Password: "); fflush(stdout);
-		if (readline(passwd, sizeof passwd) < 0) {
+		if (readline(passwd, sizeof passwd, 1) < 0) {
 			fprintf(stderr, "passwd read\n");
 			return;
 		}
 		xpasswd = crypt(passwd, pw->pw_passwd);
 		if (strcmp(xpasswd, pw->pw_passwd)) {
-			fprintf(stderr, "Login incorrect.");
+			fprintf(stderr, "Login incorrect.\n");
 			return;
 		}
 	}
@@ -201,24 +213,35 @@ struct sockaddr_in *sinp;
 	chdir(pw->pw_dir);
 	setuid(pw->pw_uid);
 #ifdef BSD4_2
-	execl(UUCICO, "uucico", (char *)0);
+	execl(_PATH_UUCICO, "uucico", (char *)0);
 #endif BSD4_2
 	perror("uucico server: execl");
 }
 
-readline(p, n)
-register char *p;
-register int n;
+readline(start, num, pass)
+char start[];
+int num, pass;
 {
 	char c;
+	register char *p = start;
+	register int n = num;
 
 	while (n-- > 0) {
 		if (read(0, &c, 1) <= 0)
 			return(-1);
 		c &= 0177;
 		if (c == '\n' || c == '\r') {
+			if (p == start && pass) {
+				n++;
+				continue;
+			}
 			*p = '\0';
 			return(0);
+		}
+		if (c == 025) {
+			n = num;
+			p = start;
+			continue;
 		}
 		*p++ = c;
 	}
