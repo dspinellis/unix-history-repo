@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.20	%G%";
+static char SccsId[] = "@(#)recipient.c	3.21	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -232,6 +232,7 @@ recipient(a)
 			register struct passwd *pw;
 			extern struct passwd *finduser();
 
+			/* warning -- finduser may trash buf */
 			pw = finduser(buf);
 			if (pw == NULL)
 			{
@@ -269,7 +270,7 @@ recipient(a)
 **		NULL if name is unknown or ambiguous.
 **
 **	Side Effects:
-**		none.
+**		may modify name.
 */
 
 struct passwd *
@@ -278,25 +279,28 @@ finduser(name)
 {
 	extern struct passwd *getpwent();
 	register struct passwd *pw;
+	register char *p;
+
+	/*
+	**  Make name canonical.
+	*/
+
+	for (p = name; *p != '\0'; p++)
+	{
+		if (*p == (SPACESUB & 0177) || *p == '_')
+			*p = ' ';
+	}
 
 	setpwent();
 	while ((pw = getpwent()) != NULL)
 	{
 		char buf[MAXNAME];
-		register char *p;
 		extern bool sameword();
-		bool gotaspace;
 
 		if (strcmp(pw->pw_name, name) == 0)
 			return (pw);
 		buildfname(pw->pw_gecos, pw->pw_name, buf);
-		gotaspace = FALSE;
-		for (p = buf; (p = index(p, ' ')) != NULL; )
-		{
-			*p++ = SPACESUB & 0177;
-			gotaspace = TRUE;
-		}
-		if (gotaspace && sameword(buf, name))
+		if (index(buf, ' ') != NULL && sameword(buf, name))
 		{
 			if (Verbose)
 				message(Arpa_Info, "sending to login name %s",
