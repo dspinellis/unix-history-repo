@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ4.c 1.1 %G%";
+static char sccsid[] = "@(#)READ4.c 1.2 %G%";
 
 #include "h00vars.h"
 #include "h01errs.h"
@@ -9,14 +9,19 @@ READ4(curfile)
 
 	register struct iorec	*curfile;
 {
-	int			data;
+	int			data, retval;
 
 	if (curfile->funit & FWRITE) {
 		ERROR(EREADIT, curfile->pfname);
 		return;
 	}
 	UNSYNC(curfile);
-	if (fscanf(curfile->fbuf, "%ld", &data) == 0) {
+	retval = fscanf(curfile->fbuf, "%ld", &data);
+	if (retval == EOF) {
+		ERROR(EPASTEOF, curfile->pfname);
+		return;
+	}
+	if (retval == 0) {
 		ERROR(EBADINUM, curfile->pfname);
 		return;
 	}
