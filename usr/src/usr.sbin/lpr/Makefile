@@ -1,4 +1,4 @@
-#	Makefile	4.12	83/07/27
+#	Makefile	4.13	83/08/18
 #
 # makefile for line printer spooling system
 #
@@ -62,7 +62,7 @@ install: all
 	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
 	chmod 775 ${DESTDIR}/${SPOOLDIR}
-	cd filters; make ${MFLAGS} install
+	cd filters; make ${MFLAGS} DESTDIR=${DESTDIR} install
 
 clean:
 	rm -f ${ALL} *.o
