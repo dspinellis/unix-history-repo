@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.40 (Berkeley) %G%
+ *	@(#)vnode.h	7.41 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -215,6 +215,25 @@ struct vnodeops {
 #define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vop_advlock))(v,p,o,l,f)
 	int	(*vop_advlock)	__P((struct vnode *vp, caddr_t id, int op,
 				    struct flock *fl, int flags));
+#define	VOP_BLKATOFF(v,o,r,b)	(*((v)->v_op->vop_blkatoff))(v,o,r,b)
+	int	(*vop_blkatoff) __P((struct vnode *vp,
+		    off_t offset, char **res, struct buf **bpp));
+#define	VOP_VGET(v,i,vp)	(*((v)->v_op->vop_vget))((v)->v_mount,i,vp)
+	int	(*vop_vget)
+		    __P((struct mount *mp, ino_t ino, struct vnode **vpp));
+#define	VOP_VALLOC(v,m,c,vp)	(*((v)->v_op->vop_valloc))(v,m,c,vp)
+	int	(*vop_valloc) __P((struct vnode *pvp,
+		    int mode, struct ucred *cred, struct vnode **vpp));
+#define	VOP_VFREE(v,i,m)	(*((v)->v_op->vop_vfree))(v,i,m)
+	void	(*vop_vfree) __P((struct vnode *pvp, ino_t ino, int mode));
+#define	VOP_TRUNCATE(v,l,f)	(*((v)->v_op->vop_truncate))(v,l,f)
+	int	(*vop_truncate)
+		    __P((struct vnode *vp, u_long length, int flags));
+#define	VOP_UPDATE(v,ta,tm,w)	(*((v)->v_op->vop_update))(v,ta,tm,w)
+	int	(*vop_update) __P((struct vnode *vp,
+		    struct timeval *ta, struct timeval *tm, int waitfor));
+#define	VOP_BWRITE(b)		(*((b)->b_vp->v_op->vop_bwrite))(b)
+	int	(*vop_bwrite) __P((struct buf *bp));
 };
 
 /*
