@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.64		%G%);
+SCCSID(@(#)main.c	3.65		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -160,6 +160,7 @@ main(argc, argv)
 # endif
 	errno = 0;
 	from = NULL;
+	OldStyle = TRUE;
 	initmacros();
 
 	/*
@@ -362,8 +363,8 @@ main(argc, argv)
 			ForkOff = TRUE;
 			break;
 
-		  case 'o':	/* take old-style headers (no commas) */
-			OldStyle = TRUE;
+		  case 'o':	/* take new-style headers (with commas) */
+			OldStyle = FALSE;
 			break;
 
 		  default:
@@ -493,16 +494,6 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-
-	/*
-	**  Hack attack!
-	**	If the sender is local, we will default to old style
-	**	headers.  Ugh ugh ugh.  But oh-so-necessary under the
-	**	circumstances.
-	*/
-
-	if (bitset(M_LOCAL, From.q_mailer->m_flags))
-		OldStyle = TRUE;
 
 	/*
 	**  Read the input mail.
