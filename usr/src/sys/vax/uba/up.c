@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	6.5 (Berkeley) %G%
+ *	@(#)up.c	6.6 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -1074,8 +1074,10 @@ updump(dev)
 	st = &upst[ui->ui_type];
 	start = 0;
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
+	if (dumplo < 0)
 		return (EINVAL);
+	if (dumplo + num >= sizes[minor(dev)&07].nblocks)
+		num = sizes[minor(dev)&07].nblocks - dumplo;
 	while (num > 0) {
 		register struct pte *io;
 		register int i;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.6 (Berkeley) %G%
+ *	@(#)idc.c	6.7 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -807,10 +807,12 @@ idcdump(dev)
 	 */
 	st = phys(struct idcst *, &idcst[ui->ui_type]);
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + maxfree >= sizes[minor(dev)&07].nblocks)
+	if (dumplo < 0)
 		return (EINVAL);
+	if (dumplo + maxfree >= sizes[minor(dev)&07].nblocks)
+		num = sizes[minor(dev)&07].nblocks - dumplo;
 	nspg = NBPG / st->nbps;
-	num = maxfree * nspg;
+	num = num * nspg;
 	start = 0;
 
 	while (num > 0) {

@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.8 (Berkeley) %G%
+ *	@(#)uda.c	6.9 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -1293,8 +1293,10 @@ uddump(dev)
 	blkoff = rasizes[minor(dev)&07].blkoff;
 	if(maxsz < 0)
 		maxsz = ra_info[unit].radsize-blkoff;
-	if (dumplo < 0 || dumplo + num >= maxsz)
+	if (dumplo < 0)
 		return (EINVAL);
+	if (dumplo + num >= maxsz)
+		num = maxsz - dumplo;
 	blkoff += dumplo;
 	while (num > 0) {
 		blk = num > DBSIZE ? DBSIZE : num;
