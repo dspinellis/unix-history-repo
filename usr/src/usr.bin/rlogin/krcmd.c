@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)krcmd.c	1.3 (Berkeley) 2/10/89";
 
 #include <sys/types.h>
 #include <stdio.h>
+#include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 
 #define	SERVICE_NAME	"rcmd"

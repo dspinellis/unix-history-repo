@@ -40,6 +40,7 @@ static char sccsid[] = "derived from @(#)rcmd.c	5.17 (Berkeley) 6/27/88";
 
 #include <netdb.h>
 #include <errno.h>
+#include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #include <kerberosIV/kparse.h>
 #include <pwd.h>
