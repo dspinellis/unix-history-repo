@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.14 %G%";
+static char sccsid[] = "@(#)langpats.c 1.15 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -512,14 +512,14 @@ main(argc, argv)
 		lp = index(line, ':');
 		for (cp = (lp != NULL) ? ++lp : line; *cp == '\t'; )
 			cp++;
-		if (strcmpn(cp, CALLTEMPLATE, TEMPLATESIZE) != 0) {
+		if (strncmp(cp, CALLTEMPLATE, TEMPLATESIZE) != 0) {
 			fputs(line, stdout);
 			continue;
 		}
 		cp += TEMPLATESIZE;
 		HASH(cp, hp);
 		while (*hp) {
-			if (strcmpn((*hp)->name, cp, size)==NULL) {
+			if (strncmp((*hp)->name, cp, size)==NULL) {
 				if (lp != NULL) {
 					*lp++ = '\n';
 					*lp = '\0';
