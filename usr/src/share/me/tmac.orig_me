@@ -1,10 +1,10 @@
 .nr _0 \n(.c
-.\" Copyright (c) 1988 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.orig_me	2.37 (Berkeley) %G%
+.\"	@(#)tmac.orig_me	8.1 (Berkeley) %G%
 .\"
 .\"	%beginstrip%
 .\"
@@ -21,7 +21,7 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.37	First Release: 11 Sept 1978			*
+.\"*	VERSION 8.1	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
