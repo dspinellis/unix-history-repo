@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.2 (Berkeley) %G%
+ *	@(#)pmap.h	7.3 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -38,7 +38,7 @@
  * Note: PMAP_HASH_UPAGES should be a multiple of MACH pages (see pmap_enter()).
  */
 #define PMAP_HASH_UPAGES	1
-#define PMAP_HASH_KPAGES	2
+#define PMAP_HASH_KPAGES	3
 #define PMAP_HASH_UADDR		(UADDR - PMAP_HASH_UPAGES * NBPG)
 #define PMAP_HASH_KADDR		(UADDR - (PMAP_HASH_UPAGES + PMAP_HASH_KPAGES) * NBPG)
 #define PMAP_HASH_NUM_ENTRIES	512
