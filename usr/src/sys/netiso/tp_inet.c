@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_inet.c	7.9 (Berkeley) %G%
+ *	@(#)tp_inet.c	7.10 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -284,102 +284,32 @@ in_getnetaddr( inp, name, which)
  * NAME: 	tpip_mtu()
  *
  * CALLED FROM:
- *  tp_input() on incoming CR, CC, and pr_usrreq() for PRU_CONNECT
+ *  tp_route_to() on incoming CR, CC, and pr_usrreq() for PRU_CONNECT
  *
  * FUNCTION, ARGUMENTS, and RETURN VALUE:
  *
- * Determine the proper maximum transmission unit, i.e., MTU, to use, given
- * a) the header size for the network protocol and the max transmission
- *	  unit on the subnet interface, determined from the information in (inp),
- * b) the max size negotiated so far (negot)
- * c) the window size used by the tp connection (found in so),
- *
- * The result is put in the integer *size in its integer form and in
- * *negot in its logarithmic form.  
- * 
- * The rules are:
- * a) can only negotiate down from the value found in *negot.
- * b) the MTU must be < the windowsize,
- * c) If src and dest are on the same net,
- * 	  we will negotiate the closest size larger than  MTU but really USE 
- *    the actual device mtu - ll hdr sizes.
- *   otherwise we negotiate the closest size smaller than MTU - ll hdr sizes.
+ * Perform subnetwork dependent part of determining MTU information.
+ * It appears that setting a double pointer to the rtentry associated with
+ * the destination, and returning the header size for the network protocol
+ * suffices.
  * 
  * SIDE EFFECTS:
- *	changes the values addressed by the arguments (size) and (negot)
- *  and
- *  when the peer is not on one of our directly connected subnets, it
- *  looks up a route, leaving the route in the inpcb addressed by (inp)
+ * Sets tp_routep pointer in pcb.
  *
  * NOTES:
  */
 
-void
-tpip_mtu(so, inp, size, negot)
-	struct socket *so;
-	struct inpcb *inp;
-	int *size;
-	u_char *negot;
+tpip_mtu(tpcb)
+register struct tp_pcb *tpcb;
 {
-	register struct ifnet	*ifp;
-	struct ifnet			*tpip_route();
-	struct in_ifaddr		*ia;
-	register int			i;
-	int						windowsize = so->so_rcv.sb_hiwat;
+	struct inpcb			*inp = (struct inpcb *)tpcb->tp_npcb;
 
 	IFDEBUG(D_CONN)
-		printf("tpip_mtu(0x%x,0x%x,0x%x,0x%x)\n",
-			so, inp, size, negot);
-		printf("tpip_mtu routing to addr 0x%x\n", inp->inp_faddr);
+		printf("tpip_mtu(tpcb)\n", tpcb);
+		printf("tpip_mtu routing to addr 0x%x\n", inp->inp_faddr.s_addr);
 	ENDDEBUG
-	IFTRACE(D_CONN)
-		tptrace(TPPTmisc, "ENTER GET MTU: size negot \n",*size, *negot, 0, 0);
-	ENDTRACE
-
-	*size = 1 << *negot;
-
-	if( *size > windowsize ) {
-		*size = windowsize;
-	}
-
-	ia = in_iaonnetof(in_netof(inp->inp_faddr));
-	if ( ia == (struct in_ifaddr *)0 ) {
-		ifp = tpip_route(&inp->inp_faddr);
-		if( ifp == (struct ifnet *)0 )
-			return ;
-	} else
-		ifp = ia->ia_ifp;
-
-
-	/****************************************************************
-	 * TODO - make this indirect off the socket structure to the
-	 * network layer to get headersize
-	 * After all, who knows what lies below the IP layer?
-	 * Who knows how big the NL header will be?
-	 ***************************************************************/
-
-	if( *size > ifp->if_mtu - sizeof(struct ip)) {
-		*size = ifp->if_mtu - sizeof(struct ip);
-	}
-	for(i=TP_MIN_TPDUSIZE; (i<TP_MAX_TPDUSIZE && ((1<<i)<*size)) ; i++)
-		;
-	i--;
-
-	if (in_netof(inp->inp_laddr) != in_netof(inp->inp_faddr)) {
-		i++;
-	} else {
-		*size = 1<<i;
-	}
-	*negot = i;
-
-	IFDEBUG(D_CONN)
-		printf("GET MTU RETURNS: ifp %s size 0x%x negot 0x%x\n",
-		ifp->if_name,	*size, *negot);
-	ENDDEBUG
-	IFTRACE(D_CONN)
-		tptrace(TPPTmisc, "EXIT GET MTU: tpcb size negot \n",
-		*size, *negot, 0, 0);
-	ENDTRACE
+	tpcb->tp_routep = &(inp->inp_route.ro_rt);
+	return (sizeof (struct ip));
 
 }
 
@@ -727,65 +657,4 @@ dump_inaddr(addr)
 	printf("INET: port 0x%x; addr 0x%x\n", addr->sin_port, addr->sin_addr);
 }
 #endif ARGO_DEBUG
-
-/*
- * NAME:	tpip_route()
- *
- * CALLED FROM: tpip_mtu()
- *
- * FUNCTION and ARGUMENTS:	given a destination addresss,
- *	find the interface that would be used to send something to this address.
- *
- * RETURNS:	 pointer to an ifnet structure
- *
- * SIDE EFFECTS:
- *
- * NOTES:			
- */
-struct ifnet *
-tpip_route(dst)
-	struct in_addr *dst;
-{
-	struct ifnet 		*ifp = (struct ifnet *)0;
-	struct sockaddr_in	insock;
-	struct sockaddr_in	*sin = &insock;
-	struct rtentry 		*rt;
-	struct ifaddr	*ia;
-
-	IFDEBUG(D_CONN)
-		printf("tpip_route: dst is x%x\n", *dst);
-	ENDDEBUG
-
-	bzero((caddr_t)sin, sizeof (*sin));
-	sin->sin_family = AF_INET;
-	sin->sin_len = sizeof(*sin);
-	sin->sin_addr = *dst;
-
-	ia = ifa_ifwithdstaddr((struct sockaddr *)sin);
-	if (ia == 0)
-		ia = ifa_ifwithnet((struct sockaddr *)sin);
-	if (ia != 0) {
-		ifp = ia->ifa_ifp;
-		IFDEBUG(D_CONN)
-			printf("tpip_route: ifp from ia:0x%x\n", ia);
-		ENDDEBUG
-	} else {
-		rt = rtalloc1((struct sockaddr *)sin, 0);
-		if (rt != 0) {
-			ifp = rt->rt_ifp;
-			IFDEBUG(D_CONN)
-				printf("tpip_route: ifp from rentry: 0x%x\n", rt);
-			ENDDEBUG
-			rtfree(rt);
-		}
-	}
-	IFDEBUG(D_CONN)
-		printf("tpip_route: returning 0x%x\n", ifp);
-		if (ifp)
-			printf("tpip_route: if name %s unit 0x%x, mtu 0x%x\n", 
-				ifp->if_name, ifp->if_unit, ifp->if_mtu);
-	ENDDEBUG
-	return ifp;
-}
-
 #endif INET
