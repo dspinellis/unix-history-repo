@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00115
+ * CURRENT PATCH LEVEL:         6       00155
  * --------------------         -----   ----------------------
  *
  * 17 Sep 92	Frank Maclachlan	Fixed I/O error reporting on raw device
@@ -50,6 +50,12 @@
  *					driver initialization, and cylinder
  *					boundary conditions.
  * 28 Mar 93	Charles Hannum		Add missing splx calls.
+ * 20 Apr 93	Terry Lee		Always report disk errors
+ * 20 Apr 93	Brett Lymn		Change infinite while loops to
+ *					timeouts
+ * 17 May 93	Rodney W. Grimes	Fixed all 1000000 to use WDCTIMEOUT,
+ *					and increased to 1000000*10 for new
+ *					intr-0.1 code.
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -77,6 +83,10 @@
 #include "vm/vm.h"
 
 #define _NWD  (NWD - 1)       /* One is for the controller XXX 31 Jul 92*/
+
+#ifndef WDCTIMEOUT
+#define WDCTIMEOUT	10000000  /* arbitrary timeout for drive ready waits */
+#endif
 
 #define	RETRIES		5	/* number of retries before giving up */
 #define	MAXTRANSFER	32	/* max size of transfer in page clusters */
@@ -356,7 +366,7 @@ wdstart()
 	struct buf *dp;
 	register struct bt_bad *bt_ptr;
 	long	blknum, pagcnt, cylin, head, sector;
-	long	secpertrk, secpercyl, addr, i;
+	long	secpertrk, secpercyl, addr, i, timeout;
 	int	unit, s, wdc;
 
 loop:
@@ -446,14 +456,29 @@ loop:
 	wdtab.b_active = 1;		/* mark controller active */
 	wdc = du->dk_port;
 
+RETRY:
 	/* if starting a multisector transfer, or doing single transfers */
 	if (du->dk_skip == 0 || (du->dk_flags & DKFL_SINGLE)) {
 		if (wdtab.b_errcnt && (bp->b_flags & B_READ) == 0)
 			du->dk_bc += DEV_BSIZE;
 
 		/* controller idle? */
+		timeout = 0;
 		while (inb(wdc+wd_status) & WDCS_BUSY)
-			;
+		{
+			if (++timeout > WDCTIMEOUT)
+			{
+				printf("wd.c: Controller busy too long!\n");
+				/* reset the device */
+				outb(wdc+wd_ctlr, (WDCTL_RST|WDCTL_IDS));
+				DELAY(1000);
+				outb(wdc+wd_ctlr, WDCTL_IDS);
+				DELAY(1000);
+				(void) inb(wdc+wd_error);	/* XXX! */
+				outb(wdc+wd_ctlr, WDCTL_4BIT);
+				break;
+			}
+		}
 
 		/* stuff the task file */
 		outb(wdc+wd_precomp, lp->d_precompcyl / 4);
@@ -480,8 +505,22 @@ loop:
 		outb(wdc+wd_sdh, WDSD_IBM | (unit<<4) | (head & 0xf));
 
 		/* wait for drive to become ready */
+		timeout = 0;
 		while ((inb(wdc+wd_status) & WDCS_READY) == 0)
-			;
+		{
+			if (++timeout > WDCTIMEOUT)
+			{
+				printf("wd.c: Drive busy too long!\n");
+				/* reset the device */
+				outb(wdc+wd_ctlr, (WDCTL_RST|WDCTL_IDS));
+				DELAY(1000);
+				outb(wdc+wd_ctlr, WDCTL_IDS);
+				DELAY(1000);
+				(void) inb(wdc+wd_error);	/* XXX! */
+				outb(wdc+wd_ctlr, WDCTL_4BIT);
+				goto RETRY;
+			}
+		}
 
 		/* initiate command! */
 #ifdef	B_FORMAT
@@ -501,8 +540,22 @@ loop:
 	if (bp->b_flags & B_READ) return;
 
 	/* ready to send data?	*/
+	timeout = 0;
 	while ((inb(wdc+wd_status) & WDCS_DRQ) == 0)
-		;
+	{
+		if (++timeout > WDCTIMEOUT)
+		{
+			printf("wd.c: Drive not ready for too long!\n");
+			/* reset the device */
+			outb(wdc+wd_ctlr, (WDCTL_RST|WDCTL_IDS));
+			DELAY(1000);
+			outb(wdc+wd_ctlr, WDCTL_IDS);
+			DELAY(1000);
+			(void) inb(wdc+wd_error);	/* XXX! */
+			outb(wdc+wd_ctlr, WDCTL_4BIT);
+			goto RETRY;
+		}
+	}
 
 	/* then send it! */
 	outsw (wdc+wd_data, addr+du->dk_skip * DEV_BSIZE,
@@ -699,10 +752,7 @@ wdopen(dev_t dev, int flags, int fmt, struct proc *p)
 		du->dk_dd.d_secpercyl = 17*8;
 		du->dk_state = WANTOPEN;
 		du->dk_unit = unit;
-		if (part == WDRAW)
-			du->dk_flags |= DKFL_QUIET;
-		else
-			du->dk_flags &= ~DKFL_QUIET;
+		du->dk_flags &= ~DKFL_QUIET;
 
 		/* read label using "c" partition */
 		if (msg = readdisklabel(makewddev(major(dev), wdunit(dev), WDRAW),
@@ -808,7 +858,7 @@ wdcontrol(register struct buf *bp)
 		wdtab.b_active = 1;
 
 		/* wait for drive and controller to become ready */
-		for (i = 1000000; (inb(wdc+wd_status) & (WDCS_READY|WDCS_BUSY))
+		for (i = WDCTIMEOUT; (inb(wdc+wd_status) & (WDCS_READY|WDCS_BUSY))
 				  != WDCS_READY && i-- != 0; )
 			;
 		outb(wdc+wd_command, WDCC_RESTORE | WD_STEP);
@@ -864,7 +914,7 @@ badopen:
  */
 static int
 wdcommand(struct disk *du, int cmd) {
-	int timeout = 1000000, stat, wdc;
+	int timeout = WDCTIMEOUT, stat, wdc;
 
 	/* controller ready for command? */
 	wdc = du->dk_port;
@@ -1281,7 +1331,7 @@ wddump(dev_t dev)			/* dump core after a system crash */
 		if (inb(wdc+wd_status) & WDCS_DRQ) return(EIO) ;
 
 		/* wait for completion */
-		for ( i = 1000000 ; inb(wdc+wd_status) & WDCS_BUSY ; i--) {
+		for ( i = WDCTIMEOUT ; inb(wdc+wd_status) & WDCS_BUSY ; i--) {
 				if (i < 0) return (EIO) ;
 		}
 		/* error check the xfer */
