@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ptx.1	6.6 (Berkeley) %G%
+.\"	@(#)ptx.1	6.7 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt PTX 1
 .Os ATT 7th
@@ -15,8 +14,8 @@
 .Sh SYNOPSIS
 .Nm ptx
 .Op  option
-\&...
-.Op input [output]
+.Ar ...
+.Op input Op output
 .Sh DESCRIPTION
 .Nm Ptx
 generates a permuted index to file
@@ -36,7 +35,9 @@ produces output in the form:
 .Pp
 .Dl \&.xx "tail" "before keyword" "keyword and after" "head"
 .Pp
-where .xx may be an
+where
+.Ar \&.xx
+may be an
 .Xr nroff 1
 or
 .Xr troff  1
@@ -57,40 +58,28 @@ in the unused space at the opposite end of the line.
 When original text must be discarded, `/' marks the spot.
 .Pp
 The following options can be applied:
-.Tw Fl
-.Tp Fl f
+.Bl -tag -width flag
+.It Fl f
 Fold upper and lower case letters for sorting.
-.Tp Fl t
+.It Fl t
 Prepare the output for the phototypesetter;
 the default line length is 100 characters.
-.Tp Cx Fl w
-.Ws
-.Ar n
-.Cx
+.It Fl w Ar n 
 Use the next argument,
 .Ar n ,
 as the width of the output line.
 The default line length is 72 characters.
-.Tp Cx Fl g
-.Ws
-.Ar n
-.Cx
+.It Fl g Ar n 
 Use the next argument,
 .Ar n ,
 as the number of characters to allow for each gap
 among the four parts of the line as finally printed.
 The default gap is 3 characters.
-.Tp Cx Fl o
-.Ws
-.Ar only
-.Cx
+.It Fl o Ar only 
 Use as keywords only the words given in the
 .Ar only
 file.
-.Tp Cx Fl i
-.Ws
-.Ar ignore
-.Cx
+.It Fl i Ar ignore 
 Do not use as keywords any words given in the
 ignore
 file.
@@ -103,32 +92,30 @@ options are missing, use
 as the
 ignore
 file.
-.Tp Cx Fl b
-.Ws
-.Ar break
-.Cx
+.It Fl b Ar break 
 Use the characters in the
 break
 file to separate words.
 In any case, tab, newline, and space characters are always used as break characters.
-.Tp Fl r
+.It Fl r
 Take any leading nonblank characters of each input line to
 be a reference identifier (as to a page or chapter)
 separate from the text of the line.
 Attach that identifier as a 5th field on each output line.
-.Tp
+.El
 .Pp
 The index for this manual was generated using
 .Nm ptx .
 .Sh FILES
-.Dw /usr/share/dict.eign
-.Di L
-.Dp /usr/bin/sort
-.Dp /usr/share/dict/eign
-.Dp
+.Bl -tag -width /usr/share/dict.eign -compact
+.It /usr/bin/sort
+.It /usr/share/dict/eign
+.El
 .Sh HISTORY
-.Nm Ptx
-appeared in Version 7 AT&T UNIX
+The
+.Nm ptx
+command appeared in
+.At v7 .
 .Sh BUGS
 Line length counts do not account for overstriking or
 proportional spacing.

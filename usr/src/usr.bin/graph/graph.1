@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)graph.1	6.5 (Berkeley) %G%
+.\"	@(#)graph.1	6.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt GRAPH 1
 .Os ATT 7th
@@ -15,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm graph
 .Op option
-\&...
+.Ar ...
 .Sh DESCRIPTION
 .Nm Graph
 with no options takes pairs of numbers from the
@@ -37,36 +36,33 @@ labels never contain newlines.
 .Pp
 The following options are recognized,
 each as a separate argument.
-.Tw Fl
-.Tp Fl a
+.Bl -tag -width flagx
+.It Fl a
 Supply abscissas automatically (they are missing from
 the input); spacing is given by the next
 argument (default 1).
 A second optional argument is the starting point for
 automatic abscissas (default 0 or lower limit given by
-.Fl x  ) .
-.Tp Fl b
+.Fl x ) .
+.It Fl b
 Break (disconnect) the graph after each label in the input.
-.Tp Fl c
+.It Fl c
 Character string given by next argument
 is default label for each point.
-.Tp Fl g
+.It Fl g
 Next argument is grid style,
 0 no grid, 1 frame with ticks, 2 full grid (default).
-.Tp Fl l
+.It Fl l
 Next argument is label for graph.
-.Tp Fl m
+.It Fl m
 Next argument is mode (style)
 of connecting lines:
 0 disconnected, 1 connected (default).
 Some devices give distinguishable line styles
 for other small integers.
-.Tp Fl s
+.It Fl s
 Save screen, don't erase before plotting.
-.Tc Fl x
-.Ws
-.Op Ar l
-.Cx
+.It Fl x Ns Op Ar l 
 If
 .Ar l
 is present, x axis is logarithmic.
@@ -77,26 +73,23 @@ Third argument, if present, is grid spacing on
 .Ar x
 axis.
 Normally these quantities are determined automatically.
-.Tc Fl y
-.Ws
-.Op Ar l
-.Cx
+.It Fl y Ns Op Ar l 
 Similarly for
 .Ar y  .
-.Tp Fl h
+.It Fl h
 Next argument is fraction of space for height.
-.Tp Fl w
+.It Fl w
 Similarly for width.
-.Tp Fl r
+.It Fl r
 Next argument is fraction of space to move right before plotting.
-.Tp Fl u
+.It Fl u
 Similarly to move up before plotting.
-.Tp Fl t
+.It Fl t
 Transpose horizontal and vertical axes.
 (Option
 .Fl x
 now applies to the vertical axis.)
-.Tp
+.El
 .Pp
 A legend indicating grid range is produced
 with a grid unless the
@@ -110,8 +103,10 @@ is reversed.
 .Xr spline 1 ,
 .Xr plot 1
 .Sh HISTORY
-.Nm Plot
-appeared in Version 6 AT&T Unix.
+The
+.Nm graph
+command appeared in
+.At v6 .
 .Sh BUGS
 .Nm Graph
 stores all points internally and drops those for which

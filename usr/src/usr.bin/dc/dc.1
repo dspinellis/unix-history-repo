@@ -3,39 +3,39 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)dc.1	6.5 (Berkeley) %G%
+.\"	@(#)dc.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DC 1
 .Os ATT 7th
 .Sh NAME
-.Nm dc
+.Nm \&dc
 .Nd desk calculator
 .Sh SYNOPSIS
-.Nm dc
+.Nm \&dc
 .Op  file
 .Sh DESCRIPTION
-.Nm Dc
+.Nm \&Dc
 is an arbitrary precision arithmetic package.
 Ordinarily it operates on decimal integers,
 but one may specify an input base, output base,
 and a number of fractional digits to be maintained.
 The overall structure of
-.Nm dc
+.Nm \&dc
 is
 a stacking (reverse Polish) calculator.
 If an argument is given,
 input is taken from that file until its end,
 then from the standard input.
 The following constructions are recognized:
-.Tw Fl
-.Tp Va number
+.Bl -tag -width flag
+.It Va number
 The value of the number is pushed on the stack.
 A number is an unbroken string of the digits 0-9.
 It may be preceded by an underscore _ to input a
 negative number.
 Numbers may contain decimal points.
-.Tp Li \&+  \&\- \&/  \&*  \&%  \&^
+.It Cm "\&+  \&\- \&/  \&*  \&%  \&^"
 The
 top two values on the stack are added
 (+),
@@ -48,9 +48,7 @@ or exponentiated (^).
 The two entries are popped off the stack;
 the result is pushed on the stack in their place.
 Any fractional part of an exponent is ignored.
-.Tc Ic s
-.Ar x
-.Cx
+.It Ic s Ns Ar x 
 The
 top of the stack is popped and stored into
 a register named
@@ -64,9 +62,7 @@ the
 is capitalized,
 .Ar x
 is treated as a stack and the value is pushed on it.
-.Tc Ic l
-.Ar x
-.Cx
+.It Ic l Ns Ar x 
 The
 value in register
 .Ar x
@@ -81,18 +77,18 @@ is capitalized,
 register
 .Ar x
 is treated as a stack and its top value is popped onto the main stack.
-.Tp Ic d
+.It Ic d
 The
 top value on the stack is duplicated.
-.Tp Ic p
+.It Ic p
 The top value on the stack is printed.
 The top value remains unchanged.
 .Ar P
 interprets the top of the stack as an ascii string,
 removes it, and prints it.
-.Tp Ic f
+.It Ic f
 All values on the stack and in registers are printed.
-.Tp Ic q
+.It Ic q
 exits the program.
 If executing a string, the recursion level is
 popped by two.
@@ -101,39 +97,47 @@ If
 is capitalized,
 the top value on the stack is popped and the string execution level is popped
 by that value.
-.Tp Ic x
+.It Ic x
 treats the top element of the stack as a character string
-and executes it as a string of dc commands.
-.Tp Ic X
+and executes it as a string of
+.Nm \&dc
+commands.
+.It Ic X
 replaces the number on the top of the stack with its scale factor.
-.Tp Op \&...
+.It Cm \&[ Ns ... Ns Cm \&]
 puts the bracketed ascii string onto the top of the stack.
-.Tp Va \&<x  \&>x  \&=x
+.It Xo
+.Cm < Va x
+.Cm > Va x
+.Cm = Va x
+.Xc
 The
 top two elements of the stack are popped and compared.
 Register
 .Ar x
 is executed if they obey the stated
 relation.
-.Tp Ic v
+.It Ic v
 replaces the top element on the stack by its square root.
 Any existing fractional part of the argument is taken
 into account, but otherwise the scale factor is ignored.
-.Tp Ic \&!
-interprets the rest of the line as a UNIX command.
-.Tp Ic c
+.It Ic \&!
+interprets the rest of the line as a
+.Ux
+command.
+.It Ic c
 All values on the stack are popped.
-.Tp Ic i
+.It Ic i
 The top value on the stack is popped and used as the
 number radix for further input.
 .Ic I
 pushes the input base on the top of the stack.
-.Tp Ic o
+.It Ic o
 The top value on the stack is popped and used as the
 number radix for further output.
-.Tp Ic O
+.It Ic O
 pushes the output base on the top of the stack.
-.Tp Ic k
+.It Ic k
 the top of the stack is popped, and that value is used as
 a non-negative scale factor:
 the appropriate number of places
@@ -142,55 +146,51 @@ and maintained during multiplication, division, and exponentiation.
 The interaction of scale factor,
 input base, and output base will be reasonable if all are changed
 together.
-.Tp Ic z
+.It Ic z
 The stack level is pushed onto the stack.
-.Tp Ic Z
+.It Ic Z
 replaces the number on the top of the stack with its length.
-.Tp Ic \&?
+.It Ic \&?
 A line of input is taken from the input source (usually the terminal)
 and executed.
-.Tp Ic \&; \&:
+.It Ic \&; \&:
 are used by
-.Ar bc
+.Xr \&bc
 for array operations.
-.Tp
+.El
 .Pp
 An example which prints the first ten values of
 .Ic n\&! :
 .Pp
-.Df I
-.Cx Op Li la1+dsa*pla10>y
-.Cx sy
-.Cx
-.De
-.Ds I
-.Li 0sa1
-.De
-.Ds I
-.Li lyx
-.De
+.Bd -literal -offset indent -compact
+[la1+dsa*pla10>y]sy 
+0sa1
+lyx
+.Ed
 .Sh SEE ALSO
-.Xr bc 1 ,
+.Xr \&bc 1 ,
 which is a preprocessor for
-.Nm dc
-providing infix notation and a C- like syntax
+.Nm \&dc
+providing infix notation and a C-like syntax
 which implements functions and reasonable control
 structures for programs.
 .Sh HISTORY
-.Nm Dc
-appeared in Version 6 AT&T Unix.
+The
+.Nm \&dc
+command appeared in
+.At v6 .
 .Sh DIAGNOSTICS
-.Tw Ar
-.Tp Li x is unimplemented
+.Bl -tag -width flag
+.It Li x is unimplemented
 where x is an octal number.
-.Tp Li stack empty
+.It Li stack empty
 for not enough elements on the stack to do what was asked.
-.Tp Li Out of space
+.It Li Out of space
 when the free list is exhausted (too many digits).
-.Tp Li Out of headers
+.It Li Out of headers
 for too many numbers being kept around.
-.Tp Li Out of pushdown
+.It Li Out of pushdown
 for too many items on the stack.
-.Tp Li Nesting Depth
+.It Li Nesting Depth
 for too many levels of nested execution.
-.Tp
+.El
