@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mtpr.h	7.1 (Berkeley) %G%
+ *	@(#)mtpr.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,9 @@
 #define	CADR	0x25		/* cache disable register */
 #define	MCESR	0x26		/* machine check error summary register */
 #define	CAER	0x27		/* cache error */
-#define	IUR	0x37		/* init unibus register */
 #define	TB	0x3b		/* translation buffer */
+#endif
+
+#if defined(VAX750) || defined(VAX730) || defined(VAX630)
+#define	IUR	0x37		/* init unibus register */
 #endif
