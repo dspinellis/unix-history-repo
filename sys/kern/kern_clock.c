@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.5 1993/10/22 11:03:50 davidg Exp $
+ *	$Id: kern_clock.c,v 1.8 1993/11/09 04:23:29 ache Exp $
  */
 
 #include "param.h"
@@ -488,7 +488,7 @@ hzto(tv)
 		usec += 1000000;
 	}
 	if (sec < 0) {
-#ifdef DEBUG
+#ifdef DIAGNOSTIC
 		printf("hzto: negative time difference %ld sec %ld usec\n",
 		       sec, usec);
 #endif
