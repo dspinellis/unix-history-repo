@@ -1,4 +1,4 @@
-.\"	"@(#)bibdoc.ms	4.4	%G%";
+.\"	"@(#)bibdoc.ms	4.5	%G%";
 .TL
 \fBBIB \- A Program for Formatting Bibliographies\fP
 .AU
@@ -1080,56 +1080,124 @@ Standard Names
 The following list gives the standard names recognized in most
 citation styles.  Various different forms for the output are used
 by the different styles.
+In the longer reference style,
+the conference proceedings will also refer
+to the date (%D), city(%C),
+and when the proceedings are published as a journal,
+the journal name (%J), volumn (%V) and number (%N).
 .sp
 .nf
 .ta 1i
 \fBJournal Names\fP
 ACTA	Acta Informatica
-BIT	BIT
+BIT	B\&IT
 BSTJ	Bell System Technical Journal
 CACM	Communications of the ACM
-COMP	Computer
+COMP	IEEE Computer
 COMPJOUR	The Computer Journal
-COMPLANG	Computer Languages
-COMPSUR	ACM Computer Surveys
+COMPLANG	Journal of Computer Languages
+COMPSUR	ACM Computing Surveys
 I&C	Information and Control
-IEEETSE	IEEE Transactions on Software Engineering
+IBMJRD	IBM Journal of Research and Development
+IBMSJ	IBM Systems Journal
 IEEETC	IEEE Transactions on Computers
+IEEETSE	IEEE Transactions on Software Engineering
+IJCIS	International Journal of Computer and Information Sciences
 IPL	Information Processing Letters
 JACM	Journal of the ACM
 JCSS	Journal of Computer and System Sciences
+MATHST	Mathematics Systems Theory
 NMATH	Numerical Mathematics
 SIAMJC	Siam Journal on Computing
+SIAMJNA	Siam Journal on Numerical Analysis
 SIGACT	S\&IGACT News
 SIGPLAN	SI\&GPLAN Notices
 SIGSOFT	Software Engineering Notes
-SP&E	Software \- Practice & Experience
+SP&E	Software\(emPractice & Experience
+SPE	Software\(emPractice & Experience
+TOCS	ACM Transactions on Computer Systems
 TODS	ACM Transactions on Database Systems
 TOMS	ACM Transactions on Mathematical Software
 TOPLAS	ACM Transactions on Programming Languages and Systems
 .sp
 \fBConferences\fP
-POPL	ACM Symposium on Principles of Programming Languages
-STOC	Annual ACM Symposium on Theory of Computing
-FOCS	Annual Symposium on Foundations of Computer Science
-ICSE	International Conference on Software Engineering
-SOSP	Symposium on Operating System Principles
-JICAI	Joint International CONF on Artifical Intelligence
+ADA80	PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIGPLAN
+ASPLOS82	PROC of the SYMP on Architectural Support for Programming Languages and Operating Systems, SIGPLAN
+CCC79	PROC of the SI\&GPLAN 1979 SYMP on Compiler Construction, SIGPLAN
+CCC82	PROC of the SI\&GPLAN 1982 SYMP on Compiler Construction, SIGPLAN
+CCC84	PROC of the SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN
+CONF	Conference
+FJCC	Fall Joint Computer Conference
+FOCS	Annual SYMP on Foundations of Computer Science
+HICSS	Hawaii International CONF on System Science
+ICSE	International CONF on Software Engineering
+JER3	PROC Third Jerusalem CONF on Information Technology
+JICAI	Joint International CONF on Artificial Intelligence
+PLISS83	PROC SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN
+POPL	ACM SYMP on Principles of Programming Languages
+POPL5	Conference Record of the Fifth POPL
+POPL6	Conference Record of the Sixth POPL
+POPL7	Conference Record of the Seventh POPL
+POPL8	Conference Record of the Eighth POPL
+POPL9	Conference Record of the Ninth POPL
+POPL10	Conference Record of the Tenth POPL
+POPL11	Conference Record of the Eleventh POPL
+PROC	Proceedings
+SOSP	SYMP on Operating System Principles
+STOC	Annual ACM SYMP on Theory of Computing
+SYMP	Symposium
+WJCC	PROC Western Joint Computer CONF
 .sp
 \fBPublishers\fP
-ACPRESS	Academic Press
 ACADEMIC	Academic Press
+ACPRESS	Academic Press
 ADDISON	Addison Wesley
+ANSI	American National Standards Institute
 CSPRESS	Computer Science Press
+DIGITAL	Digital Press
 ELSEVIER	American Elsevier
 FREEMAN	W. H. Freeman and Company
+GPO	U. S. Government Printing Office
+HOLT	Holt, Rinehart, and Winston
+IEEEP	IEEE Press
 MCGRAW	McGraw-Hill
-MITP	M. I. T. Press
+MGHILL	McGraw-Hill
+MITP	MIT Press
+NHOLL	North-Holland
+NYC	New York, N\&Y
+PRENTICE	Prentice Hall
 PRHALL	Prentice Hall
 SPRINGER	Springer Verlag
+SRA	Science Research Associates
 WILEY	John Wiley & Sons
 WINTH	Winthrop Publishers
-.ne 5
+.sp
+\fBShort place names\fP
+CORP	Corporation
+CSD	Computer Science Department
+DCS	Department of Computer Science
+DEPT	Department
+DISS	Dissertation
+TR	Technical Report
+UATR	University of Arizona Technical Report
+UNIV	University
+ERL	Electronics Research Laboratory
+.sp
+\fBLonger place names\fP
+BTLHO	Bell Laboratories
+BTLMH	Bell Laboratories
+CMU	Carnegie-Mellon University
+CMUCS	Computer Science Department, Carnegie-Mellon University
+DG	Data General
+MITAI	MIT Artificial Intelligence Laboratory
+MITLCS	MIT Laboratory for Computer Science
+SUCS	Computer Science Department, Stanford University
+SUCSL	Computer Systems Lab., Stanford Electronics Lab., Dept. of Electrical Engineering and Computer Science
+SUEE	Department of Electrical Engineering, Stanford University
+TUM	Technische Universita\*`t Mu\*`nchen
+UCB	University of California, Berkeley
+UCBCS	Computer Science Division, EECS, UCB
+UCBERL	ERL, EECS, UCB
 .sp
 \fBMonths of the year\fP
 JAN	January
@@ -1144,15 +1212,3 @@ SEP	September
 OCT	October
 NOV	November
 DEC	December
-.sp
-\fBMisc\fP
-PROC	Proceedings
-CONF	Conference
-SYMP	Symposium
-DISS	Dissertation
-DEPT	Department
-UNIV	University
-CSD	Computer Science Department
-DCS	Department of Computer Science
-UATR	University of Arizona Technical Report
-
