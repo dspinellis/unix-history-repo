@@ -1,6 +1,7 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.1 83/03/17";
+static	char *sccsid = "@(#)dr_1.c	1.2 83/05/20";
 #endif
+
 #include "externs.h"
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -38,7 +39,8 @@ unfoul()
 
 boardcomp()
 {
-	register int n, k, l, crew[3], men = 0, captured;
+	register int n, k, l, men = 0, captured;
+	int crew[3];
 	struct shipspecs *ptr;
 	struct File *ptr1;
 
@@ -432,8 +434,8 @@ char **argv;
 	struct stat Stat;
 	int uid;
 
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
+	signal(1,1);
+	signal(2,1);
 /*	uid = geteuid(); */
 /*	MIGHTYCAPTAIN = uid == MASTER || uid == SERVANT1 || uid == SERVANT2 || uid == SERVANT3; */
 	srand(getpid());

@@ -1,14 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)game.c	1.2 83/05/19";
+static	char *sccsid = "@(#)game.c	1.3 83/05/20";
 #endif
+
 #include "externs.h"
-
-
 
 maxturns(shipnum)
 int shipnum;
 {
-	int turns;
+	register int turns;
 	struct File *ptr;
 
 	turns = specs[scene[game].ship[shipnum].shipnum].ta;

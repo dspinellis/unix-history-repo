@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lo_main.c	1.1 83/03/17";
+static	char *sccsid = "@(#)lo_main.c	1.2 83/05/20";
 #endif
 /*
  * Print out the top ten SAILors

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	1.2 83/05/19";
+static	char *sccsid = "@(#)dr_3.c	1.3 83/05/20";
 #endif
 #include "externs.h"
 
@@ -7,7 +7,8 @@ extern int dtab[];
 
 moveall()		/* move all comp ships */
 {
-	register int n, k, l, m, ma, closest, weakest[5];
+	register int n, k, l, m, ma, closest;
+	int weakest[5];
 	int ta, af, jj;
 	char command[10], clast[20][10];
 	int row[20], col[20], dir[20], r1, r2, c1, c2, d1, d2;

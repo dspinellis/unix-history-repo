@@ -1,6 +1,7 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	1.1 83/03/17";
+static	char *sccsid = "@(#)pl_2.c	1.2 83/05/20";
 #endif
+
 #include "player.h"
 
 #define turnfirst(buf)  (*buf == 'r' || *buf == 'l')
@@ -137,7 +138,8 @@ int ma, ta, af;
 
 boarding()
 {
-	register int n, crew[3];
+	register int n;
+	int crew[3];
 	int captured, men = 0;
 	struct shipspecs *ptr;
 

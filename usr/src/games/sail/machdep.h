@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)machdep.h	1.5 %G%";
+ * sccsid = "@(#)machdep.h	1.6 %G%";
  */
 #define LOGFILE "/usr/games/lib/shipslog"
 #define DRIVER "/usr/games/.driver"
