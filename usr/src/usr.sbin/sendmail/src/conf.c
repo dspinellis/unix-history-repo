@@ -8,12 +8,6 @@
 **	Defines the configuration of this installation.
 **
 **	Compilation Flags:
-**		NETV6MAIL -- set if you want to use "v6mail" that
-**			comes with the Berkeley network.  Normally
-**			/bin/mail will work fine, but around Berkeley
-**			we use v6mail because it is a "fixed target".
-**			Also, only v6mail has the "/dev/mail" stuff
-**			in it (for biff(1)).
 **		V6 -- running on a version 6 system.  This determines
 **			whether to define certain routines between
 **			the two systems.  If you are running a funny
@@ -21,60 +15,6 @@
 **			should be checked carefully.
 **
 **	Configuration Variables:
-**		Mailer -- a table of mailers known to the system.
-**			This should be fairly static.  The fields are:
-**			- the pathname of the mailer.
-**			- a list of flags describing the properties
-**			  of this mailer:
-**			   M_FOPT -- if set, the mailer has a picky "-f"
-**				option.  In this mode, the mailer will
-**				only accept the "-f" option if the
-**				sender is actually "root", "network",
-**				and possibly (but not necessarily) if
-**				the -f argument matches the real sender.
-**				The effect is that if the "-f" option
-**				is given to sendmail then it will be
-**				passed through (as arguments 1 & 2) to
-**				the mailer.
-**			   M_ROPT -- identical to M_FOPT, except uses
-**				-r instead.
-**			   M_QUIET -- if set, don't print a message if
-**				the mailer returns bad status.
-**			   M_RESTR -- if set, this mailer is restricted
-**				to use by "daemon"; otherwise, we do a
-**				setuid(getuid()) before calling the
-**				mailer.
-**			   M_NHDR -- if set, the mailer doesn't want us
-**				to insert a UNIX "From" line before
-**				outputing.
-**			   M_NOHOST -- if set, this mailer doesn't care
-**				about the host part (e.g., the local
-**				mailer).
-**			   M_STRIPQ -- if set, strip quote (`"')
-**				characters out of parameters as you
-**				transliterate them into the argument
-**				vector.  For example, the local mailer
-**				is called directly, so these should be
-**				stripped, but the program-mailer (i.e.,
-**				csh) should leave them in.
-**			   M_NEEDDATE -- this mailer requires a Date:
-**				field in the message.
-**			   M_NEEDFROM -- this mailer requires a From:
-**				field in the message.
-**			   M_MSGID -- this mailer requires a Message-Id
-**				field in the message.
-**			   M_ARPAFMT == M_NEEDDATE|M_NEEDFROM|M_MSGID.
-**			- an exit status to use as the code for the
-**			  error message print if the mailer returns
-**			  something we don't understand.
-**			- A list of names that are to be considered
-**			  "local" (and hence are stripped off) for
-**			  this mailer.
-**			- An argument vector to be passed to the
-**			  mailer; this is macro substituted.
-**			>>>>>>>>>> Entry zero must be for the local
-**			>> NOTE >> mailer and entry one must be for
-**			>>>>>>>>>> the shell.
 **		HdrInfo -- a table describing well-known header fields.
 **			Each entry has the field name and some flags,
 **			which can be:
@@ -83,145 +23,25 @@
 **			- H_DELETE -- delete this field.
 **			There is also a field pointing to a pointer
 **			that should be set to point to this header.
+**
+**	Notes:
+**		I have tried to put almost all the reasonable
+**		configuration information into the configuration
+**		file read at runtime.  My intent is that anything
+**		here is a function of the version of UNIX you
+**		are running, or is really static -- for example
+**		the headers are a superset of widely used
+**		protocols.  If you find yourself playing with
+**		this file too much, you may be making a mistake!
 */
 
 
 
 
-static char SccsId[] = "@(#)conf.c	3.15	%G%";
+static char SccsId[] = "@(#)conf.c	3.16	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
-
-# ifdef BERKELEY
-# define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
-# endif BERKELEY
-
-
-
-/* local mail -- must be #0 */
-static char	*LocalArgv[] =
-{
-	"...local%mail",
-	"-d",
-	"$u",
-	NULL
-};
-
-static struct mailer	LocalMailer =
-{
-# ifdef NETV6MAIL
-	"local",	"/usr/net/bin/v6mail",
-# else
-	"local",	"/bin/mail",
-# endif
-	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT|M_MUSER|M_NHDR,
-	EX_NOUSER,	"$f",		LocalArgv,	NULL,
-};
-
-/* pipes through programs -- must be #1 -- also used for files */
-static char	*ProgArgv[] =
-{
-	"...prog%mail",
-	"-fc",
-	"$u",
-	NULL
-};
-
-static struct mailer	ProgMailer =
-{
-	"prog",		"/bin/csh",
-	M_NOHOST|M_ARPAFMT,
-	EX_UNAVAILABLE, "$f",		ProgArgv,	NULL,
-};
-
-/* user-private mailers -- must be #2 */
-static char	*PrivArgv[] =
-{
-	"...priv%mail",
-	"$u",
-	NULL
-};
-
-static struct mailer	PrivMailer =
-{
-	"priv",		NULL,
-	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,
-	EX_UNAVAILABLE,	"$f",		PrivArgv,	NULL,
-};
-
-/* local berkeley mail */
-static char	*BerkArgv[] =
-{
-	"...berk%mail",
-	"-m",
-	"$h",
-	"-h",
-	"$c",
-	"-t",
-	"$u",
-	NULL
-};
-
-static struct mailer	BerkMailer =
-{
-	"berk",		"/usr/net/bin/sendberkmail",
-	M_FOPT|M_NEEDDATE|M_FULLNAME|M_STRIPQ,
-	EX_UNAVAILABLE,	"$B:$f",	BerkArgv,	NULL,
-};
-
-/* arpanet mail */
-static char	*ArpaArgv[] =
-{
-	"...arpa%mail",
-	"$f",
-	"$h",
-	"$u",
-	NULL
-};
-
-static struct mailer	ArpaMailer =
-{
-	"arpa",		"/usr/lib/mailers/arpa",
-	M_STRIPQ|M_ARPAFMT|M_USR_UPPER,
-	0,		"$f@$A",	ArpaArgv,	NULL,
-};
-
-/* uucp mail (cheat & use Bell's v7 mail) */
-static char	*UucpArgv[] =
-{
-	"...uucp%mail",
-	"-",
-	"$h!rmail",
-	"($u)",
-	NULL
-};
-
-static struct mailer	UucpMailer =
-{
-	"uucp",		"/usr/bin/uux",
-	M_ROPT|M_STRIPQ|M_NEEDDATE|M_FULLNAME|M_MUSER,
-	EX_NOUSER,	"$U!$f",	UucpArgv,	NULL,
-};
-
-struct mailer	*Mailer[] =
-{
-	&LocalMailer,		/* 0 -- must be 0 */
-	&ProgMailer,		/* 1 -- must be 1 */
-	&PrivMailer,		/* 2 -- must be 2 */
-	&BerkMailer,		/* 3 */
-	&ArpaMailer,		/* 4 */
-	&UucpMailer,		/* 5 */
-	NULL
-};
-
-/* offsets for arbitrary mailers */
-# define M_BERK		2	/* berknet */
-# define M_ARPA		3	/* arpanet */
-# define M_UUCP		4	/* UUCPnet */
-
-
-
 
 
 /*
