@@ -11,10 +11,8 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.11 (Berkeley) %G%";
 #endif not lint
-
-#define COMPAT		/* include 4.3 Alpha compatibility */
 
 /*
  *  syslogd -- log system messages
@@ -149,49 +147,6 @@ extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
 extern	char *ctime(), *index();
 
-#ifdef COMPAT
-int	CompatMode = 0;		/* run in compatibility mode */
-int	CompatCodes[32] = {
-		LOG_USER|LOG_ALERT,	/* 0 -- undefined */
-			/* kernel priorities */
-		LOG_KERN|LOG_EMERG,	/* KERN_EMERG */
-		LOG_KERN|LOG_ALERT,	/* KERN_ALERT */
-		LOG_KERN|LOG_CRIT,	/* KERN_ERR */
-		LOG_KERN|LOG_ERR,	/* KERN_FAIL */
-		LOG_KERN|LOG_WARNING,	/* KERN_RECOV */
-		LOG_KERN|LOG_INFO,	/* KERN_INFO */
-			/* user abnormal conditions priorities */
-		LOG_USER|LOG_EMERG,	/* LOG_EMERG */
-		LOG_USER|LOG_ALERT,	/* LOG_ALERT */
-		LOG_USER|LOG_CRIT,	/* LOG_CRIT */
-		LOG_USER|LOG_ERR,	/* LOG_ERR */
-		LOG_USER|LOG_ERR,	/* LOG_ERR */
-		LOG_USER|LOG_WARNING,	/* LOG_WARNING */
-			/* user priorities */
-		LOG_USER|LOG_ALERT,	/* LOG_SALERT */
-		LOG_AUTH|LOG_NOTICE,	/* LOG_SECURITY */
-		LOG_USER|LOG_INFO,	/* LOG_FIXED */
-		LOG_MAIL|LOG_ERR,	/* LOG_MAIL */
-		LOG_DAEMON|LOG_ERR,	/* LOG_REJECT */
-		LOG_USER|LOG_NOTICE,	/* LOG_NOTICE */
-			/* user information priorities */
-		LOG_USER|LOG_INFO,	/* LOG_INFO */
-		LOG_LOCAL1|LOG_INFO,	/* LOG_INFO1 */
-		LOG_LOCAL2|LOG_INFO,	/* LOG_INFO2 */
-		LOG_LOCAL3|LOG_INFO,	/* LOG_INFO3 */
-		LOG_LOCAL4|LOG_INFO,	/* LOG_INFO4 */
-		LOG_LOCAL5|LOG_INFO,	/* LOG_INFO5 */
-			/* user debug/local priorities */
-		LOG_USER|LOG_DEBUG,	/* LOG_DEBUG */
-		LOG_LOCAL1|LOG_DEBUG,	/* LOG_LOCAL1 */
-		LOG_LOCAL2|LOG_DEBUG,	/* LOG_LOCAL2 */
-		LOG_LOCAL3|LOG_DEBUG,	/* LOG_LOCAL3 */
-		LOG_LOCAL4|LOG_DEBUG,	/* LOG_LOCAL4 */
-		LOG_LOCAL5|LOG_DEBUG,	/* LOG_LOCAL5 */
-		LOG_LOCAL6|LOG_DEBUG,	/* LOG_LOCAL6 */
-};
-#endif COMPAT
-
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -218,12 +173,6 @@ main(argc, argv)
 		case 'd':		/* debug */
 			Debug++;
 			break;
-
-#ifdef COMPAT
-		case 'C':		/* run in compat mode */
-			CompatMode++;
-			break;
-#endif COMPAT
 
 		case 'p':		/* path */
 			if (p[2] != '\0')
@@ -419,25 +368,6 @@ printline(hname, msg)
 		pri |= LOG_USER;
 
 	q = line;
-#ifdef COMPAT
-	if (CompatMode) {
-		register char *lp = index(p, ':');
-
-		if (lp && lp[1] == ' ' && lp[17] == '-' && lp[18] == '-') {
-			/*
-			 * Old format message
-			 */
-			dprintf("mapping <%d> to <%d>\n", pri, CompatCodes[pri]);
-			pri = CompatCodes[pri];
-			(void) strncpy(q, lp + 2, 15);
-			q += 15;
-			*q++ = ' ';
-			(void) strncpy(q, p, lp - p + 1);
-			q += lp - p + 1;
-			p = lp + 19;
-		}
-	}
-#endif COMPAT
 
 	while ((c = *p++ & 0177) != '\0' && c != '\n' &&
 	    q < &line[sizeof(line) - 1]) {
@@ -480,12 +410,6 @@ printsys(msg)
 				++p;
 			if (pri <= 0 || pri >= (LOG_NFACILITIES << 3))
 				pri = DEFSPRI;
-#ifdef COMPAT
-			else if (CompatMode) {
-				dprintf("mapping <%d> to <%d>\n", pri, CompatCodes[pri]);
-				pri = CompatCodes[pri];
-			}
-#endif COMPAT
 		} else {
 			/* kernel printf's come out on console */
 			flags |= IGN_CONS;
@@ -840,10 +764,12 @@ die(sig)
 {
 	char buf[100];
 
-	dprintf("syslogd: going down on signal %d\n", sig);
-	flushmsg();
-	(void) sprintf(buf, "going down on signal %d", sig);
-	logerror(buf);
+	if (sig) {
+		dprintf("syslogd: going down on signal %d\n", sig);
+		flushmsg();
+		(void) sprintf(buf, "going down on signal %d", sig);
+		logerror(buf);
+	}
 	(void) unlink(LogName);
 	exit(0);
 }
