@@ -1,0 +1,27 @@
+.TS
+center, allbox;
+lw(20).
+T{
+.nf
+.ce 1000
+Space for
+value returned
+from f
+.ce 0
+.fi
+T}
+T{
+.ce
+Value of a
+T}
+T{
+.sp
+.ce
+Block Mark
+.sp
+T}
+.TE
+.sp .1i
+.ce
+Figure 1.3 \- Stack structure on function call `f(a)'
+.sp .1i
