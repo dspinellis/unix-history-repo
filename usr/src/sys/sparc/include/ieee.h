@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ieee.h	7.2 (Berkeley) %G%
+ *	@(#)ieee.h	7.3 (Berkeley) %G%
  *
- * from: $Header: ieee.h,v 1.6 92/06/19 23:04:29 torek Exp $
+ * from: $Header: ieee.h,v 1.7 92/11/26 02:04:37 torek Exp $
  */
 
 /*

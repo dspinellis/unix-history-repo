@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)float.h	7.2 (Berkeley) %G%
+ *	@(#)float.h	7.3 (Berkeley) %G%
  *
- * from: $Header: float.h,v 1.2 92/06/17 06:10:17 torek Exp $
+ * from: $Header: float.h,v 1.3 92/11/26 02:04:35 torek Exp $
  */
 
 #define FLT_RADIX	2		/* b */
