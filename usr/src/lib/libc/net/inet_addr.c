@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_addr.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -41,9 +41,11 @@ inet_aton(cp, addr)
 	register const char *cp;
 	struct in_addr *addr;
 {
-	register u_long val, base, n;
+	register u_long val;
+	register int base, n;
 	register char c;
-	u_long parts[4], *pp = parts;
+	u_int parts[4];
+	register u_int *pp = parts;
 
 	for (;;) {
 		/*
