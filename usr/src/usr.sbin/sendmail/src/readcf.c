@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.99 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.100 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1316,6 +1316,10 @@ struct optioninfo
 	"ColonOkInAddr",	O_COLONOKINADDR, TRUE,
 #define O_MAXQUEUERUN	0x8c
 	"MaxQueueRunSize",	O_MAXQUEUERUN,	TRUE,
+#define O_MAXCHILDREN	0x8d
+/*
+	"MaxDaemonChildren",	O_MAXCHILDREN,	FALSE,
+*/
 
 	NULL,			'\0',		FALSE,
 };
@@ -1933,6 +1937,9 @@ setoption(opt, val, sticky)
 	  case O_MAXQUEUERUN:	/* max # of jobs in a single queue run */
 		MaxQueueRun = atol(val);
 		break;
+
+	  case O_MAXCHILDREN:	/* max # of children of daemon */
+		MaxChildren = atoi(val);
 
 	  default:
 		if (tTd(37, 1))
