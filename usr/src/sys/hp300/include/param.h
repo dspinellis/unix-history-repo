@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.12 91/01/18$
  *
- *	@(#)param.h	7.11 (Berkeley) %G%
+ *	@(#)param.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -134,15 +134,16 @@
 #define spl6()  _spl(PSL_S|PSL_IPL6)
 #define spl7()  _spl(PSL_S|PSL_IPL7)
 
-#define splsoftclock()  spl1()
-#define splnet()        spl1()
-#define splbio()        spl5()
-#define splimp()        spl5()
-#define spltty()        spl5()
-#define splclock()      spl6()
-#define splvm()         spl6()
-#define splhigh()       spl7()
-#define splsched()      spl7()
+#define splsoftclock()	spl1()
+#define splnet()	spl1()
+#define splbio()	spl5()
+#define splimp()	spl5()
+#define spltty()	spl5()
+#define splclock()	spl6()
+#define splstatclock()	spl6()
+#define splvm()		spl6()
+#define splhigh()	spl7()
+#define splsched()	spl7()
 
 /* watch out for side effects */
 #define splx(s)         (s & PSL_IPL ? _spl(s) : spl0())
