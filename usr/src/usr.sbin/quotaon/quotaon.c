@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)quotaon.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,6 +27,9 @@ static char sccsid[] = "@(#)quotaon.c	5.11 (Berkeley) %G%";
 #include <ufs/quota.h>
 #include <stdio.h>
 #include <fstab.h>
+
+char *qfname = QUOTAFILENAME;
+char *qfextension[] = INITQFNAMES;
 
 int	aflag;		/* all file systems */
 int	gflag;		/* operate on group quotas */
