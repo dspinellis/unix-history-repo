@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)atexit.h	8.1 (Berkeley) %G%
+ *	@(#)atexit.h	8.2 (Berkeley) %G%
  */
 
 /* must be at least 32 to guarantee ANSI conformance */
@@ -16,4 +16,4 @@ struct atexit {
 	void (*fns[ATEXIT_SIZE])();	/* the table itself */
 };
 
-struct atexit *__atexit;	/* points to head of LIFO stack */
+extern struct atexit *__atexit;	/* points to head of LIFO stack */
