@@ -1,4 +1,4 @@
-/*	ht.c	4.4	81/03/16	*/
+/*	ht.c	4.5	81/03/22	*/
 
 /*
  * TM03/TU?? tape driver
@@ -12,6 +12,11 @@
 #include "saio.h"
 #include "savax.h"
 
+short	httypes[] =
+	{ MBDT_TM03, MBDT_TE16, MBDT_TU45, MBDT_TU77, 0 };
+
+#define	MASKREG(reg)	((reg)&0xffff)
+
 htopen(io)
 	register struct iob *io;
 {
@@ -19,6 +24,11 @@ htopen(io)
 	register struct htdevice *htaddr = (struct htdevice *)mbadrv(io->i_unit);
 	int i;
 
+	for (i = 0; httypes[i]; i++)
+		if (httypes[i] == (htaddr->htdt&MBDT_TYPE))
+			goto found;
+	_stop("not a tape\n");
+found:
 	mbainit(UNITTOMBA(io->i_unit));
 	htaddr->htcs1 = HT_DCLR|HT_GO;
 	htstrategy(io, HT_REW);
@@ -52,6 +62,7 @@ htstrategy(io, func)
 retry:
 	den = HTTC_1600BPI|HTTC_PDP11;
 	htquiet(htaddr);
+	htaddr->htcs1 = HT_DCLR|HT_GO;
 	htaddr->httc = den;
 	htaddr->htfc = -io->i_cc;
 	if (func == HT_SREV) {
@@ -70,12 +81,12 @@ retry:
 		return (0);
 	}
 	if (ds & HTDS_ERR) {
-		if (errcnt == 0)
-			printf("tape error: ds=%x, er=%x",
-			    htaddr->htds, htaddr->hter);
+		printf("ht error: ds=%b, er=%b\n",
+		    MASKREG(htaddr->htds), HTDS_BITS,
+		    MASKREG(htaddr->hter), HTER_BITS);
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		if (errcnt == 10) {
-			printf("\n");
+			printf("ht: unrecovered error\n");
 			return (-1);
 		}
 		errcnt++;
@@ -83,7 +94,7 @@ retry:
 		goto retry;
 	}
 	if (errcnt)
-		printf(" recovered by retry\n");
+		printf("ht: recovered by retry\n");
 	fc = htaddr->htfc;
 	return (io->i_cc+fc);
 }

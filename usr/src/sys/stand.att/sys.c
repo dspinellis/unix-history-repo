@@ -1,4 +1,4 @@
-/*	sys.c	4.3	%G%	*/
+/*	sys.c	4.4	81/03/22	*/
 
 #include <sys/param.h>
 #include <sys/ino.h>
@@ -355,6 +355,8 @@ int	count;
 	return(i);
 }
 
+int	openfirst = 1;
+
 open(str, how)
 char *str;
 int	how;
@@ -364,13 +366,12 @@ int	how;
 	register struct iob *file;
 	register struct devsw *dp;
 	int	fdesc;
-	static first = 1;
 	long	atol();
 
-	if (first) {
+	if (openfirst) {
 		for (i = 0; i < NFILES; i++)
 			iob[i].i_flgs = 0;
-		first = 0;
+		openfirst = 0;
 	}
 
 	for (fdesc = 0; fdesc < NFILES; fdesc++)
