@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.12.1.2 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,6 +97,12 @@ malloc(size, type, flags)
 		kup->ku_freecnt = kbp->kb_elmpercl;
 		kbp->kb_totalfree += kbp->kb_elmpercl;
 #endif
+		/*
+		 * Just in case we blocked while allocating memory,
+		 * and someone else also allocated memory for this
+		 * bucket, don't assume the list is still empty.
+		 */
+		savedlist = kbp->kb_next;
 		rp = kbp->kb_next; /* returned while blocked in vmemall */
 		kbp->kb_next = va + (npg * NBPG) - allocsize;
 		for (cp = kbp->kb_next; cp >= va; cp -= allocsize) {
