@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: /var/src/sys/netiso/RCS/tp_iso.c,v 5.1 89/02/09 16:20:51 hagens Exp $
  * $Source: /var/src/sys/netiso/RCS/tp_iso.c,v $
- *	@(#)tp_iso.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_iso.c	7.4 (Berkeley) %G%
  *
  * Here is where you find the iso-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -267,14 +267,13 @@ tpclnp_mtu(so, isop, size, negot )
 	int *size;
 	u_char *negot;
 {
-	struct ifnet *ifp;
-	struct iso_ifaddr *ia;
+	struct ifnet *ifp = 0;
+	struct iso_ifaddr *ia = 0;
 	register int i;
 	int windowsize = so->so_rcv.sb_hiwat;
 	int clnp_size;
 	int sizeismtu = 0;
-
-	struct iso_ifaddr	*iso_routeifa();
+	register struct rtentry *rt = isop->isop_route.ro_rt;
 
 	IFDEBUG(D_CONN)
 		printf("tpclnp_mtu(0x%x,0x%x,0x%x,0x%x)\n", so, isop, size, negot);
@@ -289,9 +288,15 @@ tpclnp_mtu(so, isop, size, negot )
 		*size = windowsize;
 	}
 
-	if  (((ia = iso_routeifa(isop->isop_faddr)) == 0)
-	      || (ifp = ia->ia_ifp) == 0)
+	if (rt == 0 || (rt->rt_flags & RTF_UP == 0) ||
+		(ia = (struct iso_ifaddr *)rt->rt_ifa) == 0 ||
+	    (ifp = ia->ia_ifp) == 0) {
+		IFDEBUG(D_CONN)
+			printf("tpclnp_mtu routing abort rt=0x%x ia=0x%x ifp=0x%x\n",
+					rt, ia, ifp)
+		ENDDEBUG
 		return;
+	}
 
 	/* TODO - make this indirect off the socket structure to the
 	 * network layer to get headersize
