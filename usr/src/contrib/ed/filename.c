@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)filename.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)filename.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ filename(inputt, errnum)
 {
 	register int l_cnt = 0;
 	char *l_fname;
-	int l_esc = 0, l_bang_flag = 0, l_len;
+	int l_esc = 0, l_bang_flag = 0;
 
 	l_fname = calloc(FILENAME_LEN+2, sizeof(char));
 	if (l_fname == NULL) {
