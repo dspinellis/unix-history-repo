@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.6	82/09/04	*/
+/*	kern_descrip.c	5.7	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,6 +33,37 @@ getdtablesize()
 {
 
 	u.u_r.r_val1 = NOFILE;
+}
+
+getdprop()
+{
+	register struct a {
+		int	d;
+		struct	dtype *dtypeb;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	struct dtype adtype;
+
+	fp = getf(uap->d);
+	if (fp == 0)
+		return;
+	adtype.dt_type = 0;		/* XXX */
+	adtype.dt_protocol = 0;		/* XXX */
+	if (copyout((caddr_t)&adtype, (caddr_t)uap->dtypeb,
+	    sizeof (struct dtype)) < 0) {
+		u.u_error = EFAULT;
+		return;
+	}
+}
+
+getdopt()
+{
+
+}
+
+setdopt()
+{
+
 }
 
 dup()
@@ -112,27 +143,6 @@ close()
 	u.u_pofile[uap->i] = 0;
 }
 
-getdprop()
-{
-	register struct a {
-		int	d;
-		struct	dtype *dtypeb;
-	} *uap = (struct a *)u.u_ap;
-	register struct file *fp;
-	struct dtype adtype;
-
-	fp = getf(uap->d);
-	if (fp == 0)
-		return;
-	adtype.dt_type = 0;		/* XXX */
-	adtype.dt_protocol = 0;		/* XXX */
-	if (copyout((caddr_t)&adtype, (caddr_t)uap->dtypeb,
-	    sizeof (struct dtype)) < 0) {
-		u.u_error = EFAULT;
-		return;
-	}
-}
-
 wrap()
 {
 	register struct a {
@@ -153,20 +163,14 @@ wrap()
 	/* DO WRAP */
 }
 
-select()
-{
-
-}
-
 int	nselcoll;
 /*
  * Select system call.
  */
-oselect()
+select()
 {
 	register struct uap  {
-		int	nfd;
-		fd_set	*rp, *wp;
+		fd_set	*rp, *wp, *ep;
 		struct	timeval *tv;
 	} *uap = (struct uap *)u.u_ap;
 	fd_set rd, wr;
@@ -174,12 +178,6 @@ oselect()
 	struct timeval atv, origin, now;
 	int s, tsel, ncoll, rem;
 
-	if (uap->nfd > NOFILE)
-		uap->nfd = NOFILE;
-	if (uap->nfd < 0) {
-		u.u_error = EBADF;
-		return;
-	}
 	if (uap->tv) {
 		if (copyin((caddr_t)uap->tv, (caddr_t)&atv, sizeof (atv))) {
 			u.u_error = EFAULT;
@@ -196,9 +194,9 @@ retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
 	if (uap->rp)
-		readable = selscan(uap->nfd, rd, &nfds, FREAD);
+		readable = selscan(rd, &nfds, FREAD);
 	if (uap->wp)
-		writeable = selscan(uap->nfd, wr, &nfds, FWRITE);
+		writeable = selscan(wr, &nfds, FWRITE);
 	if (u.u_error)
 		goto done;
 	if (readable || writeable)
@@ -235,8 +233,6 @@ done:
 	rd.fds_bits[0] = readable;
 	wr.fds_bits[0] = writeable;
 	s = sizeof (fd_set);
-	if (s * NBBY > uap->nfd)
-		s = (uap->nfd + NBBY - 1) / NBBY;
 	u.u_r.r_val1 = nfds;
 	if (uap->rp)
 		(void) copyout((caddr_t)&rd, (caddr_t)uap->rp, sizeof(fd_set));
@@ -244,8 +240,7 @@ done:
 		(void) copyout((caddr_t)&wr, (caddr_t)uap->wp, sizeof(fd_set));
 }
 
-selscan(nfd, fds, nfdp, flag)
-	int nfd;
+selscan(fds, nfdp, flag)
 	fd_set fds;
 	int *nfdp, flag;
 {
@@ -256,8 +251,6 @@ selscan(nfd, fds, nfdp, flag)
 		
 	bits = fds.fds_bits[0];
 	while (i = ffs(bits)) {
-		if (i > nfd)
-			break;
 		bits &= ~(1<<(i-1));
 		fp = u.u_ofile[i-1];
 		if (fp == NULL) {
