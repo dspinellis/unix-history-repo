@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)malloc.3	6.2 (Berkeley) %G%
+.\"	@(#)malloc.3	6.3 (Berkeley) %G%
 .\"
 .TH MALLOC 3  ""
 .UC 4
@@ -30,7 +30,7 @@ malloc, free, realloc, calloc, alloca \- memory allocator
 .I Malloc
 and
 .I free
-provide a simple general-purpose memory allocation package.
+provide a general-purpose memory allocation package.
 .I Malloc
 returns a pointer to a block of at least
 .I size
@@ -98,6 +98,12 @@ return.
 Each of the allocation routines returns a pointer
 to space suitably aligned (after possible pointer coercion)
 for storage of any type of object.
+If the space is of
+.I pagesize
+or larger, the memory returned will be page-aligned.
+.SH SEE ALSO
+brk(2),
+pagesize(2)
 .SH DIAGNOSTICS
 .I Malloc, realloc
 and
@@ -114,6 +120,14 @@ When
 returns 0, the block pointed to by
 .I ptr
 may be destroyed.
+.PP
+The current implementation of
+.I malloc
+does not always fail gracefully when system
+memory limits are approached.
+It may fail to allocate memory when larger free blocks could be broken
+up, or when limits are exceeded because the size is rounded up.
+It is optimized for sizes that are powers of two.
 .PP
 .I Alloca
 is machine dependent; its use is discouraged.
