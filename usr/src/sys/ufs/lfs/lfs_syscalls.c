@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.24 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.25 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,9 +22,21 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
-#define INC_FINFO(SP) \
-	++((SEGSUM *)((SP)->segsum))->ss_nfinfo
+#define BUMP_FIP(SP) \
+	(SP)->fip = (FINFO *) (&(SP)->fip->fi_blocks[(SP)->fip->fi_nblocks])
 
+#define INC_FINFO(SP) ++((SEGSUM *)((SP)->segsum))->ss_nfinfo
+#define DEC_FINFO(SP) --((SEGSUM *)((SP)->segsum))->ss_nfinfo
+
+/*
+ * Before committing to add something to a segment summary, make sure there
+ * is enough room.  S is the bytes added to the summary.
+ */
+#define	CHECK_SEG(s)			\
+if (sp->sum_bytes_left < (s)) {		\
+	(void) lfs_writeseg(fs, sp);	\
+	lfs_initseg(fs, sp);		\
+}
 struct buf *lfs_fakebuf __P((struct vnode *, int, size_t, caddr_t));
 
 /*
@@ -96,17 +108,26 @@ lfs_markv(p, uap, retval)
 		 */
 		if (lastino != blkp->bi_inode) {
 			if (lastino != LFS_UNUSED_INUM) {
+				/* Finish up last file */
 				lfs_updatemeta(sp);
 				lfs_writeinode(fs, sp, ip);
 				vput(vp);
-				if (sp->fip->fi_nblocks) {
-					INC_FINFO(sp);
-					sp->fip =
-					(FINFO *) (&sp->fip->fi_blocks[sp->fip->fi_nblocks]);
+				if (sp->fip->fi_nblocks)
+					BUMP_FIP(sp);
+				else  {
+					DEC_FINFO(sp);
+					sp->sum_bytes_left +=
+						sizeof(FINFO) - sizeof(daddr_t);
+
 				}
-				sp->start_lbp = &sp->fip->fi_blocks[0];
-				sp->vp = NULL;
 			}
+
+			/* Start a new file */
+			CHECK_SEG(sizeof(FINFO));
+			sp->sum_bytes_left -= sizeof(FINFO) - sizeof(daddr_t);
+			INC_FINFO(sp);
+			sp->start_lbp = &sp->fip->fi_blocks[0];
+			sp->vp = NULL;
 			sp->fip->fi_version = blkp->bi_version;
 			sp->fip->fi_nblocks = 0;
 			sp->fip->fi_ino = blkp->bi_inode;
@@ -120,6 +141,7 @@ lfs_markv(p, uap, retval)
 			}
 			if (v_daddr == LFS_UNUSED_DADDR)
 				continue;
+
 			/* Get the vnode/inode. */
 			if (lfs_fastvget(mntp, blkp->bi_inode, v_daddr, &vp,
 			    blkp->bi_lbn == LFS_UNUSED_LBN ? 
@@ -129,7 +151,7 @@ lfs_markv(p, uap, retval)
 				    blkp->bi_inode);
 #endif
 				lastino = LFS_UNUSED_INUM;
-				v_daddr == LFS_UNUSED_DADDR;
+				v_daddr = LFS_UNUSED_DADDR;
 				continue;
 			}
 			sp->vp = vp;
@@ -140,7 +162,7 @@ lfs_markv(p, uap, retval)
 		/* If this BLOCK_INFO didn't contain a block, keep going. */
 		if (blkp->bi_lbn == LFS_UNUSED_LBN)
 			continue;
-		if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr) ||
+		if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &b_daddr, NULL) ||
 		    b_daddr != blkp->bi_daddr)
 			continue;
 		/*
@@ -165,11 +187,13 @@ lfs_markv(p, uap, retval)
 		while (lfs_gatherblock(sp, bp, NULL));
 	}
 	if (sp->vp) {
-		if (sp->fip->fi_nblocks)
-			INC_FINFO(sp);
 		lfs_updatemeta(sp);
 		lfs_writeinode(fs, sp, ip);
 		vput(vp);
+		if (!sp->fip->fi_nblocks) {
+			DEC_FINFO(sp);
+			sp->sum_bytes_left += sizeof(FINFO) - sizeof(daddr_t);
+		}
 	}
 	(void) lfs_writeseg(fs, sp);
 	lfs_segunlock(fs);
@@ -242,7 +266,7 @@ lfs_bmapv(p, uap, retval)
 		if (VFS_VGET(mntp, blkp->bi_inode, &vp))
 			daddr = LFS_UNUSED_DADDR;
 		else {
-			if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr))
+			if (VOP_BMAP(vp, blkp->bi_lbn, NULL, &daddr, NULL))
 				daddr = LFS_UNUSED_DADDR;
 			vput(vp);
 		}
