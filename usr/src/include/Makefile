@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.22 (Berkeley) 89/01/11
+#	@(#)Makefile	5.23 (Berkeley) 89/01/11
 #
 # Doing a make install builds /usr/include
 #
@@ -18,7 +18,7 @@
 #
 DESTDIR=
 SUBDIRS=arpa pascal protocols
-STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h disktab.h \
+STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h dirent.h disktab.h \
 	fcntl.h fstab.h ftw.h grp.h lastlog.h math.h memory.h mp.h mtab.h \
 	netdb.h nlist.h pcc.h pwd.h ranlib.h regexp.h resolv.h setjmp.h \
 	sgtty.h stab.h stdarg.h stdio.h string.h strings.h struct.h \
