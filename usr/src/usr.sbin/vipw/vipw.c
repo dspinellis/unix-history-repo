@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -83,28 +83,34 @@ syserr:		(void)fprintf(stderr, "vipw: %s: %s; ",
 		    passwd, strerror(errno));
 		stop(1);
 	}
-	if (!(tfp = fdopen(fd, "r"))) {
-		(void)fprintf(stderr, "vipw: %s: %s; ",
-		    temp, strerror(errno));
-		stop(1);
-	}
 
+	(void)fstat(fd, &s1);
+	(void)close(fd);
 	for (;;) {
-		(void)fstat(fd, &s1);
 		if (edit()) {
 			(void)fprintf(stderr, "vipw: edit failed; ");
 			stop(1);
 		}
-		(void)fstat(fd, &s2);
+		/*
+		 * close and re-open the file each time we edit it; some
+		 * editors create a new physical file on each edit session.
+		 */
+		if (!(tfp = fopen(temp, "r"))) {
+			(void)fprintf(stderr, "vipw: %s: %s; ",
+			    temp, strerror(errno));
+			stop(1);
+		}
+		(void)fstat(fileno(tfp), &s2);
 		if (s1.st_mtime == s2.st_mtime) {
 			(void)fprintf(stderr, "vipw: no changes made; ");
 			stop(0);
 		}
-		rewind(tfp);
 		if (!check(tfp))
 			break;
 		if (prompt())
 			stop(0);
+		(void)fstat(fileno(tfp), &s1);
+		(void)fclose(tfp);
 	}
 
 	switch(fork()) {
