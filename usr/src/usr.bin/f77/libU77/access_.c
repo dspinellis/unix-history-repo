@@ -1,5 +1,5 @@
 /*
-char id_access[] = "@(#)access_.c	1.2";
+char id_access[] = "@(#)access_.c	1.3";
  *
  * determine accessability of a file
  *
@@ -14,12 +14,16 @@ char id_access[] = "@(#)access_.c	1.2";
  */
 
 #include "../libI77/f_errno.h"
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
 
 long access_(name, mode, namlen, modlen)
 char *name, *mode;
 long namlen, modlen;
 {
-	char buf[128];
+	char buf[MAXPATHLEN];
 	int m = 0;
 
 	if (namlen >= sizeof buf)
