@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -28,7 +28,7 @@ setup(dev)
 	char *dev;
 {
 	dev_t rootdev;
-	long cg, ncg, size, i, j;
+	long cg, ncg, size, asked, i, j;
 	struct disklabel *getdisklabel(), *lp;
 	struct stat statb;
 	struct fs proto;
@@ -138,14 +138,19 @@ setup(dev)
 	/*
 	 * read in the summary info.
 	 */
+	asked = 0;
 	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
 		size = sblock.fs_cssize - i < sblock.fs_bsize ?
 		    sblock.fs_cssize - i : sblock.fs_bsize;
 		sblock.fs_csp[j] = (struct csum *)calloc(1, (unsigned)size);
 		if (bread(&dfile, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
-		    size) != 0)
-			return (0);
+		    size) != 0 && !asked) {
+			pfatal("BAD SUMMARY INFORMATION");
+			if (reply("CONTINUE") == 0)
+				errexit("");
+			asked++;
+		}
 	}
 	/*
 	 * allocate and initialize the necessary maps
