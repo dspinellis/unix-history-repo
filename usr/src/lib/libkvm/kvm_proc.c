@@ -6,10 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_proc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_proc.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <machine/pte.h>
+#include <machine/vmparam.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
@@ -62,14 +63,29 @@ static	struct pte *Usrptmap, *usrpt;
 static	int	dmmin, dmmax;
 static	struct	pte *Sysmap;
 static	int	Syssize;
-static	int     pcbpf;
-static	int     argaddr0;	/* XXX */
-static	int     argaddr1;
+static	int	pcbpf;
+static	int	argaddr0;	/* XXX */
+static	int	argaddr1;
 static	int	nswap;
 static	char	*tmp;
+#if defined(hp300)
+static	int	lowram;
+#endif
 
 #define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
 #define	MAXSYMSIZE	256
+
+#if defined(hp300)
+#define pftoc(f)	((f) - lowram)
+#define iskva(v)	(1)
+#endif
+
+#ifndef pftoc
+#define pftoc(f)	(f)
+#endif
+#ifndef iskva
+#define iskva(v)	((v) & KERNBASE)
+#endif
 
 static struct nlist nl[] = {
 	{ "_Usrptmap" },
@@ -87,7 +103,7 @@ static struct nlist nl[] = {
 	 */
 	{ "_Sysmap" },
 #define	X_SYSMAP	5
-#define	X_DEADKERNEL	X_SYSMAP	
+#define	X_DEADKERNEL	X_SYSMAP
 	{ "_Syssize" },
 #define	X_SYSSIZE	6
 	{ "_allproc" },
@@ -96,10 +112,13 @@ static struct nlist nl[] = {
 #define X_ZOMBPROC	8
 	{ "_nproc" },
 #define	X_NPROC		9
+#define	X_LAST		9
+#if defined(hp300)
+	{ "_lowram" },
+#define	X_LOWRAM	(X_LAST+1)
+#endif
 	{ "" },
 };
-
-static char *savestr();
 
 /*
  * returns 	0 if files were opened now,
@@ -486,7 +505,6 @@ again:
 
 	return (i);
 }
-	
 
 struct proc *
 kvm_nextproc()
@@ -528,7 +546,7 @@ kvm_getu(p)
 	struct proc *p;
 {
 	struct pte *pteaddr, apte;
-	struct pte arguutl[UPAGES+(CLSIZE*2)];
+	struct pte arguutl[HIGHPAGES+(CLSIZE*2)];
 	register int i;
 	int ncl;
 
@@ -562,30 +580,29 @@ kvm_getu(p)
 		    p->p_pid, kmemf);
 		return (NULL);
 	}
-	lseek(mem,
-	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+(CLSIZE*2)) * sizeof (struct pte),
-		0);
+	lseek(mem, (long)ctob(pftoc(apte.pg_pfnum+1)) - sizeof(arguutl), 0);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
 		seterr("can't read page table for u of pid %d from %s",
 		    p->p_pid, memf);
 		return (NULL);
 	}
 	if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
-		argaddr0 = ctob(arguutl[0].pg_pfnum);
+		argaddr0 = ctob(pftoc(arguutl[0].pg_pfnum));
 	else
 		argaddr0 = 0;
 	if (arguutl[CLSIZE*1].pg_fod == 0 && arguutl[CLSIZE*1].pg_pfnum)
-		argaddr1 = ctob(arguutl[CLSIZE*1].pg_pfnum);
+		argaddr1 = ctob(pftoc(arguutl[CLSIZE*1].pg_pfnum));
 	else
 		argaddr1 = 0;
 	pcbpf = arguutl[CLSIZE*2].pg_pfnum;
-	ncl = (sizeof (struct user) + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
+	ncl = (sizeof (struct user) + CLBYTES - 1) / CLBYTES;
 	while (--ncl >= 0) {
 		i = ncl * CLSIZE;
-		lseek(mem, (long)ctob(arguutl[(CLSIZE*2)+i].pg_pfnum), 0);
-		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
+		lseek(mem,
+		      (long)ctob(pftoc(arguutl[(CLSIZE*2)+i].pg_pfnum)), 0);
+		if (read(mem, user.upages[i], CLBYTES) != CLBYTES) {
 			seterr("can't read page %d of u of pid %d from %s",
-			    arguutl[CLSIZE+i].pg_pfnum, p->p_pid, memf);
+			    arguutl[(CLSIZE*2)+i].pg_pfnum, p->p_pid, memf);
 			return(NULL);
 		}
 	}
@@ -597,10 +614,10 @@ kvm_getargs(p, up)
 	struct proc *p;
 	struct user *up;
 {
-	char cmdbuf[CLSIZE*NBPG*2];
+	char cmdbuf[CLBYTES*2];
 	union {
-		char	argc[CLSIZE*NBPG*2];
-		int	argi[CLSIZE*NBPG*2/sizeof (int)];
+		char	argc[CLBYTES*2];
+		int	argi[CLBYTES*2/sizeof (int)];
 	} argspac;
 	register char *cp;
 	register int *ip;
@@ -612,34 +629,31 @@ kvm_getargs(p, up)
 	if (up == NULL || p->p_pid == 0 || p->p_pid == 2)
 		goto retucomm;
 	if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
-		if (swap < 0)
+		if (swap < 0 || p->p_ssize == 0)
 			goto retucomm;
 		vstodb(0, CLSIZE, &up->u_smap, &db, 1);
 		(void) lseek(swap, (long)dtob(db.db_base), 0);
-		if (read(swap, (char *)&argspac.argc[NBPG*CLSIZE], 
-			NBPG*CLSIZE) != NBPG*CLSIZE)
+		if (read(swap, (char *)&argspac.argc[CLBYTES], CLBYTES)
+			!= CLBYTES)
 			goto bad;
 		vstodb(1, CLSIZE, &up->u_smap, &db, 1);
 		(void) lseek(swap, (long)dtob(db.db_base), 0);
-		if (read(swap, (char *)&argspac.argc[0], 
-			NBPG*CLSIZE) != NBPG*CLSIZE)
+		if (read(swap, (char *)&argspac.argc[0], CLBYTES) != CLBYTES)
 			goto bad;
 		file = swapf;
 	} else {
 		if (argaddr0) {
 			lseek(mem, (long)argaddr0, 0);
-			if (read(mem, (char *)&argspac, NBPG*CLSIZE)
-			    != NBPG*CLSIZE)
+			if (read(mem, (char *)&argspac, CLBYTES) != CLBYTES)
 				goto bad;
 		} else
-			bzero(&argspac, NBPG*CLSIZE);
+			bzero(&argspac, CLBYTES);
 		lseek(mem, (long)argaddr1, 0);
-		if (read(mem, &argspac.argc[NBPG*CLSIZE], NBPG*CLSIZE)
-		    != NBPG*CLSIZE)
+		if (read(mem, &argspac.argc[CLBYTES], CLBYTES) != CLBYTES)
 			goto bad;
 		file = memf;
 	}
-	ip = &argspac.argi[CLSIZE*NBPG*2/sizeof (int)];
+	ip = &argspac.argi[CLBYTES*2/sizeof (int)];
 	ip -= 2;		/* last arg word and .long 0 */
 	while (*--ip) {
 		if (ip == argspac.argi)
@@ -648,7 +662,7 @@ kvm_getargs(p, up)
 	*(char *)ip = ' ';
 	ip++;
 	nbad = 0;
-	for (cp = (char *)ip; cp < &argspac.argc[CLSIZE*NBPG*2]; cp++) {
+	for (cp = (char *)ip; cp < &argspac.argc[CLBYTES*2]; cp++) {
 		c = *cp & 0177;
 		if (c == 0)
 			*cp = ' ';
@@ -669,7 +683,7 @@ kvm_getargs(p, up)
 	while (*--cp == ' ')
 		*cp = 0;
 	cp = (char *)ip;
-	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG*2] - cp);
+	(void) strncpy(cmdbuf, cp, &argspac.argc[CLBYTES*2] - cp);
 	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
 		(void) strcat(cmdbuf, " (");
 		(void) strncat(cmdbuf, p->p_comm, sizeof(p->p_comm));
@@ -713,6 +727,16 @@ getkvars()
 			seterr("can't read Sysmap");
 			return (-1);
 		}
+#if defined(hp300)
+		addr = (long) nl[X_LOWRAM].n_value;
+		(void) lseek(kmem, addr, 0);
+		if (read(kmem, (char *) &lowram, sizeof (lowram))
+		    != sizeof (lowram)) {
+			seterr("can't read lowram");
+			return (-1);
+		}
+		lowram = btop(lowram);
+#endif
 	}
 	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	Usrptmap = (struct pte *)nl[X_USRPTMAP].n_value;
@@ -740,7 +764,7 @@ kvm_read(loc, buf, len)
 {
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
-	if (loc & KERNBASE) {
+	if (iskva(loc)) {
 		klseek(kmem, loc, 0);
 		if (read(kmem, buf, len) != len) {
 			seterr("error reading kmem at %x\n", loc);
@@ -803,33 +827,38 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
 
-/*
- * This routine was stolen from adb to simulate memory management
- * on the VAX.
- */
 static off_t
 vtophys(loc)
 	long loc;
 {
-	register p;
+	int p;
 	off_t newloc;
+	register struct pte *pte;
 
 	newloc = loc & ~KERNBASE;
 	p = btop(newloc);
+#if defined(vax) || defined(tahoe)
 	if ((loc & KERNBASE) == 0) {
 		seterr("vtophys: translating non-kernel address");
 		return((off_t) -1);
 	}
+#endif
 	if (p >= Syssize) {
 		seterr("vtophys: page out of bound (%d>=%d)", p, Syssize);
 		return((off_t) -1);
 	}
-	if (Sysmap[p].pg_v == 0 &&
-	    (Sysmap[p].pg_fod || Sysmap[p].pg_pfnum == 0)) {
+	pte = &Sysmap[p];
+	if (pte->pg_v == 0 && (pte->pg_fod || pte->pg_pfnum == 0)) {
 		seterr("vtophys: page not valid");
 		return((off_t) -1);
 	}
-	loc = (long) (ptob(Sysmap[p].pg_pfnum) + (loc & PGOFSET));
+#if defined(hp300)
+	if (pte->pg_pfnum < lowram) {
+		seterr("vtophys: non-RAM page (%d<%d)", pte->pg_pfnum, lowram);
+		return((off_t) -1);
+	}
+#endif
+	loc = (long) (ptob(pftoc(pte->pg_pfnum)) + (loc & PGOFSET));
 	return(loc);
 }
 
@@ -855,7 +884,7 @@ setsyserr(va_alist)
 {
 	char *fmt, *cp;
 	va_list ap;
-	extern errno;
+	extern int errno;
 
 	va_start(ap);
 	fmt = va_arg(ap, char *);
@@ -869,6 +898,5 @@ setsyserr(va_alist)
 char *
 kvm_geterr()
 {
-
 	return (errbuf);
 }
