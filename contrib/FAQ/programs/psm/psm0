@@ -1,1 +1,0 @@
-device          psm0    at isa? port "IO_KBD" tty irq 12 vector psmintr
