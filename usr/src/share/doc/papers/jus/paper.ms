@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)paper.ms	5.1 (Berkeley) %G%
+.\"	@(#)paper.ms	5.2 (Berkeley) %G%
 .\"
 .\" use roff -ms
 .ds CM
@@ -26,7 +26,7 @@ Berkeley, California  94720
 This paper presents a brief overview of the historic Berkeley releases
 and the role that Berkeley has played in the UNIX\(dg
 .FS
-\(dgUNIX is a registered trademark of AT&T in the US and other countries.
+\(dgUNIX is a registered trademark of UNIX System Laboratories.
 .FE
 world and discusses the role that University and research releases
 should play in the future.
@@ -44,20 +44,20 @@ The University of California, Berkeley, first ran Bell Laboratories
 Version 4 UNIX on a PDP-11/45, in January of 1974.
 Later that spring, a PDP-11/40 was configured with the newly available
 Version 5.
-Version 6 was running on a PDP-11/70 by the fall of 1975, when two
-new graduate students, Bill Joy and Chuck Haley, arrived.
-Initially concentrating on making improvements to a Pascal system,
-written by Ken Thompson while on sabbatical at Berkeley, they soon
-turned their attention to the \fBed\fP editor, eventually producing
-a new version they called \fBex\fP.
-Around the end of the summer of 1976, Joy and Haley began to take an
+Version 6 was running on a PDP-11/70 by the fall of 1975,
+with the arrival of two new graduate students, Bill Joy and Chuck Haley.
+They initially concentrating on making improvements to a Pascal system,
+written by Ken Thompson while on sabbatical at Berkeley.
+With this completed, they turned their attention to the \fBed\fP editor,
+eventually producing a new version they called \fBex\fP.
+By the end of the summer of 1976, Joy and Haley began to take an
 interest in exploring the internals of the UNIX kernel.
 .PP
-In 1977, a steady  stream of requests for the enhanced Pascal system
+In 1977, a steady stream of requests for the enhanced Pascal system
 had begun.
 Early that year, Joy put together the first ``Berkeley Software
 Distribution'', including the Pascal system and the source to \fBex\fP.
-Over the next year, approximately thirty copies of this distribution
+Over the next year, about thirty copies of this distribution
 were sent out.
 At around the same time, Joy began work on what was to become \fBvi\fP.
 By mid-1978, the software distribution clearly needed to be updated.
@@ -74,13 +74,12 @@ Over the next year nearly seventy-five tapes were shipped.
 Although Joy soon moved on to other projects, the 2BSD distribution
 continued to expand.
 Today the latest version of this distribution, 2.10BSD is still alive
-and being used by people all around the world.
+and being used by people all around the world on PDP-11's.
 .PP
-Early in 1978, Berkeley obtained one of the newly announced Digital
+Early in 1978, Berkeley obtained a newly announced Digital
 Equipment Corp. (DEC) VAX\(dd
 .FS
-\(ddVAX is a registered trademark of Digital Equipment Corp. in the US
-and other countries.
+\(ddVAX is a registered trademark of Digital Equipment Corporation.
 .FE
 11-780's.
 Shortly after the arrival of the VAX, Bell Laboratories provided Berkeley
@@ -102,8 +101,8 @@ obsolete, and he began to port the 2BSD software to the VAX.
 By the end of 1979, a complete distribution had been created.
 This distribution included the virtual memory kernel,
 the standard 32/V utilities, and the 2BSD additions, which by now
-included the Pascal system, \fBex\fP/\fBvi\fP, the \fBCshell\fP and a
-number of other utilities.
+included the Pascal system, \fBex\fP/\fBvi\fP, the \fBCshell\fP and
+several other utilities.
 In December, 1979, Joy shipped the first of nearly a hundred copies of 3BSD,
 the first VAX distribution from Berkeley.
 .PP
@@ -135,9 +134,9 @@ With the release of 4.1BSD, much of the debate over performance died
 down.
 DARPA again funded Berkeley, this time with the intention of adding
 new features to the BSD system.
-These new features eventually included Berkeley signals, the Fast File
-System, disk quotas, and the socket interface and TCP/IP networking
-support.
+These new features eventually included Berkeley reliable signals,
+the fast filesystem, disk quotas,
+and the socket interface with TCP/IP networking support.
 Around this time Joy left the CSRG for Sun Microsystems, and Sam Leffler
 took over responsibility for completing the project.
 In August, 1983, this system was released as 4.2BSD [Joy83].
@@ -155,11 +154,11 @@ As Sam Leffler had left the CSRG for Lucasfilm, the tuning and enhancement
 of 4.2BSD was largely done under the direction of Michael Karels and Kirk
 McKusick [Leffler84] [McKusick85].
 This system was released in April of 1986 as 4.3BSD, and had greatly
-enhanced performance and reliability over 4.2BSD, along with a number of
+enhanced performance and reliability over 4.2BSD, along with several
 new features.
 .PP
 As it had done in 4.2BSD, the CSRG then embarked on a new development
-phase to update other major components of the system, as well as to
+phase to update other major components of the system, and
 design and integrate new functionality.
 The 4.4BSD release, scheduled for fall of 1992, will contain the results
 of several major new projects.
@@ -173,40 +172,39 @@ user-level database support.
 There will have been four interim releases made by the CSRG between 4.3BSD
 and the upcoming 4.4BSD release.
 The first two of these releases, 4.3BSD-Tahoe and 4.3BSD-Reno were
-intended to make a subset of the new functionality found in 4.4BSD
+intended to distribute a subset of the new functionality found in 4.4BSD
 available to vendors.
 The 4.3BSD-Tahoe release, made in the summer of 1988, was the first Berkeley
-release to fully support two architectures.
+release to support two architectures.
 This goal was made possible by the reimplementation of much of the machine
 specific kernel source and a fundamental restructuring of the source code
 pool so that binaries for more than one architecture could be constructed
 from a single source pool.
-The two supported architectures were VAX and the Computer Consoles Inc.
-6/32 (the Tahoe).
+The two supported architectures were the VAX and the Computer Consoles Inc.
+Power 6/32 (the Tahoe).
 Since this release, architecture support for the Intel 386/486, the
-Sun Microsystems
-Sparc\(dg
+Sun Microsystems SPARCstation\(dg
 .FS
-\(dgSparc is a registered trademark of Sun Microsystems in the US and
-other countries.
+\(dgAll SPARC trademarks are trademarks or registered trademarks
+of SPARC International, Inc.
+SPARCstation is licensed exclusively to Sun Microsystems, Inc.
 .FE
 I and II, the DECstation 3100 and 5000 and the Hewlett-Packard 300 have
-been added
-as well.
+been added as well.
 The 4.3BSD-Reno release, made in the summer of 1990, was intended to make
-the Network File System code written by Rick Macklem at the University of
-Guelph and integrated by the CSRG, under a new version of the kernel file
-system switch, available to vendors using Berkeley derived systems, such
-as The Open Software Foundation (OSF).
+the Network File System code available to vendors using Berkeley-derived
+systems, such as The Open Software Foundation (OSF).
+This code had been written by Rick Macklem at the University of Guelph
+and integrated by the CSRG, under a new version of the kernel file
+system switch.
 .PP
 Two other interim releases, the first and second release of the
-"Berkeley Network Software Distribution", usually abbreviated as NET/1
+``Berkeley Network Software Distribution'', usually abbreviated as NET/1
 and NET/2, were intended to make the source code of the 4BSD system
 available to and redistributable by anyone.
 Over the years of development by the CSRG and others, an increasingly
-larger percentage of the system was either not derived from the original
-AT&T 32/V distribution or had been so substantially reworked as to no
-longer contain any material covered by AT&T's 32/V license.
+larger percentage of the system was not derived from the original AT&T
+32/V distribution.
 In the spring of 1988 Berkeley made its first distribution not requiring
 an AT&T source license, NET/1.
 This distribution primarily contained the networking portions of the system,
@@ -221,12 +219,12 @@ research purposes.
 .PP
 Around this time, the CSRG also began to search out freely redistributable
 versions of the UNIX utilities and to rewrite, or encourage BSD users to
-rewrite, those which were not available elsewhere.
+rewrite, those that were not available elsewhere.
 This was an immensely time-consuming task, involving contributions by
 hundreds of programmers from all around the world.
 In the summer of 1991, Berkeley released NET/2, which, like NET/1, did
 not require an AT&T source license.
-The NET/2 release included approximately 80% of the source code found in
+The NET/2 release included about 80% of the source code found in
 the 4.3BSD-Reno release.
 This release has proved to be immensely popular, with hundreds of thousands
 of copies taken from the public network archives and an unknown number
@@ -263,7 +261,7 @@ This role expanded to the point that there were two major variants of
 UNIX, System V and BSD, and resulted in a breach in the UNIX world that
 is only gradually being healed.
 Acting as a vendor required an immense amount of time, money and effort
-on the part of the CSRG.
+by the CSRG.
 Thousands of hours were devoted to release engineering, thousands more
 to participation in the emerging UNIX standards and thousands more in
 distribution and user support.
@@ -272,7 +270,7 @@ the Berkeley UNIX project that its limited funding and manpower were
 insufficient to complete its historical task of designing, implementing
 and supporting a complete, reliable, leading edge system.
 As each portion of the system became more complex and additional features
-were added, more and more effort had to be expended in order to keep the
+were added, more and more effort had to be expended to keep the
 system at a high level of quality, and less and less effort was available
 to move the system technically forward.
 Fortunately, during the last half of the 1980's, as the UNIX interface
@@ -291,7 +289,7 @@ In addition, vendors desiring to maximize their return on investment
 require that the source code for their systems be proprietary and are
 unwilling to make it available to users under any but the most onerous
 restrictions.
-Many of these changes, while acceptable for the vast majority of users,
+Many of these changes, while acceptable for most users,
 are diametrically opposed to what has made UNIX the research platform
 of choice: low cost, wide availability of source code, and leading edge
 technology.
@@ -312,7 +310,7 @@ reputation for selective technical scrutiny.
 .PP
 Here one must distinguish between the selection process provided
 by research and commercial organizations.
-Research organizations can base pruning decisions strictly upon the
+Research organizations can base pruning decisions strictly on the
 coherence of the system and the technical merit of the idea.
 They need not concern themselves with how changes might affect 
 past variants of the system.
@@ -334,7 +332,7 @@ Over the long term,
 it is reasonable to expect that the most useful functionality
 of the research systems will be grafted into the commercial versions.
 Examples of ideas that began with BSD and moved into commercial systems
-include the Fast Filesystem, TCP/IP networking, and nearly half of
+include the fast filesystem, TCP/IP networking, and nearly half of
 the commands and utilities.
 .PP
 The CSRG spends a significant amount of time collecting prototypes of
