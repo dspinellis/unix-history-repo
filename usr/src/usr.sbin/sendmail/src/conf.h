@@ -7,7 +7,7 @@
 **  All rights reserved.  The Berkeley software License Agreement
 **  specifies the terms and conditions for redistribution.
 **
-**	@(#)conf.h	5.5 (Berkeley) %G%
+**	@(#)conf.h	5.6 (Berkeley) %G%
 */
 
 /*
@@ -36,14 +36,17 @@
 
 /*
 **  Compilation options.
+**
+**	#define these if they are available; comment them out otherwise.
 */
 
-#define DBM		1	/* use DBM library (requires -ldbm) */
-#define DEBUG		1	/* enable debugging */
-#define LOG		1	/* enable logging */
-#define SMTP		1	/* enable user and server SMTP */
-#define QUEUE		1	/* enable queueing */
-#define UGLYUUCP	1	/* output ugly UUCP From lines */
-#define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
-#define FLOCK		1	/* use flock file locking */
-#define SETPROCTITLE	1	/* munge argv to display current status */
+# define DBM		1	/* use DBM library (requires -ldbm) */
+# define NDBM		1	/* new DBM library available (requires DBM) */
+# define DEBUG		1	/* enable debugging */
+# define LOG		1	/* enable logging */
+# define SMTP		1	/* enable user and server SMTP */
+# define QUEUE		1	/* enable queueing */
+# define UGLYUUCP	1	/* output ugly UUCP From lines */
+# define DAEMON		1	/* include the daemon (requires IPC & SMTP) */
+# define FLOCK		1	/* use flock file locking */
+# define SETPROCTITLE	1	/* munge argv to display current status */
