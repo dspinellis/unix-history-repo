@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.15	85/05/22	*/
+/*	kern_sig.c	6.16	85/05/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -759,6 +759,8 @@ core()
 		return (0);
 	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
+		return (0);
+	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
 		return (0);
 	u.u_error = 0;
 	ndp->ni_nameiop = CREATE | FOLLOW;
