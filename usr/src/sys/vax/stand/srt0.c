@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)srt0.c	7.2 (Berkeley) %G%
+ *	@(#)srt0.c	7.3 (Berkeley) %G%
  */
 
 #include "../vax/mtpr.h"
@@ -23,6 +23,8 @@
 	.globl	_configure
 	.globl	_cpu
 	.globl	_openfirst
+	.globl	_boothowto
+	.globl	_bootdev
 
 	.set	HIGH,31		# mask for total disable
 
@@ -58,12 +60,15 @@ xclr:
 	jmp	*abegin
 begin:
 #endif
+	movl	r11,_boothowto
+	movl	r10,_bootdev
+again:
 	mtpr	$0,$SCBB
 	calls	$0,_configure
 	movl	$1,_openfirst
 	calls	$0,_main
-#ifndef TP
-	jmp	start
+#ifdef REL
+	jmp	again
 #else
 	ret
 #endif
@@ -75,6 +80,9 @@ aedata:	.long	_edata-RELOC
 #else
 aedata:	.long	_edata
 #endif
+_bootdev:	.long	0
+_boothowto:	.long	0
+	.text
 
 __rtt:
 	.word	0x0
