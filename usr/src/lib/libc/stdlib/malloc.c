@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -146,6 +146,8 @@ malloc(nbytes)
 	}
 	while (nbytes > amt + n) {
 		amt <<= 1;
+		if (amt == 0)
+			return (NULL);
 		bucket++;
 	}
 	/*
@@ -179,16 +181,21 @@ malloc(nbytes)
 /*
  * Allocate more memory to the indicated bucket.
  */
-static
 morecore(bucket)
 	int bucket;
 {
   	register union overhead *op;
 	register int sz;		/* size of desired block */
-  	register int amt;		/* amount to allocate */
-  	register int nblks;		/* how many blocks we get */
+  	int amt;			/* amount to allocate */
+  	int nblks;			/* how many blocks we get */
 
+	/*
+	 * sbrk_size <= 0 only for big, FLUFFY, requests (about
+	 * 2^30 bytes on a VAX, I think) or for a negative arg.
+	 */
 	sz = 1 << (bucket + 3);
+	if (sz <= 0)
+		return;
 	if (sz < pagesz) {
 		amt = pagesz;
   		nblks = amt / sz;
