@@ -1,0 +1,651 @@
+.\" Copyright (c) 1983, 1985, 1991, 1993 Peter J. Nicklin.
+.\" Copyright (c) 1991, 1993 Version Technology.
+.\" All Rights Reserved.
+.\"
+.\" $License: VT.1.1 $
+.\" Redistribution and use in source and binary forms,  with or without
+.\" modification,  are permitted provided that the following conditions
+.\" are met:  (1) Redistributions of source code must retain the  above
+.\" copyright  notice,  this  list  of  conditions  and  the  following
+.\" disclaimer.  (2) Redistributions in binary form must reproduce  the
+.\" above  copyright notice,  this list of conditions and the following
+.\" disclaimer in the  documentation  and/or other  materials  provided
+.\" with  the  distribution.  (3) All advertising materials  mentioning
+.\" features or  use  of  this  software  must  display  the  following
+.\" acknowledgement:  ``This  product  includes  software  developed by
+.\" Version Technology.''  Neither the name of Version  Technology  nor
+.\" the  name  of  Peter J. Nicklin  may  be used to endorse or promote
+.\" products derived from this software without specific prior  written
+.\" permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY VERSION TECHNOLOGY ``AS IS''  AND  ANY
+.\" EXPRESS OR IMPLIED WARRANTIES,  INCLUDING,  BUT NOT LIMITED TO, THE
+.\" IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+.\" PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL  VERSION  TECHNOLOGY  BE
+.\" LIABLE  FOR ANY DIRECT,  INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY,
+.\" OR  CONSEQUENTIAL DAMAGES   (INCLUDING,   BUT   NOT   LIMITED   TO,
+.\" PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;  LOSS OF USE, DATA, OR
+.\" PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+.\" OF  LIABILITY,  WHETHER  IN  CONTRACT,  STRICT LIABILITY,  OR  TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE)  ARISING  IN ANY WAY OUT OF THE
+.\" USE OF THIS SOFTWARE,  EVEN  IF  ADVISED OF THE POSSIBILITY OF SUCH
+.\" DAMAGE.
+.\"
+.\" Report problems and direct questions to nicklin@netcom.com
+.\"
+.\" $Header: mkmf.man,v 4.14 93/05/26 00:10:12 nicklin Exp $
+.TH MKMF 1
+.SH NAME
+mkmf \- make a makefile
+.SH SYNOPSIS
+.B mkmf
+.RB [ \|\-acdeilLS\| ]
+.RB [ \|\-f
+.IR makefile\| ]
+.RB [ \|\-F
+.IR template\| ]
+.RB [ \|\-M
+.IR language\| ]
+.RI [ \|macroname=value \ \|.\|.\|.\|]
+.SH DESCRIPTION
+.I mkmf
+creates a makefile that informs the
+.IR make (1)
+command how to construct and maintain programs and libraries.
+After gathering up all source code file names in the current working
+directory and inserting them into the makefile,
+.I mkmf
+scans source code files for included files
+and generates dependency information that is appended to the makefile.
+Source code files are identified by their file name suffixes.
+.I mkmf
+recognizes the following suffixes:
+.RS
+.TP 8
+.B .c
+C
+.PD 0
+.TP
+.B .C
+C+\h'-.1v'+
+.TP
+.B .f
+Fortran
+.TP
+.B .h
+Include files
+.TP
+.B .i
+Pascal include files
+.TP
+.B .l
+Lex or Lisp
+.TP
+.B .o
+Object files
+.TP
+.B .p
+Pascal
+.TP
+.B .r
+Ratfor
+.TP
+.B .s
+Assembler
+.TP
+.B .y
+Yacc
+.PD
+.RE
+.PP
+.I mkmf
+checks for an existing makefile before creating one.  If no
+.B \-f
+option is present,
+.I mkmf
+tries the makefiles
+.BR makefile
+and
+.BR Makefile ,
+respectively.
+.PP
+After the makefile has been created,
+arbitrary changes can be made using a text editor.
+.I mkmf
+can also be used to re-edit the macro definitions in the makefile,
+regardless of changes that may have been made since it was created.
+.PP
+By default,
+.I mkmf
+creates a program makefile.
+To create a makefile that handles libraries, either the
+.B \-l
+or
+.B \-L
+options must be used.
+.PP
+.SS Make Requests
+Given a makefile created by
+.I mkmf,
+.I make
+recognizes the following requests:
+.RS
+.TP 12
+.B all
+Compile and load a program or library.
+.TP
+.B clean
+Remove all object and core files.
+.TP
+.B clobber
+Remove all files that can be regenerated.
+.TP
+.B depend
+Update included file dependencies in a makefile.
+.TP
+.B echo
+List the names of the source code files on standard output.
+.TP
+.B extract
+Extract all object files from the library and place them in the
+same directory as the source code files.  The library is not altered.
+.TP
+.B index
+Print an index of functions on standard output.
+.TP
+.B install
+Compile and load the program or library
+and move it to its destination directory.
+.TP
+.B print
+Print source code files on standard output.
+.TP
+.B tags
+Create a tags file for the
+.IR ex (1)
+editor, for C, Pascal, and Fortran source code files.
+.RE
+.PP
+Several requests can be given simultaneously.
+For example, to (1) compile and link a program,
+(2) move the program to its destination directory,
+and (3) remove any unnecessary object files, use:
+.IP
+.B make install clean
+.SS Macro Definitions
+.I mkmf
+understands the following macro definitions:
+.TP 15
+.SM CFLAGS
+C compiler flags.
+After searching for included files in the directory currently being processed,
+.I mkmf
+searches in directories named in
+.B \-I
+compiler options and then in the
+.B /usr/include
+directory.
+.TP
+.SM COMPILESYSTYPE
+Location of
+.BR /usr/include .
+If the 
+.SM COMPILESYSTYPE
+macro or environment variable is defined,
+.I mkmf
+searches for included files in
+.BI / \s-1$COMPILESYSTYPE\s0 /usr/include
+instead of
+.BR /usr/include .
+.TP
+.SM CXXFLAGS
+C+\h'-.1v'+ compiler flags.
+After searching for included files in the directory
+currently being processed,
+.I mkmf
+searches in directories named in
+.B \-I
+compiler options and then in the
+.B /usr/include/\s-1CC\s0
+directory, followed by the
+.B /usr/include
+directory.
+.TP
+.SM C+\h'-.1v'+FLAGS
+C+\h'-.1v'+ compiler flags.
+After searching for included files in the directory
+currently being processed,
+.I mkmf
+searches in directories named in
+.B \-I
+compiler options and then in the
+.B /usr/include/\s-1CC\s0
+directory, followed by the
+.B /usr/include
+directory.
+.TP
+.SM CCFLAGS
+C+\h'-.1v'+ compiler flags.
+After searching for included files in the directory
+currently being processed,
+.I mkmf
+searches in directories named in
+.B \-I
+compiler options and then in the
+.B /usr/include/\s-1CC\s0
+directory, followed by the
+.B /usr/include
+directory.
+.TP
+.SM DEST
+Directory where the program or library is to be installed.
+.TP
+.SM EXTHDRS
+List of included files external to the current directory.
+.I mkmf
+automatically updates this macro definition in the makefile
+if dependency information is being generated.
+.TP
+.SM FFLAGS
+Fortran compiler flags.
+After searching for included files in the directory currently being processed,
+.I mkmf
+searches in directories named in
+.B \-I
+compiler options, then in the
+.B /usr/include
+directory.
+.TP
+.SM HDRS
+List of included files in the current directory.
+.I mkmf
+automatically updates this macro definition in the makefile.
+.TP
+.SM INSTALL
+Installation program name.
+.TP
+.SM LD
+Link editor name.
+.TP
+.SM LDFLAGS
+Link editor flags. Before searching for libraries in the
+.B /lib
+and
+.B /usr/lib
+directories,
+.I mkmf
+searches for libraries in directories named by
+.B \-L
+link editor options.
+.TP
+.SM LIBRARY
+Library name.  This macro also implies the
+.B \-l
+option.
+.TP
+.SM LIBS
+List of libraries needed by the link editor to resolve external references.
+Since executable files depend on libraries,
+.I mkmf
+expands each library
+.BI \-l \^x
+option to
+.BI /lib/lib \^x .a
+or
+.BI /usr/lib/lib \^x .a .
+If the
+.SM LPATH
+environment variable is defined, it should contain a colon-separated list
+of directories to search instead of the default library directories.
+.TP
+.SM MAKEFILE
+Makefile name.
+.TP
+.SM OBJS
+List of object files.
+.I mkmf
+automatically updates this macro definition in the makefile.
+.TP
+.SM PROGRAM
+Program name.
+.TP
+.SM SRCS
+List of source code files.
+.I mkmf
+automatically updates this macro definition in the makefile.
+.TP
+.SM SUFFIX
+List of additional file name suffixes for
+.I mkmf
+to know about.
+.TP
+.SM SYSHDRS
+List of included files found in the
+.B /usr/include
+directory hierarchy.
+.I mkmf
+automatically updates this macro definition in the makefile
+if dependency information is being generated.
+If
+.SM SYSHDRS
+is omitted from the makefile,
+.I mkmf
+does not generate
+.B /usr/include
+dependencies.
+.TP
+.SM VPATH
+List of source code directories separated by colons or spaces.
+.I mkmf
+will search for files in the current directory, and then in
+each of the directories defined by
+.SM VPATH.
+.PP
+Both these and any other macro definitions already within the makefile
+can be replaced by definitions on the command line in the form
+.IB macroname = value\fR.
+For example, to change the C compiler flags and the program name,
+type the following line:
+.IP
+\fB mkmf  "\s-1CFLAGS\s0=\-I../include  \-O"  \s-1PROGRAM\s0=mkmf\fR
+.PP
+Note that macro definitions such as
+.SM CFLAGS
+with blanks in them must be enclosed in double quote (\fB"\fR) marks.
+.SS Environment
+The environment is read by
+.IR mkmf .
+All variables are assumed to be macro definitions with the exception of
+.SM HDRS,
+.SM EXTHDRS,
+.SM SRCS,
+and
+.SM OBJS.
+Environment variables are processed after command line macro definitions
+and the macro definitions in a
+.IR makefile .
+The
+.B \-e
+option forces the environment to override the macro definitions in a
+.IR makefile .
+.SS File Name Suffixes
+.I mkmf
+can recognize additional file name suffixes or ignore ones
+that it already recognizes by specifying suffix descriptions in the
+.SM SUFFIX
+macro definition.
+Each suffix description takes the form
+.BI . suffix : tI
+where
+.I t
+is a character indicating the contents of the file
+.RB ( \|s
+= source file,
+.B o
+= object file,
+.B h
+= header file,
+.B x
+= executable file) and
+.I I
+is an optional character indicating the include syntax for header files
+.RB ( C
+= C syntax,
+.B C+\h'-.1v'+
+= C syntax plus the addition of
+.B /usr/include/\s-1CC\s0
+as a standard search directory,
+.B F
+= Fortran and Ratfor syntax,
+.B P
+= Pascal syntax).
+The following list shows the default configuration for
+.I mkmf:
+.RS
+.TP 12
+.B .c:sC
+C
+.PD 0
+.TP
+.B .C:sC+\h'-.1v'+
+C+\h'-.1v'+
+.TP
+.B .f:sF
+Fortran
+.TP
+.B .h:h
+Include files
+.TP
+.B .i:h
+Pascal include files
+.TP
+.B .l:sC
+Lex or Lisp
+.TP
+.B .o:o
+Object files
+.TP
+.B .p:sP
+Pascal
+.TP
+.B .r:sF
+Ratfor
+.TP
+.B .s:s
+Assembler
+.TP
+.B .y:sC
+Yacc
+.PD
+.RE
+.PP
+For example, to change the object file suffix to
+.BR .obj ,
+undefine the Pascal include file suffix,
+and prevent Fortran files from being scanned for included files, the
+.SM SUFFIX
+macro definition could be:
+.IP
+.B
+\&\s-1SUFFIX\s0 = .obj:o  .i:  .f:s
+.SS Include Statement Syntax
+The syntax of include statements for C, C+\h'-.1v'+,
+Fortran, and Pascal source code are of the form:
+.TP
+.B C/C+\h'-.1v'+:
+.br
+#include "\fIfilename\fR"
+.br
+#include <\fIfilename\fR>
+.br
+where
+.B #
+must be the first non-white space character in the line.
+.TP
+.B Fortran:
+.br
+#include "\fIfilename\fR"
+.br
+#include <\fIfilename\fR>
+.br
+$include '\fIfilename\fR'$
+.br
+$\s-1INCLUDE\s0 '\fIfilename\fR'$
+.br
+where
+.B $
+must be the first non-white space character in the line.
+Alternatively, the
+.B $
+can be omitted if the include statement starts in column 7.
+In either case the trailing
+.B $
+can be omitted.
+.TP
+.B Pascal:
+.br
+#include "\fIfilename\fR"
+.br
+#include <\fIfilename\fR>
+.br
+$include '\fIfilename\fR'$
+.br
+$INCLUDE '\fIfilename\fR'$
+.br
+where
+.B $
+must be the first non-white space character in the line and the trailing
+.B $
+is optional.
+.SS User-Defined Templates
+.PP
+If
+.I mkmf
+cannot find a makefile within the current directory,
+it normally uses one of the standard makefile templates,
+.BR C.p ,
+.BR C.l ,
+or
+.BR C.L ,
+in
+.B INSTALLDIR/lib/mkmf
+unless the user has alternative
+.BR C.p ,
+.BR C.l ,
+or
+.B C.L
+template files in a directory
+.SM
+.B $PROJECT\s0/lib/mkmf
+where
+.B
+.SM $PROJECT
+is the absolute path name of the directory assigned to the
+.SM PROJECT
+environment variable.
+.SS Options
+.I mkmf
+recognizes the following options:
+.TP 15
+.B \-a
+Include source files beginning with a
+.B \&.
+in the makefile.
+.TP
+.B \-c
+Suppress `creating
+.I makefile
+from .\|.\|.'
+message.
+.TP
+.B \-d
+Turn off scanning of source code for
+.B include
+files.
+Old dependency information is left untouched in the makefile.
+.TP
+.B \-e
+Environment variables override macro definitions within
+.IR makefile s.
+.TP
+.BI \-f \|makefile
+Specify an alternative
+.I makefile
+file name.
+The default file name is
+.BR Makefile .
+.TP
+.B \-i
+Prompt the user for the name of the program or library
+and the directory where it is to be installed.
+If a carriage-return is typed in response to each of these queries,
+.I mkmf
+assumes that the default program name is
+.B a.out
+or the default library name is
+.BR lib.a ,
+and the destination directory is the current directory.
+.TP
+.B \-l
+Force the makefile to be a library makefile.
+.TP
+.B \-L
+Force the makefile to be a library makefile containing object file names
+defined as library members.
+.TP
+.BI \-F \|template
+Specify an alternative makefile template path name.
+The path name can be relative or absolute.
+.TP
+.BI \-M \|language
+Specify an alternative
+.IR language -specific
+makefile template.
+The default language is C and the corresponding program
+and library makefile templates are
+.BR C.p ,
+and
+.B C.l
+or
+.BR C.L ,
+respectively.
+.I mkmf
+looks for these templates in
+.B INSTALLDIR/lib/mkmf
+or
+.SM
+.BR $PROJECT\s0/lib/mkmf .
+.TP
+.B \-S
+Symbolically link source code files found in directories listed in
+the VPATH macro into the current directory. Additionally, if the
+.B \-S
+option is repeated, remove any symbolic links to files in directories
+not listed in the VPATH macro.
+.SH DIAGNOSTICS
+Exit status 0 is normal.  Exit status 1 indicates an error.
+.SH WARNINGS
+The name of the makefile is included as a macro definition
+within the makefile and must be changed if the makefile is renamed.
+.PP
+Generated dependency information appears after a line in the makefile
+beginning with
+.BR ### .
+This line must not be removed,
+nor must any other information be inserted in the makefile below this line.
+.PP
+The name of a program or library must not conflict with any predefined
+target names in a makefile.
+.SH AUTHOR
+Peter J. Nicklin
+.SH FILES
+.TP 25
+INSTALLDIR/lib/mkmf/C.p
+Standard program template
+.PD 0
+.TP
+INSTALLDIR/lib/mkmf/C.l
+Standard library template
+.TP
+INSTALLDIR/lib/mkmf/C.L
+Alternative library template
+.TP
+\s-1$PROJECT\s0/lib/mkmf/C.p
+User-defined program template
+.TP
+\s-1$PROJECT\s0/lib/mkmf/C.l
+User-defined library template
+.TP
+\s-1$PROJECT\s0/lib/mkmf/C.L
+Alternative user-defined library template
+.PD
+.SH SEE ALSO
+ar(1), ctags(1), ld(1), make(1).
+.PP
+"Make \- A Program for Maintaining Computer Programs",
+\fISoftware\-Practice and Experience\fP, Feldman, S.I., vol. 9, no. 4,
+pp. 255-265, April 1979.
+.PP
+"Automatic Generation of Make Dependencies",
+\fISoftware\-Practice and Experience\fP, Walden, K., vol. 14, no. 6,
+pp. 575-585, June 1984.
