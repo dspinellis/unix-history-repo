@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -180,6 +180,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
+			syslog(LOG_ERR, "invalid flag");
 			(void)fprintf(stderr,
 			    "usage: login [-fp] [username]\n");
 			exit(1);
@@ -263,7 +264,10 @@ main(argc, argv)
 		if (fflag && pwd) {
 			int uid = getuid();
 
-			passwd_req = pwd->pw_uid == 0 ||
+			passwd_req =
+#ifndef	KERBEROS
+			     pwd->pw_uid == 0 ||
+#endif
 			    (uid && uid != pwd->pw_uid);
 		}
 
@@ -340,6 +344,7 @@ main(argc, argv)
 		(void)printf("Logging in with home = \"/\".\n");
 	}
 
+#if BSD > 43
 #define	TWOWEEKS	(14*24*60*60)
 	if (pwd->pw_change || pwd->pw_expire)
 		(void)gettimeofday(&tp, (struct timezone *)NULL);
@@ -390,6 +395,7 @@ main(argc, argv)
 			    months[ttp->tm_mon], ttp->tm_mday,
 			    TM_YEAR_BASE + ttp->tm_year);
 		}
+#endif
 
 	/* nothing else left to fail -- really log in */
 	{
@@ -463,8 +469,10 @@ main(argc, argv)
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
+#if	BSD > 43
 	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
 		syslog(LOG_ERR, "setlogname() failure: %m");
+#endif
 
 	/* discard permissions last so can't get killed and drop core */
 	(void)setuid(pwd->pw_uid);
@@ -521,7 +529,8 @@ jmp_buf motdinterrupt;
 motd()
 {
 	register int fd, nchars;
-	int (*oldint)(), sigint();
+	sig_t oldint;
+	int sigint();
 	char tbuf[8192];
 
 	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
