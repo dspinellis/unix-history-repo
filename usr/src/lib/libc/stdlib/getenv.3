@@ -1,19 +1,9 @@
 .\" Copyright (c) 1988 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)getenv.3	6.7 (Berkeley) %G%
+.\"	@(#)getenv.3	6.8 (Berkeley) %G%
 .\"
 .TH GETENV 3 ""
 .AT 3
@@ -21,53 +11,80 @@
 getenv, putenv, setenv, unsetenv \- manipulate environmental variables
 .SH SYNOPSIS
 .nf
-.B char *getenv(name)
-.B char *name;
-.PP
-.B setenv(name, value, overwrite)
-.B char *name, value;
-.B int overwrite;
-.PP
-.B putenv(string)
-.B char *string;
-.PP
-.B void unsetenv(name)
-.B char *name;
+.ft B
+char *
+getenv(const char *name);
+
+setenv(const char *name, const char *value, int overwrite);
+
+putenv(const char *string);
+
+void
+unsetenv(const char *name);
+.ft R
 .fi
 .SH DESCRIPTION
-\fIGetenv\fP searches the environment list (see \fIenviron\fP(7))
+.I Getenv
+searches the environment list (see
+.IR environ (7))
 for a string of the form \fIname\fP\fB=\fP\fIvalue\fP and returns
-a pointer to the string \fIvalue\fP if such a string is present,
-and 0 (NULL) if it is not.
+a pointer to the string
+.I value
+if such a string is present, and a NULL pointer if it is not.
 .PP
-\fISetenv\fP searches the environment list as \fIgetenv\fP does; if
-the string \fIname\fP is not found, a string of the form
-\fIname\fP\fB=\fP\fIvalue\fP is added to the environment.  If it is
-found, and \fIoverwrite\fP is non-zero, its value is changed to
-\fIvalue\fP.  \fISetenv\fP returns 0 on success and -1 on failure,
-where failure is caused by an inability to allocate space for the
-environment.
+.I Setenv
+searches the environment list as
+.I getenv
+does; if the string
+.I name
+is not found, a string of the form \fIname\fP\fB=\fP\fIvalue\fP is
+added to the environment.
+If it is found, and
+.I overwrite
+is non-zero, its value is changed to
+.IR value .
+.I Setenv
+returns 0 on success and -1 on failure, setting the external variable
+.IR errno .
 .PP
 .I Putenv
-is provided for compatibility with System V.  It takes an argument
-of the form ``\fIname\fR=\fIvalue\fR'' and is the equivalent of calling
-\fIsetenv\fR(\fIname\fR, \fIvalue\fR, 1).
+takes an argument of the form ``\fIname\fR=\fIvalue\fR'' and is the
+equivalent of:
+.sp
+.RS
+setenv(name, value, 1);
+.RE
 .PP
-\fIUnsetenv\fP removes all occurrences of the string \fIname\fP from
-the environment.  There is no library provision for completely removing
-the current environment.  It is suggested that the following code be
-used to do so.
-.PP
+.I Unsetenv
+removes all occurrences of the string
+.I name
+from the environment.
+There is no library provision for completely removing the current
+environment.
+It is suggested that the following code be used to do so.
+.sp
+.RS
 .nf
-	static char	*envinit[1];
-	extern char	**environ;
-	environ = envinit;
+static char	*envinit[1];
+extern char	**environ;
+environ = envinit;
 .fi
+.RE
 .PP
 All of these routines permit, but do not require, a trailing equals
-(``='') sign on \fIname\fP or a leading equals sign on \fIvalue\fP.
+(``='') sign on
+.I name
+or a leading equals sign on
+.IR value .
+.SH ERRORS
+.TP
+[ENOMEM]
+.I Setenv
+or
+.I putenv
+failed because they were unable to allocate memory for the environment.
 .SH SEE ALSO
 csh(1), sh(1), execve(2), environ(7)
-.SH BUGS
-All information is part of the environment, so it must be copied
-if it is to be manipulated.
+.SH STANDARDS
+.B Getenv
+conforms to ANSI X3.159-1989 (``ANSI C'').
