@@ -1,4 +1,4 @@
-/*	ut.c	4.27	83/02/20	*/
+/*	ut.c	4.28	83/02/20	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -502,7 +502,7 @@ utintr(ut11)
 		if (bp == &rutbuf[UTUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
 		    (sc->sc_erreg&UTER_FCE))
 			sc->sc_erreg &= ~UTER_FCE;
-		if (sc->sc_errreg == 0)
+		if (sc->sc_erreg == 0)
 			goto ignoreerr;
 		/*
 		 * Fix up errors which occur due to backspacing
