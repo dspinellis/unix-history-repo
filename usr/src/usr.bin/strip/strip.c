@@ -1,77 +1,78 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)strip.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
-#include <a.out.h>
-#include <signal.h>
-#include <stdio.h>
+#include <sys/types.h>
 #include <sys/file.h>
+#include <a.out.h>
+#include <stdio.h>
 
-struct	exec head;
-int	status;
-int	pagesize;
-
+/* ARGSUSED */
 main(argc, argv)
-	char *argv[];
+	int argc;
+	char **argv;
 {
-	register i;
+	typedef struct exec EXEC;
+	register off_t fsize;
+	register int fd, n, pagesize;
+	EXEC head;
+	off_t lseek();
 
 	pagesize = getpagesize();
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	for (i = 1; i < argc; i++) {
-		strip(argv[i]);
-		if (status > 1)
-			break;
+	while (*++argv) {
+		if ((fd = open(*argv, O_RDWR)) < 0 ||
+		    (n = read(fd, (char *)&head, sizeof(EXEC))) == -1)
+			error(*argv);
+		if (n != sizeof(EXEC) || N_BADMAG(head)) {
+			fprintf(stderr, "strip: %s not in a.out format.\n",
+			    *argv);
+			exit(1);
+		}
+		if (!head.a_syms && !head.a_trsize && !head.a_drsize) {
+			fprintf(stderr, "strip: %s already stripped.\n", *argv);
+			continue;
+		}
+		fsize = head.a_text + head.a_data;
+		if (head.a_magic == ZMAGIC)
+			fsize += pagesize - sizeof(EXEC);
+		head.a_syms = head.a_trsize = head.a_drsize = 0;
+		if (ftruncate(fd, fsize + sizeof(EXEC)) ||
+		    lseek(fd, 0L, L_SET) == -1 ||
+		    write(fd, (char *)&head, sizeof(EXEC)) != sizeof(EXEC))
+			error(*argv);
+		(void)close(fd);
 	}
-	exit(status);
+	exit(0);
 }
 
-strip(name)
-	char *name;
+static
+error(fname)
+	char *fname;
 {
-	register f;
-	long size;
-
-	f = open(name, O_RDWR);
-	if (f < 0) {
-		fprintf(stderr, "strip: "); perror(name);
-		status = 1;
-		goto out;
-	}
-	if (read(f, (char *)&head, sizeof (head)) < 0 || N_BADMAG(head)) {
-		printf("strip: %s not in a.out format\n", name);
-		status = 1;
-		goto out;
-	}
-	if ((head.a_syms == 0) && (head.a_trsize == 0) && (head.a_drsize ==0)) {
-		printf("strip: %s already stripped\n", name);
-		goto out;
-	}
-	size = (long)head.a_text + head.a_data;
-	head.a_syms = head.a_trsize = head.a_drsize = 0;
-	if (head.a_magic == ZMAGIC)
-		size += pagesize - sizeof (head);
-	if (ftruncate(f, size + sizeof (head)) < 0) {
-		fputs("strip: ", stderr); perror(name);
-		status = 1;
-		goto out;
-	}
-	(void) lseek(f, (long)0, L_SET);
-	(void) write(f, (char *)&head, sizeof (head));
-out:
-	close(f);
+	fprintf(stderr, "strip: %s: ", fname);
+	perror((char *)NULL);
+	exit(1);
 }
