@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	7.8 (Berkeley) %G%
+ *	@(#)conf.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -37,10 +37,8 @@ struct cdevsw {
 				     struct proc *p));
 	int	(*d_close)	__P((dev_t dev, int fflag, int devtype,
 				     struct proc *));
-	int	(*d_read)	__P((dev_t dev, struct uio *uio, int ioflag,
-				     struct proc *p));
-	int	(*d_write)	__P((dev_t dev, struct uio *uio, int ioflag,
-				     struct proc *p));
+	int	(*d_read)	__P((dev_t dev, struct uio *uio, int ioflag));
+	int	(*d_write)	__P((dev_t dev, struct uio *uio, int ioflag));
 	int	(*d_ioctl)	__P((dev_t dev, int cmd, caddr_t data,
 				     int fflag, struct proc *p));
 	int	(*d_stop)	__P((struct tty *tp, int rw));
