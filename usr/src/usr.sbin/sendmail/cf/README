@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.23 (Berkeley) %G%
+		@(#)README	8.24 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -562,7 +562,7 @@ For example, new rules are needed to parse hostnames that you accept
 via MX records.  For example, you might have:
 
 	LOCAL_RULE_0
-	R$+ < @ cnmat.Berkeley.EDU >	$#uucp $@ cnmat $: $1
+	R$+ <@ host.dom.ain.>	$#uucp $@ cnmat $: $1 < @ host.dom.ain.>
 
 You would use this if you had installed an MX record for cnmat.Berkeley.EDU
 pointing at this host; this rule catches the message and forwards it on
