@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.4 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -106,17 +106,17 @@ lfs_markv(p, uap, retval)
 		if (lastino != blkp->bi_inode) {
 			if (lastino != LFS_UNUSED_INUM) {
 				/* Finish up last file */
-				lfs_updatemeta(sp);
-				lfs_writeinode(fs, sp, ip);
-				lfs_vunref(vp);
-				if (sp->fip->fi_nblocks)
-					BUMP_FIP(sp);
-				else  {
+				if (sp->fip->fi_nblocks == 0) {
 					DEC_FINFO(sp);
 					sp->sum_bytes_left +=
-						sizeof(FINFO) - sizeof(daddr_t);
-
+					    sizeof(FINFO) - sizeof(daddr_t);
+				} else {
+					lfs_updatemeta(sp);
+					BUMP_FIP(sp);
 				}
+
+				lfs_writeinode(fs, sp, ip);
+				lfs_vunref(vp);
 			}
 
 			/* Start a new file */
@@ -184,20 +184,24 @@ lfs_markv(p, uap, retval)
 		while (lfs_gatherblock(sp, bp, NULL));
 	}
 	if (sp->vp) {
-		lfs_updatemeta(sp);
+		if (sp->fip->fi_nblocks == 0) {
+			DEC_FINFO(sp);
+			sp->sum_bytes_left +=
+			    sizeof(FINFO) - sizeof(daddr_t);
+		} else
+			lfs_updatemeta(sp);
+
 		lfs_writeinode(fs, sp, ip);
 		lfs_vunref(vp);
-		if (!sp->fip->fi_nblocks) {
-			DEC_FINFO(sp);
-			sp->sum_bytes_left += sizeof(FINFO) - sizeof(daddr_t);
-		}
 	}
 	(void) lfs_writeseg(fs, sp);
 	lfs_segunlock(fs);
 	free(start, M_SEGMENT);
 	return (error);
+
 /*
- * XXX If we come in to error 2, we might have indirect blocks that were
+ * XXX
+ * If we come in to error 2, we might have indirect blocks that were
  * updated and now have bad block pointers.  I don't know what to do
  * about this.
  */
@@ -213,7 +217,7 @@ err2:	lfs_vunref(vp);
 	lfs_segunlock(fs);
 err1:	
 	free(start, M_SEGMENT);
-	return(error);
+	return (error);
 }
 
 /*
@@ -318,7 +322,7 @@ lfs_segclean(p, uap, retval)
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
 	if (sup->su_flags & SEGUSE_ACTIVE) {
 		brelse(bp);
-		return(EBUSY);
+		return (EBUSY);
 	}
 	fs->lfs_avail += fsbtodb(fs, fs->lfs_ssize) - 1;
 	fs->lfs_bfree += (sup->su_nsums * LFS_SUMMARY_SIZE / DEV_BSIZE) +
@@ -528,5 +532,5 @@ lfs_fakebuf(vp, lbn, size, uaddr)
 	bp->b_bufsize = size;
 	bp->b_bcount = size;
 	bp->b_flags |= B_INVAL;
-	return(bp);
+	return (bp);
 }
