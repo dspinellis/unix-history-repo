@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.12 (Berkeley) %G%
+ *	@(#)proc.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -69,13 +69,13 @@ struct	proc {
 	struct	rusage *p_ru;	/* exit information */
 	short	p_poip;		/* page outs in progress */
 	short	p_szpt;		/* copy of page table size */
-	size_t	p_tsize;	/* size of text (clicks) */
-	size_t	p_dsize;	/* size of data space (clicks) */
-	size_t	p_mmsize;	/* size of mapmem beyond p_dsize (clicks) */
-	size_t	p_ssize;	/* copy of stack size (clicks) */
-	size_t 	p_rssize; 	/* current resident set size in clicks */
-	size_t	p_maxrss;	/* copy of u.u_limit[MAXRSS] */
-	size_t	p_swrss;	/* resident set size before last swap */
+	segsz_t p_tsize;	/* size of text (clicks) */
+	segsz_t p_dsize;	/* size of data space (clicks) */
+	segsz_t p_mmsize;	/* size of mapmem beyond p_dsize (clicks) */
+	segsz_t p_ssize;	/* copy of stack size (clicks) */
+	segsz_t p_rssize; 	/* current resident set size in clicks */
+	segsz_t p_maxrss;	/* copy of u.u_limit[MAXRSS] */
+	segsz_t p_swrss;	/* resident set size before last swap */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	caddr_t p_wchan;	/* event process is awaiting */
 	struct	text *p_textp;	/* pointer to text structure */
@@ -122,7 +122,7 @@ struct kinfo_proc {
 		struct	session *e_tsess;	/* tty session pointer */
 #define	WMESGLEN	7
 		char	e_wmesg[WMESGLEN+1];	/* wchan message */
-		size_t	e_xsize;		/* text size */
+		segsz_t e_xsize;		/* text size */
 		short	e_xrssize;		/* text rss */
 		short	e_xccount;		/* text references */
 		short	e_xswrss;

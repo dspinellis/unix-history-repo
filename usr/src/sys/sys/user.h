@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.10 (Berkeley) %G%
+ *	@(#)user.h	7.11 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -53,15 +53,15 @@ struct	user {
 #define u_gid	u_cred->cr_gid		/* effective group id */
 
 /* 1.2 - memory management */
-	size_t	u_tsize;		/* text size (clicks) */
-	size_t	u_dsize;		/* data size (clicks) */
-	size_t	u_ssize;		/* stack size (clicks) */
+	segsz_t u_tsize;		/* text size (clicks) */
+	segsz_t u_dsize;		/* data size (clicks) */
+	segsz_t u_ssize;		/* stack size (clicks) */
 	struct	dmap u_dmap;		/* disk map for data segment */
 	struct	dmap u_smap;		/* disk map for stack segment */
 	struct	dmap u_cdmap;		/* temp data segment disk map */
 	struct	dmap u_csmap;		/* temp stack segment disk map */
 	label_t u_ssave;		/* label variable for swapping */
-	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
+	segsz_t u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	time_t	u_outime;		/* user time at last sample */
 	struct	mapmem *u_mmap;		/* list of mapped memory regions */
 
