@@ -1,5 +1,5 @@
 List of Changes to UUCP
-CHANGES	5.3	85/06/19
+CHANGES	5.4	85/10/09
 
 Added support for Eunice.
 
@@ -100,7 +100,7 @@ through local port selectors and smart modems more easily
 without mucking up every line of L.sys. See UUAIDs/L-devices for
 details.
 
-The 'g'  protocol code was clean up a lot and is now almost
+The 'g'  protocol code was cleaned up a lot and is now almost
 readable.
 
 If you need a parity other than even (the default) to login to
@@ -133,6 +133,8 @@ uucico will not try and resend files it has already sent (when the
 files are specified in one C. file)
 
 Incorporated Bill Sebok's code to dial in and out on the same modem.
+NOTE: acucntrl is heavily Vax/4.xbsd specific and will require work to
+run on any other system.
 
 For compatibility with Honey DanBer, in the Date fields of L.sys,
 	| was changed to , (| is supported, but not encouraged)
@@ -147,3 +149,9 @@ be used to map host with longer names in L.sys to 7 character
 names that some hosts send.  Entries should be 
 
 	fullname 7-char-name
+
+You can specify a time for the expect send sequences with ~ instead
+of getting the default MAXMSGTIME. E.g.
+	system Any ACU 1200 1234567 ogin~20-\r-ogin~10-\b-ogin user password pw
+will look for ogin for 20 seconds, send CR, look for ogin for 10
+seconds, send a BREAK and look for ogin for MAXMSGTIME seconds
