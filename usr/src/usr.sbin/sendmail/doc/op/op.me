@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	5.19 (Berkeley) %G%
+.\"	@(#)op.me	5.20 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 5.19
+Version 5.20
 .sp
 For Sendmail Version 5.111
 .)l
@@ -166,7 +166,7 @@ If you are not running the new version of
 .b make
 you will probably have to use
 .(b
-make -f Makefile.dist
+make \-f Makefile.dist
 .)b
 This file does not assume several new syntaxes,
 including the
@@ -183,6 +183,7 @@ for the
 .i aliases
 database.
 These formats are:
+.nr ii 1i
 .ip DBM
 The old, tried and somewhat-true
 .i dbm
@@ -374,6 +375,14 @@ These are referenced using the
 .sm FEATURE
 .b m4
 macro.
+Example features are
+no_wildcard_MX
+(which improves performance if you don't have a wildcard MX record
+matching your domain)
+and
+use_cw_file
+(which tells sendmail to read an /etc/sendmail.cw file on startup
+to find the set of local names).
 .ip hack
 Local hacks, referenced using the
 .sm HACK
@@ -394,6 +403,10 @@ referenced using the
 .sm MAILER
 .b m4
 macro.
+Defined mailer types in this distribution are
+local,
+smtp,
+and uucp.
 .ip ostype
 Definitions describing various operating system environments
 (such as the location of support files).
@@ -409,6 +422,24 @@ You shouldn't have to mess with these.
 .ip siteconfig
 Local site configuration information,
 such as UUCP connectivity.
+They normally contain lists of site information, for example:
+.(b
+SITE(contessa)
+SITE(hoptoad)
+SITE(nkainc)
+SITE(well)
+.)b
+They are referenced using the SITECONFIG macro:
+.(b
+SITECONFIG(site.config.file, name_of_site, X)
+.)b
+where
+.i X
+is the macro/class name to use.
+It can be U
+(indicating locally connected hosts)
+or one of W, X, or Y
+for up to three remote UUCP hubs.
 .pp
 If you are in a new domain
 (e.g., a company),
@@ -440,6 +471,15 @@ makes users appear to be from the CS.Berkeley.EDU subdomain
 (with no local host information included).
 You will probably have to update this directory
 to be appropriate for your domain.
+.pp
+You will have to use or create
+.b \&.mc
+files in the
+.i cf/cf
+subdirectory for your hosts.
+This is detailed in the
+cf/README
+file.
 .sh 2 "Details of Installation Files"
 .pp
 This subsection describes the files that
@@ -457,6 +497,18 @@ many systems install it in
 /usr/lib.
 I understand it is in /usr/ucblib
 on System V Release 4.
+.)f
+It should be setuid root.
+For security reasons,
+/, /usr, and /usr/\*(SD
+should be owned by root, mode 755\**.
+.(f
+\**Some vendors ship them owned by bin;
+this creates a security hole that is not actually related to
+.i sendmail .
+Other important directories that should have restrictive ownerships
+and permissions are
+/bin, /usr/bin, /etc, /usr/etc, /lib, and /usr/lib.
 .)f
 .sh 3 "/etc/sendmail.cf"
 .pp
@@ -504,7 +556,7 @@ for your system.
 The directory
 .i /var/spool/mqueue
 should be created to hold the mail queue.
-This directory should be mode 755
+This directory should be mode 700
 and owned by root.
 .pp
 The actual path of this directory
@@ -564,7 +616,8 @@ and initialize it.
 This step may be safely skipped.
 .(b
 cp /dev/null /etc/sendmail.fc
-/etc/sendmail \-bz
+chmod 644 /etc/sendmail.fc
+/usr/\*(SD/sendmail \-bz
 .)b
 .sh 3 "/etc/rc"
 .pp
@@ -582,7 +635,7 @@ Add the following lines to
 as appropriate)
 in the area where it is starting up the daemons:
 .(b
-if [ \-f /usr/\*(SD/sendmail -a -f /etc/sendmail.cf ]; then
+if [ \-f /usr/\*(SD/sendmail \-a \-f /etc/sendmail.cf ]; then
 	(cd /var/spool/mqueue; rm \-f [lnx]f*)
 	/usr/\*(SD/sendmail \-bd \-q30m &
 	echo \-n ' sendmail' >/dev/console
@@ -777,6 +830,7 @@ and the
 .i x
 is a type.
 The types are:
+.nr ii 0.5i
 .ip d
 The data file.
 The message body (excluding the header) is kept in this file.
@@ -884,9 +938,9 @@ are passed through to the queue run phase.
 .pp
 As an example,
 the following is a queue file sent to
-.q mckusick@calder
+.q eric@mammoth.Berkeley.EDU
 and
-.q wnj \**:
+.q bostic@okeeffe.CS.Berkeley.EDU \**:
 .(f
 \**This example is contrived and probably inaccurate for your environment.
 Glance over it to get an idea;
@@ -898,11 +952,11 @@ T404261372
 DdfAA13557
 Seric
 Cdaemon
-Esendmail-request@vangogh.CS.Berkeley.EDU
-Csendmail-request@vangogh.CS.Berkeley.EDU
+Eowner-sendmail@vangogh.CS.Berkeley.EDU
+Ceric
 Reric@mammoth.Berkeley.EDU
 Rbostic@okeeffe.CS.Berkeley.EDU
-H?P?return-path: <sendmail-request>
+H?P?return-path: <owner-sendmail@vangogh.CS.Berkeley.EDU>
 Hreceived: by vangogh.CS.Berkeley.EDU (5.108/2.7) id AA06703;
 	Fri, 17 Jul 92 00:28:55 -0700
 Hreceived: from mail.CS.Berkeley.EDU by vangogh.CS.Berkeley.EDU (5.108/2.7)
@@ -968,7 +1022,7 @@ To do this,
 it is acceptable to move the entire queue directory:
 .(b
 cd /var/spool
-mv mqueue omqueue; mkdir mqueue; chmod 755 mqueue
+mv mqueue omqueue; mkdir mqueue; chmod 700 mqueue
 .)b
 You should then kill the existing daemon
 (since it will still be processing in the old queue directory)
@@ -1052,13 +1106,6 @@ option is specified in the configuration,
 will rebuild the alias database automatically
 if possible
 when it is out of date.
-The conditions under which it will do this are:
-.np
-The DBM version of the database is mode 666.   -or-
-.np
-.i Sendmail
-is running setuid to root.
-.lp
 Auto-rebuild can be dangerous
 on heavily loaded machines
 with large alias files;
@@ -1104,22 +1151,6 @@ unless you are running
 .i delivermail
 in parallel with
 .i sendmail.
-.)f
-.i Sendmail
-will wait for this entry to appear,
-at which point it will force a rebuild itself\**.
-.(f
-\**Note:
-the
-.q D
-option must be specified in the configuration file
-for this operation to occur.
-If the
-.q D
-option is not specified,
-a warning message is generated and
-.i sendmail
-continues.
 .)f
 .sh 3 "List owners"
 .pp
@@ -1370,7 +1401,7 @@ to the value
 .q 3d
 (three days).
 .pp
-Most of these options default appropriately for most sites.
+Most of these options have appropriate defaults for most sites.
 However,
 sites having very high mail loads may find they need to tune them
 as appropriate for their mail load.
@@ -1544,9 +1575,9 @@ They default to 1000 (for the recipient factor)
 and 1800
 (for the class factor).
 The initial priority is:
-.(b
-pri = size \- (class * z) + (nrcpt * y)
-.)b
+.EQ
+pri = size - (class times z) + (nrcpt times y)
+.EN
 (Remember, higher values for this parameter actually mean
 that the job will be treated with lower priority.)
 .pp
@@ -1640,6 +1671,7 @@ if you have a mailer that takes a long time to deliver a message.
 The level of logging can be set for sendmail.
 The default using a standard configuration table is level 9.
 The levels are as follows:
+.nr ii 0.5i
 .ip 0
 No logging.
 .ip 1
@@ -1661,6 +1693,11 @@ trying to process a locked queue file.
 Log internal queue id to external message id mappings.
 This can be useful for tracing a message
 as it travels between several hosts.
+Also logs any VRFY or EXPN requests.
+.ip 11
+Logs attempts to run locked queue files.
+These are not errors,
+but can be useful to note if your queue appears to be clogged.
 .ip 12
 Several messages that are basically only of interest
 when debugging.
@@ -1834,21 +1871,27 @@ If your system supports the name server,
 then the probability is that
 .i sendmail
 will be using it regardless of how you configure sendmail.
-However, if you set the
-.b I
-option,
-.i sendmail
-will understand that the name server versions of
+However, if you have nameserver support
+which you are not using,
+sendmail will get a
+.q "connection refused"
+message when it tries to connect to the name server
+(either by calling
 .i gethostbyname
-can return errors that indicate temporary failures
-that would otherwise be interpreted as permanent failures.
-In general, you should define
+or by trying to look up the MX records).
+If the
 .b I
-if you are uncertain as to it's proper setting;
-leaving it turned off is really a performance optimization.
+option is set,
+.i sendmail
+will interpret this to mean a temporary failure;
+otherwise, it ignores the name server data.
+If your name server is running properly,
+the setting of this option is not relevant;
+however, it is important that it be set properly
+to make error handling work properly.
 .pp
 The option should be inverted;
-the current semantics are more semantic than practical.
+the current semantics are more historical than practical.
 .sh 1 "THE WHOLE SCOOP ON THE CONFIGURATION FILE"
 .pp
 This section describes the configuration file
@@ -2359,8 +2402,8 @@ For example, on our system these definitions are:
 .(b
 De$j Sendmail $v ready at $b
 DnMAILER-DAEMON
-DlFrom $g  $d
-Do.:%@!^=/
+DlFrom $<  $d
+Do.:%@!^/
 Dq$g$?x ($x)$.
 Dj$H.$D
 .)b
@@ -2370,8 +2413,8 @@ macro is
 .q "$?x$x $.<$g>" .
 These correspond to the following two formats:
 .(b
-eric@Berkeley (Eric Allman)
-Eric Allman <eric@Berkeley>
+eric@CS.Berkeley.EDU (Eric Allman)
+Eric Allman <eric@CS.Berkeley.EDU>
 .)b
 .pp
 Some macros are defined by
@@ -2452,6 +2495,13 @@ and the
 .b $g
 macro will be
 .q eric@ucbarpa.
+.pp
+The
+.b $<
+macro is identical to the
+.b $g
+macro except that it uses the envelope sender
+instead of the From: address in the body of the message.
 .pp
 The
 .b $x
@@ -2583,7 +2633,7 @@ Metasymbols are:
 .ta \w'$#mailer\0\0\0'u
 \fB$\fP\fIn\fP	Substitute indefinite token \fIn\fP from LHS
 \fB$[\fP\fIname\fP\fB$]\fP	Canonicalize \fIname\fP
-\fB$[\fP\fImap key\fP \fB$@\fP\fIarguments\fP \fB$:\fP\fIdefault\fP \fB$)
+\fB$[\fP\fImap key\fP \fB$@\fP\fIarguments\fP \fB$:\fP\fIdefault\fP \fB$)\fP
 	Generalized keyed mapping function
 \fB$>\fP\fIn\fP	\*(lqCall\*(rq ruleset \fIn\fP
 \fB$#\fP\fImailer\fP	Resolve to \fImailer\fP
@@ -2619,6 +2669,18 @@ and
 .q $[[128.32.130.2]$]
 would become
 .q vangogh.berkeley.edu.
+.pp
+The
+.b $(
+\&...
+.b $)
+syntax is a more general form of lookup;
+it uses a named map instead of an implicit map.
+If no lookup is found, the indicted
+.i default
+is inserted;
+if no default is specified and no lookup matches,
+the value is left unchanged.
 .pp
 The
 .b $> \c
@@ -3421,7 +3483,7 @@ Meta-information is always stored with a leading colon.
 .pp
 Field names define both the syntax and semantics of the value.
 Defined fields include:
-.nr ii 1.5i
+.nr ii 1i
 .ip maildrop
 The delivery address for this user.
 There may be multiple values of this record.
@@ -4736,7 +4798,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 5.19
+.\"Version 5.20
 .\".ce 0
 .pn 2
 .bp
