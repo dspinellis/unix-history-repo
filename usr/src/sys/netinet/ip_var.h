@@ -1,4 +1,4 @@
-/*	ip_var.h	4.8	83/02/05	*/
+/*	ip_var.h	4.9	83/02/23	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).
@@ -56,6 +56,9 @@ struct	ipasfrag {
 struct	ipstat {
 	int	ips_badsum;		/* checksum bad */
 	int	ips_tooshort;		/* packet too short */
+	int	ips_toosmall;		/* not enough data */
+	int	ips_badhlen;		/* ip header length < data size */
+	int	ips_badlen;		/* ip length < ip header length */
 };
 
 #ifdef KERNEL
