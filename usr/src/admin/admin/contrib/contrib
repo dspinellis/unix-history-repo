@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.50 (Berkeley) %G%
+.\"	@(#)contrib	5.51 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -12,7 +12,7 @@
 .sp |1i
 .ps 16
 .ce
-\fBThe Computer Stystems Research Group 1979 \- 1993\fP
+\fBThe Computer Systems Research Group 1979 \- 1993\fP
 .if \n%>1 \{
 .	OH '\s10Community''- % -\s0'
 .	EH '\s10- % -''Community\s0'
@@ -62,12 +62,14 @@ gifts, personnel, and/or hardware.\fP
 .sp 1
 .nf
 .in +1i
+Center for Advanced Aviation System Development, The MITRE Corp.
 Compaq Computer Corporation
 Cray Research Inc.
 Department of Defense Advance Research Projects Agency (DARPA)
 Digital Equipment Corporation
-NASA Ames Research Center
 The Hewlett-Packard Company
+NASA Ames Research Center
+The National Science Foundation
 The Open Software Foundation
 UUNET Technologies Inc.
 .in -1.5i
