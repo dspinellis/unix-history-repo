@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,8 +54,6 @@ extern int	file;
 extern int	quit_at_eof;
 extern int	cbufs;
 extern int	errmsgs;
-
-public char *	editor;
 
 extern char *	tagfile;
 extern char *	tagpattern;
@@ -246,10 +244,6 @@ main(argc, argv)
 		(argv[0][0] == '-' || argv[0][0] == '+') && 
 		argv[0][1] != '\0')
 		scan_option(*argv++);
-
-	editor = getenv("EDITOR");
-	if (editor == NULL || *editor == '\0')
-		editor = EDIT_PGM;
 
 	/*
 	 * Set up list of files to be examined.
