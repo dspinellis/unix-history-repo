@@ -38,7 +38,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.11 1994/05/04 08:27:16 rgrimes Exp $
+ *	$Id: vfs_subr.c,v 1.12 1994/05/30 03:20:06 ache Exp $
  */
 
 /*
@@ -57,6 +57,9 @@
 #include "buf.h"
 #include "errno.h"
 #include "malloc.h"
+#include "vm/vm.h"
+#include "vm/vm_object.h"
+#include "vm/vm_pager.h"
 
 static void insmntque(struct vnode *, struct mount *);
 
@@ -441,6 +444,8 @@ vinvalbuf(vp, save)
 	register struct buf *bp;
 	struct buf *nbp, *blist;
 	int s, dirty = 0;
+	vm_pager_t pager;
+	vm_object_t object;
 
 	for (;;) {
 		if (blist = vp->v_dirtyblkhd)
@@ -473,6 +478,20 @@ vinvalbuf(vp, save)
 			brelse(bp);
 		}
 	}
+
+	pager = (vm_pager_t)vp->v_vmdata;
+	if (pager != NULL) {
+		object = vm_object_lookup(pager);
+		if (object) {
+			vm_object_lock(object);
+			if (save)
+				vm_object_page_clean(object, 0, 0);
+			vm_object_page_remove(object, 0, object->size);
+			vm_object_unlock(object);
+			vm_object_deallocate(object);
+		}
+	}
+
 	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
 		panic("vinvalbuf: flush failed");
 	return (dirty);
