@@ -1,5 +1,5 @@
 #
-#	@(#)disktab	5.3 (Berkeley) %G%
+#	@(#)disktab	5.4 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -125,6 +125,16 @@ rd7959B|rd7963|rd7963B|HP7959/63B:\
 	:pf#207900:bf#4096:ff#1024:\
 	:pg#528444:bg#4096:fg#1024:\
 	:ph#511812:bh#4096:fh#1024:
+rd335H|rd335|2200A|HP6000/335H:\
+	:ty=winchester:ns#113:nt#4:nc#1449:\
+	:pa#16272:ba#8192:fa#1024:\
+	:pb#49720:\
+	:pc#654948:bc#4096:fc#1024:\
+	:pd#65992:\
+	:pe#304648:be#4096:fe#512:\
+	:pf#267584:bf#4096:ff#1024:\
+	:pg#588504:bg#4096:fg#1024:\
+	:ph#572232:bh#4096:fh#1024:
 #
 # Utah derivatives
 #
@@ -170,6 +180,21 @@ rd7914|rd7914P|rd7914CT|HP7914P/CT:\
 #
 # SCSI disks
 # Again, these mapping support three basic layouts:
+# Again, these mapping support three basic layouts:
+#
+#	A/B/G:   This is the "traditional" setup for a bootable disk.
+#	         A is the root partition, B the swap, and G is for /usr
+#		 and users.
+#	A/D/E/F (large drives):
+#	A/D/H (small drives):
+#		 This is a setup for bootable systems requiring more swap
+#	         (e.g. those who need CL).  It has A as the root, D as a
+#	         larger swap, E and F (or H) as smaller user partitions.
+#		 E could  be used for /usr and F for users (or H for both).
+#		 Or, E could be used for /var and F for /usr and users.
+#	C:       This gives a single, non-bootable, large user filesystem.
+#	         Good for second drives on a machine as either /usr/src
+#		 or a large /usr or user partition.
 #
 #	A/B/G:   This is the "traditional" setup for a bootable disk.
 #	         A is the root partition, B the swap, and G is for /usr
@@ -219,7 +244,7 @@ sd7548-utah|sd660|HP97548S with Utah partitions:\
 # HP magneto-optical drive.
 # (ns, nt, nc are totally bogus)
 # actually 1K sectors
-sd650|mo650|HP6300/650A Magneto-optical drive:\
+sd650-sony|mo650-sony|HP6300/650A Magneto-optical drive with Sony format:\
 	:ty=optical:ns#61:nt#8:nc#1306:\
 	:pa#16384:oa#1024:ba#8192:fa#1024:\
 	:pb#65536:ob#17408:\
@@ -228,3 +253,12 @@ sd650|mo650|HP6300/650A Magneto-optical drive:\
 	:pe#102400:oe#115712:be#4096:fe#1024:\
 	:pf#419216:of#218112:bf#4096:ff#1024:\
 	:pg#554384:og#82944:bg#8192:fg#1024:
+sd650|mo650|mo650-ansi|HP6300/650A Magneto-optical with ANSI format drive:\
+	:ty=optical:ns#61:nt#8:nc#1306:\
+	:pa#16384:oa#1024:ba#8192:fa#1024:\
+	:pb#65536:ob#17408:\
+	:pc#629136:oc#0:bc#8192:fc#1024:\
+	:pd#98304:od#17408:\
+	:pe#102400:oe#115712:be#4096:fe#1024:\
+	:pf#411024:of#218112:bf#4096:ff#1024:\
+	:pg#546192:og#82944:bg#8192:fg#1024:
