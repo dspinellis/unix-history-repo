@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.8 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.9 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -258,6 +258,7 @@ checksymbol( nlp , ofilep )
 	static struct symbol	*pfilep = NIL;
 	static struct symbol	*ifilep = NIL;
 	register struct symbol	*symbolp;
+	int			errtype;
 
 #	ifdef DEBUG
 	    if ( pfilep && ifilep ) {
@@ -288,6 +289,8 @@ checksymbol( nlp , ofilep )
 		case N_PGVAR:
 		case N_PGFUNC:
 		case N_PGPROC:
+		case N_PLDATA:
+		case N_PLTEXT:
 			symbolp -> sym_un.sym_str.rfilep = ifilep;
 			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
 			symbolp -> sym_un.sym_str.fromp = pfilep;
@@ -330,6 +333,7 @@ checksymbol( nlp , ofilep )
 		fprintf( stderr , "[checksymbol] ->name %s is OLD\n"
 			, symbolp -> name );
 #	    endif DEBUG
+	    errtype = ERROR;
 	    switch ( symbolp -> desc ) {
 		default:
 			error( FATAL , "panic [checksymbol] OLD" );
@@ -405,7 +409,7 @@ checksymbol( nlp , ofilep )
 			     */
 			if ( symbolp -> sym_un.sym_str.rfilep == NIL ) {
 			    error( ERROR ,
-			    "%s, line %d: %s already defined (%s, line %d)." ,
+		    "%s, line %d: %s is already defined\n\t(%s, line %d)." ,
 				ifilep -> name , nlp -> n_value , 
 				nlp -> n_un.n_name , 
 				symbolp -> sym_un.sym_str.fromi -> name ,
@@ -439,14 +443,46 @@ included:
 			}
 			symbolp -> sym_un.sym_str.fromp = pfilep;
 			return;
+		case N_PLDATA:
+		case N_PLTEXT:
+			switch ( nlp -> n_desc ) {
+			    default:
+				error( FATAL , "pc3: unknown stab 0x%x"
+					, nlp -> n_desc );
+				return;
+			    case N_PSO:
+			    case N_PSOL:
+			    case N_PGCONST:
+			    case N_PGTYPE:
+				/* these won't conflict with library */
+				return;
+			    case N_PGLABEL:
+			    case N_PGVAR:
+			    case N_PGFUNC:
+			    case N_PGPROC:
+			    case N_PEFUNC:
+			    case N_PEPROC:
+			    case N_PLDATA:
+			    case N_PLTEXT:
+				errtype = WARNING;
+				break;
+			}
+			break;
 	    }
 		/*
 		 *	this is the breaks
 		 */
-	    error( ERROR , "%s, line %d: %s already defined (%s, line %d)."
-		    , ifilep -> name , nlp -> n_value , nlp -> n_un.n_name
-		    , symbolp -> sym_un.sym_str.rfilep -> name
-		    , symbolp -> sym_un.sym_str.rline );
+	    error( errtype
+		, "%s, line %d: %s %s is already defined\n\t%s%s (%s, line %d)."
+		, ifilep -> name
+		, nlp -> n_value
+		, classify( nlp -> n_desc )
+		, nlp -> n_un.n_name
+		, ( symbolp -> desc == nlp -> n_desc ? "" : " as " )
+		, ( symbolp -> desc == nlp -> n_desc
+			? "" : article( symbolp -> desc ) )
+		, symbolp -> sym_un.sym_str.rfilep -> name
+		, symbolp -> sym_un.sym_str.rline );
 	}
     }
 
@@ -714,7 +750,7 @@ nextelement( ofilep )
     /*
      *	variable number of arguments to error, like printf.
      */
-error( type , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 )
+error( type , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 , arg8 )
     int		type;
     char	*message;
     {
@@ -737,7 +773,7 @@ error( type , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 )
 		    fprintf( stderr , "Ooops: " );
 		    break;
 	}
-	fprintf( stderr , message , arg1,arg2,arg3,arg4,arg5,arg6 );
+	fprintf( stderr , message , arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8 );
 	fprintf( stderr , "\n" );
 	if ( type == FATAL ) {
 	    exit( FATAL );
@@ -790,7 +826,45 @@ classify( type )
 		return "external function";
 	    case N_PEPROC:
 		return "external procedure";
+	    case N_PLDATA:
+		return "library variable";
+	    case N_PLTEXT:
+		return "library routine";
 	    default:
 		return "unknown symbol";
+	}
+    }
+
+char *
+article( type )
+    unsigned char	type;
+    {
+	switch ( type ) {
+	    case N_PSO:
+		return "a source file";
+	    case N_PSOL:
+		return "an include file";
+	    case N_PGLABEL:
+		return "a label";
+	    case N_PGCONST:
+		return "a constant";
+	    case N_PGTYPE:
+		return "a type";
+	    case N_PGVAR:
+		return "a variable";
+	    case N_PGFUNC:
+		return "a function";
+	    case N_PGPROC:
+		return "a procedure";
+	    case N_PEFUNC:
+		return "an external function";
+	    case N_PEPROC:
+		return "an external procedure";
+	    case N_PLDATA:
+		return "a library variable";
+	    case N_PLTEXT:
+		return "a library routine";
+	    default:
+		return "an unknown symbol";
 	}
     }
