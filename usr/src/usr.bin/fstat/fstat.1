@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fstat.1	5.4 (Berkeley) %G%
+.\"	@(#)fstat.1	5.5 (Berkeley) %G%
 .\"
 .TH FSTAT 8 ""
 .UC 4
@@ -41,10 +41,10 @@ reports on all open files.
 Options:
 .TP 6
 .B  \-u
-Report all files open by a specified user.
+Report all files open by the specified user.
 .TP 6
 .B  \-p
-Report all files open by a specified process id.
+Report all files open by the specified process.
 .TP 6
 .B filename...
 Restrict reports to the specified files.
@@ -53,7 +53,7 @@ If the file is a block special file,
 additionally reports on any open files on that device,
 treating it as a mounted file system.  
 .PP
-The following fields are printed
+The following fields are printed:
 .TP 6
 .B  USER
 The username of the owner of the process.
@@ -66,52 +66,50 @@ The process id.
 .TP 6
 .B FD
 The file number in the per-process open file table.  The special
-names "text" and "wd" mean that the file is the pure text inode
-or the working directory for the process.  If the file number is
-followed by an asterick (*), then the file is not an inode, but
-either a socket, fifo, or has an error of some kind. In this case
-the rest of the entry is variable format, doesn't correspond
-to the rest of the
-headings, and is
-enclosed in parenthesis.
-The following paragraph describing sockets will explain the
-variable format.
+names ``text'' and ``wd'' mean that the file is the pure text inode
+or the working directory for the process.
+If the file number is followed by an asterisk (``*''), then the file is
+not an inode, but is a socket or a FIFO or has an error of some kind.
+In this case the rest of the entry is in variable format, doesn't
+correspond to the rest of the headings, and is enclosed in parentheses.
 .TP 6
 .B DEVICE
-Major minor number of the device this file exists on.
+Major/minor number of the device this file exists on.
 .TP 6
 .B INODE
 The inode number of the file.
 .TP 6
 .B SIZE
-The size in bytes of the file.
+The size, in bytes, of the file.
 .TP 6
 .B TYPE
-The type of the file. (see stat(2))
-.PP
-Sockets
-.sp1 6
-The formating of open sockets depends on the protocol domain.  In
-all cases the first field is the domain name, the second field
+The type of the file (see
+.IR stat (2)).
+.SH Sockets
+The formating of open sockets depends on the protocol domain.
+In all cases the first field is the domain name, the second field
 is the socket type (stream, dgram, etc), and the third is the socket
-flags field (in hex).  The remaining fields are protocol dependent.  For tcp,
-it is the address of the tcpcb, and for udp,
-the inpcb (socket pcb).  For unix domain sockets, its the address of the socket
-pcb and the address of the connected pcb (if connected).  Otherwise
-the protocol number and address of the socket itself are printed. The
-idea is not to duplicate netstat, but to make available enough
-information for further analysis.  For example, the addresses mentioned
-above are the addresses which the "netstat -A" command would print for
-tcp, udp, and unixdomain.  Note that since pipe(2) is implemented
-with sockets, a pipe appears as a connected unix domain stream socket.
-A unidirectional unix domain socket indicates the direction of
-flow with an arrow ("<-" or "->"), and a full duplex socket shows
-a double arrow ("<->").
-.dt
-.SH BUGS
-Socket information clutters the output.
+flags field (in hex).
+The remaining fields are protocol dependent.
+For tcp, it is the address of the tcpcb, and for udp, the inpcb (socket pcb).
+For unix domain sockets, its the address of the socket pcb and the address
+of the connected pcb (if connected).
+Otherwise the protocol number and address of the socket itself are printed.
+The attempt is to not duplicate
+.IR netstat (1),
+but rather to make enough information available to permit further analysis.
 .PP
-Since \fIfstat\fP takes a snapshot of the system, it is only correct for
-a very short period of time.
+For example, the addresses mentioned above are the addresses which the
+``netstat -A'' command would print for tcp, udp, and unixdomain.
+Note that since pipes are implemented using sockets, a pipe appears as a
+connected unix domain stream socket.
+A unidirectional unix domain socket indicates the direction of flow with
+an arrow (``<-'' or ``->''), and a full duplex socket shows a double arrow
+(``<->'').
+.SH BUGS
+Since
+.I fstat
+takes a snapshot of the system, it is only correct for a very short period
+of time.
 .SH "SEE ALSO"
-ps(1), stat(2), pstat(8)
+netstat(1), ps(1), systat(1), stat(2), pstat(8)
