@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.52 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,7 @@ int termwidth = 80;		/* default terminal width */
 int f_accesstime;		/* use time of last access */
 int f_column;			/* columnated format */
 int f_group;			/* show group ownership of a file */
+int f_flags;			/* show flags associated with a file */
 int f_ignorelink;		/* indirect through symbolic link operands */
 int f_inode;			/* print inode */
 int f_kblocks;			/* print size in kilobytes */
@@ -91,7 +92,7 @@ main(argc, argv)
 	if (!getuid())
 		f_listdot = 1;
 
-	while ((ch = getopt(argc, argv, "1ACFLRTacdfgiklqrstu")) != EOF) {
+	while ((ch = getopt(argc, argv, "1ACFLRTacdfgikloqrstu")) != EOF) {
 		switch (ch) {
 		/*
 		 * -1, -C and -l all override each other
@@ -149,6 +150,9 @@ main(argc, argv)
 			break;
 		case 'k':
 			f_kblocks = 1;
+			break;
+		case 'o':
+			f_flags = 1;
 			break;
 		case 'q':
 			f_nonprint = 1;
