@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)file.h	7.7 (Berkeley) %G%
+ *	@(#)file.h	7.8 (Berkeley) %G%
  */
 
 #include <sys/fcntl.h>
@@ -24,11 +24,26 @@ struct file {
 	short	f_msgcount;	/* references from message queue */
 	struct	ucred *f_cred;	/* credentials associated with descriptor */
 	struct	fileops {
-		int	(*fo_read)();
-		int	(*fo_write)();
-		int	(*fo_ioctl)();
-		int	(*fo_select)();
-		int	(*fo_close)();
+		int	(*fo_read)__P((
+				struct file *fp,
+				struct uio *uio,
+				struct ucred *cred));
+		int	(*fo_write)__P((
+				struct file *fp,
+				struct uio *uio,
+				struct ucred *cred));
+		int	(*fo_ioctl)__P((
+				struct file *fp,
+				int com,
+				caddr_t data,
+				struct proc *p));
+		int	(*fo_select)__P((
+				struct file *fp,
+				int which,
+				struct proc *p));
+		int	(*fo_close)__P((
+				struct file *fp,
+				struct proc *p));
 	} *f_ops;
 	caddr_t	f_data;		/* inode */
 	off_t	f_offset;
