@@ -14,7 +14,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -312,7 +312,7 @@ getint(ip)
 	if (getlong(&val))
 		return (1);
 	if (val > INT_MAX) {
-		warnx("%s", *gargv, strerror(ERANGE));
+		warnx("%s: %s", *gargv, strerror(ERANGE));
 		return (1);
 	}
 	*ip = val;
@@ -339,11 +339,11 @@ getlong(lp)
 		}
 		if (errno == ERANGE)
 			if (val == LONG_MAX) {
-				warnx("%s", *gargv, strerror(ERANGE));
+				warnx("%s: %s", *gargv, strerror(ERANGE));
 				return (1);
 			}
 			if (val == LONG_MIN) {
-				warnx("%s", *gargv, strerror(ERANGE));
+				warnx("%s: %s", *gargv, strerror(ERANGE));
 				return (1);
 			}
 			
