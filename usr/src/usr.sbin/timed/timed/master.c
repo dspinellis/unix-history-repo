@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.9 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -78,7 +78,7 @@ loop:
 		for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
 			to.tsp_type = TSP_LOOP;
 			to.tsp_vers = TSPVERSION;
-			to.tsp_seq = sequence;
+			to.tsp_seq = sequence++;
 			to.tsp_hopcnt = 10;
 			(void)strcpy(to.tsp_name, hostname);
 			bytenetorder(&to);
@@ -86,8 +86,6 @@ loop:
 			    &ntp->dest_addr, sizeof(struct sockaddr_in)) < 0) {
 				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
-			if (++sequence > MAXSEQ)
-				sequence = 1;
 			}
 		}
 	}

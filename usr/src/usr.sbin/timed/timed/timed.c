@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.8 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -188,7 +188,7 @@ char **argv;
 	seed = time.tv_sec + time.tv_usec;
 	srandom(seed);
 
-	sequence = casual((long)1, (long)MAXSEQ);     /* initial seq number */
+	sequence = random();     /* initial seq number */
 
 	/* rounds kernel variable time to multiple of 5 ms. */
 	time.tv_sec = 0;
@@ -587,19 +587,18 @@ long sup;
 char *
 date()
 {
-	char	*ret;
 	char    *ctime();
 	struct	timeval tv;
 
 	(void)gettimeofday(&tv, (struct timezone *)0);
-	ret = ctime(&tv.tv_sec);
-	return(ret);
+	return (ctime(&tv.tv_sec));
 }
 
 addnetname(name)
 	char *name;
 {
-	struct nets **netlist = &nets;
+	register struct nets **netlist = &nets;
+
 	while (*netlist)
 		netlist = &((*netlist)->next);
 	*netlist = (struct nets *)malloc(sizeof **netlist);
