@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	7.2 (Berkeley) %G%
+ *	@(#)exec.h	7.3 (Berkeley) %G%
  *
- * from: $Header: exec.h,v 1.7 92/07/01 23:51:32 torek Exp $
+ * from: $Header: exec.h,v 1.8 92/09/06 01:35:41 torek Exp $
  */
 
 /*
@@ -44,8 +44,8 @@
 
 /* Address of the bottom of the data segment. */
 #define N_DATADDR(ex) \
-	(N_TXTADDR(ex) + ((ex).a_magic == OMAGIC ? (ex).a_text \
-	: __LDPGSZ + ((ex).a_text - 1 & ~(__LDPGSZ - 1))))
+	(N_TXTADDR(ex) + ((ex).a_magic == OMAGIC ? (ex).a_text : \
+	    (((ex).a_text + __LDPGSZ - 1) & ~(__LDPGSZ - 1))))
 
 /*
  * N_TXTOFF is the offset within an a.out file of the first executable
@@ -60,7 +60,7 @@
 /* Data segment offset. */
 #define	N_DATOFF(ex) \
 	(N_TXTOFF(ex) + ((ex).a_magic != ZMAGIC ? (ex).a_text : \
-	__LDPGSZ + ((ex).a_text - 1 & ~(__LDPGSZ - 1))))
+	    (((ex).a_text + __LDPGSZ - 1) & ~(__LDPGSZ - 1))))
 
 /* Symbol table offset. */
 #define N_SYMOFF(ex) \
