@@ -7,19 +7,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
 
 #ifdef NDBM
-#include <ndbm.h>
+# include <ndbm.h>
 #endif
 #ifdef NEWDB
-#include <db.h>
+# include <db.h>
 #endif
 #ifdef NIS
-#include <rpcsvc/ypclnt.h>
+# include <rpcsvc/yp_prot.h>
+# include <rpcsvc/ypclnt.h>
 #endif
 
 /*
