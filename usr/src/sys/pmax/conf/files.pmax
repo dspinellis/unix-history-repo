@@ -17,6 +17,7 @@ pmax/dev/asc.c			optional asc device-driver
 pmax/dev/dc.c			optional dc device-driver
 pmax/dev/if_le.c		optional le
 pmax/dev/pm.c			optional pm
+pmax/dev/cfb.c			optional cfb
 pmax/dev/rz.c			optional rz
 pmax/dev/sii.c			optional sii device-driver
 pmax/dev/tz.c			optional tz
