@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.44	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.45	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2092,7 +2092,7 @@ vf|tvi950-rv-4p|950-rv-4p|televideo950 rev video w/4 pages:\
 	\Ex3\200\200\Ex4\r\200\E\\3\E-07 :\
 	:vb=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb:\
 	:te=\E\\3\E-07 :ti=\E\\1\E-07 :ks=\El:ke=\Ek:tc=tvi950:
-ve|tvi924|924|televideo model 924:\
+vg|tvi924|924|televideo model 924:\
 	:am:bs:xn:co#80:li#24:cm=\E=%+ %+ :cl=\E*0:cd=\Ey:ce=\Et:is=\Ek0\E"^O:\
 	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:ho=^^:\
 	:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:up=^K:do=^V:kb=^H:\
@@ -2100,6 +2100,14 @@ ve|tvi924|924|televideo model 924:\
 	:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:k8=^AG\r:k9=^AH\r:\
 	:k0=^AI\r:ko=ic,dc,al,dl,cl,ce,cd,bt:sr=\Ej:\
 	:hs:fs=^Y\Es1:ts=\Ef:ds=\Es0\Ef^Y:
+# from Alan R. Rogers (rogers%albany@csnet-relay)
+vh|tvi910+|910+|televideo 910+:\
+	:al=5*\EE:am:bs:bt=\EI:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+\040%+\040:\
+	:co#80:dc=\EW:dl=\ER:do=^J:ei=:ho=^^:ic=\EQ:\
+	:if=/usr/lib/tabset/stdcrt:im=:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:\
+	:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=^H:\
+	:kd=^J:kh=^^:kl=^H:kr=^L:ku=^K:li#24:ll=\E=7\040:ma=^K^P^L\040:\
+	:nd=^L:pt:se=\EG0:sg#1:so=\EG4:ue=\EG0:up=^K:us=\EG8:xn:
 # # --------------------------------
 #
 # y: TELERAY
