@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
 #include "dump.h"
+#include "pathnames.h"
 
 char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
 int	writesize;		/* size of malloc()ed buffer for tape */
@@ -295,8 +296,11 @@ otape()
 #else RDUMP
 		while ((to = pipeout ? 1 : creat(tape, 0666)) < 0)
 #endif RDUMP
-			if (!query("Cannot open tape.  Do you want to retry the open?"))
+		    {
+			msg("Cannot open tape \"%s\".\n", tape);
+			if (!query("Do you want to retry the open?"))
 				dumpabort();
+		}
 
 		enslave();  /* Share open tape file descriptor with slaves */
 
@@ -347,7 +351,7 @@ lockfile(fd)
 {
 	char tmpname[20];
 
-	strcpy(tmpname, "/tmp/dumplockXXXXXX");
+	strcpy(tmpname, _PATH_LOCK);
 	mktemp(tmpname);
 	if ((fd[1] = creat(tmpname, 0400)) < 0) {
 		msg("Could not create lockfile ");
