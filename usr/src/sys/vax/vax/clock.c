@@ -1,11 +1,11 @@
-/*	clock.c	6.1	83/07/29	*/
+/*	clock.c	6.2	84/08/28	*/
 
-#include "../h/param.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "time.h"
+#include "kernel.h"
 
-#include "../vax/mtpr.h"
-#include "../vax/clock.h"
+#include "mtpr.h"
+#include "clock.h"
 
 /*
  * Machine-dependent clock routines.

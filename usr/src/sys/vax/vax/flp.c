@@ -1,18 +1,18 @@
-/*	flp.c	6.2	84/08/22	*/
+/*	flp.c	6.2	84/08/28	*/
 
 #if VAX780
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "uio.h"
 
-#include "../vax/cons.h"
-#include "../vax/cpu.h"
-#include "../vax/flp.h"
-#include "../vax/mtpr.h"
+#include "cons.h"
+#include "cpu.h"
+#include "flp.h"
+#include "mtpr.h"
 
 struct {
 	short	fl_state;		/* open and busy flags */

@@ -2,23 +2,23 @@
 #define	VAX750	1
 #define	VAX730	1
 
-#include "../machine/pte.h"
+#include "pte.h"
 
-#include "../h/param.h"
-#include "../h/buf.h"
-#include "../h/vmmeter.h"
-#include "../h/vmparam.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/cmap.h"
-#include "../h/map.h"
+#include "param.h"
+#include "buf.h"
+#include "vmmeter.h"
+#include "vmparam.h"
+#include "dir.h"
+#include "user.h"
+#include "cmap.h"
+#include "map.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
-#include "../h/proc.h"
-#include "../h/text.h"
-#include "../vax/rpb.h"
-#include "../h/mbuf.h"
-#include "../h/msgbuf.h"
+#include "proc.h"
+#include "text.h"
+#include "rpb.h"
+#include "mbuf.h"
+#include "msgbuf.h"
 
 main()
 {
