@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -199,9 +199,6 @@ usage:
 		if (freopen(stdoutn, "w", stdout) == NULL)
 bad:
 			perror(stdoutn), exit(1);
-	} else {
-		extern char _sobuf[BUFSIZ];
-		setbuf(stdout, _sobuf);
 	}
 	if (profile || opt('l')) {
 		opt('n')++;
