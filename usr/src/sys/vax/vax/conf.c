@@ -1,4 +1,4 @@
-/*	conf.c	4.56	82/10/13	*/
+/*	conf.c	4.57	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,8 +11,9 @@ int	nodev();
 
 #include "hp.h"
 #if NHP > 0
-int	hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl();
+int	hpopen(),hpstrategy(),hpread(),hpwrite(),hpdump(),hpioctl();
 #else
+#define	hpopen		nodev
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
@@ -35,8 +36,9 @@ int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump(),htioctl();
 
 #include "rk.h"
 #if NHK > 0
-int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
+int	rkopen(),rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
 #else
+#define	rkopen		nodev
 #define	rkstrategy	nodev
 #define	rkread		nodev
 #define	rkwrite		nodev
@@ -103,8 +105,9 @@ int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump();
 
 #include "up.h"
 #if NSC > 0
-int	upstrategy(),upread(),upwrite(),upreset(),updump();
+int	upopen(),upstrategy(),upread(),upwrite(),upreset(),updump();
 #else
+#define	upopen		nodev
 #define	upstrategy	nodev
 #define	upread		nodev
 #define	upwrite		nodev
@@ -129,8 +132,9 @@ int	utreset(),utdump();
 
 #include "rb.h"
 #if NIDC > 0
-int	idcstrategy(),idcread(),idcwrite(),idcreset(),idcdump();
+int	idcopen(),idcstrategy(),idcread(),idcwrite(),idcreset(),idcdump();
 #else
+#define	idcopen		nodev
 #define	idcstrategy	nodev
 #define	idcread		nodev
 #define	idcwrite	nodev
@@ -150,10 +154,10 @@ int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	nulldev,	nulldev,	hpstrategy,	hpdump,	0,	/*0*/
+	hpopen,		nulldev,	hpstrategy,	hpdump,	0,	/*0*/
 	htopen,		htclose,	htstrategy,	htdump,	B_TAPE,	/*1*/
-	nulldev,	nulldev,	upstrategy,	updump,	0,	/*2*/
-	nulldev,	nulldev,	rkstrategy,	rkdump,	0,	/*3*/
+	upopen,		nulldev,	upstrategy,	updump,	0,	/*2*/
+	rkopen,		nulldev,	rkstrategy,	rkdump,	0,	/*3*/
 	nodev,		nodev,		swstrategy,	nodev,	0,	/*4*/
 	tmopen,		tmclose,	tmstrategy,	tmdump,	B_TAPE,	/*5*/
 	tsopen,		tsclose,	tsstrategy,	tsdump,	B_TAPE,	/*6*/
@@ -161,9 +165,9 @@ struct bdevsw	bdevsw[] =
 	tuopen,		tuclose,	tustrategy,	nodev,	B_TAPE,	/*8*/
 	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
 	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
-	nodev,		nodev,		idcstrategy,	idcdump,0,	/*11*/
-	0,
+	idcopen,	nodev,		idcstrategy,	idcdump,0,	/*11*/
 };
+int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
 struct tty cons;
@@ -281,7 +285,7 @@ struct	tty pt_tty[];
 
 #include "lpa.h"
 #if NLPA > 0
-int	lpaopen(), lpaclose(), lparead(), lpawrite(), lpaioctl();
+int	lpaopen(),lpaclose(),lparead(),lpawrite(),lpaioctl();
 #else
 #define	lpaopen		nodev
 #define	lpaclose	nodev
@@ -292,7 +296,7 @@ int	lpaopen(), lpaclose(), lparead(), lpawrite(), lpaioctl();
 
 #include "dn.h"
 #if NDN > 0
-int	dnopen(), dnclose(), dnwrite();
+int	dnopen(),dnclose(),dnwrite();
 #else
 #define	dnopen		nodev
 #define	dnclose		nodev
@@ -312,8 +316,7 @@ int	gpibopen(),gpibclose(),gpibread(),gpibwrite(),gpibioctl();
 
 #include "ik.h"
 #if NIK > 0
-int	ikopen(), ikclose(), ikread(), ikwrite();
-int	ikioctl(), ikreset();
+int	ikopen(),ikclose(),ikread(),ikwrite(),ikioctl(),ikreset();
 #else
 #define ikopen nodev
 #define ikclose nodev
@@ -325,8 +328,7 @@ int	ikioctl(), ikreset();
 
 #include "ps.h"
 #if NPS > 0
-int	psopen(), psclose(), psread(), pswrite();
-int	psioctl(), psreset();
+int	psopen(),psclose(),psread(),pswrite(),psioctl(),psreset();
 #else
 #define psopen nodev
 #define psclose nodev
@@ -339,7 +341,7 @@ int	psioctl(), psreset();
 
 #include "ib.h"
 #if NIB > 0
-int	ibopen(), ibclose(), ibread(), ibwrite(), ibioctl();
+int	ibopen(),ibclose(),ibread(),ibwrite(),ibioctl();
 #else
 #define	ibopen	nodev
 #define	ibclose	nodev
@@ -350,7 +352,7 @@ int	ibopen(), ibclose(), ibread(), ibwrite(), ibioctl();
 
 #include "ad.h"
 #if NAD > 0
-int	adopen(), adclose(), adioctl(), adreset();
+int	adopen(),adclose(),adioctl(),adreset();
 #else
 #define adopen nodev
 #define adclose nodev
@@ -360,7 +362,7 @@ int	adopen(), adclose(), adioctl(), adreset();
 
 #include "efs.h"
 #if NEFS > 0
-int	efsopen(), efsclose(), efsread(), efswrite(), efsioctl(), efsreset();
+int	efsopen(),efsclose(),efsread(),efswrite(),efsioctl(),efsreset();
 #else
 #define efsopen nodev
 #define efsclose nodev
@@ -386,7 +388,7 @@ struct cdevsw	cdevsw[] =
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
 	mmselect,
-	nulldev,	nulldev,	hpread,		hpwrite,	/*4*/
+	hpopen,		nulldev,	hpread,		hpwrite,	/*4*/
 	hpioctl,	nodev,		nulldev,	0,
 	seltrue,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
@@ -413,13 +415,13 @@ struct cdevsw	cdevsw[] =
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
 	vaselect,
-	nulldev,	nulldev,	rkread,		rkwrite,	/*11*/
+	rkopen,		nulldev,	rkread,		rkwrite,	/*11*/
 	nodev,		nodev,		rkreset,	0,
 	seltrue,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
 	ttselect,
-	nulldev,	nulldev,	upread,		upwrite,	/*13*/
+	upopen,		nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
 	seltrue,
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
@@ -449,7 +451,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		nodev,		0,
 	nodev,
-	nulldev,	nulldev,	idcread,	idcwrite,	/*23*/
+	idcopen,	nulldev,	idcread,	idcwrite,	/*23*/
 	nodev,		nodev,		idcreset,	0,
 	seltrue,
 	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
@@ -477,8 +479,8 @@ struct cdevsw	cdevsw[] =
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
 	ikioctl,	nodev,		ikreset,	0,
 	seltrue,
-	0,	
 };
+int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
 int	mem_no = 3; 	/* major device number of memory special file */
 

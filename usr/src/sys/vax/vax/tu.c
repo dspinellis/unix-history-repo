@@ -1,4 +1,4 @@
-/*	tu.c	4.8	82/10/13	*/
+/*	tu.c	4.9	82/10/17	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -159,10 +159,8 @@ tuopen(dev, flag)
 #ifdef lint
 	turintr(); tuwintr();
 #endif
-	if ((minor(dev)&DNUM) >= NTU || tu.tu_dopen[minor(dev)&DNUM]) {
-		u.u_error = ENXIO;
-		return;
-	}
+	if ((minor(dev)&DNUM) >= NTU || tu.tu_dopen[minor(dev)&DNUM])
+		return (ENXIO);
 	if (tutimer == 0) {
 		tutimer++;
 		timeout(tuwatch, (caddr_t)0, hz);
@@ -176,7 +174,7 @@ tuopen(dev, flag)
 	if (tu.tu_state == TUS_IDLE) {
 		mtpr(CSRS, IE);
 		splx(s);
-		return;
+		return (0);
 	}
 
 	/* 
@@ -195,6 +193,7 @@ tuopen(dev, flag)
 		mtpr(CSRS, 0);
 	}
 	splx(s);
+	return (0);
 }
 
 /*
