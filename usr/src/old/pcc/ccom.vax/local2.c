@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.13 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.14 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -319,7 +319,7 @@ zzzcode( p, c ) register NODE *p; {
 			adrput(r);
 			putchar(',');
 			adrput(l);
-			putstr("\n\tbbsc\t$31,");
+			putstr("\n\tjbsc\t$31,");
 			adrput(l);
 			printf(",L%d\n\tcvtl", label1);
 			prtype(l);
