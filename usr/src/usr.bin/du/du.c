@@ -15,34 +15,33 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 #include <dirent.h>
-#include <string.h>
 #include <stdio.h>
-
-typedef struct _ID {
-	dev_t	dev;
-	ino_t	inode;
-} ID;
-
-ID *files;
-dev_t device;
-int crossmounts, kvalue, listdirs, listfiles, maxfiles, numfiles;
-char path[MAXPATHLEN + 1];
+#include <fts.h>
+#include <string.h>
+#include <stdlib.h>
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind, errno;
-	int ch;
-	char *malloc(), top[MAXPATHLEN + 1];
+	extern int optind;
+	register FTS *fts;
+	register FTSENT *p;
+	register int kvalue, listdirs, listfiles;
+	int ch, ftsoptions;
+	char **save;
 
-	listdirs = crossmounts = 1;
+	ftsoptions = FTS_PHYSICAL;
+	kvalue = listfiles = 0;
+	listdirs = 1;
+	save = argv;
 	while ((ch = getopt(argc, argv, "aksx")) != EOF)
 		switch(ch) {
 		case 'a':
@@ -55,7 +54,7 @@ main(argc, argv)
 			listfiles = listdirs = 0;
 			break;
 		case 'x':
-			crossmounts = 0;
+			ftsoptions |= FTS_XDEV;
 			break;
 		case '?':
 		default:
@@ -65,122 +64,95 @@ main(argc, argv)
 		}
 	argv += optind;
 
-	files = (ID *)malloc((u_int)(sizeof(ID) * (maxfiles = 128)));
-
-	if (!*argv)
-		du(".");
-	else {
-		if (argv[1])
-			(void)getwd(top);
-		for (;;) {
-			du(*argv);
-			if (!*++argv)
-				break;
-			if (chdir(top)) {
-				(void)fprintf(stderr, "du: %s: %s\n",
-				    top, strerror(errno));
-				exit(1);
-			}
-		}
+	if (!*argv) {
+		argv = save;
+		argv[0] = ".";
+		argv[1] = NULL;
 	}
+
+	if (!(fts = fts_open(argv, ftsoptions, (int (*)())NULL))) {
+		(void)fprintf(stderr, "du: %s.\n", strerror(errno));
+		exit(1);
+	}
+
+	while (p = fts_read(fts))
+		switch(p->fts_info) {
+		case FTS_DNR:
+			(void)fprintf(stderr,
+			    "du: %s: unable to read.\n", p->fts_path);
+			break;
+		case FTS_DNX:
+			(void)fprintf(stderr,
+			    "du: %s: unable to search.\n", p->fts_path);
+			break;
+		case FTS_D:
+		case FTS_DC:
+			break;
+		case FTS_DP:
+			p->fts_parent->fts_number += 
+			    p->fts_number += p->fts_statb.st_blocks;
+			/*
+			 * If listing each directory, or not listing files
+			 * or directories and this is post-order of the
+			 * root of a traversal, display the total.
+			 */
+			if (listdirs || !listfiles && !p->fts_level)
+				(void)printf("%ld\t%s\n", kvalue ?
+				    howmany(p->fts_number, 2) :
+				    p->fts_number, p->fts_path);
+			break;
+		case FTS_ERR:
+			(void)fprintf(stderr,
+			    "du: %s: %s.\n", p->fts_path, strerror(errno));
+			exit(1);
+		case FTS_NS:
+			(void)fprintf(stderr,
+			    "du: unable to stat: %s.\n", p->fts_path);
+			break;
+		default:
+			if (p->fts_statb.st_nlink > 1 && linkchk(p))
+				break;
+			/*
+			 * If listing each file, or a non-directory file was
+			 * the root of a traversal, display the total.
+			 */
+			if (listfiles || !p->fts_level)
+				(void)printf("%ld\t%s\n", kvalue ?
+				    howmany(p->fts_statb.st_blocks, 2) :
+				    p->fts_statb.st_blocks, p->fts_path);
+			p->fts_parent->fts_number += p->fts_statb.st_blocks;
+		}
 	exit(0);
 }
 
-struct stat info;
+typedef struct _ID {
+	dev_t	dev;
+	ino_t	inode;
+} ID;
 
-du(arg)
-	register char *arg;
+linkchk(p)
+	register FTSENT *p;
 {
-	extern int errno;
-	u_long total, descend();
+	static ID *files;
+	static int maxfiles, nfiles;
+	register ID *fp, *start;
+	register ino_t ino;
+	register dev_t dev;
 
-	if (lstat(arg, &info)) {
-		(void)fprintf(stderr, "du: %s: %s\n", arg, strerror(errno));
-		return;
-	}
-	if ((info.st_mode&S_IFMT) != S_IFDIR) {
-		(void)printf("%ld\t%s\n", kvalue ?
-		    howmany(info.st_blocks, 2) : info.st_blocks, arg);
-		return;
-	}
-	device = info.st_dev;
-	(void)strcpy(path, arg);
-	total = descend(path);
-	if (!listfiles && !listdirs)
-		(void)printf("%lu\t%s\n",
-		    kvalue ? howmany(total, 2) : total, path);
-}
+	ino = p->fts_statb.st_ino;
+	dev = p->fts_statb.st_dev;
+	if (start = files)
+		for (fp = start + nfiles - 1; fp >= start; --fp)
+			if (ino == fp->inode && dev == fp->dev)
+				return(1);
 
-u_long
-descend(endp)
-	register char *endp;
-{
-	extern int errno;
-	register DIR *dir;
-	register ID *fp;
-	register struct dirent *dp;
-	u_long total;
-	char *realloc();
-
-	if (info.st_nlink > 1) {
-		for (fp = files + numfiles - 1; fp >= files; --fp)
-			if (info.st_ino == fp->inode &&
-			    info.st_dev == fp->dev)
-				return(0L);
-		if (numfiles == maxfiles)
-			files = (ID *)realloc((char *)files,
-			    (u_int)(sizeof(ID) * (maxfiles += 128)));
-		files[numfiles].inode = info.st_ino;
-		files[numfiles].dev = info.st_dev;
-		++numfiles;
+	if (nfiles == maxfiles && !(files = (ID *)realloc((char *)files,
+	    (u_int)(sizeof(ID) * (maxfiles += 128))))) {
+		(void)fprintf(stderr, "du: %s\n", strerror(errno));
+		exit(1);
 	}
-	total = info.st_blocks;
-	if ((info.st_mode&S_IFMT) == S_IFDIR) {
-		if (info.st_dev != device && !crossmounts)
-			return(0L);
-		if (chdir(endp)) {
-			(void)fprintf(stderr, "du: %s: %s\n",
-			    path, strerror(errno));
-			return(total);
-		}
-		if (!(dir = opendir("."))) {
-			(void)fprintf(stderr, "du: %s: %s\n",
-			    path, strerror(errno));
-			if (chdir("..")) {
-				/* very unlikely */
-				(void)fprintf(stderr, "du: ..: %s\n",
-				    strerror(errno));
-				exit(1);
-			}
-			return(total);
-		}
-		for (; *endp; ++endp);
-		if (endp[-1] != '/')
-			*endp++ = '/';
-		while (dp = readdir(dir)) {
-			if (dp->d_name[0] == '.' && (!dp->d_name[1] ||
-			    dp->d_name[1] == '.' && !dp->d_name[2]))
-				continue;
-			bcopy(dp->d_name, endp, dp->d_namlen + 1);
-			if (lstat(dp->d_name, &info)) {
-				(void)fprintf(stderr, "du: %s: %s\n", path,
-				    strerror(errno));
-				continue;
-			}
-			total += descend(endp);
-		}
-		closedir(dir);
-		if (chdir("..")) {
-			(void)fprintf(stderr, "du: ..: %s\n", strerror(errno));
-			exit(1);
-		}
-		*--endp = '\0';
-		if (listdirs)
-			(void)printf("%lu\t%s\n",
-			    kvalue ? howmany(total, 2) : total, path);
-	}
-	else if (listfiles)
-		(void)printf("%lu\t%s\n",
-		    kvalue ? howmany(total, 2) : total, path);
-	return(total);
+	files[nfiles].inode = ino;
+	files[nfiles].dev = dev;
+	++nfiles;
+	return(0);
 }
