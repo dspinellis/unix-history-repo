@@ -5,13 +5,96 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.25 %G%";
+/*
+**  SCCS.C -- human-oriented front end to the SCCS system.
+**
+**	Without trying to add any functionality to speak of, this
+**	program tries to make SCCS a little more accessible to human
+**	types.  The main thing it does is automatically put the
+**	string "SCCS/s." on the front of names.  Also, it has a
+**	couple of things that are designed to shorten frequent
+**	combinations, e.g., "delget" which expands to a "delta"
+**	and a "get".
+**
+**	This program can also function as a setuid front end.
+**	To do this, you should copy the source, renaming it to
+**	whatever you want, e.g., "syssccs".  Change any defaults
+**	in the program (e.g., syssccs might default -d to
+**	"/usr/src/sys").  Then recompile and put the result
+**	as setuid to whomever you want.  In this mode, sccs
+**	knows to not run setuid for certain programs in order
+**	to preserve security, and so forth.
+**
+**	Usage:
+**		sccs [flags] command [args]
+**
+**	Flags:
+**		-d<dir>		<dir> represents a directory to search
+**				out of.  It should be a full pathname
+**				for general usage.  E.g., if <dir> is
+**				"/usr/src/sys", then a reference to the
+**				file "dev/bio.c" becomes a reference to
+**				"/usr/src/sys/dev/bio.c".
+**		-p<path>	prepends <path> to the final component
+**				of the pathname.  By default, this is
+**				"SCCS".  For example, in the -d example
+**				above, the path then gets modified to
+**				"/usr/src/sys/dev/SCCS/s.bio.c".  In
+**				more common usage (without the -d flag),
+**				"prog.c" would get modified to
+**				"SCCS/s.prog.c".  In both cases, the
+**				"s." gets automatically prepended.
+**		-r		run as the real user.
+**
+**	Commands:
+**		admin,
+**		get,
+**		delta,
+**		rmdel,
+**		chghist,
+**		etc.		Straight out of SCCS; only difference
+**				is that pathnames get modified as
+**				described above.
+**		edit		Macro for "get -e".
+**		unedit		Removes a file being edited, knowing
+**				about p-files, etc.
+**		delget		Macro for "delta" followed by "get".
+**		deledit		Macro for "delta" followed by "get -e".
+**		info		Tell what files being edited.
+**		clean		Remove all files that can be
+**				regenerated from SCCS files.
+**		status		Like info, but return exit status, for
+**				use in makefiles.
+**		fix		Remove a top delta & reedit, but save
+**				the previous changes in that delta.
+**
+**	Compilation Flags:
+**		UIDUSER -- determine who the user is by looking at the
+**			uid rather than the login name -- for machines
+**			where SCCS gets the user in this way.
+**
+**	Compilation Instructions:
+**		cc -O -n -s sccs.c
+**
+**	Author:
+**		Eric Allman, UCB/INGRES
+*/
+
+# ifdef CSVAX
+# define UIDUSER
+# endif
+
+static char SccsId[] = "@(#)sccs.c	1.26 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
 typedef char	bool;
 # define TRUE	1
 # define FALSE	0
+
+# ifdef UIDUSER
+# include <pwd.h>
+# endif UIDUSER
 
 struct sccsprog
 {
@@ -59,8 +142,6 @@ struct sccsprog SccsProg[] =
 	"edit",		CMACRO,	0,			"get -e",
 	"delget",	CMACRO,	0,			"delta/get",
 	"deledit",	CMACRO,	0,			"delta/get -e",
-	"del",		CMACRO,	0,			"delta/get",
-	"delt",		CMACRO,	0,			"delta/get",
 	"fix",		FIX,	0,			NULL,
 	"clean",	CLEAN,	REALUSER,		(char *) CLEANC,
 	"info",		CLEAN,	REALUSER,		(char *) INFOC,
@@ -620,6 +701,10 @@ unedit(fn)
 	struct pfile *pent;
 	extern struct pfile *getpfile();
 	char buf[120];
+# ifdef UIDUSER
+	struct passwd *pw;
+	extern struct passwd *getpwuid();
+# endif UIDUSER
 
 	/* make "s." filename & find the trailing component */
 	pfn = makefile(fn);
@@ -656,7 +741,17 @@ unedit(fn)
 		exit(EX_OSERR);
 	}
 
+# ifdef UIDUSER
+	pw = getpwuid(getuid());
+	if (pw == NULL)
+	{
+		fprintf(stderr, "Sccs: who are you?\n");
+		exit(EX_OSERR);
+	}
+	myname = pw->pw_name;
+# else
 	myname = getlogin();
+# endif UIDUSER
 	while ((pent = getpfile(pfp)) != NULL)
 	{
 		if (strcmp(pent->p_user, myname) == 0)
