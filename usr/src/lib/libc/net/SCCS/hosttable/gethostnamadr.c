@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -20,6 +20,8 @@ static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
 static char *host_addrs[2];
+
+int h_errno;
 
 /*
  * The following is shared with gethostent.c
@@ -102,6 +104,8 @@ gethostbyname(nam)
 		dbm_close(_host_db);
 		_host_db = (DBM *)NULL;
 	}
+	if ( hp == NULL)
+		h_errno = HOST_NOT_FOUND;
         return (hp);
 }
 
@@ -124,6 +128,8 @@ gethostbyaddr(addr, length, type)
 		}
 		if (!_host_stayopen)
 			endhostent();
+		if ( hp == NULL)
+			h_errno = HOST_NOT_FOUND;
 		return (hp);
 	}
         key.dptr = addr;
@@ -133,5 +139,7 @@ gethostbyaddr(addr, length, type)
 		dbm_close(_host_db);
 		_host_db = (DBM *)NULL;
 	}
+	if ( hp == NULL)
+		h_errno = HOST_NOT_FOUND;
         return (hp);
 }
