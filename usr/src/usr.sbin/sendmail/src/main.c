@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.5	%G%";
+static char	SccsId[] = "@(#)main.c	1.6	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -303,8 +303,25 @@ main(argc, argv)
 
 	/*
 	**  Figure out who it's coming from.
-	**	If we are root or "network", then allow -f.  Otherwise,
-	**	insist that we figure it out ourselves.
+	**	Under certain circumstances allow the user to say who
+	**	s/he is (using -f or -r).  These are:
+	**	1.  The user's uid is zero (root).
+	**	2.  The user's login name is "network" (mail from
+	**	    a network server).
+	**	3.  The user's login name is "uucp" (mail from the
+	**	    uucp network).
+	**	4.  The address the user is trying to claim has a
+	**	    "!" character in it (since #3 doesn't do it for
+	**	    us if we are dialing out).
+	**	A better check to replace #3 & #4 would be if the
+	**	effective uid is "UUCP" -- this would require me
+	**	to rewrite getpwent to "grab" uucp as it went by,
+	**	make getname more nasty, do another passwd file
+	**	scan, or compile the UID of "UUCP" into the code,
+	**	all of which are reprehensible.
+	**
+	**	Assuming all of these fail, we figure out something
+	**	ourselves.
 	*/
 
 	errno = 0;
@@ -317,7 +334,8 @@ main(argc, argv)
 	errno = 0;
 	if (from != NULL)
 	{
-		if (strcmp(p, "network") != 0 && getuid() != 0 /* && strcmp(p, From) != 0 */ )
+		if (strcmp(p, "network") != 0 && strcmp(p, "uucp") != 0 &&
+		    index(from, '!') == NULL && getuid() != 0)
 		{
 			/* network sends -r regardless (why why why?) */
 			/* syserr("%s, you cannot use the -f flag", p); */
