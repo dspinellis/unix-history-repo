@@ -1,9 +1,17 @@
-/*	hp.c	4.18	81/03/01	*/
+/*	hp.c	4.19	81/03/01	*/
 
 #include "hp.h"
 #if NHP > 0
 /*
  * HP disk driver for RP0x+RM0x
+ *
+ * TODO:
+ *	Check out handling of spun-down drives and write lock
+ *	Add RM80 bad sector handling
+ *	Add reading of bad sector information and disk layout from sector 1
+ *	Add bad sector forwarding code
+ *	Check interaction with tape driver on same mba
+ *	Check multiple drive handling
  */
 
 #include "../h/param.h"
@@ -373,16 +381,12 @@ hpdump(dev)
 	num = maxfree;
 	start = 0;
 	unit = minor(dev) >> 3;
-	if (unit >= NHP) {
-		printf("bad unit\n");
-		return (-1);
-	}
+	if (unit >= NHP)
+		return (ENXIO);
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
 	mi = phys(hpinfo[unit],struct mba_info *);
-	if (mi == 0 || mi->mi_alive == 0) {
-		printf("dna\n");
-		return (-1);
-	}
+	if (mi == 0 || mi->mi_alive == 0)
+		return (ENXIO);
 	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 	mba->mba_cr = MBAINIT;
 	hpaddr = (struct hpdevice *)&mba->mba_drv[mi->mi_drive];
@@ -392,10 +396,8 @@ hpdump(dev)
 		hpaddr->hpof = HP_FMT22;
 	}
 	st = &hpst[mi->mi_type];
-	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks) {
-		printf("oor\n");
-		return (-1);
-	}
+	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks)
+		return (EINVAL);
 	while (num > 0) {
 		register struct pte *hpte = mba->mba_map;
 		register int i;
@@ -418,11 +420,8 @@ hpdump(dev)
 		hpaddr->hpcs1 = HP_WCOM | HP_GO;
 		while ((hpaddr->hpds & HP_DRY) == 0)
 			;
-		if (hpaddr->hpds&HP_ERR) {
-			printf("dskerr: (%d,%d,%d) ds=%x er=%x\n",
-			    cn, tn, sn, hpaddr->hpds, hpaddr->hper1);
-			return (-1);
-		}
+		if (hpaddr->hpds&HP_ERR)
+			return (EIO);
 		start += blk*NBPG;
 		num -= blk;
 	}
