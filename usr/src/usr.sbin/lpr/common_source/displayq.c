@@ -47,9 +47,11 @@ displayq(format)
 {
 	register struct queue *q;
 	register int i, nitems, fd;
+	register char	*cp;
 	struct queue **queue;
 	struct stat statb;
 	FILE *fp;
+	char c;
 
 	lflag = format;
 	totsize = 0;
@@ -88,7 +90,7 @@ displayq(format)
 		    printf("unable to get network name for local machine %s\n",
 			name);
 		    goto localcheck_done;
-		} else strcpy(name, hp->h_name);
+		} else (void) strcpy(name, hp->h_name);
 
 		/* get the network standard name of RM */
 		hp = gethostbyname(RM);
@@ -99,47 +101,15 @@ displayq(format)
 		}
 
 		/* if printer is not on local machine, ignore LP */
-		if (strcmp(name, hp->h_name) != 0) *LP = '\0';
+		if (strcmp(name, hp->h_name)) {
+			*LP = '\0';
+			++sendtorem;
+		}
 	}
 localcheck_done:
 
 	/*
-	 * If there is no local printer, then print the queue on
-	 * the remote machine and then what's in the queue here.
-	 * Note that a file in transit may not show up in either queue.
-	 */
-	if (*LP == '\0') {
-		register char *cp;
-		char c;
-
-		sendtorem++;
-		(void) sprintf(line, "%c%s", format + '\3', RP);
-		cp = line;
-		for (i = 0; i < requests; i++) {
-			cp += strlen(cp);
-			(void) sprintf(cp, " %d", requ[i]);
-		}
-		for (i = 0; i < users; i++) {
-			cp += strlen(cp);
-			*cp++ = ' ';
-			strcpy(cp, user[i]);
-		}
-		strcat(line, "\n");
-		fd = getport(RM);
-		if (fd < 0) {
-			if (from != host)
-				printf("%s: ", host);
-			printf("connection to %s is down\n", RM);
-		} else {
-			i = strlen(line);
-			if (write(fd, line, i) != i)
-				fatal("Lost connection");
-			while ((i = read(fd, line, sizeof(line))) > 0)
-				(void) fwrite(line, 1, i, stdout);
-			(void) close(fd);
-		}
-	}
-	/*
+	 * Print out local queue
 	 * Find all the control files in the spooling directory
 	 */
 	if (chdir(SD) < 0)
@@ -147,8 +117,6 @@ localcheck_done:
 	if ((nitems = getq(&queue)) < 0)
 		fatal("cannot examine spooling area\n");
 	if (stat(LO, &statb) >= 0) {
-		if ((statb.st_mode & 0110) && sendtorem)
-			printf("\n");
 		if (statb.st_mode & 0100) {
 			if (sendtorem)
 				printf("%s: ", host);
@@ -168,60 +136,94 @@ localcheck_done:
 			printf("Warning: %s queue is turned off\n", printer);
 		}
 	}
-	if (nitems == 0) {
-		if (!sendtorem)
-			printf("no entries\n");
-		return(0);
-	}
-	fp = fopen(LO, "r");
-	if (fp == NULL)
-		warn();
-	else {
-		register char *cp;
 
-		/* get daemon pid */
-		cp = current;
-		while ((*cp = getc(fp)) != EOF && *cp != '\n')
-			cp++;
-		*cp = '\0';
-		i = atoi(current);
-		if (i <= 0 || kill(i, 0) < 0)
+	if (nitems) {
+		fp = fopen(LO, "r");
+		if (fp == NULL)
 			warn();
 		else {
-			/* read current file name */
+			register char *cp;
+
+			/* get daemon pid */
 			cp = current;
 			while ((*cp = getc(fp)) != EOF && *cp != '\n')
 				cp++;
 			*cp = '\0';
-			/*
-			 * Print the status file.
-			 */
-			if (sendtorem)
-				printf("\n%s: ", host);
-			fd = open(ST, O_RDONLY);
-			if (fd >= 0) {
-				(void) flock(fd, LOCK_SH);
-				while ((i = read(fd, line, sizeof(line))) > 0)
-					(void) fwrite(line, 1, i, stdout);
-				(void) close(fd);	/* unlocks as well */
-			} else
-				putchar('\n');
+			i = atoi(current);
+			if (i <= 0 || kill(i, 0) < 0)
+				warn();
+			else {
+				/* read current file name */
+				cp = current;
+				while ((*cp = getc(fp)) != EOF && *cp != '\n')
+					cp++;
+				*cp = '\0';
+				/*
+				 * Print the status file.
+				 */
+				if (sendtorem)
+					printf("%s: ", host);
+				fd = open(ST, O_RDONLY);
+				if (fd >= 0) {
+					(void) flock(fd, LOCK_SH);
+					while ((i = read(fd, line, sizeof(line))) > 0)
+						(void) fwrite(line, 1, i, stdout);
+					(void) close(fd);	/* unlocks as well */
+				} else
+					putchar('\n');
+			}
+			(void) fclose(fp);
 		}
-		(void) fclose(fp);
+		/*
+		 * Now, examine the control files and print out the jobs to
+		 * be done for each user.
+		 */
+		if (!lflag)
+			header();
+		for (i = 0; i < nitems; i++) {
+			q = queue[i];
+			inform(q->q_name);
+			free(q);
+		}
+		free(queue);
 	}
+	else if (!sendtorem) {
+		puts("no entries");
+		return;
+	}
+
 	/*
-	 * Now, examine the control files and print out the jobs to
-	 * be done for each user.
+	 * Print foreign queue
+	 * Note that a file in transit may show up in either queue.
 	 */
-	if (!lflag)
-		header();
-	for (i = 0; i < nitems; i++) {
-		q = queue[i];
-		inform(q->q_name);
-		free(q);
+	if (nitems)
+		putchar('\n');
+	(void) sprintf(line, "%c%s", format + '\3', RP);
+	cp = line;
+	for (i = 0; i < requests; i++) {
+		cp += strlen(cp);
+		(void) sprintf(cp, " %d", requ[i]);
 	}
-	free(queue);
-	return(nitems-garbage);
+	for (i = 0; i < users; i++) {
+		cp += strlen(cp);
+		*cp++ = ' ';
+		(void) strcpy(cp, user[i]);
+	}
+	strcat(line, "\n");
+	fd = getport(RM);
+	if (fd < 0) {
+		if (from != host)
+			printf("%s: ", host);
+		printf("connection to %s is down\n", RM);
+	}
+	else {
+		i = strlen(line);
+		if (write(fd, line, i) != i)
+			fatal("Lost connection");
+		while ((i = read(fd, line, sizeof(line))) > 0)
+			(void) fwrite(line, 1, i, stdout);
+		(void) close(fd);
+	}
 }
 
 /*
@@ -231,7 +233,7 @@ warn()
 {
 	if (sendtorem)
 		printf("\n%s: ", host);
-	printf("Warning: no daemon present\n");
+	puts("Warning: no daemon present");
 	current[0] = '\0';
 }
 
@@ -291,7 +293,7 @@ inform(cf)
 			if (line[0] < 'a' || line[0] > 'z')
 				continue;
 			if (j == 0 || strcmp(file, line+1) != 0)
-				strcpy(file, line+1);
+				(void) strcpy(file, line+1);
 			j++;
 			continue;
 		case 'N':
