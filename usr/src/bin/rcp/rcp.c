@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.11 (Berkeley) 9/22/88";
 #endif /* not lint */
 
 /*
@@ -42,6 +42,14 @@ static char sccsid[] = "@(#)rcp.c	5.11 (Berkeley) %G%";
 #include <ctype.h>
 #include <netdb.h>
 #include <errno.h>
+
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+char	krb_realm[REALM_SZ];
+int	use_kerberos = 1, encrypt = 0;
+CREDENTIALS	cred;
+Key_schedule	schedule;
+#endif
 
 int	rem;
 char	*colon(), *index(), *rindex(), *malloc(), *strcpy();
@@ -96,6 +104,17 @@ main(argc, argv)
 		    case 'r':
 			iamrecursive++;
 			break;
+
+#ifdef	KERBEROS
+		    case 'x':
+			encrypt = 1;
+			des_set_key(cred.session, schedule);
+			break;
+
+		    case 'k':
+			strncpy(krb_realm, ++argv, REALM_SZ);
+			break;
+#endif
 
 		    case 'p':		/* preserve mtimes and atimes */
 			pflag++;
@@ -180,9 +199,53 @@ main(argc, argv)
 					(void) sprintf(buf, "%s -t %s",
 					    cmd, targ);
 					host = thost;
+#ifdef	KERBEROS
+try_again:
+					if(use_kerberos) {
+					    rem = KSUCCESS;
+					    if(krb_realm[0] == '\0')
+						    rem = krb_get_lrealm(krb_realm,1);
+					    if(rem == KSUCCESS) {
+						    if(encrypt) {
+						        rem = krcmd_mutual(
+							    &host, port,
+							    tuser ? tuser
+								    : pwd->pw_name,
+							    buf, 0, krb_realm,
+							    &cred, schedule);
+						    } else {
+						    	
+						        rem = krcmd(
+							    &host,
+							    port,
+					    		    tuser ? tuser 
+							       : pwd->pw_name,
+					    		    buf, 0,
+							    krb_realm
+					    	        );
+						    }
+					    } else {
+						    fprintf(stderr,
+						      "rcp: error getting local realm %s\n",
+						      krb_err_txt[rem]);
+						    exit(1);
+					    }
+					    if((rem < 0) && errno == ECONNREFUSED) {
+						    use_kerberos = 0;
+						    old_warning("remote host doesn't support Kerberos");
+						    goto try_again;
+					    }
+					} else {
+					    rem = rcmd(&host, port, pwd->pw_name,
+					        tuser ? tuser : pwd->pw_name,
+					        buf, 0);
+					}
+#else
+
 					rem = rcmd(&host, port, pwd->pw_name,
 					    tuser ? tuser : pwd->pw_name,
 					    buf, 0);
+#endif
 					if (rem < 0)
 						exit(1);
 					if (response() < 0)
@@ -220,8 +283,50 @@ main(argc, argv)
 					suser = pwd->pw_name;
 				}
 				(void) sprintf(buf, "%s -f %s", cmd, src);
+#ifdef	KERBEROS
+one_more_time:
+				if(use_kerberos) {
+				    rem = KSUCCESS;
+				    if(krb_realm[0] == '\0')
+					    rem = krb_get_lrealm(krb_realm,1);
+				    if(rem == KSUCCESS) {
+					if(encrypt) {
+					    rem = krcmd_mutual(
+						    &host,
+						    port,
+						    suser,
+						    buf, 0,
+						    krb_realm,
+						    &cred, schedule
+					    );
+					} else {
+					    rem = krcmd(
+						    &host,
+						    port,
+						    suser,
+						    buf, 0,
+						    krb_realm
+					    );
+					}
+				    } else {
+					    fprintf(stderr,
+					      "rcp: error getting local realm %s\n",
+					      krb_err_txt[rem]);
+					    exit(1);
+				    }
+				    if((rem < 0) && errno == ECONNREFUSED) {
+					use_kerberos = 0;
+					old_warning("remote host doesn't suport Kerberos");
+					goto one_more_time;
+				    }
+				} else {
+					rem = rcmd(&host, port, pwd->pw_name, suser,
+			    			buf, 0);
+				}
+#else
 				rem = rcmd(&host, port, pwd->pw_name, suser,
-				    buf, 0);
+			    		buf, 0);
+#endif
 				if (rem < 0)
 					continue;
 				(void) setreuid(0, userid);
@@ -728,3 +833,11 @@ usage()
 	fputs("usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn d2\n", stderr);
 	exit(1);
 }
+
+#ifdef	KERBEROS
+old_warning(str)
+	char	*str;
+{
+	fprintf(stderr,"Warning: %s, using standard rcp", str);
+}
+#endif
