@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)match.c	4.6 (Berkeley) %G%";
+static char *sccsid ="@(#)match.c	4.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -148,7 +148,7 @@ tshape( p, shape ) NODE *p; {
 		STBREG	any temporary lvalue register
 		*/
 		mask = isbreg( p->tn.rval ) ? SBREG : SAREG;
-		if( istreg( p->tn.rval ) && busy[p->tn.rval]<=1 ) mask |= mask==SAREG ? STAREG : STBREG;
+		if( istreg( p->tn.rval ) && !ISBUSY(p->tn.rval) ) mask |= mask==SAREG ? STAREG : STBREG;
 		return( shape & mask );
 
 	case OREG:
@@ -273,6 +273,24 @@ setrew(){
 		}
 	}
 
+#ifdef MATCHSTATS
+struct matchstats {
+	unsigned ms_total;
+	unsigned ms_opsimp;
+	unsigned ms_opglob;
+	unsigned ms_cookie;
+	unsigned ms_shape;
+	unsigned ms_type;
+	unsigned ms_rewrite;
+	unsigned ms_allo;
+	unsigned ms_done;
+	unsigned ms_nope;
+} ms;
+#define CMS(x) { ++x; continue; }
+#else
+#define CMS(x) continue;
+#endif
+
 match( p, cookie ) NODE *p; {
 	/* called by: order, gencall
 	   look for match in table and generate code if found unless
@@ -290,39 +308,54 @@ match( p, cookie ) NODE *p; {
 
 		/* at one point the call that was here was over 15% of the total time;
 		    thus the function call was expanded inline */
+#ifdef MATCHSTATS
+		++ms.ms_total;
+#endif
 		if( q->op < OPSIMP ){
-			if( q->op!=p->in.op ) continue;
+			if( q->op!=p->in.op ) CMS(ms.ms_opsimp)
 			}
 		else {
 			register opmtemp;
 			if((opmtemp=mamask[q->op - OPSIMP])&SPFLG){
 				if( p->in.op!=NAME && p->in.op!=ICON && p->in.op!= OREG &&
-					! shltype( p->in.op, p ) ) continue;
+					! shltype( p->in.op, p ) ) CMS(ms.ms_opglob)
 				}
-			else if( (dope[p->in.op]&(opmtemp|ASGFLG)) != opmtemp ) continue;
+			else if( (dope[p->in.op]&(opmtemp|ASGFLG)) != opmtemp ) CMS(ms.ms_opglob)
 			}
 
-		if( !(q->visit & cookie ) ) continue;
+		if( !(q->visit & cookie ) ) CMS(ms.ms_cookie)
 		r = getlr( p, 'L' );			/* see if left child matches */
-		if( !tshape( r, q->lshape ) ) continue;
-		if( !ttype( r->in.type, q->ltype ) ) continue;
+		if( !tshape( r, q->lshape ) ) CMS(ms.ms_shape)
+		if( !ttype( r->in.type, q->ltype ) ) CMS(ms.ms_type)
 		r = getlr( p, 'R' );			/* see if right child matches */
-		if( !tshape( r, q->rshape ) ) continue;
-		if( !ttype( r->in.type, q->rtype ) ) continue;
+		if( !tshape( r, q->rshape ) ) CMS(ms.ms_shape)
+		if( !ttype( r->in.type, q->rtype ) ) CMS(ms.ms_type)
 
 			/* REWRITE means no code from this match but go ahead
 			   and rewrite node to help future match */
-		if( q->needs & REWRITE ) return( q->rewrite );
-		if( !allo( p, q ) ) continue;			/* if can't generate code, skip entry */
+		if( q->needs & REWRITE ) {
+#ifdef MATCHSTATS
+			++ms.ms_rewrite;
+#endif
+			return( q->rewrite );
+			}
+		if( !allo( p, q ) ) CMS(ms.ms_allo)			/* if can't generate code, skip entry */
 
 		/* resources are available */
 
 		expand( p, cookie, q->cstring );		/* generate code */
 		reclaim( p, q->rewrite, cookie );
+#ifdef MATCHSTATS
+		++ms.ms_done;
+#endif
 
 		return(MDONE);
 
 		}
+
+#ifdef MATCHSTATS
+	++ms.ms_nope;
+#endif
 
 	return(MNOPE);
 	}
