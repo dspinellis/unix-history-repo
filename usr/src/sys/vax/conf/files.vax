@@ -77,4 +77,5 @@ vaxuba/va.c		optional va device-driver
 vaxuba/vp.c		optional vp device-driver
 vaxuba/vs.c		optional vs device-driver
 ultrix/qv.c		optional qv device-driver
+ultrix/qfont.c		optional qv device-driver
 ultrix/qd.c		optional qd device-driver
