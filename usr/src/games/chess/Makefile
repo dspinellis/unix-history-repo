@@ -27,16 +27,17 @@
 #    To use with latter, add -DCHESSTOOL to the gnuchess.o/nondsp.o
 #    compilation lines (e.g. cc -O -DCHESSTOOL ...)
 #
-CC= cc
 NEW=move.o
 CFLAGS= -O -DNEWMOVE=12
 all : gnuchess gnuchessr
+MAN=	chess.0
 
 gnuchess: gnuchess.o uxdsp.o $(NEW)
-	$(CC) $(CFLAGS) -o gnuchess gnuchess.o uxdsp.o $(NEW) -lcurses -ltermlib
+	$(CC) $(CFLAGS) -o gnuchess gnuchess.o uxdsp.o $(NEW) \
+		-lcurses -ltermlib -lcompat
 
 gnuchessr: gnuchess.o nondsp.o $(NEW)
-	$(CC) $(CFLAGS) -o gnuchessr gnuchess.o nondsp.o $(NEW)
+	$(CC) $(CFLAGS) -o gnuchessr gnuchess.o nondsp.o $(NEW) -lcompat
 
 gnuchess.o: gnuchess.c
 	$(CC) $(CFLAGS) -c gnuchess.c
@@ -54,10 +55,15 @@ distribution:
 	tar cf - gnuchess.h gnuchess.c move.h move.c uxdsp.c nondsp.c Xchess gnuchess.book DOCUMENTATION Makefile > gnuchess.tar
 	compress gnuchess.tar
 
-install:
-	cp gnuchessr /usr/games/gnuchess.chesstool
-	cp gnuchess /usr/games/gnuchess
-	cp gnuchess.book /usr/games/lib/gnuchess.book
+install: ${MAN}
+	install -s -o games -g bin -m 4700 gnuchess ${DESTDIR}/usr/games/hide/chess
+	(cd ${DESTDIR}/usr/games; rm -f chess; ln -s dm chess; chown games.bin chess)
+	install -c -o bin -g bin -m 444 gnuchess.book /usr/games/lib
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
+
+#	cp gnuchessr /usr/games/gnuchess.chesstool
+#	cp gnuchess /usr/games/gnuchess
+#	cp gnuchess.book /usr/games/lib/gnuchess.book
 
 clean:
 	-rm gnuchess gnuchessr *.o
