@@ -13,6 +13,7 @@
 #include "param.h"
 #include "inode.h"
 #include "fs.h"
+#include "disklabel.h"
 
 #include "saio.h"
 
@@ -23,35 +24,37 @@ char	*malloc();
 
 main()
 {
-	char *cp, *bp;
-	int fd, tracksize, debug;
-	register int sector, lastsector;
-	struct st st;
+	register int fd, sector, lastsector, tracksize;
+	register char *bp;
+	struct disklabel dl;
+	int debug;
 
 	printf("Testprogram for stand-alone driver\n\n");
 again:
-	debug = getdebug("Enable debugging (1=bse, 2=ecc, 3=bse+ecc)? ");
+	debug = getdebug("Enable debugging (0=none, 1=bse, 2=ecc, 3=bse+ecc)? ");
 	if (debug < 0)
 		debug = 0;
 	fd = getfile("Device to read?", 2);
-	ioctl(fd, SAIODEVDATA, (char *)&st);
+	ioctl(fd, SAIODEVDATA, &dl);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
-		st.ncyl, st.ntrak, st.nsect);
+		dl.d_ncylinders, dl.d_ntracks, dl.d_nsectors);
 	ioctl(fd, SAIODEBUG, (char *)debug);
-	tracksize = st.nsect * SECTSIZ;
+	tracksize = dl.d_nsectors * SECTSIZ;
 	bp = malloc(tracksize);
 	printf("Reading in %d byte records\n", tracksize);
 	printf("Start ...make sure drive is on-line\n");
 	lseek(fd, 0, L_SET);
-	lastsector = st.ncyl * st.nspc;
-	for (sector = 0; sector < lastsector; sector += st.nsect) {
-		if (sector && (sector % (st.nspc * 10)) == 0)
-			printf("cylinder %d\n", sector/st.nspc);
+	lastsector = dl.d_ncylinders * dl.d_secpercyl;
+	for (sector = 0; sector < lastsector; sector += dl.d_nsectors) {
+		if (sector && (sector % (dl.d_secpercyl * 10)) == 0)
+			printf("cylinder %d\n", sector/dl.d_secpercyl);
 		read(fd, bp, tracksize);
 	}
 	goto again;
+	/*NOTREACHED*/
 }
 
+static
 getdebug(msg)
 	char *msg;
 {
@@ -67,12 +70,12 @@ getdebug(msg)
  * Round allocated chunk to a page multiple to
  * ease next request.
  */
-char *
+static char *
 malloc(size)
 	int size;
 {
-	char *result;
 	static caddr_t last = 0;
+	char *result;
 
 	if (last == 0)
 		last = (caddr_t)(((int)&end + 511) & ~0x1ff);
