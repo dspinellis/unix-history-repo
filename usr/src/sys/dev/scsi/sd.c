@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	5.1 (Berkeley) %G%
+ *	@(#)sd.c	5.2 (Berkeley) %G%
  *
  * from: $Header: sd.c,v 1.18 92/06/11 17:55:56 torek Exp $
  */
@@ -22,6 +22,7 @@
  */
 
 #include "sys/param.h"
+#include "sys/systm.h"
 #include "sys/proc.h"
 #include "sys/buf.h"
 #include "sys/errno.h"
@@ -375,7 +376,7 @@ sdlblkstrat(bp, bsize)
 		if (boff || resid < bsize) {
 			struct sd_softc *sc = sdcd.cd_devs[sdunit(bp->b_dev)];
 			sc->sc_partials++;
-			count = MIN(resid, bsize - boff);
+			count = min(resid, bsize - boff);
 			tbp.b_flags = B_BUSY | B_READ;
 			tbp.b_blkno = bn - btodb(boff);
 			tbp.b_un.b_addr = cbuf;
