@@ -1,4 +1,4 @@
-/*	locore.s	4.42	81/04/03	*/
+/*	locore.s	4.43	81/04/15	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -844,6 +844,7 @@ _kernacc:
 	.word	0x0
 	movl	4(ap),r0	# virtual address
 	bbcc	$31,r0,kacc1
+	bbs	$30,r0,kacerr
 	mfpr	$SBR,r2		# address and length of page table (system)
 	bbss	$31,r2,0f; 0:
 	mfpr	$SLR,r3
