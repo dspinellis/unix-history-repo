@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.7 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -1037,8 +1037,8 @@ struct functbl {
 	} opfunc[] = {
 	DIV,		TANY,	"udiv",
 	MOD,		TANY,	"urem",
-	ASG DIV,	TANY,	"udiv",
-	ASG MOD,	TANY,	"urem",
+	ASG DIV,	TANY,	"audiv",
+	ASG MOD,	TANY,	"aurem",
 	0,	0,	0 };
 
 hardops(p)  register NODE *p; {
@@ -1057,28 +1057,35 @@ hardops(p)  register NODE *p; {
 		}
 	return;
 
-	/* need to rewrite tree for ASG OP */
-	/* must change ASG OP to a simple OP */
 	convert:
 	if( asgop( o ) ) {
-		q = talloc();
-		switch( p->in.op ) {
-			case ASG DIV:
-				q->in.op = DIV;
-				break;
-			case ASG MOD:
-				q->in.op = MOD;
-				break;
-		}
-		q->in.rall = NOPREF;
-		q->in.type = p->in.type;
-		q->in.left = tcopy(p->in.left);
-		q->in.right = p->in.right;
-		p->in.op = ASSIGN;
-		p->in.right = q;
-		zappost(q->in.left); /* remove post-INCR(DECR) from new node */
-		fixpre(q->in.left);	/* change pre-INCR(DECR) to +/-	*/
-		p = q;
+		switch( p->in.left->in.op ){
+		case REG:
+		case NAME:
+		case OREG:
+			/* change ASG OP to a simple OP */
+			q = talloc();
+			q->in.op = NOASG p->in.op;
+			q->in.rall = NOPREF;
+			q->in.type = p->in.type;
+			q->in.left = tcopy(p->in.left);
+			q->in.right = p->in.right;
+			p->in.op = ASSIGN;
+			p->in.right = q;
+			p = q;
+			f -= 2; /* Note: this depends on the table order */
+			break;
+
+		case UNARY MUL:
+			/* avoid doing side effects twice */
+			q = p->in.left;
+			p->in.left = q->in.left;
+			q->in.op = FREE;
+			break;
+
+		default:
+			cerror( "hardops: can't compute & LHS" );
+			}
 
 	}
 
@@ -1105,53 +1112,7 @@ hardops(p)  register NODE *p; {
 	q->tn.lval = 0;
 	q->tn.rval = 0;
 
-	return;
-
 	}
-
-zappost(p) NODE *p; {
-	/* look for ++ and -- operators and remove them */
-
-	register o, ty;
-	register NODE *q;
-	o = p->in.op;
-	ty = optype( o );
-
-	switch( o ){
-
-	case INCR:
-	case DECR:
-			q = p->in.left;
-			p->in.right->in.op = FREE;  /* zap constant */
-			ncopy( p, q );
-			q->in.op = FREE;
-			return;
-
-		}
-
-	if( ty == BITYPE ) zappost( p->in.right );
-	if( ty != LTYPE ) zappost( p->in.left );
-}
-
-fixpre(p) NODE *p; {
-
-	register o, ty;
-	o = p->in.op;
-	ty = optype( o );
-
-	switch( o ){
-
-	case ASG PLUS:
-			p->in.op = PLUS;
-			break;
-	case ASG MINUS:
-			p->in.op = MINUS;
-			break;
-		}
-
-	if( ty == BITYPE ) fixpre( p->in.right );
-	if( ty != LTYPE ) fixpre( p->in.left );
-}
 
 myreader(p) register NODE *p; {
 	walkf( p, hardops );	/* convert ops to function calls */
