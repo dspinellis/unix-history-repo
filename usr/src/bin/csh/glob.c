@@ -5,474 +5,386 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
-#include <sys/dir.h>
+#include "glob.h"
+
+static int noglob;
+
+static int pargsiz, gargsiz;
+/*
+ * Values for gflag
+ */
+#define G_NONE	0	/* No globbing needed			*/
+#define G_GLOB	1	/* string contains *?[] characters	*/
+#define G_CSH	2	/* string contains ~`{ characters	*/
+
+#define LBRC '{'
+#define RBRC '}'
+#define LBRK '['
+#define RBRK ']'
+
+#define EOS '\0'
+char **gargv = (char **) 0;
+short gargc = 0;
 
 /*
- * C Shell
+ * globbing is now done in two stages. In the first pass we expand
+ * csh globbing idioms ~`{ and then we proceed doing the normal 
+ * globbing if needed ?*[
+ *
+ * Csh type globbing is handled in globexpand() and the rest is
+ * handled in glob() which is part of the 4.4BSD libc. To do the
+ * 'No match' checking, we try to glob everything without checking
+ * and then we look if the string still contains globbing characters.
+ * If it does, then globbing failed for at least one component of the
+ * block.
+ * 
  */
 
-int	globcnt;
 
-char	*gpath, *gpathp, *lastgpathp;
-int	globbed;
-bool	noglob;
-bool	nonomatch;
-char	*entp;
-char	**sortbas;
-int	sortscmp();
+static char *
+globtilde(s)
+char *s;
+{
+	char gbuf[MAXPATHLEN], *gstart, *b, *u;
 
-#define sort()	qsort((char *)sortbas, &gargv[gargc] - sortbas, \
-		      sizeof(*sortbas), sortscmp), sortbas = &gargv[gargc]
+	gstart = gbuf;
+	*gstart++ = *s++;
+	for (u = s, b = gstart; alnum(*s) || *s == '-'; *b++ = *s++)
+		 continue;
+	*b = EOS;
+	if (*s == EOS || *s == '/') {
+		if (s == u) 
+			gstart = strcpy(gbuf, value("home"));
+		else if (gethdir(gstart)) 
+			error("Unknown user: %s", gstart);
+		b = &gstart[strlen(gstart)];
+	}
+	while (*s) *b++ = *s++;
+	*b = EOS;
+	return(savestr(gstart));
+}
 
+static int
+globbrace(s, p, bl)
+char *s, *p, ***bl;
+{
+	int i, len;
+	char *pm, *pe, *lm, *pl;
+	char **nv, **vl;
+	char gbuf[MAXPATHLEN];
+	int size = GAVSIZ;
+
+	nv = vl = (char **) xalloc(sizeof(char *) * size);
+
+	len = 0;
+	/* copy part up to the brace */
+	for (lm = gbuf, p = s; *p != LBRC; *lm++ = *p++)
+		continue;
+
+	/* check for balanced braces */
+	for (i = 0, pe = ++p; *pe; pe++) 
+		if (*pe == LBRK) {
+			/* Ignore everything between [] */
+			for (++pe; *pe != RBRK && *pe != EOS; pe++)
+				continue;
+			if (*pe == EOS) {
+				blkfree(nv);
+				return(- LBRK);
+			}
+		}
+		else if (*pe == LBRC)
+			i++;
+		else if (*pe == RBRC) {
+			if (i == 0)
+				break;
+			i--;
+		}
+
+	if (i != 0) {
+		blkfree(nv);
+		return(- LBRC);
+	}
+
+	for (i = 0, pl = pm = p; pm <= pe; pm++)
+	switch (*pm) {
+	case LBRK:
+		for (++pm; *pm != RBRK && *pm != EOS; pm++)
+			continue;
+		if (*pm == EOS) {
+			blkfree(nv);
+			return(- RBRK);
+		}
+		break;
+	case LBRC:
+		i++;
+		break;
+	case RBRC:
+		if (i) {
+			i--;
+			break;
+		}
+		/*FALLTHROUGH*/
+	case ',':
+		if (i && *pm == ',')
+			break;
+		else {
+			char savec = *pm;
+			*pm = EOS;
+			(void) strcpy(lm, pl);
+			(void) strcat(gbuf, pe + 1);
+			*pm = savec;
+			*vl++ = savestr(gbuf);
+			len++;
+			pl = pm + 1;
+			if (vl == &nv[size]) {
+				size += GAVSIZ;
+				nv = (char **) xrealloc(nv, 
+							size * sizeof(char *));
+				vl = &nv[size - GAVSIZ];
+			}
+		}
+		break;
+	}
+	*vl = (char *) 0;
+	*bl = nv;
+	return(len);
+}
+
+static char **
+globexpand(v)
+	char **v;
+{
+	char *s;
+	char **nv, **vl, **el;
+	int size = GAVSIZ;
+
+
+	nv = vl = (char **) xalloc(sizeof(char *) * size);
+	*vl = (char *) 0;
+
+	/*
+	 * Step 1: expand backquotes.
+	 */
+	while (s = *v++) {
+		if (index(s, '`')) {
+			int i;
+
+			dobackp(s, 0);
+			for (i = 0; i < pargc; i++) {
+				*vl++ = pargv[i];
+				if (vl == &nv[size]) {
+					size += GAVSIZ;
+					nv = (char **) xrealloc(nv, 
+							size * sizeof(char *));
+					vl = &nv[size - GAVSIZ];
+				}
+			}
+			xfree((char *) pargv);
+			pargv = (char **) 0;
+		}
+		else {
+			*vl++ = savestr(s);
+			if (vl == &nv[size]) {
+				size += GAVSIZ;
+				nv = (char **) xrealloc(nv, 
+							size * sizeof(char *));
+				vl = &nv[size - GAVSIZ];
+			}
+		}
+	}
+	*vl = (char *) 0;
+
+	if (noglob) 
+		return(nv);
+
+	/*
+	 * Step 2: expand tilde and braces
+	 */
+	el = vl;
+	vl = nv;
+	for (s = *vl; s; s = *++vl) {
+		char *b;
+		char **vp, **bp;
+		if (*s == '~') {
+			*vl = globtilde(s);
+			xfree(s);
+		}
+		if (b = index(s, LBRC)) {
+			char **bl;
+			int i, len;
+			if ((len = globbrace(s, b, &bl)) < 0) {
+				blkfree(nv);
+				error("Missing %c", -len);
+			}
+			xfree(s);
+			if (len == 1) {
+				*vl-- = *bl;
+				xfree((char *) bl);
+				continue;
+			}
+			len = blklen(bl);
+			if (&el[len] >= &nv[size]) {
+				int l, e;
+				l = &el[len] - &nv[size];
+				size += GAVSIZ > l ? GAVSIZ : l;
+				l = vl - nv;
+				e = el - nv;
+				nv = (char **) xrealloc(nv, 
+							size * sizeof(char *));
+				vl = nv + l;
+				el = nv + e;
+			}
+			vp = vl--;
+			*vp = *bl;
+			len--;
+			for (bp = el; bp != vp; bp--) 
+			     bp[len] = *bp;
+			el += len;
+			vp++;
+			for (bp = bl + 1; *bp; *vp++ = *bp++)
+				continue;
+			xfree(bl);
+		}
+    
+	}
+	vl = nv;
+	return(vl);
+}
+
+char * 
+globone(str)
+	char *str;
+{
+	
+	char *v[2];
+	char *nstr;
+
+	noglob = adrof("noglob") != 0;
+	gflag = 0;
+	v[0] = str;
+	v[1] = 0;
+	tglob(v);
+	if (gflag == G_NONE)
+		return (strip(savestr(str)));
+
+	if (gflag & G_CSH) {
+		char **vl;
+
+		/*
+		 * Expand back-quote, tilde and brace
+		 */
+		vl = globexpand(v);
+		if (vl[1] != (char *) 0) {
+			blkfree(vl);
+			setname(str);
+			bferr("Ambiguous");
+			/*NOTREACHED*/
+		}
+		nstr = vl[0];
+		xfree((char *) vl);
+	}
+	else	
+		nstr = str;
+	
+	if (!noglob && (gflag & G_GLOB)) {
+		glob_t globv;
+
+		globv.gl_offs = 0;
+		globv.gl_pathv = 0;
+		glob(nstr, GLOB_NOCHECK, 0, &globv);
+		if (gflag & G_CSH)
+			xfree(nstr);
+		if (globv.gl_pathc != 1) {
+			setname(str);
+			globfree(&globv);
+			bferr("Ambiguous");
+			/*NOTREACHED*/
+		}
+		if (adrof("nonomatch") == 0) {
+			gflag = 0;
+			tglob(globv.gl_pathv);
+			/* No match */
+			if (gflag != G_NONE) {
+				setname(str);
+				globfree(&globv);
+				bferr("No match");
+				/*NOTREACHED*/
+			}
+		}
+		str = strip(savestr(globv.gl_pathv[0]));
+		globfree(&globv);
+		return(str);
+	}
+	return(strip(nstr));
+}
 
 char **
-glob(v)
-	register char **v;
+globall(v)
+	char **v;
 {
-	char agpath[BUFSIZ];
-	char *agargv[GAVSIZ];
+	char *c, **vl, **vo;
 
-	gpath = agpath; gpathp = gpath; *gpathp = 0;
-	lastgpathp = &gpath[sizeof agpath - 2];
-	ginit(agargv); globcnt = 0;
-#ifdef GDEBUG
-	printf("glob entered: "); blkpr(v); printf("\n");
-#endif
+	if (!v || !v[0]) {
+		gargv = saveblk(v);
+		gargc = blklen(gargv);
+		return (gargv);
+	}
+
 	noglob = adrof("noglob") != 0;
-	nonomatch = adrof("nonomatch") != 0;
-	globcnt = noglob | nonomatch;
-	while (*v)
-		collect(*v++);
-#ifdef GDEBUG
-	printf("glob done, globcnt=%d, gflag=%d: ", globcnt, gflag); blkpr(gargv); printf("\n");
-#endif
-	if (globcnt == 0 && (gflag&1)) {
-		blkfree(gargv), gargv = 0;
-		return (0);
-	} else
-		return (gargv = copyblk(gargv));
-}
+	
+	if (gflag & G_CSH) 
+		/*
+		 * Expand back-quote, tilde and brace
+		 */
+		vl = vo = globexpand(v);
+	else	
+		vl = vo = saveblk(v);
+	    
+	if (!noglob && (gflag & G_GLOB)) {
+		/*
+		 * Glob the strings in vl using the glob routine
+		 * from libc
+		 */
+		glob_t globv;
 
-ginit(agargv)
-	char **agargv;
-{
-
-	agargv[0] = 0; gargv = agargv; sortbas = agargv; gargc = 0;
-	gnleft = NCARGS - 4;
-}
-
-collect(as)
-	register char *as;
-{
-	register int i;
-
-	if (any('`', as)) {
-#ifdef GDEBUG
-		printf("doing backp of %s\n", as);
-#endif
-		(void) dobackp(as, 0);
-#ifdef GDEBUG
-		printf("backp done, acollect'ing\n");
-#endif
-		for (i = 0; i < pargc; i++)
-			if (noglob) {
-				Gcat(pargv[i], "");
-				sortbas = &gargv[gargc];
-			} else
-				acollect(pargv[i]);
-		if (pargv)
-			blkfree(pargv), pargv = 0;
-#ifdef GDEBUG
-		printf("acollect done\n");
-#endif
-	} else if (noglob || eq(as, "{") || eq(as, "{}")) {
-		Gcat(as, "");
-		sort();
-	} else
-		acollect(as);
-}
-
-acollect(as)
-	register char *as;
-{
-	register int ogargc = gargc;
-
-	gpathp = gpath; *gpathp = 0; globbed = 0;
-	expand(as);
-	if (gargc == ogargc) {
-		if (nonomatch) {
-			Gcat(as, "");
-			sort();
-		}
-	} else
-		sort();
-}
-
-/*
- * String compare for qsort.  Also used by filec code in sh.file.c.
- */
-sortscmp(a1, a2)
-	char **a1, **a2;
-{
-
-	 return (strcmp(*a1, *a2));
-}
-
-expand(as)
-	char *as;
-{
-	register char *cs;
-	register char *sgpathp, *oldcs;
-	struct stat stb;
-
-	sgpathp = gpathp;
-	cs = as;
-	if (*cs == '~' && gpathp == gpath) {
-		addpath('~');
-		for (cs++; letter(*cs) || digit(*cs) || *cs == '-';)
-			addpath(*cs++);
-		if (!*cs || *cs == '/') {
-			if (gpathp != gpath + 1) {
-				*gpathp = 0;
-				if (gethdir(gpath + 1))
-					error("Unknown user: %s", gpath + 1);
-				(void) strcpy(gpath, gpath + 1);
-			} else
-				(void) strcpy(gpath, value("home"));
-			gpathp = strend(gpath);
-		}
-	}
-	while (!isglob(*cs)) {
-		if (*cs == 0) {
-			if (!globbed)
-				Gcat(gpath, "");
-			else if (stat(gpath, &stb) >= 0) {
-				Gcat(gpath, "");
-				globcnt++;
+		globv.gl_offs = 0;
+		globv.gl_pathv = 0;
+		glob(vl[0], GLOB_NOCHECK, 0, &globv);
+		while (*++vl) 
+			glob(*vl, GLOB_NOCHECK | GLOB_APPEND, 0, &globv);
+		if (gflag & G_CSH)
+			blkfree(vo);
+		if (adrof("nonomatch") == 0) {
+			gflag = 0;
+			tglob(globv.gl_pathv);
+			if (gflag != G_NONE) {
+				/* No match */
+				globfree(&globv);
+				gargc = 0;
+				return(gargv = (char **) 0);
 			}
-			goto endit;
 		}
-		addpath(*cs++);
+		if (globv.gl_pathc)
+			vl = saveblk(globv.gl_pathv);
+		else
+			vl = 0;
+		globfree(&globv);
 	}
-	oldcs = cs;
-	while (cs > as && *cs != '/')
-		cs--, gpathp--;
-	if (*cs == '/')
-		cs++, gpathp++;
-	*gpathp = 0;
-	if (*oldcs == '{') {
-		(void) execbrc(cs, NOSTR);
-		return;
-	}
-	matchdir(cs);
-endit:
-	gpathp = sgpathp;
-	*gpathp = 0;
+
+	gargc = vl ? blklen(vl) : 0;
+	return(gargv = vl);
 }
-
-matchdir(pattern)
-	char *pattern;
+		
+ginit()
 {
-	struct stat stb;
-	register struct direct *dp;
-	register DIR *dirp;
-
-	dirp = opendir(gpath);
-	if (dirp == NULL) {
-		if (globbed)
-			return;
-		goto patherr2;
-	}
-	if (fstat(dirp->dd_fd, &stb) < 0)
-		goto patherr1;
-	if (!isdir(stb)) {
-		errno = ENOTDIR;
-		goto patherr1;
-	}
-	while ((dp = readdir(dirp)) != NULL) {
-		if (dp->d_ino == 0)
-			continue;
-		if (match(dp->d_name, pattern)) {
-			Gcat(gpath, dp->d_name);
-			globcnt++;
-		}
-	}
-	closedir(dirp);
-	return;
-
-patherr1:
-	closedir(dirp);
-patherr2:
-	Perror(gpath);
-}
-
-execbrc(p, s)
-	char *p, *s;
-{
-	char restbuf[BUFSIZ + 2];
-	register char *pe, *pm, *pl;
-	int brclev = 0;
-	char *lm, savec, *sgpathp;
-
-	for (lm = restbuf; *p != '{'; *lm++ = *p++)
-		continue;
-	for (pe = ++p; *pe; pe++)
-	switch (*pe) {
-
-	case '{':
-		brclev++;
-		continue;
-
-	case '}':
-		if (brclev == 0)
-			goto pend;
-		brclev--;
-		continue;
-
-	case '[':
-		for (pe++; *pe && *pe != ']'; pe++)
-			continue;
-		if (!*pe)
-			error("Missing ]");
-		continue;
-	}
-pend:
-	if (brclev || !*pe)
-		error("Missing }");
-	for (pl = pm = p; pm <= pe; pm++)
-	switch (*pm & (QUOTE|TRIM)) {
-
-	case '{':
-		brclev++;
-		continue;
-
-	case '}':
-		if (brclev) {
-			brclev--;
-			continue;
-		}
-		goto doit;
-
-	case ',':
-		if (brclev)
-			continue;
-doit:
-		savec = *pm;
-		*pm = 0;
-		(void) strcpy(lm, pl);
-		(void) strcat(restbuf, pe + 1);
-		*pm = savec;
-		if (s == 0) {
-			sgpathp = gpathp;
-			expand(restbuf);
-			gpathp = sgpathp;
-			*gpathp = 0;
-		} else if (amatch(s, restbuf))
-			return (1);
-		sort();
-		pl = pm + 1;
-		continue;
-
-	case '[':
-		for (pm++; *pm && *pm != ']'; pm++)
-			continue;
-		if (!*pm)
-			error("Missing ]");
-		continue;
-	}
-	return (0);
-}
-
-match(s, p)
-	char *s, *p;
-{
-	register int c;
-	register char *sentp;
-	char sglobbed = globbed;
-
-	if (*s == '.' && *p != '.')
-		return (0);
-	sentp = entp;
-	entp = s;
-	c = amatch(s, p);
-	entp = sentp;
-	globbed = sglobbed;
-	return (c);
-}
-
-amatch(s, p)
-	register char *s, *p;
-{
-	register int scc;
-	int ok, lc;
-	char *sgpathp;
-	struct stat stb;
-	int c, cc;
-
-	globbed = 1;
-	for (;;) {
-		scc = *s++ & TRIM;
-		switch (c = *p++) {
-
-		case '{':
-			return (execbrc(p - 1, s - 1));
-
-		case '[':
-			ok = 0;
-			lc = 077777;
-			while (cc = *p++) {
-				if (cc == ']') {
-					if (ok)
-						break;
-					return (0);
-				}
-				if (cc == '-') {
-					if (lc <= scc && scc <= *p++)
-						ok++;
-				} else
-					if (scc == (lc = cc))
-						ok++;
-			}
-			if (cc == 0)
-				error("Missing ]");
-			continue;
-
-		case '*':
-			if (!*p)
-				return (1);
-			if (*p == '/') {
-				p++;
-				goto slash;
-			}
-			for (s--; *s; s++)
-				if (amatch(s, p))
-					return (1);
-			return (0);
-
-		case 0:
-			return (scc == 0);
-
-		default:
-			if ((c & TRIM) != scc)
-				return (0);
-			continue;
-
-		case '?':
-			if (scc == 0)
-				return (0);
-			continue;
-
-		case '/':
-			if (scc)
-				return (0);
-slash:
-			s = entp;
-			sgpathp = gpathp;
-			while (*s)
-				addpath(*s++);
-			addpath('/');
-			if (stat(gpath, &stb) == 0 && isdir(stb))
-				if (*p == 0) {
-					Gcat(gpath, "");
-					globcnt++;
-				} else
-					expand(p);
-			gpathp = sgpathp;
-			*gpathp = 0;
-			return (0);
-		}
-	}
-}
-
-Gmatch(s, p)
-	register char *s, *p;
-{
-	register int scc;
-	int ok, lc;
-	int c, cc;
-
-	for (;;) {
-		scc = *s++ & TRIM;
-		switch (c = *p++) {
-
-		case '[':
-			ok = 0;
-			lc = 077777;
-			while (cc = *p++) {
-				if (cc == ']') {
-					if (ok)
-						break;
-					return (0);
-				}
-				if (cc == '-') {
-					if (lc <= scc && scc <= *p++)
-						ok++;
-				} else
-					if (scc == (lc = cc))
-						ok++;
-			}
-			if (cc == 0)
-				bferr("Missing ]");
-			continue;
-
-		case '*':
-			if (!*p)
-				return (1);
-			for (s--; *s; s++)
-				if (Gmatch(s, p))
-					return (1);
-			return (0);
-
-		case 0:
-			return (scc == 0);
-
-		default:
-			if ((c & TRIM) != scc)
-				return (0);
-			continue;
-
-		case '?':
-			if (scc == 0)
-				return (0);
-			continue;
-
-		}
-	}
-}
-
-Gcat(s1, s2)
-	char *s1, *s2;
-{
-	register char *p, *q;
-	int n;
-
-	for (p = s1; *p++;)
-		;
-	for (q = s2; *q++;)
-		;
-	gnleft -= (n = (p - s1) + (q - s2) - 1);
-	if (gnleft <= 0 || ++gargc >= GAVSIZ)
-		error("Arguments too long");
-	gargv[gargc] = 0;
-	p = gargv[gargc - 1] = xalloc((unsigned)n);
-	for (q = s1; *p++ = *q++;)
-		;
-	for (p--, q = s2; *p++ = *q++;)
-		;
-}
-
-addpath(c)
-	char c;
-{
-
-	if (gpathp >= lastgpathp)
-		error("Pathname too long");
-	*gpathp++ = c & TRIM;
-	*gpathp = 0;
+	gargsiz = GAVSIZ;
+	gargv = (char **) xalloc(sizeof(char *) * gargsiz);
+	gargv[0] = 0;
+	gargc = 0;
 }
 
 rscan(t, f)
@@ -503,59 +415,20 @@ tglob(t)
 
 	while (p = *t++) {
 		if (*p == '~')
-			gflag |= 2;
-		else if (*p == '{' && (p[1] == '\0' || p[1] == '}' && p[2] == '\0'))
+			gflag |= G_CSH;
+		else if (*p == '{' &&
+		    (p[1] == '\0' || p[1] == '}' && p[2] == '\0'))
 			continue;
 		while (c = *p++)
 			if (isglob(c))
-				gflag |= c == '{' ? 2 : 1;
+			    gflag |= (c == '{' || c == '`') ? G_CSH : G_GLOB;
 	}
 }
 
-char *
-globone(str)
-	register char *str;
-{
-	char *gv[2];
-	register char **gvp;
-	register char *cp;
-
-	gv[0] = str;
-	gv[1] = 0;
-	gflag = 0;
-	tglob(gv);
-	if (gflag) {
-		gvp = glob(gv);
-		if (gvp == 0) {
-			setname(str);
-			bferr("No match");
-		}
-		cp = *gvp++;
-		if (cp == 0)
-			cp = "";
-		else if (*gvp) {
-			setname(str);
-			bferr("Ambiguous");
-		} else
-			cp = strip(cp);
 /*
-		if (cp == 0 || *gvp) {
-			setname(str);
-			bferr(cp ? "Ambiguous" : "No output");
-		}
-*/
-		xfree((char *)gargv); gargv = 0;
-	} else {
-		trim(gv);
-		cp = savestr(gv[0]);
-	}
-	return (cp);
-}
-
-/*
- * Command substitute cp.  If literal, then this is
- * a substitution from a << redirection, and so we should
- * not crunch blanks and tabs, separating words only at newlines.
+ * Command substitute cp.  If literal, then this is a substitution from a
+ * << redirection, and so we should not crunch blanks and tabs, separating
+ * words only at newlines.
  */
 char **
 dobackp(cp, literal)
@@ -563,28 +436,24 @@ dobackp(cp, literal)
 	bool literal;
 {
 	register char *lp, *rp;
-	char *ep;
-	char word[BUFSIZ];
-	char *apargv[GAVSIZ + 2];
+	char *ep, word[MAXPATHLEN];
 
 	if (pargv) {
 		abort();
 		blkfree(pargv);
 	}
-	pargv = apargv;
+	pargsiz = GAVSIZ;
+	pargv = (char **) xalloc(sizeof(char *) * pargsiz);
 	pargv[0] = NOSTR;
 	pargcp = pargs = word;
 	pargc = 0;
-	pnleft = BUFSIZ - 4;
+	pnleft = MAXPATHLEN - 4;
 	for (;;) {
 		for (lp = cp; *lp != '`'; lp++) {
 			if (*lp == 0) {
 				if (pargcp != pargs)
 					pword();
-#ifdef GDEBUG
-				printf("leaving dobackp\n");
-#endif
-				return (pargv = copyblk(pargv));
+				return (pargv);
 			}
 			psave(*lp);
 		}
@@ -596,14 +465,10 @@ dobackp(cp, literal)
 					goto oops;
 			}
 		if (!*rp)
-oops:
-			error("Unmatched `");
+oops:			error("Unmatched `");
 		ep = savestr(lp);
 		ep[rp - lp] = 0;
 		backeval(ep, literal);
-#ifdef GDEBUG
-		printf("back from backeval\n");
-#endif
 		cp = rp + 1;
 	}
 }
@@ -612,15 +477,16 @@ backeval(cp, literal)
 	char *cp;
 	bool literal;
 {
-	int pvec[2];
-	int quoted = (literal || (cp[0] & QUOTE)) ? QUOTE : 0;
-	char ibuf[BUFSIZ];
-	register int icnt = 0, c;
+	register int icnt, c;
 	register char *ip;
-	bool hadnl = 0;
-	char *fakecom[2];
 	struct command faket;
+	bool hadnl;
+	int pvec[2], quoted;
+	char *fakecom[2], ibuf[BUFSIZ];
 
+	hadnl = 0;
+	icnt = 0;
+	quoted = (literal || (cp[0] & QUOTE)) ? QUOTE : 0;
 	faket.t_dtyp = TCOM;
 	faket.t_dflg = 0;
 	faket.t_dlef = 0;
@@ -629,18 +495,19 @@ backeval(cp, literal)
 	faket.t_dcom = fakecom;
 	fakecom[0] = "` ... `";
 	fakecom[1] = 0;
+
 	/*
-	 * We do the psave job to temporarily change the current job
-	 * so that the following fork is considered a separate job.
-	 * This is so that when backquotes are used in a
-	 * builtin function that calls glob the "current job" is not corrupted.
-	 * We only need one level of pushed jobs as long as we are sure to
-	 * fork here.
+	 * We do the psave job to temporarily change the current job so that
+	 * the following fork is considered a separate job.  This is so that
+	 * when backquotes are used in a builtin function that calls glob the
+	 * "current job" is not corrupted.  We only need one level of pushed
+	 * jobs as long as we are sure to fork here.
 	 */
 	psavejob();
+
 	/*
-	 * It would be nicer if we could integrate this redirection more
-	 * with the routines in sh.sem.c by doing a fake execute on a builtin
+	 * It would be nicer if we could integrate this redirection more with
+	 * the routines in sh.sem.c by doing a fake execute on a builtin
 	 * function that was piped out.
 	 */
 	mypipe(pvec);
@@ -691,10 +558,9 @@ backeval(cp, literal)
 				break;
 			if (c == '\n') {
 				/*
-				 * Continue around the loop one
-				 * more time, so that we can eat
-				 * the last newline without terminating
-				 * this word.
+				 * Continue around the loop one more time, so
+				 * that we can eat the last newline without
+				 * terminating this word.
 				 */
 				hadnl = 1;
 				continue;
@@ -705,20 +571,15 @@ backeval(cp, literal)
 			psave(c | quoted);
 		}
 		/*
-		 * Unless at end-of-file, we will form a new word
-		 * here if there were characters in the word, or in
-		 * any case when we take text literally.  If
-		 * we didn't make empty words here when literal was
-		 * set then we would lose blank lines.
+		 * Unless at end-of-file, we will form a new word here if there
+		 * were characters in the word, or in any case when we take
+		 * text literally.  If we didn't make empty words here when
+		 * literal was set then we would lose blank lines.
 		 */
 		if (c != -1 && (cnt || literal))
 			pword();
 		hadnl = 0;
 	} while (c >= 0);
-#ifdef GDEBUG
-	printf("done in backeval, pvec: %d %d\n", pvec[0], pvec[1]);
-	printf("also c = %c <%o>\n", c, c);
-#endif
 	(void) close(pvec[0]);
 	pwait();
 	prestjob();
@@ -727,7 +588,6 @@ backeval(cp, literal)
 psave(c)
 	char c;
 {
-
 	if (--pnleft <= 0)
 		error("Word too long");
 	*pargcp++ = c;
@@ -735,15 +595,93 @@ psave(c)
 
 pword()
 {
-
 	psave(0);
-	if (pargc == GAVSIZ)
-		error("Too many words from ``");
+	if (pargc == pargsiz - 1) {
+	    pargsiz += GAVSIZ;
+	    pargv = (char **) xrealloc(pargv, pargsiz * sizeof(char *));
+	}
 	pargv[pargc++] = savestr(pargs);
 	pargv[pargc] = NOSTR;
-#ifdef GDEBUG
-	printf("got word %s\n", pargv[pargc-1]);
-#endif
 	pargcp = pargs;
-	pnleft = BUFSIZ - 4;
+	pnleft = MAXPATHLEN - 4;
+}
+
+Gmatch(string, pattern)
+	register char *string, *pattern;
+{
+	register char stringc, patternc;
+	int match;
+	char lastchar, rangec;
+
+	for (;; ++string) {
+		stringc = *string & TRIM;
+		switch (patternc = *pattern++) {
+		case 0:
+			return (stringc == 0);
+		case '?':
+			if (stringc == 0)
+				return (0);
+			break;
+		case '*':
+			if (!*pattern)
+				return (1);
+			while (*string) 
+				if (Gmatch(string++, pattern))
+					return (1);
+			return (0);
+		case '[':
+			lastchar = -1;
+			match = 0;
+			while (rangec = *pattern++) {
+				if (rangec == ']')
+					if (match)
+						break;
+					else
+						return (0);
+				if (match)
+					continue;
+				if (rangec == '-') 
+					match = (stringc <= *pattern++ &&
+					    *(pattern-2) <= stringc);
+				else {
+					lastchar = rangec;
+					match = (stringc == rangec);
+				}
+			}
+			if (rangec == 0)
+				bferr("Missing ]");
+			break;
+		default:
+			if ((patternc & TRIM) != stringc)
+				return (0);
+			break;
+
+		}
+	}
+}
+
+Gcat(s1, s2)
+	char *s1, *s2;
+{
+	register char *p, *q;
+	int n;
+
+	for (p = s1; *p++;);
+	for (q = s2; *q++;);
+	n = (p - s1) + (q - s2) - 1;
+	if (++gargc >= gargsiz) {
+		gargsiz += GAVSIZ;
+		gargv = (char **) xrealloc(gargv, gargsiz * sizeof(char *));
+	}
+	gargv[gargc] = 0;
+	p = gargv[gargc - 1] = xalloc((unsigned)n);
+	for (q = s1; *p++ = *q++;);
+	for (p--, q = s2; *p++ = *q++;);
+}
+
+int
+sortscmp(a1, a2)
+	char **a1, **a2;
+{
+	return(strcmp(*a1, *a2));
 }
