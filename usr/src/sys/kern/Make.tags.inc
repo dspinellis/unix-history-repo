@@ -1,4 +1,4 @@
-#	@(#)Make.tags.inc	8.1 (Berkeley) %G%
+#	@(#)Make.tags.inc	8.2 (Berkeley) %G%
 
 # Common files for "make tags".
 # Included by the Makefile for each architecture.
@@ -9,6 +9,7 @@
 
 COMM=	/sys/conf/*.[ch] \
 	/sys/dev/*.[ch] /sys/dev/scsi/*.[ch] \
+	/sys/isofs/*/*.[ch] \
 	/sys/kern/*.[ch] /sys/libkern/*.[ch] \
 	/sys/miscfs/*/*.[ch] \
 	/sys/net/*.[ch] /sys/netccitt/*.[ch] /sys/netinet/*.[ch] \
