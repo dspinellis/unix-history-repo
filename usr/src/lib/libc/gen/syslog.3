@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)syslog.3	6.9 (Berkeley) %G%
+.\"	@(#)syslog.3	6.10 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -121,8 +121,10 @@ Current values for
 .I logopt
 are:
 .IP LOG_PID \w'LOG_WARNING'u+3
-log the process id with each message:
+Log the process id with each message:
 useful for identifying instantiations of daemons.
+.IP LOG_PERROR \w'LOG_WARNING'u+3
+Write the message to stderr as well to the system log.
 .IP LOG_CONS \w'LOG_WARNING'u+3
 Force writing messages to the console if unable to send it to
 .I syslogd.

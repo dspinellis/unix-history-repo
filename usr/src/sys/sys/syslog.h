@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)syslog.h	7.12 (Berkeley) %G%
+ *	@(#)syslog.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -85,3 +85,4 @@
 #define	LOG_ODELAY	0x04	/* delay open until first syslog() (default) */
 #define LOG_NDELAY	0x08	/* don't delay open */
 #define LOG_NOWAIT	0x10	/* if forking to log on console, don't wait() */
+#define	LOG_PERROR	0x20	/* log to stderr as well */
