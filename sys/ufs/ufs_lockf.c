@@ -515,7 +515,7 @@ lf_findoverlap(lf, lock, type, prev, overlap)
 			return (2);
 		}
 		if (start <= lf->lf_start &&
-		           (end == -1 ||
+			   (end == -1 ||
 			   (lf->lf_end != -1 && end >= lf->lf_end))) {
 			/* Case 3 */
 #ifdef LOCKF_DEBUG
@@ -628,21 +628,21 @@ lf_split(lock1, lock2)
 lf_wakelock(listhead)
 	struct lockf *listhead;
 {
-        register struct lockf *blocklist, *wakelock;
+	register struct lockf *blocklist, *wakelock;
 
 	blocklist = listhead->lf_block;
 	listhead->lf_block = NOLOCKF;
-        while (blocklist != NOLOCKF) {
-                wakelock = blocklist;
-                blocklist = blocklist->lf_block;
+	while (blocklist != NOLOCKF) {
+		wakelock = blocklist;
+		blocklist = blocklist->lf_block;
 		wakelock->lf_block = NOLOCKF;
 		wakelock->lf_next = NOLOCKF;
 #ifdef LOCKF_DEBUG
 		if (lockf_debug & 2)
 			lf_print("lf_wakelock: awakening", wakelock);
 #endif /* LOCKF_DEBUG */
-                wakeup((caddr_t)wakelock);
-        }
+		wakeup((caddr_t)wakelock);
+	}
 }
 
 #ifdef LOCKF_DEBUG
