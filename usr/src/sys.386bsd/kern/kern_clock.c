@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)kern_clock.c	7.16 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00113
+ * --------------------         -----   ----------------------
+ *
+ * 08 Apr 93	Poul-Henning Kamp	Add support for dcfclock
  */
 
 #include "param.h"
@@ -222,6 +229,16 @@ hardclock(frame)
 		}
 		BUMPTIME(&time, delta);
 	}
+#ifdef DCFCLK
+	/*
+	 * This is lousy, but until I can get the $&^%&^(!!! signal onto one
+	 * of the interrupt's I'll have to poll it.  No, it will not work if
+	 * you attempt -DHZ=1000, things break.
+	 * But keep the NDCFCLK low, to avoid waste of cycles...
+	 * phk@data.fls.dk
+	 */
+	dcfclk_worker();
+#endif
 	if (needsoft) {
 		if (CLKF_BASEPRI(&frame)) {
 			/*

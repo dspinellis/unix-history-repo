@@ -20,11 +20,12 @@
 #
 # PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
 # --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       00001
+# CURRENT PATCH LEVEL:         2       00113
 # --------------------         -----   ----------------------
 #
 # 29 Jun 92	Chris G. Demetriou	Fix vers.o for kernel profiling and
 #						plain old link
+# 25 Mar 93	Sean Eric Fagan		Add support for assembler source
 #
 TOUCH=	touch -f -c
 LD=	/usr/bin/ld
@@ -41,6 +42,7 @@ CFLAGS=	-O ${COPTS}
 
 NORMAL_C= ${CC} -c ${CFLAGS} ${PROF} $<
 NORMAL_C_C= ${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
+NORMAL_S= ${CPP} -I. -DLOCORE ${COPTS} $< | ${AS} ${ASFLAGS} -o $*.o
 DRIVER_C= ${CC} -c ${CFLAGS} ${PROF} $<
 DRIVER_C_C= ${CC} -c ${CFLAGS} ${PROF} ${PARAM} $<
 SYSTEM_OBJS=locore.o ${OBJS} param.o ioconf.o conf.o

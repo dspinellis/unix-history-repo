@@ -37,7 +37,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00082
+ * CURRENT PATCH LEVEL:         4       00113
  * --------------------         -----   ----------------------
  *
  * 14 Aug 92	Arne Henrik Juul	Added code in the kernel to
@@ -47,6 +47,8 @@
  * 01 Feb 93	Julian Elischer		Added code to for the cpu
  *					speed independent spinwait()
  *					function, (used by scsi and others)
+ * 25 Mar 93	Sean Eric Fagan		Add microtimer support using timer 1
+ * 08 Apr 93	Poul-Henning Kamp/P-HK	Fixes, and support for dcfclock
  */
 
 /*
@@ -60,10 +62,15 @@
 #include "i386/isa/icu.h"
 #include "i386/isa/isa.h"
 #include "i386/isa/rtc.h"
+#include "i386/isa/timerreg.h"
 
 #define DAYST 119
 #define DAYEN 303
+
+/* X-tals being what they are, it's nice to be able to fudge this one... */
+#ifndef XTALSPEED
 #define XTALSPEED 1193182
+#endif
 
 startrtclock() {
 	int s;
@@ -71,9 +78,11 @@ startrtclock() {
 	findcpuspeed();		/* use the clock (while it's free)
 					to find the cpu speed */
 	/* initialize 8253 clock */
-	outb (IO_TIMER1+3, 0x36);
-	outb (IO_TIMER1, XTALSPEED/hz);
-	outb (IO_TIMER1, (XTALSPEED/hz)/256);
+	outb(TIMER_MODE, TIMER_SEL0|TIMER_RATEGEN|TIMER_16BIT);
+
+	/* Correct rounding will buy us a better precision in timekeeping */
+	outb (IO_TIMER1, (XTALSPEED+hz/2)/hz);
+	outb (IO_TIMER1, ((XTALSPEED+hz/2)/hz)/256);
 
 	/* initialize brain-dead battery powered clock */
 	outb (IO_RTC, RTC_STATUSA);
