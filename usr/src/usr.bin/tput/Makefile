@@ -14,22 +14,22 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.3 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	clear.c
+SRCS=	tput.c
 OBJS=
-MAN=	clear.0
+MAN=	tput.0
 
-all: clear
+all: tput
 
-clear: ${LIBC}
+tput: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c -ltermcap
 
 clean:
-	rm -f ${OBJS} core clear
+	rm -f ${OBJS} core tput
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +38,8 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 clear ${DESTDIR}/usr/bin
+	install -s -o bin -g bin -m 755 tput ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 755 clear.sh ${DESTDIR}/usr/bin/clear
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}
