@@ -1,4 +1,4 @@
-.\"	@(#)Cover.infopacket	1.4	%G%
+.\" @(#)Cover.infopacket	1.5 (CSRG - distribution) %G%
 .nr PS 11
 .ps 11
 .nr VS 13
@@ -289,6 +289,9 @@ For 4.2 licensees that have updated to 4.3BSD, substitute
 accepted by The Regents of the University of California.
 The revised Berkeley License Agreement (6/83)
 and Addendum Number Three govern.''
+The wiring of money is strongly discouraged. If it must be wired, then 
+along with the account number, the sender must
+include "C.S.R.G.,2-7780".
 .IP \(bu
 A completed Site Information Form.
 The distribution itself will be sent to the technical contact.
@@ -297,8 +300,9 @@ and is for our use in identifying sites with specific configurations.
 Please note that we cannot ship to post office boxes; 
 therefore, please have the
 technical contact's address supplied without use of a post office box.
+Please inform C.S.R.G. of any future changes in wither your
+technical or administrative contacts.
 .PP
-A checklist is included to aid you in assembling this material.
 All the above material must be sent to:
 .DS
 Distribution Coordinator
@@ -318,6 +322,8 @@ of arrival of the properly completed paperwork.
 Because of the differential in costs of shipping outside the United States,
 we ask that organizations beyond the North American continent pay
 the collect shipping charges.
+The payment of custom and duty charges are the responsibility
+of the recipient.
 .PP
 The most expedient way to insure that your full distribution is sent
 as quickly as possible is to include in a single package the signed
