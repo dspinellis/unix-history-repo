@@ -1,21 +1,20 @@
 /*
- * "@(#)dump.h	1.1 (Berkeley) %G%"
+ * "@(#)dump.h	1.2 (Berkeley) %G%"
  */
 #define	NI	16
 #define	DIRPB	(BSIZE/sizeof(struct direct))
 
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/filsys.h>
-#include <sys/ino.h>
-#include <sys/inode.h>
-#include <sys/fblk.h>
-#include <sys/dir.h>
+#include "../../h/param.h"
+#include "../../h/stat.h"
+#include "../../h/fs.h"
+#include "../../h/inode.h"
+#include "../../h/dir.h"
 #include <utmp.h>
 #include <time.h>
 #include <signal.h>
+int (*signal())();
 #include <dumprestor.h>
 #include <fstab.h>
 
@@ -69,6 +68,7 @@ int	dsrch();
 int	nullf();
 char	*getsuffix();
 char	*rawname();
+struct dinode *getino();
 
 int	interrupt();		/* in case operator bangs on console */
 
