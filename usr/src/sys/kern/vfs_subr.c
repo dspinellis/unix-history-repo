@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.5 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.6 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,6 @@ int	vttoif_tab[9] = {
 /*
  * Insq/Remq for the vnode usage lists.
  */
-#define NOLIST ((struct buf *)0x87654321)
 #define	bufinsvn(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_vnbufs)
 #define	bufremvn(bp) {  \
 	LIST_REMOVE(bp, b_vnbufs); \
