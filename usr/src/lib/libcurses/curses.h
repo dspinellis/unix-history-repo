@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.10 */
+/* %G% (Berkeley) @(#)curses.h	1.11 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -126,7 +126,7 @@ int	__void__;
 #define	scrollok(win,bf) (win->_scroll = bf)
 #define flushok(win,bf)	 (bf ? (win->_flags |= _FLUSH):(win->_flags &= ~_FLUSH))
 #define	getyx(win,y,x)	 y = win->_cury, x = win->_curx
-#define	winch(win)	 (win->_y[win->_cury][win->_curx])
+#define	winch(win)	 (win->_y[win->_cury][win->_curx] & 0177)
 
 #define raw()	 (_tty.sg_flags|=RAW, _pfast=_rawmode=TRUE, stty(_tty_ch,&_tty))
 #define noraw()	 (_tty.sg_flags&=~RAW,_rawmode=FALSE,_pfast=!(_tty.sg_flags&CRMOD),stty(_tty_ch,&_tty))
