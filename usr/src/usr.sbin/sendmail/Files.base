@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.10 (Berkeley) %G%
+#	@(#)Files.base	8.11 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -12,6 +12,9 @@ makemap/Makefile
 makemap/Makefile.dist
 makemap/makemap.8
 makemap/makemap.c
+smrsh/README
+smrsh/smrsh.8
+smrsh/smrsh.c
 src/Makefile
 src/makesendmail
 src/READ_ME
