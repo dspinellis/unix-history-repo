@@ -14,29 +14,30 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-DIRS=	man1 man2 man3 man3f man4 man4/vax man4/tahoe man5 man7 man8 man8/vax
+DIRS=	man3 man3f man4 man4/vax man4/tahoe man5 man7 man8 man8/vax
 
-all: scriptinstall FRC
-	install -c -o bin -g bin -m 444 makewhatis.sed \
-		${DESTDIR}/usr/man/makewhatis.sed
-	for i in ${DIRS}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); \
+all: FRC
+	@-for i in ${DIRS}; do \
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); \
 	done
 
-
 install: FRC
-	for i in ${DIRS}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for file in `find /usr/man -type f -name '*.0' -print`; do \
-		sed -n -f /usr/man/makewhatis.sed $$file; \
+	install -c -o bin -g bin -m 444 makewhatis.sed \
+		${DESTDIR}/usr/share/man/makewhatis.sed
+	@-for i in ${DIRS}; do \
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+	for file in `find /usr/share/man -type f -name '*.0' -print`; do \
+		sed -n -f /usr/share/man/makewhatis.sed $$file; \
 	done | sort -u > whatis.db
-	install -o bin -g bin -m 444 whatis.db ${DESTDIR}/usr/man/whatis
-	install -c -o bin -g bin -m 444 man.template ${DESTDIR}/usr/man/man.template
+	install -o bin -g bin -m 444 whatis.db ${DESTDIR}/usr/share/man
 
 clean cleandir depend lint tags:
-	for i in ${DIRS}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
+	@-for i in ${DIRS}; do \
+		(echo "==> $$i"; \
+		    cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} $@); done
 
 FRC:
