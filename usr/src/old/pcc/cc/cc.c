@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.16 %G%";
+static	char sccsid[] = "@(#)cc.c 4.17 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -73,9 +73,9 @@ main(argc, argv)
 			continue;
 		case 'p':
 			proflag++;
-			crt0 = "/lib/mcrt0.o";
+			crt0 = _PATH_MCRT0;
 			if (argv[i][2] == 'g')
-				crt0 = "/usr/lib/gcrt0.o";
+				crt0 = _PATH_GCRT0;
 			continue;
 		case 'f':
 			fflag++;
@@ -157,7 +157,7 @@ main(argc, argv)
 	if (npassname && chpass ==0)
 		chpass = "012p";
 	if (chpass && npassname==0)
-		npassname = "/usr/new";
+		npassname = _PATH_USRNEW;
 	if (chpass)
 	for (t=chpass; *t; t++) {
 		switch (*t) {
