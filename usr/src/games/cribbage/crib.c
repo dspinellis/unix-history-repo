@@ -398,9 +398,9 @@ BOOLEAN		mycrib;
 	static CARD		ch[CINHAND], ph[CINHAND];
 	CARD			crd;
 	register int		i, j, k;
-	int			l;
-	int			cnum, pnum, sum;
-	BOOLEAN			myturn, mego, ugo, last, played;
+	register int		l;
+	register int		cnum, pnum, sum;
+	register BOOLEAN	myturn, mego, ugo, last, played;
 
 	cnum = pnum = CINHAND;
 	for (i = 0; i < CINHAND; i++) {		/* make copies of hands */
@@ -413,8 +413,8 @@ BOOLEAN		mycrib;
 	myturn = !mycrib;
 	for (;;) {
 	    last = TRUE;				/* enable last flag */
-	    prtable(sum);
 	    prhand(ph, pnum, Playwin);
+	    prtable(sum);
 	    if (myturn) {				/* my tyrn to play */
 		if (!anymove(ch, cnum, sum)) {		/* if no card to play */
 		    if (!mego && cnum) {		/* go for comp? */
@@ -517,6 +517,8 @@ BOOLEAN		mycrib;
 	    if (!pnum && !cnum)
 		break;					/* both done */
 	}
+	prhand(ph, pnum, Playwin);
+	prtable(sum);
 	if (last)
 	    if (played) {
 		msg(quiet ? "I get one for last" : "I get one point for last");
