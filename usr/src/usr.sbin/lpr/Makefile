@@ -1,3 +1,4 @@
+#	@(#)Makefile	4.1	(Berkeley)	82/12/03
 #
 # makefile for line printer spooling system
 #
