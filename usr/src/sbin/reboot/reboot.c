@@ -22,21 +22,21 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Reboot
  */
-#include <stdio.h>
-#include <sys/reboot.h>
-#include <errno.h>
-#include <signal.h>
-#include <pwd.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/syslog.h>
 #include <sys/syscall.h>
+#include <sys/reboot.h>
+#include <sys/signal.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <errno.h>
 
 main(argc, argv)
 	int argc;
