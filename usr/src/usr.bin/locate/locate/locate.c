@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)locate.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)locate.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,14 +50,17 @@ static char sccsid[] = "@(#)locate.c	5.4 (Berkeley) %G%";
 #include <fnmatch.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+
 #include "locate.h"
 #include "pathnames.h"
 
 FILE *fp;
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	if (argc != 2) {
 		(void)fprintf(stderr, "usage: locate pattern\n");
@@ -79,7 +82,7 @@ fastfind(pathpart)
 	register char *p, *s;
 	register int c;
 	int count, found, globflag;
-	char *cutoff, *patend, *q, *index(), *patprep();
+	char *cutoff, *patend, *q, *patprep();
 	char bigram1[NBG], bigram2[NBG], path[MAXPATHLEN];
 
 	for (c = 0, p = bigram1, s = bigram2; c < NBG; c++)
