@@ -1,4 +1,8 @@
+.\"	@(#)tmac.s	1.5 (Berkeley) 5/11/88
+.\" ancillary files reside in \*(//,
+.\" except local which are in \*(L/,
 .ds // /usr/lib/ms/
+.ds L/ /usr/local/lib/tmac/
 .	\" IZ - initialize (before text begins)
 .de IZ
 .nr FM 1i
@@ -164,7 +168,7 @@
 .	\" TL - source file for cover sheet
 .de TL
 .rn TL @T
-.so \*(//s.cov
+.so \*(//cov.ms
 .TL
 .rm @T
 ..
@@ -394,10 +398,10 @@
 .	br
 .	ev 2
 .	KK
+.	rm KK
 .\}
 .ls
 .ce 0
-.if !\\n(TB .rm KK
 .if \\n(TB .da KJ
 .if \\n(TB \!.KD \\n(dn
 .if \\n(TB .KK
@@ -417,7 +421,7 @@
 .	\" EM - end macro (process leftover keep)
 .de EM
 .br
-.if !\\n(TB .if t .wh -1p CM
+.if !\\n(TB .wh -1p CM
 .if \\n(TB \{\
 \&\c
 '	bp
@@ -449,7 +453,7 @@
 .	tm HM + FM longer than page
 .	ab
 .\}
-.if t .CM
+.CM
 .if !\\n(HM .nr HM 1i
 .po \\n(POu
 .nr PF \\n(.f
@@ -472,7 +476,7 @@
 .nr MF 0
 .mk
 .os
-.ev 1
+.ev 2
 .if !\\n(TD .if \\n(TC<5 .XK
 .nr TC 0
 .ev
@@ -487,7 +491,6 @@
 .\}
 .ns
 .mk #T
-.if t .if \\n(.o+\\n(LL>7.54i .tm PO + LL wider than 7.54i
 ..
 .	\" PT - page titles
 .de PT
@@ -495,6 +498,7 @@
 .pc %
 .nr PN \\n%
 .nr PT \\n%
+.if !'\\n%'0' .if !'\\n%'1' .if !'\\n%'i' .nr PT 2
 .if \\n(P1 .nr PT 2
 .if \\n(PT>1 .if !\\n(EH .if !\\n(OH .tl \\*(LH\\*(CH\\*(RH
 .if \\n(PT>1 .if \\n(OH .if o .tl \\*(O1
@@ -552,9 +556,9 @@
 .	tl ''\\n(PN''
 .	nr CT 0
 .\}
-.if \\n% .if !\\n(EF .if !\\n(OF .tl \\*(LF\\*(CF\\*(RF
-.if \\n% .if \\n(OF .if o .tl \\*(O3
-.if \\n% .if \\n(EF .if e .tl \\*(E4
+.if !'\\n%'0' .if !\\n(EF .if !\\n(OF .tl \\*(LF\\*(CF\\*(RF
+.if !'\\n%'0' .if \\n(OF .if o .tl \\*(O3
+.if !'\\n%'0' .if \\n(EF .if e .tl \\*(E4
 .ft \\n(PF
 .ps \\n(PX
 ..
@@ -620,7 +624,7 @@
 .nr XX 0 1
 .if \\n(MF .FV
 .ch FX \\n(.pu-\\n(FMu
-.ev 1
+.ev 2
 .if \\n(TB .XK
 .nr TC 0
 .ev
@@ -655,6 +659,12 @@
 .if \\n(IP<=0 .in -\\n(I\\n(IRu
 ..
 .	\" CM - cut mark
+.	\" only in troff when register v isn't one
+.	\" if string .T is set (ditroff), only if .T is "vp"
+.	\" may be forced if register v is two
+.if n .ig
+.if \nv=1 .ig
+.if !\nv=2 .if !"\*(.T"" .if !"\*(.T"vp" .ig
 .de CM
 .po 0
 .lt 7.6i
@@ -723,7 +733,7 @@
 .rm CF
 ..
 .	\" \** - numbered footnote
-.ds * \\*([.\\n+*\\*(.]
+.ds * \\*[\\n+*\\*]
 .	\" FJ - replaces FS after cover
 .de FJ
 'ce 0
@@ -791,7 +801,7 @@
 .\}
 .if !\\n(FF \{\
 .	ie "\\$2"no" \\$1\0\c
-.	el \\*([.\\$1\\*(.]\0\c
+.	el \\*[\\$1\\*]\0\c
 .\}
 .if \\n(FF .if \\n(FF<3 \{\
 .	ie "\\$2"no" \\$1\0\c
@@ -832,40 +842,113 @@
 .fi
 .ev
 ..
+.de IS			\" *** start ideal picture
+.nr g7 \\n(.u
+.ls 1
+..
+.de IF
+.if \\n(g7 .fi
+.ls
+..
+.de IE			\" *** end ideal picture
+.if \\n(g7 .fi
+.ls
+..
+.de PS		\" *** start picture: $1=height, $2=width in units or inches
+.if t .sp .3
+.nr g7 \\$2
+.in (\\n(.lu-\\n(g7u)/2u
+.ne \\$1u
+.nr g7 \\n(.u
+.ls 1
+..
+.de PE			\" *** end picture
+.in
+.if \\n(g7 .fi
+.if t .sp .6
+.ls
+..
+.\"	GS called with C (default), L or R  (\n(g1=width, \n(g2=height)
+.de GS			\" *** start gremlin picture
+.nr g7 (\\n(.lu-\\n(g1u)/2u
+.if "\\$1"L" .nr g7 \\n(.iu
+.if "\\$1"R" .nr g7 \\n(.lu-\\n(g1u
+.in \\n(g7u
+.nr g7 \\n(.u
+.ls 1
+.nf
+.ne \\n(g2u
+..
+.de GE			\" *** end gremlin picture
+.ls
+.in
+.if \\n(g7 .fi
+.if t .sp .6
+..
+.de GF			\" *** finish gremlin picture; stay at top
+.ls
+.in
+.if \\n(g7 .fi
+..
 .	\" TS - source file for tbl
 .de TS
 .rn TS @T
-.so \*(//s.tbl
+.so \*(//tbl.ms
 .TS \\$1 \\$2
 .rm @T
 ..
 .	\" EQ - source file for eqn
 .de EQ
 .rn EQ @T
-.so \*(//s.eqn
+.so \*(//eqn.ms
 .EQ \\$1 \\$2
 .rm @T
 ..
 .	\" ]- - source file for refer
 .de ]-
 .rn ]- @T
-.so \*(//s.ref
+.so \*(//ref.ms
 .]-
 .rm @T
 ..
+.if !"\*(.T"" \{\
+.	\" LT and HE - source for letter head
+.de LT
+.rn LT @T
+.so \*(L/hed.ms
+.LT
+.rm @T
+..
+.de HE
+.rn HE @T
+.so \*(L/hed.ms
+.HE
+.rm @T
+..
+.\}
 .	\" [< - for refer -s or -e
 .de ]<
 .rn ]< @T
-.so \*(//s.ref
+.so \*(//ref.ms
 .]<
 .rm @T
 ..
-.if \n(.V>19 .ds [. \f1[
-.if \n(.V>19 .ds .] ]\fP
-.if \n(.V<20 .ds [. \f1\s-2\v'-.4m'
-.if \n(.V<20 .ds .] \v'.4m'\s+2\fP
-.ds <. .
-.ds <, ,
+.	\" footnote delimiters
+.if \n(.V>19 .ds [ \f1[
+.if \n(.V>19 .ds ] ]\fP
+.if \n(.V<20 .ds [ \f1\s-2\v'-.4m'
+.if \n(.V<20 .ds ] \v'.4m'\s+2\fP
+.	\" refer strings
+.if n .ds [. [
+.if t .ds [. \s-2\v'-.4m'\f1
+.if n .ds .] ]
+.if t .ds .] \v'.4m'\s+2\fP
+.if n .ds <. "
+.if t .ds <. .
+.if n .ds >. .
+.if t .ds >. "
+.if n .ds >; ;
+.if t .ds >; "
 .if n .ds Q \&"
 .if n .ds U \&"
 .if n .ds - \%--
@@ -874,18 +957,18 @@
 .if t .ds - \(em
 .ds ' \h'\w'e'u/5'\z\'\h'-\w'e'u/5'
 .ds ` \h'\w'e'u/5'\z\`\h'-\w'e'u/5'
-.ds ^ \h'\w'o'u/10'\z^\h'-\w'e'u/10'
-.ds , \h'\w'c'u/5'\z,\h'-\w'e'u/5'
-.ds : \h'\w'u'u/5'\z"\h'-\w'e'u/5'
-.ds ~ \h'\w'n'u/10'\z~\h'-\w'e'u/10'
+.ds ^ \h'\w'o'u/10'\z^\h'-\w'o'u/10'
+.ds , \h'\w'c'u/5'\z,\h'-\w'c'u/5'
+.ds : \h'\w'u'u/5'\u\z.\h'\w'u'u*2/5'\z.\d\h'-\w'u'u*3/5'
+.ds ~ \h'\w'n'u/10'\z~\h'-\w'n'u/10'
 .ds C \h'\w'c'u/5'\v'-.6m'\s-4\zv\s+4\v'.6m'\h'-\w'c'u/5'
 .	\" AM - better accent marks
 .de AM
-.so \*(//s.acc
+.so \*(//acc.ms
 ..
 .	\" TM - thesis mode
 .de TM
-.so \*(//s.ths
+.so \*(//ths.ms
 ..
 .	\" BX - word in a box
 .de BX
@@ -895,14 +978,14 @@
 .	\" B1 - source file for boxed text
 .de B1
 .rn B1 @T
-.so \*(//s.tbl
+.so \*(//tbl.ms
 .B1 \\$1
 .rm @T
 ..
 .	\" XS - table of contents
 .de XS
 .rn XS @T
-.so \*(//s.toc
+.so \*(//toc.ms
 .XS \\$1 \\$2
 .rm @T
 ..
@@ -916,7 +999,8 @@
 .el \{\
 \s-1UNIX\s0\\$1\(dg
 .FS
-\(dg \s-1UNIX\s0 is a trademark of AT&T Bell Laboratories.
+\(dg \s-1UNIX\s0 is a registered trademark of AT&T Bell Laboratories
+in the USA and other countries.
 .FE
 .nr UX 1
 .\}
