@@ -1,3 +1,5 @@
+/*	@(#)tmscp.h	1.2 (Berkeley) %G% */
+
 /*
  *	@(#)tmscp.h	1.3	10/21/85
  * Definitions for the Tape Mass Storage Control Protocol
@@ -107,8 +109,7 @@
  * Unit flags
  */
 #define	M_UF_WRTPH	0020000		/* Write protect (hardware) */
-#define	M_UF_WRTPS	0010000		/* Write protect (software or volume) *
-/
+#define	M_UF_WRTPS	0010000		/* Write protect (software or volume) */
 #define	M_UF_WBKNV	0000100		/* Write back (enables cache) */
 #define	M_UF_VSMSU	0000040		/* Variable speed mode suppression */
 #define	M_UF_VARSP	0000020		/* Variable speed unit */
@@ -138,8 +139,7 @@
 #define	M_ST_PLOST	021		/* Position lost */
 #define	M_ST_SEX	022		/* Serious exception */
 #define	M_ST_LED	023		/* LEOT detected */
-#define	M_ST_DIAG	037		/* Message from an internal diagnostic 
-*/
+#define	M_ST_DIAG	037		/* Message from an internal diagnostic */
  
 /*
  * An MSCP packet
@@ -241,10 +241,8 @@ struct mscp {
 #define	mscp_hostid	mscp_un.mscp_getunitsts.Mscp_hostid
 #define	mscp_unitid	mscp_un.mscp_getunitsts.Mscp_unitid
 #define	mscp_mediaid	mscp_un.mscp_getunitsts.Mscp_mediaid
-#define	mscp_format	mscp_un.mscp_getunitsts.Mscp_format /* density:0=high *
-/
-#define	mscp_speed	mscp_un.mscp_getunitsts.Mscp_speed  /* (ips*bpi)/1000 *
-/
+#define	mscp_format	mscp_un.mscp_getunitsts.Mscp_format /* density:0=high */
+#define	mscp_speed	mscp_un.mscp_getunitsts.Mscp_speed  /* (ips*bpi)/1000 */
 #define	mscp_fmtmenu	mscp_un.mscp_getunitsts.Mscp_fmtmenu
  
 /*
@@ -259,8 +257,7 @@ struct mscp {
  */
  
 #define	mscp_cnttmo	mscp_hsttmo	/* controller timeout */
-#define	mscp_cntcmdl	mscp_usefrac	/* controller soft & hardware version *
-/
+#define	mscp_cntcmdl	mscp_usefrac	/* controller soft & hardware version */
 #define	mscp_cntid	mscp_unitid	/* controller id */
  
  
