@@ -1,52 +1,50 @@
-/*	tu.c	4.13	83/02/10	*/
+/*	uu.c	4.2	83/04/10	*/
 
-#if defined(VAX750) || defined(VAX730)
+#include "uu->h"
+#if NDL > 0
 /*
- * TU58 DECtape II device driver
+ * TU58 DECtape II/DL11 device driver
  *
- * This driver controls the console TU58s on a VAX-11/750 or VAX-11/730.
- * It could be easily modified for a Unibus TU58.  The TU58
- * is treated as a block device (only).  Error detection and
+ * The TU58 * is treated as a block device (only).  Error detection and
  * recovery is almost non-existant.  It is assumed that the
  * TU58 will follow the RSP protocol exactly, very few protocol
- * errors are checked for.  It is assumed that the 750 uses standard
- * RSP while the 730 uses Modified RSP (MRSP).  At the time when 750's
- * are converted to MRSP (by replacing EPROMS in the TU58), the tests
- * based on MRSP can be removed.
+ * errors are checked for.  
  */
+
+/* 
+ * TODO:
+ * -	Split the uu structure into a per controller 
+ * 	part and a per drive part.
+ */
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
-#include "../h/user.h"
 #include "../h/kernel.h"
+#include "../h/errno.h"
+#include "../h/uio.h"
+#include "../h/user.h"
+#include "../h/file.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/uureg.h"
 
-#define	printd	if(tudebug) printf
+#define	printd	if(uudebug) printf
 #ifdef	printd
-int	tudebug;	/* printd */
+int	uudebug;	/* printd */
 #endif	printd
 
-#define	NTU	((cpu == VAX_750) ? 1 : 2)
-#define DNUM    01      /* mask for drive number (should match NTU) */
-#if !defined(MRSP) || lint
+#if	!defined(MRSP) || lint
 #define	MRSP	(cpu != VAX_750)
 #endif
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */
-#define WRV     02              /* bit in minor dev => write w. read verify */
-#define NTUQ    2               /* # of blocks which can be queued up */
-#define	TUIPL	((cpu == VAX_750) ? 0x17 : 0x14)
-
-/*
- * Device register bits
- */
-#define	READY	0200		/* transmitter ready */
-#define	DONE	0200		/* receiver done */
-#define	IE	0100		/* interrupt enable */
-#define	BREAK	1		/* send break */
+#define	WRV     02              /* bit in minor dev => write w. read verify */
+#define	NDPC	02		/* # drives per controller */
 
 /*
  * Structure of a command packet
@@ -64,52 +62,52 @@ struct packet {
 	u_short	pk_chksum;	/* checksum, by words with end around carry */
 };
 
-struct packet tucmd;		/* a command sent to the TU58 */
-struct packet tudata;		/* a command or data returned from TU58 */
+struct packet uucmd[NDL];	/* a command sent to the TU58 */
+struct packet uudata[NDL];	/* a command or data returned from TU58 */
 
 /*
- * State information
+ * per controller state information
  */
-struct tu {
-	u_char	*tu_rbptr;	/* pointer to buffer for read */
-	int	tu_rcnt;	/* how much to read */
-	u_char	*tu_wbptr;	/* pointer to buffer for write */
-	int	tu_wcnt;	/* how much to write */
-	int	tu_state;	/* current tu_state of tansfer operation */
-	int	tu_flag;	/* read in progress flag */
-	char	*tu_addr;	/* real buffer data address */
-	int	tu_count;	/* real requested count */
-	int	tu_serrs;	/* count of soft errors */
-	int	tu_cerrs;	/* count of checksum errors */
-	int	tu_herrs;	/* count of hard errors */
-	char    tu_dopen[2];	/* drive is open */
-} tu;
+struct uu_ctlr {
+	u_char	*uu_rbptr;	/* pointer to buffer for read */
+	int	uu_rcnt;	/* how much to read */
+	u_char	*uu_wbptr;	/* pointer to buffer for write */
+	int	uu_wcnt;	/* how much to write */
+	int	uu_state;	/* current uu_state of tansfer operation */
+	int	uu_flag;	/* read in progress flag */
+	char	*uu_addr;	/* real buffer data address */
+	int	uu_count;	/* real requested count */
+	int	uu_serrs;	/* count of soft errors */
+	int	uu_cerrs;	/* count of checksum errors */
+	int	uu_herrs;	/* count of hard errors */
+	char    uu_dopen[NDPC];	/* drive is open */
+} uu_ctlr[NDL];
 
 /*
- * States
+ * controller states
  */
-#define	TUS_INIT1	0	/* sending nulls */
-#define	TUS_INIT2	1	/* sending inits */
-#define	TUS_IDLE	2	/* initialized, no transfer in progress */
-#define	TUS_SENDH	3	/* sending header */
-#define	TUS_SENDD	4	/* sending data */
-#define	TUS_SENDC	5	/* sending checksum */
-#define	TUS_SENDR	6	/* sending read command packet */
-#define	TUS_SENDW	7	/* sending write command packet */
-#define	TUS_GETH	8	/* reading header */
-#define	TUS_GETD	9	/* reading data */
-#define	TUS_GETC	10	/* reading checksum */
-#define	TUS_GET		11	/* reading an entire packet */
-#define	TUS_WAIT	12	/* waiting for continue */
+#define	UUS_INIT1	0	/* sending nulls */
+#define	UUS_INIT2	1	/* sending inits */
+#define	UUS_IDLE	2	/* initialized, no transfer in progress */
+#define	UUS_SENDH	3	/* sending header */
+#define	UUS_SENDD	4	/* sending data */
+#define	UUS_SENDC	5	/* sending checksum */
+#define	UUS_SENDR	6	/* sending read command packet */
+#define	UUS_SENDW	7	/* sending write command packet */
+#define	UUS_GETH	8	/* reading header */
+#define	UUS_GETD	9	/* reading data */
+#define	UUS_GETC	10	/* reading checksum */
+#define	UUS_GET		11	/* reading an entire packet */
+#define	UUS_WAIT	12	/* waiting for continue */
 
-#define	TUS_NSTATES	13
-char *tustates[TUS_NSTATES] = {
+#define	UUS_NSTATES	13
+char *uustates[UUS_NSTATES] = {
 	"INIT1", "INIT2", "IDLE", "SENDH", "SENDD", "SENDC", "SENDR",
 	"SENDW", "GETH", "GETD", "GETC", "GET", "WAIT"
 };
 #define	printstate(state) \
-	if ((state) < TUS_NSTATES) \
-		printf("%s", tustates[(state)]); \
+	if ((state) < UUS_NSTATES) \
+		printf("%s", uustates[(state)]); \
 	else \
 		printf("%d", (state));
 
@@ -125,11 +123,12 @@ char *tustates[TUS_NSTATES] = {
 /*
  * Op Codes
  */
+#define	TUOP_NOOP	0		/* no operation */
 #define	TUOP_INIT	1		/* initialize */
 #define	TUOP_READ	2		/* read block */
 #define	TUOP_WRITE	3		/* write block */
 #define	TUOP_SEEK	5		/* seek to block */
-#define TUOP_DIAGNOSE	7		/* run micro-diagnostics */
+#define	TUOP_DIAGNOSE	7		/* run micro-diagnostics */
 #define	TUOP_END	0100		/* end packet */
 
 /*
@@ -142,38 +141,83 @@ char *tustates[TUS_NSTATES] = {
  */
 #define	TUSW_MRSP	010		/* use Modified RSP */
 
-u_char	tunull[2] = { 0, 0 };	/* nulls to send for initialization */
-u_char	tuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
-static char pcnt[2];            /* pee/vee counters */
-int	tutimer = 0;
-struct buf tutab;		/* I/O queue header */
+u_char	uunull[2] = { 0, 0 };	/* nulls to send for initialization */
+u_char	uuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
 
-/*
- * Open the TU58
- */
+struct	uba_device	*uudinfo[NUU];
+struct	uba_ctlr	*uuminfo[NDL];
+
+int uuprobe(), uuslave(), uuattach(), uurintr(), uuxintr(), uuwatch();
+u_short uustd[] = { 0176500, 0 };
+struct uba_driver dldriver =
+    { uuprobe, uuslave, uuattach, uudgo, uustd, "uu", uudinfo, "dl", uuminfo };
+
+int	uuwstart;
+
 /*ARGSUSED*/
-tuopen(dev, flag)
+uuprobe(reg)
+	caddr_t reg;
 {
-	extern int tuwatch();
-	register s;
+	register int br, cvec;			/* value result */
+	struct uudevice *uuaddr = (struct uudevice *)reg;
+	int i;
 
 #ifdef lint
-	turintr(); tuwintr();
+	br = 0; cvec = br; br = cvec;
+	uurintr(0); uuxintr(0);
 #endif
-	if ((minor(dev)&DNUM) >= NTU || tu.tu_dopen[minor(dev)&DNUM])
+	uuaddr->rcs = UUCS_INTR;
+	uuaddr->tdb = TUF_INITF;
+	DELAY(10000);
+	i = uuaddr->rdb;
+	uuaddr->rcs = 0;
+	return(sizeof (*uuaddr));
+}
+
+uuslave(ui, reg);
+	struct uba_device *ui;
+	caddr_t reg;
+{
+	return (ui->ui_slave == 0 || ui->ui_slave == 1);
+}
+
+/*ARGSUSED*/
+uuattach(ui)
+	struct uba_device *ui;
+{
+
+}
+
+/*ARGSUSED1*/
+uuopen(dev, flag)
+	dev_t dev;
+	int flag;	
+{
+	register struct uba_device *ui;
+	register struct uu_ctlr *uuc;
+	register struct uudevice *uuaddr;
+	register struct uba_ctlr *um;
+	int ctlr, unit = minor(dev), s;
+
+	if (unit >= NUU || (ui = uudinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
-	if (tutimer == 0) {
-		tutimer++;
-		timeout(tuwatch, (caddr_t)0, hz);
-	}
-	tu.tu_dopen[minor(dev)&DNUM]++;
-	s = splx(TUIPL);
+	um = ui->ui_mi;
+	ctlr = um->um_ctlr;
+	uuc = &uu_ctlr[ctlr];
+	if (uuc->uu_dopen[unit%NDPC])
+		return (EBUSY);
+	if (uuwstart++ == 0)
+		timeout(uuwatch, (caddr_t)0, hz);
+
+	uuc->uu_dopen[unit%NDPC]++;
+	uuaddr = (struct uudevice *)ui->ui_mi->um_addr;
+	s = spl5();
 	/*
-	 * If the cassette's already initialized,
+	 * If the unit already initialized,
 	 * just enable interrupts and return.
 	 */
-	if (tu.tu_state == TUS_IDLE) {
-		mtpr(CSRS, IE);
+	if (uu->uu_state == TUS_IDLE) {
+		uuaddr->rcs = UUCS_INTR;
 		splx(s);
 		return (0);
 	}
@@ -182,128 +226,179 @@ tuopen(dev, flag)
 	 * Must initialize, reset the cassette
 	 * and wait for things to settle down.
 	 */
-	tureset();
-	sleep((caddr_t)&tu, PZERO+1);
-	tutab.b_active = NULL;
-	if (tu.tu_state != TUS_IDLE) {
-		u.u_error = ENXIO;
-		tu.tu_state = TUS_INIT1;
-		tu.tu_dopen[minor(dev)&DNUM] = 0;
-		tu.tu_rcnt = tu.tu_wcnt = 0;
-		mtpr(CSTS, 0);
-		mtpr(CSRS, 0);
+	uureset(ctlr);
+	sleep((caddr_t)uuc, PZERO+1);
+	um->um_tab.b_active = NULL;
+	if (uu->uu_state != TUS_IDLE) {
+		uu->uu_state = TUS_INIT1;
+		uu->uu_dopen[unit%NDPC] = 0;
+		uu->uu_rcnt = uu->uu_wcnt = 0;
+		uuaddr->rcs = 0;
+		uuaddr->tcs = 0;
+		splx(s);
+		return (ENXIO);
 	}
 	splx(s);
 	return (0);
 }
 
-/*
- * Close the TU58
- */
-tuclose(dev)
+uuclose(dev, flag)
+	dev_t dev;
+	int flag;
 {
+	register struct uba_ctlr *um = uudinfo[minor(dev)]->ui_mi;
+	register struct uudevice *uuaddr;
+	register struct uu_ctlr *uuc;
 
-	if (tutab.b_active == 0) {
-		mtpr(CSRS, 0);
-		tutimer = 0;
+	if (um->um_tab.b_active == 0) {
+		uuaddr = (struct uudevice *)um->um_addr;
+		uuaddr->rcs = 0;
+		uuwstart--;
 	}
-	if (tu.tu_serrs + tu.tu_cerrs + tu.tu_herrs != 0) {
+	uuc = &uu_ctlr[um->um_ctlr];
+	if (uuc->uu_serrs + uuc->uu_cerrs + uuc->uu_herrs != 0) {
 		/*
 		 * A tu58 is like nothing ever seen before;
 		 * I guess this is appropriate then...
 		 */
 		uprintf(
-		   "tu%d: %d soft errors, %d chksum errors, %d hard errors\n",
-			minor(dev), tu.tu_serrs, tu.tu_cerrs, tu.tu_herrs);
-		tu.tu_serrs = tu.tu_cerrs = tu.tu_herrs = 0;
+		   "uu%d: %d soft errors, %d chksum errors, %d hard errors\n",
+		    minor(dev), uuc->uu_serrs, uuc->uu_cerrs, uuc->uu_herrs);
+		    uuc->uu_serrs = uuc->uu_cerrs = uuc->uu_herrs = 0;
 	}
-	tu.tu_dopen[minor(dev)&DNUM] = 0;
+	uuc->uu_dopen[minor(dev)%NDPC] = 0;
 }
 
-/*
- * Reset the TU58
- */
-tureset()
+uureset(ctlr)
+	int ctlr;
 {
+	register struct uu_ctlr *uuc = uu_ctlr[ctlr];
+	register struct packet *cmd = uucmd[ctlr];
+	register struct uudevice *uuaddr;
+	struct uba_ctlr *um = uuminfo[ctlr];
 
-	tu.tu_state = TUS_INIT1;
-	tu.tu_wbptr = tunull;
-	tu.tu_wcnt = sizeof (tunull);
-	tucmd.pk_flag = TUF_CMD;
-	tucmd.pk_mcount = sizeof (tucmd) - 4;
-	tucmd.pk_mod = 0;
-	tucmd.pk_seq = 0;
-	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
-	tutab.b_active++;
-	mtpr(CSRS, 0);
-	mtpr(CSTS, IE|BREAK);
-	tuxintr();		/* start output */
+	um->um_tab.b_active++;
+	uuc->uu_state = TUS_INIT1;
+	uuc->uu_wbptr = uunull;
+	uuc->uu_wcnt = sizeof (uunull);
+	cmd->pk_flag = TUF_CMD;
+	cmd->pk_mcount = sizeof (uucmd) - 4;
+	cmd->pk_mod = 0;
+	cmd->pk_seq = 0;
+	cmd->pk_sw = MRSP ? TUSW_MRSP : 0;
+	uuaddr = (struct uudevice *)um->um_addr;
+	uuaddr->rcs = 0;
+	uuaddr->tcs = UUCS_INTR | UUCS_BREAK;
+	uuxintr(ctlr);				/* start output */
 }
 
 /*
  * Strategy routine for block I/O
  */
-tustrategy(bp)
+uustrategy(bp)
 	register struct buf *bp;
 {
-	register int s;
+	register struct buf *dp;
+	struct uba_device *ui;
+	struct uu_ctlr *uuc;
+	int s, unit = minor(bp->b_dev);
 
-	if (bp->b_blkno >= NTUBLK) {
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
+	if (unit > NUU)
+		goto bad;
+	if (bp->b_blkno >= NTUBLK)
+		goto bad;
+	ui = uudinfo[unit];
+	if (ui == 0 || ui->ui_alive == 0)
+		goto bad;
+	uuc = &uu_ctlr[ui->ui_mi->um_ctlr];
+	s = spl5();
+	bp->b_cylin = bp->b_blkno;
+	dp = &uuutab[unit];
+	disksort(dp, bp);
+	if (dp->b_active == 0) {
+		uuustart(ui);
+		bp = &ui->ui_mi->um_tab;
+		if (bp->b_actf && bp->b_active == 0)
+			uustart(ui->ui_mi);
 	}
-	if ((bp->b_flags&B_READ) == 0)
-		tu_pee(&pcnt[minor(bp->b_dev)&DNUM]);
-	bp->av_forw = NULL;
-	s = splx(TUIPL);
-	if (tutab.b_actf == NULL)
-		tutab.b_actf = bp;
-	else
-		tutab.b_actl->av_forw = bp;
-	tutab.b_actl = bp;
-	if (tutab.b_active == NULL)
-		tustart();
 	splx(s);
+	return;
+
+bad:
+	bp->b_flags |= B_ERROR;
+	iodone(bp);
+	return;
 }
 
 /*
+ * Unit start routine.
+ * Put this unit on the ready queue for the controller
+ */
+uuustart(ui)
+	register struct uba_device *ui;
+{
+	struct buf *dp = &uuutab[ui->ui_unit];
+	struct uba_ctlr *um = ui->ui_mi;
+	
+	dp->b_forw = NULL;
+	if (um->um_tab.b_actf == NULL)
+		um->um_tab.b_actf = dp;
+	else
+		um->um_tab.b_actl->b_forw = dp;
+	um->um_tab.b_actl = dp;
+	dp->b_active++;
+}
+/*
  * Start the transfer
  */
-tustart()
+uustart(um)
+	register struct uba_ctlr *um;
 {
+	register struct uudevice *uuaddr;
 	register struct buf *bp;
+	register struct uu_ctlr *uuc;
+	struct buf *dp;
+	struct packet *cmd;
+	int unit;
 
-	if ((bp = tutab.b_actf) == NULL)
+loop:
+	if ((dp = um->um_tab.b_actf) == NULL)
 		return;
-	if (tu.tu_state != TUS_IDLE) {
-		tureset();
+	if ((bp = dp->b_actf) == NULL) {
+		um->um_tab.b_actf = dp->b_forw;
+		goto loop;
+	}
+	unit = minor(bp->b_dev);
+	uuc = &uu_ctlr[um->um_ctlr];
+	cmd = &uucmd[um->um_ctlr];
+	if (uuc->uu_state != TUS_IDLE) {
+		uureset(um->um_ctlr);
 		return;
 	}
-	tutab.b_active++;
-	tutab.b_errcnt = 0;
-	tucmd.pk_op = bp->b_flags&B_READ ? TUOP_READ : TUOP_WRITE;
-	tucmd.pk_mod = ((bp->b_flags&B_READ) == 0 && (minor(bp->b_dev)&WRV)) ?
+	um->um_tab.b_active++;
+	uuaddr = (struct uudevice *)um->um_addr;
+	cmd->pk_op = bp->b_flags&B_READ ? TUOP_READ : TUOP_WRITE;
+	cmd->pk_mod = ((bp->b_flags&B_READ) == 0 && (minor(bp->b_dev)&WRV)) ?
 	    TUMD_WRV : 0;
-	tucmd.pk_unit = (minor(bp->b_dev)&DNUM);
-	tucmd.pk_sw = MRSP ? TUSW_MRSP : 0;
-	tucmd.pk_count = tu.tu_count = bp->b_bcount;
-	tucmd.pk_block = bp->b_blkno;
-	tucmd.pk_chksum =
-	    tuchk(*((short *)&tucmd), (u_short *)&tucmd.pk_op,
-		(int)tucmd.pk_mcount);
-	tu.tu_state = bp->b_flags&B_READ ? TUS_SENDR : TUS_SENDW;
-	tu.tu_addr = bp->b_un.b_addr;
-	tu.tu_count = bp->b_bcount;
-	tu.tu_wbptr = (u_char *)&tucmd;
-	tu.tu_wcnt = sizeof (tucmd);
-	tuxintr();
+	cmd->pk_unit = (minor(bp->b_dev)&DNUM);
+	cmd->pk_sw = MRSP ? TUSW_MRSP : 0;
+	cmd->pk_count = uu->uu_count = bp->b_bcount;
+	cmd->pk_block = bp->b_blkno;
+	cmd->pk_chksum =
+	    uuchk(*((short *)&cmd), (u_short *)&cmd.pk_op,
+		(int)cmd.pk_mcount);
+	uuc->uu_state = bp->b_flags&B_READ ? TUS_SENDR : TUS_SENDW;
+	uuc->uu_addr = bp->b_un.b_addr;
+	uuc->uu_count = bp->b_bcount;
+	uuc->uu_wbptr = (u_char *)&uucmd;
+	uuc->uu_wcnt = sizeof (uucmd);
+	uuxintr(um->um_ctlr);
 }
 
 /*
  * TU58 receiver interrupt
  */
-turintr()
+uurintr()
 {
 	register struct buf *bp;
 	register int c;
@@ -314,27 +409,27 @@ turintr()
 			;
 		mtpr(CSTD, TUF_CONT);	/* ACK */
 	}
-	if (tu.tu_rcnt) {		/* still waiting for data? */
-		*tu.tu_rbptr++ = c;	/* yup, put it there */
-		if (--tu.tu_rcnt)	/* decrement count, any left? */
+	if (uu->uu_rcnt) {		/* still waiting for data? */
+		*uu->uu_rbptr++ = c;	/* yup, put it there */
+		if (--uu->uu_rcnt)	/* decrement count, any left? */
 			return;		/* get some more */
 	}
 
 	/*
 	 * We got all the data we were expecting for now,
-	 * switch on the tu_state of the transfer.
+	 * switch on the uu_state of the transfer.
 	 */
-	switch(tu.tu_state) {
+	switch(uu->uu_state) {
 
 	/*
 	 * If we get an unexpected "continue",
 	 * start all over again...
 	 */
 	case TUS_INIT2:
-		tu.tu_state = c == TUF_CONT ? TUS_IDLE : TUS_INIT1;
-		tu.tu_flag = 0;
-		wakeup((caddr_t)&tu);
-		tustart();
+		uu->uu_state = c == TUF_CONT ? TUS_IDLE : TUS_INIT1;
+		uu->uu_flag = 0;
+		wakeup((caddr_t)&uu);
+		uustart();
 		break;
 
 	/*
@@ -344,94 +439,94 @@ turintr()
 	 */
 	case TUS_WAIT:			/* waiting for continue */
 		if (c != TUF_CONT) {
-			tu.tu_state = TUS_INIT1;
+			uu->uu_state = TUS_INIT1;
 			break;
 		}
-		tu.tu_flag = 0;
-		tudata.pk_flag = TUF_DATA;
-		tudata.pk_mcount = MIN(128, tu.tu_count);
-		tudata.pk_chksum =
-		    tuchk(*((short *)&tudata), (u_short *)tu.tu_addr,
-			(int)tudata.pk_mcount);
-		tu.tu_state = TUS_SENDH;
-		tu.tu_wbptr = (u_char *)&tudata;
-		tu.tu_wcnt = 2;
-		tuxintr();
+		uu->uu_flag = 0;
+		uudata.pk_flag = TUF_DATA;
+		uudata.pk_mcount = MIN(128, uu->uu_count);
+		uudata.pk_chksum =
+		    uuchk(*((short *)&uudata), (u_short *)uu->uu_addr,
+			(int)uudata.pk_mcount);
+		uu->uu_state = TUS_SENDH;
+		uu->uu_wbptr = (u_char *)&uudata;
+		uu->uu_wcnt = 2;
+		uuxintr();
 		break;
 
 	case TUS_SENDW:
 		if (c != TUF_CONT)
 			goto bad;
-		tureset();
+		uureset();
 		break;
 
 	/*
 	 * Got header, now get data; amount to
-	 * fetch is include in packet.
+	 * fetch is included in packet.
 	 */
 	case TUS_GETH:
-		if (tudata.pk_flag == TUF_DATA)
-			tu.tu_rbptr = (u_char *)tu.tu_addr;
-		tu.tu_rcnt = tudata.pk_mcount;
-		tu.tu_state = TUS_GETD;
+		if (uudata.pk_flag == TUF_DATA)
+			uu->uu_rbptr = (u_char *)uu->uu_addr;
+		uu->uu_rcnt = uudata.pk_mcount;
+		uu->uu_state = TUS_GETD;
 		break;
 
 	/*
 	 * Got the data, now fetch the checksum.
 	 */
 	case TUS_GETD:
-		tu.tu_rbptr = (u_char *)&tudata.pk_chksum;
-		tu.tu_rcnt = sizeof (tudata.pk_chksum);
-		tu.tu_state = TUS_GETC;
+		uu->uu_rbptr = (u_char *)&uudata.pk_chksum;
+		uu->uu_rcnt = sizeof (uudata.pk_chksum);
+		uu->uu_state = TUS_GETC;
 		break;
 
 	case TUS_GET:
 	case TUS_GETC:
 		/* got entire packet */
 #ifdef notdef
-		if (tudata.pk_chksum !=
-		    tuchk(*((short *)&tudata), (u_short *)
-		     (tudata.pk_flag == TUF_DATA ? tu.tu_addr : &tudata.pk_op),
-		     (int)tudata.pk_mcount))
-			tu.tu_cerrs++;
+		if (uudata.pk_chksum !=
+		    uuchk(*((short *)&uudata), (u_short *)
+		     (uudata.pk_flag == TUF_DATA ? uu->uu_addr : &uudata.pk_op),
+		     (int)uudata.pk_mcount))
+			uu->uu_cerrs++;
 #endif
-		if (tudata.pk_flag == TUF_DATA) {
+		if (uudata.pk_flag == TUF_DATA) {
 			/* data packet, advance to next */
-			tu.tu_addr += tudata.pk_mcount;
-			tu.tu_count -= tudata.pk_mcount;
-			tu.tu_state = TUS_GETH;
-			tu.tu_rbptr = (u_char *)&tudata; /* next packet */
-			tu.tu_rcnt = 2;
-		} else if (tudata.pk_flag==TUF_CMD && tudata.pk_op==TUOP_END) {
+			uu->uu_addr += uudata.pk_mcount;
+			uu->uu_count -= uudata.pk_mcount;
+			uu->uu_state = TUS_GETH;
+			uu->uu_rbptr = (u_char *)&uudata; /* next packet */
+			uu->uu_rcnt = 2;
+		} else if (uudata.pk_flag==TUF_CMD && uudata.pk_op==TUOP_END) {
 			/* end packet, idle and reenable transmitter */
-			tu.tu_state = TUS_IDLE;
-			tu.tu_flag = 0;
+			uu->uu_state = TUS_IDLE;
+			uu->uu_flag = 0;
 			mtpr(CSTS, IE);
 			printd("ON ");
-			if ((bp = tutab.b_actf) == NULL) {
-				printf("tu: no bp, active %d\n",tutab.b_active);
-				tustart();
+			if ((bp = uutab.b_actf) == NULL) {
+				printf("uu: no bp, active %d\n",uutab.b_active);
+				uustart();
 				return;
 			}
-			if (tudata.pk_mod > 1) {        /* hard error */
+			if (uudata.pk_mod > 1) {        /* hard error */
 				bp->b_flags |= B_ERROR;
-				tu.tu_herrs++;
-				harderr(bp, "tu");
-				printf("  pk_mod %o\n", tudata.pk_mod&0377);
-			} else if (tudata.pk_mod != 0)	/* soft error */
-				tu.tu_serrs++;
-			tutab.b_active = NULL;
-			tutab.b_actf = bp->av_forw;
-			bp->b_resid = tu.tu_count;
+				uu->uu_herrs++;
+				harderr(bp, "uu");
+				printf("  pk_mod %o\n", uudata.pk_mod&0377);
+			} else if (uudata.pk_mod != 0)	/* soft error */
+				uu->uu_serrs++;
+			uutab.b_active = NULL;
+			uutab.b_actf = bp->av_forw;
+			bp->b_resid = uu->uu_count;
 			if ((bp->b_flags&B_READ) == 0)
-				tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+				uu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 			iodone(bp);
-			tustart();
+			uustart();
 		} else {
 			printf("neither data nor end: %o %o\n",
-			    tudata.pk_flag&0xff, tudata.pk_op&0xff);
+			    uudata.pk_flag&0xff, uudata.pk_op&0xff);
 			mtpr(CSRS, 0);		/* flush the rest */
-			tu.tu_state = TUS_INIT1;
+			uu->uu_state = TUS_INIT1;
 		}
 		break;
 
@@ -442,26 +537,26 @@ turintr()
 	default:
 bad:
 		if (c == TUF_INITF) {
-			printf("tu protocol error, state=");
-			printstate(tu.tu_state);
+			printf("uu protocol error, state=");
+			printstate(uu->uu_state);
 			printf(", op=%x, cnt=%d, block=%d\n",
-			    tucmd.pk_op, tucmd.pk_count, tucmd.pk_block);
-			tutab.b_active = NULL;
-			if (bp = tutab.b_actf) {
+			    uucmd.pk_op, uucmd.pk_count, uucmd.pk_block);
+			uutab.b_active = NULL;
+			if (bp = uutab.b_actf) {
 				bp->b_flags |= B_ERROR;
-				tutab.b_actf = bp->av_forw;
+				uutab.b_actf = bp->av_forw;
 				if ((bp->b_flags&B_READ) == 0)
-					tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+					uu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 				iodone(bp);
 			}
-			tu.tu_state = TUS_INIT1;
+			uu->uu_state = TUS_INIT1;
 		} else {
-			printf("tu receive state error, state=");
+			printf("uu receive state error, state=");
 			printf(", byte=%x\n", c);
 #ifdef notdef
-			tu.tu_state = TUS_INIT1; */
+			uu->uu_state = TUS_INIT1; */
 #endif
-			wakeup((caddr_t)&tu);
+			wakeup((caddr_t)&uu);
 		}
 	}
 }
@@ -469,28 +564,28 @@ bad:
 /*
  * TU58 transmitter interrupt
  */
-tuxintr()
+uuxintr()
 {
 
 top:
-	if (tu.tu_wcnt) {
+	if (uu->uu_wcnt) {
 		/* still stuff to send, send one byte */
 		while ((mfpr(CSTS) & READY) == 0)
 			;
-		mtpr(CSTD, *tu.tu_wbptr++);
-		tu.tu_wcnt--;
+		mtpr(CSTD, *uu->uu_wbptr++);
+		uu->uu_wcnt--;
 		return;
 	}
 
 	/*
 	 * Last message byte was sent out.
-	 * Switch on tu_state of transfer.
+	 * Switch on uu_state of transfer.
 	 */
-	if (tudebug) {
-		printf("tuxintr: state=");
-		printstate(tu.tu_state);
+	if (uudebug) {
+		printf("uuxintr: state=");
+		printstate(uu->uu_state);
 	}
-	switch(tu.tu_state) {
+	switch(uu->uu_state) {
 
 	/*
 	 * Two nulls have been sent, remove break, and send inits
@@ -498,9 +593,9 @@ top:
 	case TUS_INIT1:	
 		mtpr(CSTS, IE);
 		printd("ON2 ");
-		tu.tu_state = TUS_INIT2;
-		tu.tu_wbptr = tuinit;
-		tu.tu_wcnt = sizeof (tuinit);
+		uu->uu_state = TUS_INIT2;
+		uu->uu_wbptr = uuinit;
+		uu->uu_wcnt = sizeof (uuinit);
 		goto top;
 
 	/*
@@ -509,7 +604,7 @@ top:
 	case TUS_INIT2:	
 		(void) mfpr(CSRD);
 		mtpr(CSRS, IE);
-		tu.tu_flag = 1;
+		uu->uu_flag = 1;
 		break;
 
 	case TUS_IDLE:		/* stray interrupt? */
@@ -519,10 +614,10 @@ top:
 	 * Read cmd packet sent, get ready for data
 	 */
 	case TUS_SENDR:
-		tu.tu_state = TUS_GETH;
-		tu.tu_rbptr = (u_char *)&tudata;
-		tu.tu_rcnt = 2;
-		tu.tu_flag = 1;
+		uu->uu_state = TUS_GETH;
+		uu->uu_rbptr = (u_char *)&uudata;
+		uu->uu_rcnt = 2;
+		uu->uu_flag = 1;
 		mtpr(CSTS, 0);	/* disable transmitter interrupts */
 		printd("OFF ");
 		break;
@@ -531,8 +626,8 @@ top:
 	 * Write cmd packet sent, wait for continue
 	 */
 	case TUS_SENDW:	
-		tu.tu_state = TUS_WAIT;
-		tu.tu_flag = 1;
+		uu->uu_state = TUS_WAIT;
+		uu->uu_flag = 1;
 		if ((mfpr(CSRS)&IE) == 0) {
 			printf("NO IE\n");
 			mtpr(CSRS, IE);
@@ -543,18 +638,18 @@ top:
 	 * Header sent, send data.
 	 */
 	case TUS_SENDH:
-		tu.tu_state = TUS_SENDD;
-		tu.tu_wbptr = (u_char *)tu.tu_addr;
-		tu.tu_wcnt = tudata.pk_mcount;
+		uu->uu_state = TUS_SENDD;
+		uu->uu_wbptr = (u_char *)uu->uu_addr;
+		uu->uu_wcnt = uudata.pk_mcount;
 		goto top;
 
 	/*
 	 * Data sent, follow with checksum.
 	 */
 	case TUS_SENDD:	
-		tu.tu_state = TUS_SENDC;
-		tu.tu_wbptr = (u_char *)&tudata.pk_chksum;
-		tu.tu_wcnt = sizeof tudata.pk_chksum;
+		uu->uu_state = TUS_SENDC;
+		uu->uu_wbptr = (u_char *)&uudata.pk_chksum;
+		uu->uu_wcnt = sizeof uudata.pk_chksum;
 		goto top;
 
 	/* 
@@ -564,21 +659,21 @@ top:
 		/*
 		 * Updata buffer address and count.
 		 */
-		tu.tu_addr += tudata.pk_mcount;
-		tu.tu_count -= tudata.pk_mcount;
-		if (tu.tu_count) {
-			tu.tu_state = TUS_WAIT;
-			tu.tu_flag = 1;
+		uu->uu_addr += uudata.pk_mcount;
+		uu->uu_count -= uudata.pk_mcount;
+		if (uu->uu_count) {
+			uu->uu_state = TUS_WAIT;
+			uu->uu_flag = 1;
 			break;
 		}
 
 		/*
 		 * End of transmission, get ready for end packet.
 		 */
-		tu.tu_state = TUS_GET;
-		tu.tu_rbptr = (u_char *)&tudata;
-		tu.tu_rcnt = sizeof (tudata);
-		tu.tu_flag = 1;
+		uu->uu_state = TUS_GET;
+		uu->uu_rbptr = (u_char *)&uudata;
+		uu->uu_rcnt = sizeof (uudata);
+		uu->uu_flag = 1;
 		mtpr(CSTS, 0);
 		printd("OFF2 ");
 		break;
@@ -589,9 +684,9 @@ top:
 	default:
 		break;
 	}
-	if (tudebug) {
-		printd("  new tu_state=");
-		printstate(tu.tu_state);
+	if (uudebug) {
+		printd("  new uu_state=");
+		printstate(uu->uu_state);
 	}
 }
 
@@ -599,7 +694,7 @@ top:
  * Compute checksum TU58 fashion
  */
 #ifdef lint
-tuchk(word, cp, n)
+uuchk(word, cp, n)
 	register word;
 	register unsigned short *cp;
 	int n;
@@ -618,87 +713,65 @@ tuchk(word, cp, n)
 	return (word);
 }
 #else
-tuchk(word0, wp, n)
-	register int word0;	/* r11 */
-	register char *wp;	/* r10 */
-	register int n;		/* r9 */
+uuchk(word0, wp, n)
+	register int word0;			/* r11 */
+	register char *wp;			/* r10 */
+	register int n;				/* r9 */
 {
 	asm("loop:");
-	asm("	addw2	(r10)+,r11");	/* add a word to sum */
-	asm("	adwc	$0,r11");	/* add in carry, end-around */
+	asm("	addw2	(r10)+,r11");		/* add a word to sum */
+	asm("	adwc	$0,r11");		/* add in carry, end-around */
 	asm("	acbl	$2,$-2,r9,loop");	/* done yet? */
-	asm("	blbc	r9,ok");	/* odd byte count? */
-	asm("	movzbw	(r10),r10");	/* yes, get last byte */
-	asm("	addw2	r10,r11");	/* add it in */
-	asm("	adwc	$0,r11");	/* and the carry */
+	asm("	blbc	r9,ok");		/* odd byte count? */
+	asm("	movzbw	(r10),r10");		/* yes, get last byte */
+	asm("	addw2	r10,r11");		/* add it in */
+	asm("	adwc	$0,r11");		/* and the carry */
 	asm("ok:");
-	asm("	movl	r11,r0");	/* return sum */
+	asm("	movl	r11,r0");		/* return sum */
 }
 #endif
 
-tuwatch()
+uuwatch()
 {
 	register int s;
 	register struct buf *bp;
 
-	if (tutimer == 0) {
-		tu.tu_flag = 0;
+	if (uutimer == 0) {
+		uu->uu_flag = 0;
 		return;
 	}
-	if (tu.tu_flag)
-		tu.tu_flag++;
-	if (tu.tu_flag <= 40) {
-		timeout(tuwatch, (caddr_t)0, hz);
+	if (uu->uu_flag)
+		uu->uu_flag++;
+	if (uu->uu_flag <= 40) {
+		timeout(uuwatch, (caddr_t)0, hz);
 		return;
 	}
-	printf("tu: read stalled\n");
-	printf("%X %X %X %X %X %X %X %X\n", tu.tu_rbptr, tu.tu_rcnt,
-		tu.tu_wbptr, tu.tu_wcnt, tu.tu_state, tu.tu_flag,
-		tu.tu_addr, tu.tu_count);
-	tu.tu_flag = 0;
+	printf("uu: read stalled\n");
+	printf("%X %X %X %X %X %X %X %X\n", uu->uu_rbptr, uu->uu_rcnt,
+		uu->uu_wbptr, uu->uu_wcnt, uu->uu_state, uu->uu_flag,
+		uu->uu_addr, uu->uu_count);
+	uu->uu_flag = 0;
 	s = splx(TUIPL);
 	(void) mfpr(CSRD);
 	mtpr(CSRS, IE);		/* in case we were flushing */
 	mtpr(CSTS, IE);
-	tu.tu_state = TUS_IDLE;
-	if (!tutab.b_active) {
-		wakeup((caddr_t)&tu);
+	uu->uu_state = TUS_IDLE;
+	if (!uutab.b_active) {
+		wakeup((caddr_t)&uu);
 		goto retry;
 	}
-	if (++tutab.b_errcnt <= 1) {
-		tustart();
+	if (++uutab.b_errcnt <= 1) {
+		uustart();
 		goto retry;
 	}
-	if (bp = tutab.b_actf) {
+	if (bp = uutab.b_actf) {
 		bp->b_flags |= B_ERROR;
 		if ((bp->b_flags&B_READ) == 0)
-			tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+			uu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
 		iodone(bp);
 	}
 retry:
 	splx(s);
-	timeout(tuwatch, (caddr_t)0, hz);
-}
-
-tu_pee(cp)
-	char *cp;
-{
-	register int s;
-
-	s = splx(TUIPL);
-	if (++(*cp) > NTUQ)
-		sleep(cp, PRIBIO);
-	splx(s);
-}
-
-tu_vee(cp)
-	char *cp;
-{
-	register int s;
-
-	s = splx(TUIPL);
-	if (--(*cp) <= NTUQ)
-		wakeup(cp);
-	splx(s);
+	timeout(uuwatch, (caddr_t)0, hz);
 }
 #endif
