@@ -1,4 +1,4 @@
-#	Makefile	6.1	83/07/29
+#	Makefile	4.34	83/08/11
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -102,7 +102,7 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 	rm 730boot.c
 
 730boot: 730boot.o relsrt0.o 730bootconf.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} -o 730boot relsrt0.o boot.o 730bootconf.o -lsa -lc
+	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o -lsa -lc
 
 730bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 730bootconf.o: ../h/fs.h saio.h
