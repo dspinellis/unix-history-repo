@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)subr.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)subr.c	1.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -268,11 +268,13 @@ wordvprint(fyle, wordc, wordv)
 	char	*wordv[];
 {
 	int	i;
-	for(i = 0; i < wordc; i++){
-		fprintf(fyle, "%s",wordv[i]);
-		if (i != wordc - 1)
-			fprintf(fyle, " ");
-	}
+	char *sep = "";
+
+	for(i = 0; i < wordc; i++)
+		if (wordv[i]) {
+			fprintf(fyle, "%s%s",sep,wordv[i]);
+			sep = " ";
+		}
 }
 
 /*
