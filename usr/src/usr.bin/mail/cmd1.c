@@ -8,10 +8,11 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.4 %G%";
+static char *SccsId = "@(#)cmd1.c	1.5 %G%";
 
 /*
  * Print the current active headings.
+ * Don't change dot if invoker didn't give an argument.
  */
 
 static int screen;
@@ -34,7 +35,8 @@ headers(msgvec)
 		mp = &message[0];
 	flag = 0;
 	mesg = mp - &message[0];
-	dot = mp;
+	if (dot != &message[n-1])
+		dot = mp;
 	for (; mp < &message[msgCount]; mp++) {
 		mesg++;
 		if (mp->m_flag & MDELETED)
@@ -118,7 +120,7 @@ printhead(mesg)
 {
 	struct message *mp;
 	FILE *ibuf;
-	char headline[LINESIZE], wcount[10], *subjline, dispc;
+	char headline[LINESIZE], wcount[10], *subjline, dispc, curind;
 	char pbuf[BUFSIZ];
 	int s;
 	struct headline hl;
@@ -137,6 +139,7 @@ printhead(mesg)
 
 	if (subjline != NOSTR && strlen(subjline) > 28)
 		subjline[29] = '\0';
+	curind = dot == mp ? '>' : ' ';
 	dispc = ' ';
 	if (mp->m_flag & MSAVED)
 		dispc = '*';
@@ -154,10 +157,10 @@ printhead(mesg)
 		s++, *cp++ = ' ';
 	*cp = '\0';
 	if (subjline != NOSTR)
-		printf("%c%3d %-8s %16.16s %s \"%s\"\n", dispc, mesg,
+		printf("%c%c%3d %-8s %16.16s %s \"%s\"\n", curind, dispc, mesg,
 		    nameof(mp), hl.l_date, wcount, subjline);
 	else
-		printf("%c%3d %-8s %16.16s %s\n", dispc, mesg,
+		printf("%c%c%3d %-8s %16.16s %s\n", curind, dispc, mesg,
 		    nameof(mp), hl.l_date, wcount);
 }
 
