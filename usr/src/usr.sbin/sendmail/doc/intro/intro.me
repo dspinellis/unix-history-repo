@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.7,
+version 3.8,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -72,7 +72,7 @@ Bell version 7 mail
 [UNIX80],
 Berkeley
 .i Mail
-[Schoens79],
+[Shoens79],
 BerkNet mail
 [Schmidt79],
 and hopefully UUCP mail
@@ -255,7 +255,7 @@ such as Berkeley
 MS
 [Crocker77b],
 or MH
-[MH99],
+[Borden79],
 edits the message as required by the destination network,
 and calls appropriate mailers
 to do mail delivery or queueing for network transmission
@@ -437,7 +437,7 @@ this vector is macro expanded before use.
 .pp
 The heart of address parsing in
 .i sendmail
-is the rewriting rules.
+is a set of rewriting rules.
 These are an ordered list of pattern-replacement rules,
 somewhat like a production system,
 except that order is critical.
@@ -527,6 +527,12 @@ If the user name contains slash marks (\c
 .q /\^ )
 the name is used as a file name,
 instead of a login name.
+.pp
+Files that have setuid or setgid bits set
+but no execute bits set
+have those bits honored if
+.i sendmail
+is running as root.
 .sh 2 "Aliasing, Forwarding, Inclusion"
 .pp
 .i Sendmail
@@ -549,18 +555,10 @@ this guarantees a unique key.
 .pp
 The inverted form of the file
 must be recreated when the text copy is changed.
-The
-.b \-I
-option to
+Under certain circumstances,
 .i sendmail
-rebuilds the database\**.
-.(f
-\**This could be done automatically if
-.i sendmail
-could be guaranteed to be running as the owner of the
-alias file.
-In some environments this is not the case.
-.)f
+will do this automatically;
+an option can force rebuilding.
 .sh 3 "Forwarding"
 .pp
 After aliasing,
@@ -609,6 +607,34 @@ even if the alias file is protected.
 .pp
 It is not necessary to rebuild the alias database
 when a :include: list is changed.
+.sh 2 "Message Delivery"
+.pp
+Internally,
+the recipient list is stored as one list per mailer.
+Each mailer list can be scanned trivially
+and mail to each host picked out to implement message batching.
+Each address is marked as it is sent,
+so rescanning the list is safe;
+this makes sending to mailers that can only accept one user easy.
+An argument list is built as the scan proceeds.
+Mail to files is detected during the scan of the send list.
+.pp
+When an argument vector is built,
+.i sendmail
+creates a pipe and subprocess for the mailer.
+The parent calls an
+.q "editing function"
+which makes the per-mailer changes to the header
+and sends the result to the mailer;
+a different editing function is used for sending error messages
+which prepends the error information.
+.pp
+The exit status from the mailer is collected
+after the message is sent,
+and a diagnostic is printed if appropriate.
+If any mail is rejected by the mailer,
+a flag is set to invoke the return-to-sender function
+after all delivery completes.
 .sh 2 "Exit Status"
 .pp
 An exit status is returned that corresponds to the system standard
@@ -642,10 +668,7 @@ program has been modified here to do the special-purpose parsing
 necessary to decode UUCP headers
 and turn them into a normal UUCP address;
 this address is then passed to
-.i sendmail
-via a
-.b \-f
-flag.
+.i sendmail .
 .sh 3 "Outgoing ARPANET mail"
 .pp
 The ARPANET imposes many standards that
@@ -945,11 +968,8 @@ The
 .b $x
 macro is set to the full name of the sender.
 This can be determined in several ways.
-If a
-.b \-F
-flag is given to
-.i sendmail ,
-this value is taken as the full name.
+It can be passed as a flag to
+.i sendmail .
 The
 .q Full-Name:
 line in the header is the second option,
@@ -1106,7 +1126,7 @@ This option is suppressed in
 .q unsafe
 configuration files
 (i.e., user-supplied, either on a
-.b \-C
+command line
 option, or in the
 .i \&.mailcf
 file in the home directory).
@@ -1238,7 +1258,7 @@ $:user	Canonical user name.
 .)b
 The replacement from the LHS to the RHS does not use macros,
 and there are no name conflicts.
-Patterns are reexecuted until it fails.
+Each pattern reexecutes until it fails.
 As soon as the input resolves to a canonical name
 (i.e.,
 .q "$#mailer$@host$:user" ),
@@ -1847,7 +1867,6 @@ were to run setuid)
 then the inverted form could be rebuilt automatically when the
 text copy was changed.
 However, this appears to be little more than frosting.
-must be properly balanced and nested.
 .pp
 Some proposals call for a single address syntax,
 such that the host name uniquely determines the network.
@@ -1884,7 +1903,7 @@ This would require an automatically updated database
 and some method of resolving conflicts.
 Ideally this would be effective even with multiple managements.
 A student at Berkeley,
-Allan Biocca,
+Alan Biocca,
 is working on a facility which may provide the necessary functionality.
 .pp
 In the long run,
@@ -1898,7 +1917,7 @@ the haphazard environment that exists today,
 until the better tools permeate the internetwork world.
 .sh 0 "ACKNOWLEDGEMENTS"
 .pp
-Thanks are due to Kurt Schoens for his continual cheerful
+Thanks are due to Kurt Shoens for his continual cheerful
 assistance and good advice,
 Bill Joy for pointing me in the correct direction
 (over and over),
@@ -1996,8 +2015,16 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 1978.
-.ip [MH99]
-MH.
+.ip [Borden79]
+Borden, S.,
+Gaines, R. S.,
+and
+Shapiro, N. Z.,
+.ul
+The MH Message Handling System: Users' Manual.
+R-2367-PAF.
+Rand Corporation.
+October 1979.
 .ip [NBS80]
 National Bureau of Standards,
 .ul
@@ -2081,8 +2108,8 @@ Schmidt, E.,
 An Introduction to the Berkeley Network.
 University of California, Berkeley California.
 1979.
-.ip [Schoens79]
-Schoens, K.,
+.ip [Shoens79]
+Shoens, K.,
 .ul
 Mail Reference Manual.
 University of California, Berkeley.
@@ -2229,6 +2256,9 @@ If
 .b \-I
 is given,
 no delivery is attempted.
+The DBM version will be rebuilt automatically if the DBM files
+are mode 666,
+or if they are owned by the effective userid.
 .ip \-V
 Verify the addresses only.
 Only partial verification is done:
