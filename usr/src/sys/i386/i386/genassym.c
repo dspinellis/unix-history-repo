@@ -5,18 +5,21 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.noredist.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.5 (Berkeley) %G%
+ *	@(#)genassym.c	5.6 (Berkeley) %G%
  */
 
-#include "../i386/pte.h"
+#ifndef lint
+static char sccsid[] = "@(#)genassym.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
+#define	KERNEL
+#include "machine/pte.h"
 
 #include "param.h"
-#include "vmmeter.h"
-#include "vmparam.h"
 #include "buf.h"
-#include "dir.h"
+#include "vmmeter.h"
+#include "machine/vmparam.h"
 #include "user.h"
 #include "cmap.h"
 #include "map.h"
@@ -24,19 +27,26 @@
 #include "text.h"
 #include "mbuf.h"
 #include "msgbuf.h"
+#include "machine/cpu.h"
+#include "machine/trap.h"
+#include "machine/psl.h"
+#include "machine/reg.h"
+#include "syscall.h"
 
 main()
 {
-	register struct user *u = (struct user *)0;
 	register struct proc *p = (struct proc *)0;
 	register struct vmmeter *vm = (struct vmmeter *)0;
-	register struct pcb *pcb = (struct pcb *)0;
+	register struct user *up = (struct user *)0;
+	register struct rusage *rup = (struct rusage *)0;
+	struct text *tp = (struct text *)0;
+	struct pcb *pcb = (struct pcb *)0;
+	register unsigned i;
 
 	printf("#ifdef LOCORE\n");
 	printf("#define\tI386_CR3PAT %d\n", I386_CR3PAT);
-
-	printf("#define\tU_PROCP %d\n", &u->u_procp);
-	printf("#define\tU_EOSYS %d\n", &u->u_eosys);
+	printf("#define\tU_PROCP %d\n", &up->u_procp);
+	printf("#define\tUDOT_SZ %d\n", sizeof(struct user));
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
 	printf("#define\tP_XLINK %d\n", &p->p_xlink);
@@ -50,7 +60,7 @@ main()
 	printf("#define\tP_SZPT %d\n", &p->p_szpt);
 	printf("#define\tP_TEXTP %d\n", &p->p_textp);
 	printf("#define\tP_FLAG %d\n", &p->p_flag);
-	printf("#define\tP_CR3 %d\n", &p->p_cr3);
+	printf("#define\tP_PID %d\n", &p->p_pid);
 	printf("#define\tSSLEEP %d\n", SSLEEP);
 	printf("#define\tSRUN %d\n", SRUN);
 	printf("#define\tV_SWTCH %d\n", &vm->v_swtch);
@@ -96,7 +106,11 @@ main()
 	printf("#define\tPCB_GS %d\n", &pcb->pcbtss.tss_gs);
 	printf("#define\tPCB_LDT %d\n", &pcb->pcbtss.tss_ldt);
 	printf("#define\tPCB_IOOPT %d\n", &pcb->pcbtss.tss_ioopt);
-	printf("#define\tPCB_FPSAV %d\n", &pcb->pcb_fpsav);
+	printf("#define\tPCB_FLAGS %d\n", &pcb->pcb_flags);
+	printf("#define\tFP_WASUSED %d\n", FP_WASUSED);
+	printf("#define\tFP_NEEDSSAVE %d\n", FP_NEEDSSAVE);
+	printf("#define\tFP_NEEDSRESTORE %d\n", FP_NEEDSRESTORE);
+	printf("#define\tFP_USESEMC %d\n", FP_USESEMC);
 	printf("#define\tPCB_SAVEFPU %d\n", &pcb->pcb_savefpu);
 	printf("#define\tPCB_SAVEEMC %d\n", &pcb->pcb_saveemc);
 	printf("#define\tPCB_P0BR %d\n", &pcb->pcb_p0br);
