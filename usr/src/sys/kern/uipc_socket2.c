@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.11 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -533,15 +533,15 @@ sbinsertoob(sb, m0)
 }
 
 /*
- * Append address and data, and optionally, rights
+ * Append address and data, and optionally, control (ancillary) data
  * to the receive queue of a socket.  If present,
- * m0 Return 0 if
- * no space in sockbuf or insufficient mbufs.
+ * m0 must include a packet header with total length.
+ * Returns 0 if no space in sockbuf or insufficient mbufs.
  */
-sbappendaddr(sb, asa, m0, rights0)
+sbappendaddr(sb, asa, m0, control)
 	register struct sockbuf *sb;
 	struct sockaddr *asa;
-	struct mbuf *m0, *rights0;
+	struct mbuf *m0, *control;
 {
 	register struct mbuf *m, *n;
 	int space = asa->sa_len;
@@ -550,67 +550,64 @@ if (m0 && (m0->m_flags & M_PKTHDR) == 0)
 panic("sbappendaddr");
 	if (m0)
 		space += m0->m_pkthdr.len;
-	if (rights0)
-		space += rights0->m_len;
+	for (n = control; n; n = n->m_next) {
+		space += n->m_len;
+		if (n->m_next == 0)	/* keep pointer to last control buf */
+			break;
+	}
 	if (space > sbspace(sb))
+		return (0);
+	if (asa->sa_len > MLEN)
 		return (0);
 	MGET(m, M_DONTWAIT, MT_SONAME);
 	if (m == 0)
 		return (0);
-	if (asa->sa_len > MLEN) {
-		(void) m_free(m);
-		return (0);
-	}
 	m->m_len = asa->sa_len;
 	bcopy((caddr_t)asa, mtod(m, caddr_t), asa->sa_len);
-	if (rights0 && rights0->m_len) {
-		m->m_next = m_copy(rights0, 0, rights0->m_len);
-		if (m->m_next == 0) {
-			m_freem(m);
-			return (0);
-		}
-		sballoc(sb, m->m_next);
-	}
-	sballoc(sb, m);
+	if (n)
+		n->m_next = m0;		/* concatenate data to control */
+	else
+		control = m0;
+	m->m_next = control;
+	for (n = m; n; n = n->m_next)
+		sballoc(sb, n);
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
 		n->m_nextpkt = m;
 	} else
 		sb->sb_mb = m;
-	if (m->m_next)
-		m = m->m_next;
-	if (m0)
-		sbcompress(sb, m0, m);
 	return (1);
 }
 
-sbappendrights(sb, m0, rights)
+sbappendcontrol(sb, m0, control)
 	struct sockbuf *sb;
-	struct mbuf *rights, *m0;
+	struct mbuf *control, *m0;
 {
 	register struct mbuf *m, *n;
 	int space = 0;
 
-	if (rights == 0)
-		panic("sbappendrights");
+	if (control == 0)
+		panic("sbappendcontrol");
+	for (m = control; ; m = m->m_next) {
+		space += m->m_len;
+		if (m->m_next == 0)
+			break;
+	}
+	n = m;			/* save pointer to last control buffer */
 	for (m = m0; m; m = m->m_next)
 		space += m->m_len;
-	space += rights->m_len;
 	if (space > sbspace(sb))
 		return (0);
-	m = m_copy(rights, 0, rights->m_len);
-	if (m == 0)
-		return (0);
-	sballoc(sb, m);
+	n->m_next = m0;			/* concatenate data to control */
+	for (m = control; m; m = m->m_next)
+		sballoc(sb, m);
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
-		n->m_nextpkt = m;
+		n->m_nextpkt = control;
 	} else
-		sb->sb_mb = m;
-	if (m0)
-		sbcompress(sb, m0, m);
+		sb->sb_mb = control;
 	return (1);
 }
 
@@ -623,8 +620,8 @@ sbcompress(sb, m, n)
 	register struct sockbuf *sb;
 	register struct mbuf *m, *n;
 {
-
 	register int eor = 0;
+
 	while (m) {
 		eor |= m->m_flags & M_EOR;
 		if (m->m_len == 0) {
@@ -667,7 +664,7 @@ sbflush(sb)
 		panic("sbflush");
 	while (sb->sb_mbcnt)
 		sbdrop(sb, (int)sb->sb_cc);
-	if (sb->sb_cc || sb->sb_mbcnt || sb->sb_mb)
+	if (sb->sb_cc || sb->sb_mb)
 		panic("sbflush 2");
 }
 
