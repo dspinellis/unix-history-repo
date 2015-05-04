@@ -1,3 +1,2569 @@
+ChangeSet@1.3320, 2015-04-07 04:28:16-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P2
+  TAG: NTP_4_2_8P2
+
+  ChangeLog@1.1633 +1 -0
+    NTP_4_2_8P2
+
+  ntpd/invoke-ntp.conf.texi@1.182 +1 -1
+    NTP_4_2_8P2
+
+  ntpd/invoke-ntp.keys.texi@1.178 +1 -1
+    NTP_4_2_8P2
+
+  ntpd/invoke-ntpd.texi@1.495 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.conf.5man@1.216 +3 -3
+    NTP_4_2_8P2
+
+  ntpd/ntp.conf.5mdoc@1.216 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.conf.html@1.173 +1 -1
+    NTP_4_2_8P2
+
+  ntpd/ntp.conf.man.in@1.216 +3 -3
+    NTP_4_2_8P2
+
+  ntpd/ntp.conf.mdoc.in@1.216 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.keys.5man@1.212 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.keys.5mdoc@1.212 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.keys.html@1.174 +1 -1
+    NTP_4_2_8P2
+
+  ntpd/ntp.keys.man.in@1.212 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntp.keys.mdoc.in@1.212 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntpd-opts.c@1.517 +245 -245
+    NTP_4_2_8P2
+
+  ntpd/ntpd-opts.h@1.516 +3 -3
+    NTP_4_2_8P2
+
+  ntpd/ntpd.1ntpdman@1.324 +3 -3
+    NTP_4_2_8P2
+
+  ntpd/ntpd.1ntpdmdoc@1.324 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntpd.html@1.168 +2 -2
+    NTP_4_2_8P2
+
+  ntpd/ntpd.man.in@1.324 +3 -3
+    NTP_4_2_8P2
+
+  ntpd/ntpd.mdoc.in@1.324 +2 -2
+    NTP_4_2_8P2
+
+  ntpdc/invoke-ntpdc.texi@1.492 +2 -2
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc-opts.c@1.510 +107 -107
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc-opts.h@1.509 +3 -3
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc.1ntpdcman@1.323 +3 -3
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.323 +2 -2
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc.html@1.336 +2 -2
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc.man.in@1.323 +3 -3
+    NTP_4_2_8P2
+
+  ntpdc/ntpdc.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P2
+
+  ntpq/invoke-ntpq.texi@1.498 +2 -2
+    NTP_4_2_8P2
+
+  ntpq/ntpq-opts.c@1.515 +106 -106
+    NTP_4_2_8P2
+
+  ntpq/ntpq-opts.h@1.513 +3 -3
+    NTP_4_2_8P2
+
+  ntpq/ntpq.1ntpqman@1.326 +3 -3
+    NTP_4_2_8P2
+
+  ntpq/ntpq.1ntpqmdoc@1.326 +2 -2
+    NTP_4_2_8P2
+
+  ntpq/ntpq.html@1.165 +2 -2
+    NTP_4_2_8P2
+
+  ntpq/ntpq.man.in@1.326 +3 -3
+    NTP_4_2_8P2
+
+  ntpq/ntpq.mdoc.in@1.326 +2 -2
+    NTP_4_2_8P2
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.494 +2 -2
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.512 +68 -68
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.511 +3 -3
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.323 +3 -3
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.323 +2 -2
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd.html@1.163 +1 -1
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd.man.in@1.323 +3 -3
+    NTP_4_2_8P2
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P2
+
+  packageinfo.sh@1.509 +2 -2
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.84 +3 -3
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.85 +2 -2
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/calc_tickadj.html@1.86 +1 -1
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.83 +3 -3
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.85 +2 -2
+    NTP_4_2_8P2
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.88 +1 -1
+    NTP_4_2_8P2
+
+  scripts/invoke-plot_summary.texi@1.105 +2 -2
+    NTP_4_2_8P2
+
+  scripts/invoke-summary.texi@1.105 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.315 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait-opts@1.51 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.312 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.313 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait.html@1.332 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait.man.in@1.312 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.313 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.103 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep-opts@1.53 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.91 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.91 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep.html@1.104 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep.man.in@1.91 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.92 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.104 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace-opts@1.53 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.91 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.92 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace.html@1.105 +2 -2
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace.man.in@1.91 +3 -3
+    NTP_4_2_8P2
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.93 +2 -2
+    NTP_4_2_8P2
+
+  scripts/plot_summary-opts@1.53 +2 -2
+    NTP_4_2_8P2
+
+  scripts/plot_summary.1plot_summaryman@1.103 +3 -3
+    NTP_4_2_8P2
+
+  scripts/plot_summary.1plot_summarymdoc@1.103 +2 -2
+    NTP_4_2_8P2
+
+  scripts/plot_summary.html@1.106 +2 -2
+    NTP_4_2_8P2
+
+  scripts/plot_summary.man.in@1.103 +3 -3
+    NTP_4_2_8P2
+
+  scripts/plot_summary.mdoc.in@1.103 +2 -2
+    NTP_4_2_8P2
+
+  scripts/summary-opts@1.53 +2 -2
+    NTP_4_2_8P2
+
+  scripts/summary.1summaryman@1.103 +3 -3
+    NTP_4_2_8P2
+
+  scripts/summary.1summarymdoc@1.103 +2 -2
+    NTP_4_2_8P2
+
+  scripts/summary.html@1.106 +2 -2
+    NTP_4_2_8P2
+
+  scripts/summary.man.in@1.103 +3 -3
+    NTP_4_2_8P2
+
+  scripts/summary.mdoc.in@1.103 +2 -2
+    NTP_4_2_8P2
+
+  scripts/update-leap/invoke-update-leap.texi@1.4 +1 -1
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap-opts@1.4 +2 -2
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap.1update-leapman@1.4 +3 -3
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.4 +2 -2
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap.html@1.4 +1 -1
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap.man.in@1.4 +3 -3
+    NTP_4_2_8P2
+
+  scripts/update-leap/update-leap.mdoc.in@1.4 +2 -2
+    NTP_4_2_8P2
+
+  sntp/invoke-sntp.texi@1.492 +2 -2
+    NTP_4_2_8P2
+
+  sntp/sntp-opts.c@1.511 +159 -159
+    NTP_4_2_8P2
+
+  sntp/sntp-opts.h@1.509 +3 -3
+    NTP_4_2_8P2
+
+  sntp/sntp.1sntpman@1.327 +3 -3
+    NTP_4_2_8P2
+
+  sntp/sntp.1sntpmdoc@1.327 +2 -2
+    NTP_4_2_8P2
+
+  sntp/sntp.html@1.507 +2 -2
+    NTP_4_2_8P2
+
+  sntp/sntp.man.in@1.327 +3 -3
+    NTP_4_2_8P2
+
+  sntp/sntp.mdoc.in@1.327 +2 -2
+    NTP_4_2_8P2
+
+  util/invoke-ntp-keygen.texi@1.495 +2 -2
+    NTP_4_2_8P2
+
+  util/ntp-keygen-opts.c@1.513 +173 -173
+    NTP_4_2_8P2
+
+  util/ntp-keygen-opts.h@1.511 +3 -3
+    NTP_4_2_8P2
+
+  util/ntp-keygen.1ntp-keygenman@1.323 +3 -3
+    NTP_4_2_8P2
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.323 +2 -2
+    NTP_4_2_8P2
+
+  util/ntp-keygen.html@1.169 +2 -2
+    NTP_4_2_8P2
+
+  util/ntp-keygen.man.in@1.323 +3 -3
+    NTP_4_2_8P2
+
+  util/ntp-keygen.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P2
+
+ChangeSet@1.3319, 2015-04-07 04:05:46-04:00, stenn@deacon.udel.edu
+  ntp-4.2.8p2
+
+  packageinfo.sh@1.508 +2 -2
+    ntp-4.2.8p2
+
+ChangeSet@1.3318, 2015-04-07 07:57:32+00:00, stenn@psp-fb1.ntp.org
+  NEWS update
+
+  NEWS@1.135 +4 -2
+    NEWS update
+
+ChangeSet@1.3314.1.3, 2015-04-03 03:56:38-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P2_RC3
+  TAG: NTP_4_2_8P2_RC3
+
+  ChangeLog@1.1629.1.3 +1 -0
+    NTP_4_2_8P2_RC3
+
+  ntpd/invoke-ntp.conf.texi@1.181 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/invoke-ntp.keys.texi@1.177 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/invoke-ntpd.texi@1.494 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.conf.5man@1.215 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.conf.5mdoc@1.215 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.conf.html@1.172 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.conf.man.in@1.215 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.conf.mdoc.in@1.215 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.keys.5man@1.211 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.keys.5mdoc@1.211 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.keys.html@1.173 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.keys.man.in@1.211 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntp.keys.mdoc.in@1.211 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd-opts.c@1.516 +7 -7
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd-opts.h@1.515 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd.1ntpdman@1.323 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd.1ntpdmdoc@1.323 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd.html@1.167 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd.man.in@1.323 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpd/ntpd.mdoc.in@1.323 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpdc/invoke-ntpdc.texi@1.491 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc-opts.c@1.509 +7 -7
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc-opts.h@1.508 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc.1ntpdcman@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc.html@1.335 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc.man.in@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpdc/ntpdc.mdoc.in@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpq/invoke-ntpq.texi@1.497 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq-opts.c@1.514 +7 -7
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq-opts.h@1.512 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq.1ntpqman@1.325 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq.1ntpqmdoc@1.325 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq.html@1.164 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq.man.in@1.325 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpq/ntpq.mdoc.in@1.325 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.493 +2 -2
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.511 +7 -7
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.510 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd.html@1.162 +1 -1
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd.man.in@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+  packageinfo.sh@1.507 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.83 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.84 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/calc_tickadj.html@1.85 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.82 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.84 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.87 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/invoke-plot_summary.texi@1.104 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/invoke-summary.texi@1.104 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.314 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait-opts@1.50 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.311 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.312 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait.html@1.331 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait.man.in@1.311 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.312 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.102 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep-opts@1.52 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.90 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.90 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep.html@1.103 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep.man.in@1.90 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.91 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.103 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace-opts@1.52 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.90 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.91 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace.html@1.104 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace.man.in@1.90 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.92 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary-opts@1.52 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary.1plot_summaryman@1.102 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary.1plot_summarymdoc@1.102 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary.html@1.105 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary.man.in@1.102 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/plot_summary.mdoc.in@1.102 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/summary-opts@1.52 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/summary.1summaryman@1.102 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/summary.1summarymdoc@1.102 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/summary.html@1.105 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/summary.man.in@1.102 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/summary.mdoc.in@1.102 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/invoke-update-leap.texi@1.3 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap-opts@1.3 +2 -2
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap.1update-leapman@1.3 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.3 +1 -1
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap.html@1.3 +6 -5
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap.man.in@1.3 +3 -3
+    NTP_4_2_8P2_RC3
+
+  scripts/update-leap/update-leap.mdoc.in@1.3 +1 -1
+    NTP_4_2_8P2_RC3
+
+  sntp/invoke-sntp.texi@1.491 +2 -2
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp-opts.c@1.510 +7 -7
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp-opts.h@1.508 +3 -3
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp.1sntpman@1.326 +3 -3
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp.1sntpmdoc@1.326 +1 -1
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp.html@1.506 +2 -2
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp.man.in@1.326 +3 -3
+    NTP_4_2_8P2_RC3
+
+  sntp/sntp.mdoc.in@1.326 +1 -1
+    NTP_4_2_8P2_RC3
+
+  util/invoke-ntp-keygen.texi@1.494 +2 -2
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen-opts.c@1.512 +7 -7
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen-opts.h@1.510 +3 -3
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen.1ntp-keygenman@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen.html@1.168 +2 -2
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen.man.in@1.322 +3 -3
+    NTP_4_2_8P2_RC3
+
+  util/ntp-keygen.mdoc.in@1.322 +1 -1
+    NTP_4_2_8P2_RC3
+
+ChangeSet@1.3314.1.2, 2015-04-03 03:35:54-04:00, stenn@deacon.udel.edu
+  [Bug 2763] Fix for different thresholds for forward and backward steps
+
+  ChangeLog@1.1629.1.2 +3 -0
+    [Bug 2763] Fix for different thresholds for forward and backward steps
+
+  ntpd/ntp_loopfilter.c@1.183 +2 -2
+    [Bug 2763] Fix for different thresholds for forward and backward steps
+
+ChangeSet@1.3314.1.1, 2015-04-03 01:16:34-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P2_RC2
+  TAG: NTP_4_2_8P2_RC2
+
+  ChangeLog@1.1629.1.1 +1 -0
+    NTP_4_2_8P2_RC2
+
+  ntpd/invoke-ntp.conf.texi@1.180 +1 -1
+    NTP_4_2_8P2_RC2
+
+  ntpd/invoke-ntp.keys.texi@1.176 +1 -1
+    NTP_4_2_8P2_RC2
+
+  ntpd/invoke-ntpd.texi@1.493 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.conf.5man@1.214 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.conf.5mdoc@1.214 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.conf.html@1.171 +1 -1
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.conf.man.in@1.214 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.conf.mdoc.in@1.214 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.keys.5man@1.210 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.keys.5mdoc@1.210 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.keys.html@1.172 +1 -1
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.keys.man.in@1.210 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntp.keys.mdoc.in@1.210 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd-opts.c@1.515 +7 -7
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd-opts.h@1.514 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd.1ntpdman@1.322 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd.1ntpdmdoc@1.322 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd.html@1.166 +50 -26
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd.man.in@1.322 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpd/ntpd.mdoc.in@1.322 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpdc/invoke-ntpdc.texi@1.490 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc-opts.c@1.508 +7 -7
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc-opts.h@1.507 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc.1ntpdcman@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc.html@1.334 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc.man.in@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpdc/ntpdc.mdoc.in@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpq/invoke-ntpq.texi@1.496 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq-opts.c@1.513 +7 -7
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq-opts.h@1.511 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq.1ntpqman@1.324 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq.1ntpqmdoc@1.324 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq.html@1.163 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq.man.in@1.324 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpq/ntpq.mdoc.in@1.324 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.492 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.510 +7 -7
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.509 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd.html@1.161 +1 -1
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd.man.in@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+  packageinfo.sh@1.506 +1 -1
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.82 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.83 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/calc_tickadj.html@1.84 +1 -1
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.81 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.83 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.86 +1 -1
+    NTP_4_2_8P2_RC2
+
+  scripts/invoke-plot_summary.texi@1.103 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/invoke-summary.texi@1.103 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.313 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait-opts@1.49 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.310 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.311 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait.html@1.330 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait.man.in@1.310 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.311 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.101 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep-opts@1.51 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.89 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.89 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep.html@1.102 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep.man.in@1.89 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.90 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.102 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace-opts@1.51 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.89 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.90 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace.html@1.103 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace.man.in@1.89 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.91 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary-opts@1.51 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary.1plot_summaryman@1.101 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary.1plot_summarymdoc@1.101 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary.html@1.104 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary.man.in@1.101 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/plot_summary.mdoc.in@1.101 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/summary-opts@1.51 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/summary.1summaryman@1.101 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/summary.1summarymdoc@1.101 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/summary.html@1.104 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/summary.man.in@1.101 +3 -3
+    NTP_4_2_8P2_RC2
+
+  scripts/summary.mdoc.in@1.101 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/invoke-update-leap.texi@1.2 +6 -5
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap-opts@1.2 +2 -2
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap.1update-leapman@1.2 +7 -6
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.2 +6 -5
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap.html@1.2 +48 -72
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap.man.in@1.2 +7 -6
+    NTP_4_2_8P2_RC2
+
+  scripts/update-leap/update-leap.mdoc.in@1.2 +6 -5
+    NTP_4_2_8P2_RC2
+
+  sntp/invoke-sntp.texi@1.490 +2 -2
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp-opts.c@1.509 +7 -7
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp-opts.h@1.507 +3 -3
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp.1sntpman@1.325 +3 -3
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp.1sntpmdoc@1.325 +2 -2
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp.html@1.505 +111 -135
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp.man.in@1.325 +3 -3
+    NTP_4_2_8P2_RC2
+
+  sntp/sntp.mdoc.in@1.325 +2 -2
+    NTP_4_2_8P2_RC2
+
+  util/invoke-ntp-keygen.texi@1.493 +2 -2
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen-opts.c@1.511 +7 -7
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen-opts.h@1.509 +3 -3
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen.1ntp-keygenman@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen.html@1.167 +2 -2
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen.man.in@1.321 +3 -3
+    NTP_4_2_8P2_RC2
+
+  util/ntp-keygen.mdoc.in@1.321 +2 -2
+    NTP_4_2_8P2_RC2
+
+ChangeSet@1.3314, 2015-04-03 02:36:18+00:00, stenn@psp-fb1.ntp.org
+  merge cleanup
+
+  NEWS@1.133 +6 -5
+    merge cleanup
+
+ChangeSet@1.3313, 2015-04-03 02:31:18+00:00, stenn@psp-fb1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1629 +3 -3
+    merge cleanup
+
+ChangeSet@1.3308.2.11, 2015-04-02 21:42:37+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2592] FLAG_TSTAMP_PPS cleanup for refclock_parse.c
+
+  ChangeLog@1.1625.2.9 +1 -0
+    [Bug 2592] FLAG_TSTAMP_PPS cleanup for refclock_parse.c
+
+ChangeSet@1.3308.2.10, 2015-04-02 20:17:55+00:00, stenn@psp-deb1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1625.2.8 +1 -3
+    merge cleanup
+
+ChangeSet@1.3308.2.9, 2015-04-02 21:41:22+02:00, jnperlin@nemesis.localnet
+  [Bug 2795] Cannot build without OpenSLL (on Win32).
+    fixed minor warning
+
+  ChangeLog@1.1625.2.7 +3 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32).
+      fixed minor warning
+
+  include/ntp_md5.h@1.10 +1 -1
+    [Bug 2795] Cannot build without OpenSLL (on Win32).
+      OpenSSL declares EVP_md5() as function without arguments; surrogate should do the same.
+
+ChangeSet@1.3308.6.2, 2015-04-02 07:45:04+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1625.6.3 +0 -2
+    cleanup
+
+  ChangeLog@1.1625.6.2 +6 -0
+
+  ntpd/invoke-ntpd.texi@1.492 +20 -3
+    [Bug 2788] New -G flag (force step once) cleanup.
+
+  ntpd/ntp_loopfilter.c@1.182 +17 -6
+    [Bug 2794] Clean up kernel clock status reports.
+    Trailing whitespace cleanup.
+
+  ntpd/ntpd-opts.c@1.514 +249 -249
+    Autogenerated file.
+
+  ntpd/ntpd-opts.h@1.513 +3 -3
+    Autogenerated file.
+
+  ntpd/ntpd.1ntpdman@1.321 +19 -5
+    Autogenerated file.
+
+  ntpd/ntpd.1ntpdmdoc@1.321 +17 -4
+    Autogenerated file.
+
+  ntpd/ntpd.man.in@1.321 +19 -5
+    Autogenerated file.
+
+  ntpd/ntpd.mdoc.in@1.321 +17 -4
+    Autogenerated file.
+
+  ntpd/ntpdbase-opts.def@1.29 +9 -6
+    [Bug 2788] New flag -G (force_step_once) - documentation cleanup.
+
+ChangeSet@1.3308.2.7, 2015-04-02 07:34:40+00:00, stenn@psp-deb1.ntp.org
+  Simple cleanup to html/build.html
+
+  ChangeLog@1.1625.2.5 +1 -0
+    Simple cleanup to html/build.html
+
+  html/build.html@1.28 +2 -2
+    Simple cleanup to html/build.html
+
+ChangeSet@1.3308.2.6, 2015-04-02 03:15:42+00:00, stenn@psp-fb1.ntp.org
+  typos
+
+  ChangeLog@1.1625.2.4 +4 -4
+    typos
+
+ChangeSet@1.3308.5.2, 2015-04-01 11:08:14+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2798] sntp should decode and display the leap indicator
+
+  html/sntp.html@1.12 +3 -3
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/invoke-sntp.texi@1.489 +4 -3
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp-opts.c@1.508 +1 -1
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp-opts.def@1.47 +2 -1
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp-opts.h@1.506 +1 -1
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp.1sntpman@1.324 +5 -4
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp.1sntpmdoc@1.324 +4 -3
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp.html@1.504 +136 -111
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp.man.in@1.324 +5 -4
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/sntp.mdoc.in@1.324 +4 -3
+    [Bug 2798] sntp should decode and display the leap indicator
+
+ChangeSet@1.3308.5.1, 2015-04-01 10:44:24+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2798] sntp should decode and display the leap indicator
+
+  ChangeLog@1.1625.5.1 +3 -0
+    [Bug 2798] sntp should decode and display the leap indicator
+
+  sntp/main.c@1.95 +21 -1
+    [Bug 2798] sntp should decode and display the leap indicator
+
+ChangeSet@1.3308.4.1, 2015-03-30 20:14:46+02:00, jnperlin@hydra.(none)
+  [Bug 2797] ntp-keygen trapped in endless loop for MD5 keys on big-endian machines
+
+  ChangeLog@1.1625.4.1 +3 -0
+    [Bug 2797] ntp-keygen trapped in endless loop for MD5 keys on big-endian machines
+
+  util/ntp-keygen.c@1.104 +4 -4
+    [Bug 2797] ntp-keygen trapped in endless loop for MD5 keys on big-endian machines
+
+ChangeSet@1.3308.3.1, 2015-03-30 19:39:17+02:00, jnperlin@nemesis.localnet
+  [Bug 2796] ntp-keygen crashes in 'getclock()' on Win32
+
+  ChangeLog@1.1625.3.1 +2 -0
+    [Bug 2796] ntp-keygen crashes in 'getclock()' on Win32
+
+  ports/winnt/libntp/getclock.c@1.5 +2 -0
+    [Bug 2796] ntp-keygen crashes in 'getclock()' on Win32
+      make sure 'init_win_precise_time()' gets called
+
+ChangeSet@1.3308.2.4, 2015-03-30 19:10:12+02:00, jnperlin@nemesis.localnet
+  [Bug 2795] Cannot build without OpenSLL (on Win32)
+   Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ChangeLog@1.1625.2.2 +3 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ports/winnt/libntp/arc4wrap.c@1.1 +84 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ports/winnt/libntp/arc4wrap.c@1.0 +0 -0
+
+  ports/winnt/vs2005/libntp.vcproj@1.24 +4 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ports/winnt/vs2008/libntp/libntp.vcproj@1.52 +6 -2
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj@1.6 +1 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj.filters@1.4 +6 -0
+    [Bug 2795] Cannot build without OpenSLL (on Win32)
+     Provided a Win32 specific wrapper around libevent/arc4random.c
+
+ChangeSet@1.3305.3.8, 2015-03-30 15:55:43+02:00, martin@pc-martin.(none)
+  [Bug 2794] Don't let reports on normal kernel status changes look like errors.
+
+  ChangeLog@1.1622.3.8 +2 -0
+    [Bug 2794] Don't let reports on normal kernel status changes look like errors.
+
+  ntpd/ntp_loopfilter.c@1.181 +30 -19
+    [Bug 2794] Don't let reports on normal kernel status changes look like errors.
+
+ChangeSet@1.3305.3.7, 2015-03-30 11:23:48+02:00, martin@pc-martin.(none)
+  [Bug 2788] New flag -G (force_step_once)
+
+  ChangeLog@1.1622.3.7 +1 -0
+    [Bug 2788] New flag -G (force_step_once)
+
+  include/ntpd.h@1.185.1.1 +4 -3
+    [Bug 2788] Support new flag -G (force_step_once)
+    Removed trailing whitespace.
+
+  ntpd/cmd_args.c@1.62 +6 -3
+    [Bug 2788] New flag -G (force_step_once)
+    Removed trailing whitespace.
+
+  ntpd/ntp_loopfilter.c@1.180 +21 -15
+    [Bug 2788] New flag -G (force_step_once)
+    Removed trailing whitespace.
+
+  ntpd/ntpd-opts.c@1.511.1.1 +255 -225
+    [Bug 2788] New flag -G (force_step_once)
+
+  ntpd/ntpd-opts.h@1.510.1.1 +36 -29
+    [Bug 2788] New flag -G (force_step_once)
+
+  ntpd/ntpdbase-opts.def@1.28 +17 -2
+    [Bug 2788] New flag -G (force_step_once)
+    Removed trailing whitespace.
+
+ChangeSet@1.3308.1.3, 2015-03-30 09:11:33+00:00, stenn@psp-fb1.ntp.org
+  Start the RC cycle for ntp-4.2.8p2
+
+  NEWS@1.130.1.2 +82 -1
+    Start the RC cycle for ntp-4.2.8p2
+
+ChangeSet@1.3308.2.3, 2015-03-30 04:48:27-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P2_RC1
+  TAG: NTP_4_2_8P2_RC1
+
+  ChangeLog@1.1625.2.1 +1 -0
+    NTP_4_2_8P2_RC1
+
+  ntpd/invoke-ntp.conf.texi@1.179 +1 -1
+    NTP_4_2_8P2_RC1
+
+  ntpd/invoke-ntp.keys.texi@1.175 +1 -1
+    NTP_4_2_8P2_RC1
+
+  ntpd/invoke-ntpd.texi@1.491 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.conf.5man@1.213 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.conf.5mdoc@1.213 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.conf.html@1.170 +13 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.conf.man.in@1.213 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.conf.mdoc.in@1.213 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.keys.5man@1.209 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.keys.5mdoc@1.209 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.keys.html@1.171 +1 -1
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.keys.man.in@1.209 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntp.keys.mdoc.in@1.209 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd-opts.c@1.512 +239 -239
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd-opts.h@1.511 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd.1ntpdman@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd.1ntpdmdoc@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd.html@1.165 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd.man.in@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpd/ntpd.mdoc.in@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpdc/invoke-ntpdc.texi@1.489 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc-opts.c@1.507 +107 -107
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc-opts.h@1.506 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc.1ntpdcman@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc.html@1.333 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc.man.in@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpdc/ntpdc.mdoc.in@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpq/invoke-ntpq.texi@1.495 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq-opts.c@1.512 +106 -106
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq-opts.h@1.510 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq.1ntpqman@1.323 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq.1ntpqmdoc@1.323 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq.html@1.162 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq.man.in@1.323 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpq/ntpq.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.491 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.509 +68 -68
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.508 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd.html@1.160 +1 -1
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd.man.in@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  packageinfo.sh@1.505 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.81 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.82 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/calc_tickadj.html@1.83 +1 -1
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.80 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.82 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.85 +1 -1
+    NTP_4_2_8P2_RC1
+
+  scripts/invoke-plot_summary.texi@1.102 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/invoke-summary.texi@1.102 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.312 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait-opts@1.48 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.309 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.310 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait.html@1.329 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait.man.in@1.309 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.310 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.100 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep-opts@1.50 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.88 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.88 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep.html@1.101 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep.man.in@1.88 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.89 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.101 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace-opts@1.50 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.88 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.89 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace.html@1.102 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace.man.in@1.88 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.90 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary-opts@1.50 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary.1plot_summaryman@1.100 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary.1plot_summarymdoc@1.100 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary.html@1.103 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary.man.in@1.100 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/plot_summary.mdoc.in@1.100 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/summary-opts@1.50 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/summary.1summaryman@1.100 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/summary.1summarymdoc@1.100 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/summary.html@1.103 +2 -2
+    NTP_4_2_8P2_RC1
+
+  scripts/summary.man.in@1.100 +3 -3
+    NTP_4_2_8P2_RC1
+
+  scripts/summary.mdoc.in@1.100 +2 -2
+    NTP_4_2_8P2_RC1
+
+  sntp/invoke-sntp.texi@1.488 +2 -2
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp-opts.c@1.507 +159 -159
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp-opts.h@1.505 +3 -3
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp.1sntpman@1.323 +3 -3
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp.1sntpmdoc@1.323 +2 -2
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp.html@1.503 +2 -2
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp.man.in@1.323 +3 -3
+    NTP_4_2_8P2_RC1
+
+  sntp/sntp.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P2_RC1
+
+  util/invoke-ntp-keygen.texi@1.492 +2 -2
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen-opts.c@1.510 +173 -173
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen-opts.h@1.508 +3 -3
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen.1ntp-keygenman@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen.html@1.166 +2 -2
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen.man.in@1.320 +3 -3
+    NTP_4_2_8P2_RC1
+
+  util/ntp-keygen.mdoc.in@1.320 +2 -2
+    NTP_4_2_8P2_RC1
+
+ChangeSet@1.3308.2.2, 2015-03-30 04:25:58-04:00, stenn@deacon.udel.edu
+  Begin 4.2.8p2-RC1
+
+  packageinfo.sh@1.504 +1 -1
+    Begin 4.2.8p2-RC1
+
+ChangeSet@1.3308.2.1, 2015-03-30 08:18:35+00:00, stenn@psp-fb1.ntp.org
+  Start the RC cycle for ntp-4.2.8p2
+
+  NEWS@1.130.1.1 +49 -0
+    Start the RC cycle for ntp-4.2.8p2
+
+ChangeSet@1.3311, 2015-03-29 05:05:41+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2769] cleannup for update-leap
+
+  ChangeLog@1.1627 +1 -0
+    [Bug 2769] cleannup for update-leap
+
+ChangeSet@1.3310, 2015-03-29 04:10:31+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2769] cleannup for update-leap
+
+  NEWS@1.131 +8 -0
+    [Bug 2769] cleannup for update-leap
+
+  scripts/update-leap/Makefile.am@1.3 +1 -0
+    [Bug 2769] cleannup for update-leap
+
+  scripts/update-leap/update-leap-opts.def@1.2 +4 -3
+    [Bug 2769] cleannup for update-leap
+
+ChangeSet@1.3308, 2015-03-29 01:49:10+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2346] "graceful termination" signals do not do peer cleanup
+
+  ChangeLog@1.1625 +1 -0
+    [Bug 2346] "graceful termination" signals do not do peer cleanup
+
+  include/ntpd.h@1.186 +1 -0
+    [Bug 2346] "graceful termination" signals do not do peer cleanup
+
+  ntpd/ntp_peer.c@1.154 +20 -0
+    [Bug 2346] "graceful termination" signals do not do peer cleanup
+
+  ntpd/ntpd.c@1.159 +1 -0
+    [Bug 2346] "graceful termination" signals do not do peer cleanup
+
+ChangeSet@1.3305.3.6, 2015-03-25 17:32:25+01:00, martin@pc-martin.(none)
+  [Bug 2592] Account for PPS sources which can provide an accurate absolute time stamp, and status information.
+
+  ChangeLog@1.1622.3.6 +2 -0
+    [Bug 2592] Account for PPS sources which can provide an accurate absolute time stamp, and status information.
+
+  include/ntp.h@1.213 +2 -1
+    New flag FLAG_TSTAMP_PPS.
+
+  ntpd/ntp_proto.c@1.353.1.2 +2 -1
+    [Bug 2592] Account for PPS sources which can provide an accurate absolute time stamp, and status information.
+
+  ntpd/refclock_parse.c@1.78 +2 -2
+    [Bug 2592] Parse driver can return absolute timestamp with PPS, and status information.
+
+ChangeSet@1.3305.3.5, 2015-03-25 17:24:59+01:00, martin@pc-martin.(none)
+  Fixed indention and removed trailing whitespace.
+
+  ChangeLog@1.1622.3.5 +1 -0
+    Fixed indention and removed trailing whitespace.
+
+  include/ntp.h@1.212 +4 -4
+    Fixed indention.
+
+  include/parse_conf.h@1.7 +6 -6
+    Fixed indention.
+
+  ntpd/ntp_proto.c@1.353.1.1 +27 -27
+    Removed trailing whitespace.
+
+  ntpd/refclock_parse.c@1.77 +16 -16
+    Fixed indention.
+
+ChangeSet@1.3305.3.4, 2015-03-22 07:59:12+00:00, stenn@psp-fb1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1622.3.4 +0 -1
+    merge cleanup
+
+ChangeSet@1.3305.5.3, 2015-03-22 07:24:07+00:00, stenn@psp-fb1.ntp.org
+  Bug 2791 -> Bug 2789
+
+  ChangeLog@1.1622.5.3 +1 -1
+    Bug 2791 -> Bug 2789
+
+ChangeSet@1.3305.5.2, 2015-03-22 06:59:06+00:00, stenn@psp-fb1.ntp.org
+  Merge cleanup
+
+  ChangeLog@1.1622.5.2 +22 -22
+    Merge cleanup
+
+ChangeSet@1.3305.4.2, 2015-03-22 03:48:52+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2769] New script: update-leap
+
+  .point-changed-filelist@1.26 +7 -0
+    [Bug 2769] New script: update-leap
+
+  scripts/update-leap/Makefile.am@1.2 +2 -1
+    [Bug 2769] New script: update-leap
+
+ChangeSet@1.3305.4.1, 2015-03-22 03:01:33+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2769] New script: update-leap
+
+  BitKeeper/etc/ignore@1.86 +1 -0
+    added Makefile.in
+
+  ChangeLog@1.1622.4.1 +1 -0
+    [Bug 2769] New script: update-leap
+
+  configure.ac@1.585 +8 -7
+    [Bug 2769] New script: update-leap
+
+  scripts/Makefile.am@1.40 +1 -0
+    [Bug 2769] New script: update-leap
+
+  scripts/update-leap/Makefile.am@1.1 +95 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/Makefile.am
+
+  scripts/update-leap/Makefile.am@1.0 +0 -0
+
+  scripts/update-leap/invoke-update-leap.menu@1.1 +1 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/invoke-update-leap.menu
+
+  scripts/update-leap/invoke-update-leap.menu@1.0 +0 -0
+
+  scripts/update-leap/invoke-update-leap.texi@1.1 +169 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/invoke-update-leap.texi
+
+  scripts/update-leap/invoke-update-leap.texi@1.0 +0 -0
+
+  scripts/update-leap/update-leap@1.1 +434 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap
+
+  scripts/update-leap/update-leap@1.0 +0 -0
+
+  scripts/update-leap/update-leap-opts@1.1 +72 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap-opts
+
+  scripts/update-leap/update-leap-opts@1.0 +0 -0
+
+  scripts/update-leap/update-leap-opts.def@1.1 +162 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap-opts.def
+
+  scripts/update-leap/update-leap-opts.def@1.0 +0 -0
+
+  scripts/update-leap/update-leap.1update-leapman@1.1 +168 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.1update-leapman
+
+  scripts/update-leap/update-leap.1update-leapman@1.0 +0 -0
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.1 +133 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.1update-leapmdoc
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.0 +0 -0
+
+  scripts/update-leap/update-leap.html@1.1 +297 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.html
+
+  scripts/update-leap/update-leap.html@1.0 +0 -0
+
+  scripts/update-leap/update-leap.man.in@1.1 +168 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.man.in
+
+  scripts/update-leap/update-leap.man.in@1.0 +0 -0
+
+  scripts/update-leap/update-leap.mdoc.in@1.1 +133 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.mdoc.in
+
+  scripts/update-leap/update-leap.mdoc.in@1.0 +0 -0
+
+  scripts/update-leap/update-leap.texi@1.1 +43 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2769/scripts/update-leap/update-leap.texi
+
+  scripts/update-leap/update-leap.texi@1.0 +0 -0
+
+  sntp/loc/darwin@1.3 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/loc/debian@1.4 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/loc/freebsd@1.6 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/loc/legacy@1.7 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/loc/netbsd@1.4 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/loc/solaris@1.7 +1 -0
+    [Bug 2769] New script: update-leap
+
+  sntp/m4/ntp_locinfo.m4@1.18 +6 -0
+    [Bug 2769] New script: update-leap
+
+ChangeSet@1.3305.3.1, 2015-03-20 13:03:38+01:00, burnicki@pc-martin4.
+  [Bug 2790] If ntpd sets the Windows MM timer highest resolution then pause
+  briefly before measuring system clock precision to yield correct results.
+
+  ChangeLog@1.1622.3.1 +3 -1
+    [Bug 2790] If ntpd sets the Windows MM timer highest resolution then pause
+    briefly before measuring system clock precision to yield correct results.
+
+  ports/winnt/ntpd/nt_clockstuff.c@1.65 +4 -0
+    [Bug 2790] If ntpd sets the Windows MM timer highest resolution then pause
+    briefly before measuring system clock precision to yield correct results.
+
+ChangeSet@1.3305.2.6, 2015-03-20 11:47:15+01:00, martin@pc-martin.(none)
+  [Bug 2791] Quiet compiler warnings from libevent.
+
+  ChangeLog@1.1622.2.6 +1 -0
+    [Bug 2791] Quiet compiler warnings from libevent.
+
+  sntp/libevent/evthread-internal.h@1.8 +2 -2
+    [Bug 2791] Fixed function prototypes to quiet compiler warnings.
+
+ChangeSet@1.3305.2.5, 2015-03-20 11:36:15+01:00, martin@pc-martin.(none)
+  [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  ChangeLog@1.1622.2.5 +4 -3
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  include/parse.h@1.12 +3 -3
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  libparse/clk_meinberg.c@1.14 +7 -4
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  libparse/clk_rawdcf.c@1.20 +3 -2
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  libparse/clk_schmid.c@1.13 +3 -3
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  libparse/parse.c@1.19 +1 -1
+    Quiet compiler warning.
+
+  ntpd/refclock_parse.c@1.76 +1 -1
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+
+  parseutil/dcfd.c@1.28 +26 -25
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+    Removed trailing whitespace.
+
+  parseutil/testdcf.c@1.10 +11 -10
+    [Bug 1787] DCF77's formerly "antenna" bit is "call bit" since 2003.
+    Removed trailing whitespace and fixed indention.
+
+ChangeSet@1.3305.2.4, 2015-03-19 17:00:30+01:00, martin@pc-martin.(none)
+  Added a comment from Juergen Perlinger in ntp_date.c to make the code clearer.
+
+  ChangeLog@1.1622.2.4 +1 -0
+    Added a comment from Juergen Perlinger in ntp_date.c to make the code clearer.
+
+  libntp/ntp_calendar.c@1.15 +40 -34
+    Added a comment from Juergen Perlinger to make the code clearer.
+    Removed trailing whitespace.
+
+ChangeSet@1.3305.2.3, 2015-03-19 16:52:05+01:00, martin@pc-martin.(none)
+  Use predefined function types for parse driver functions used to set up function pointers.
+  Account for changed prototype of parse_inp_fnc_t functions.
+  Cast parse conversion results to appropriate types to avoid compiler warnings.
+  Let ioctl() for Windows accept a (void *) to avoid compiler warnings when called with pointers to different types.
+
+  ChangeLog@1.1622.2.3 +7 -0
+    Use predefined function types for parse driver functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast parse conversion results to appropriate types to avoid compiler warnings.
+    Let ioctl() for Windows accept a (void *) to avoid compiler warnings when called with pointers to different types.
+
+  include/binio.h@1.6 +10 -0
+    Added macros casting the result of the conversion function to a dedicated with to avoid compiler warnings.
+
+  include/mbg_gps166.h@1.13 +1 -1
+    Use specific data type with mbg_csum() to avoid compiler warnings.
+
+  include/parse.h@1.11 +15 -11
+    Introduced some dedicated function types simplifying use with function pointers.
+    Let parse input functions expect a char instead of an unsigned int since chars are used anyway.
+    This helps to avoid compiler warnings.
+
+  libparse/clk_computime.c@1.12 +10 -10
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_dcf7000.c@1.12 +8 -7
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_hopf6021.c@1.11 +21 -20
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_meinberg.c@1.13 +20 -19
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast conversion results to appropriate types to avoid compiler warnings.
+
+  libparse/clk_rawdcf.c@1.19 +8 -7
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast to appropriate types to avoid compiler warnings.
+
+  libparse/clk_rcc8000.c@1.11 +17 -16
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_schmid.c@1.12 +9 -9
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_sel240x.c@1.4 +5 -11
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast to appropriate types to avoid compiler warnings.
+
+  libparse/clk_trimtaip.c@1.12 +8 -7
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_trimtsip.c@1.13 +18 -18
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast conversion results to appropriate types to avoid compiler warnings.
+    Use commonly defined constants to handle GPS week number wraparounds.
+
+  libparse/clk_varitext.c@1.11 +6 -5
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/clk_wharton.c@1.10 +7 -4
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+
+  libparse/data_mbg.c@1.15 +36 -36
+    Cast conversion results to appropriate types to avoid compiler warnings.
+
+  libparse/gpstolfp.c@1.12 +1 -1
+    Type cast to avoid compiler warning.
+
+  libparse/parse.c@1.18 +14 -14
+    Use predefined function types for functions used to set up function pointers.
+    Account for changed prototype of parse_inp_fnc_t functions.
+    Cast conversion results to appropriate types to avoid compiler warnings.
+
+  ntpd/refclock_parse.c@1.75 +49 -48
+    Cast conversion results to appropriate types to avoid compiler warnings.
+
+  ports/winnt/include/termios.h@1.17 +1 -1
+    Changed the prototype for ioctl() to accept a (void *) to avoid compiler warnings when called with pointers to different types.
+
+  ports/winnt/libntp/termios.c@1.30 +2 -1
+    Let ioctl() accept a (void *) to avoid compiler warnings when called with pointers to different types.
+
+ChangeSet@1.3305.1.19, 2015-03-19 07:54:24+00:00, stenn@psp-deb1.ntp.org
+  ntp_proto.c, ChangeLog:
+    [Sec 2779] ntpd accepts unauthenticated packets with symmetric key crypto.
+    [Sec 2781] Authentication doesn't protect symmetric associations against DoS attacks.
+
+  ChangeLog@1.1622.1.16 +3 -0
+    [Sec 2779] ntpd accepts unauthenticated packets with symmetric key crypto.
+    [Sec 2781] Authentication doesn't protect symmetric associations against DoS attacks.
+
+  ntpd/ntp_proto.c@1.354 +16 -14
+    [Sec 2779] ntpd accepts unauthenticated packets with symmetric key crypto.
+    [Sec 2781] Authentication doesn't protect symmetric associations against DoS attacks.
+
+ChangeSet@1.3305.1.18, 2015-03-16 09:17:42+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ChangeLog@1.1622.1.15 +1 -0
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  include/ntp.h@1.211 +13 -11
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  include/ntpd.h@1.185 +2 -1
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/invoke-ntp.conf.texi@1.178 +15 -2
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/keyword-gen-utd@1.22 +1 -1
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/keyword-gen.c@1.27 +2 -0
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp.conf.5man@1.212 +19 -4
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp.conf.5mdoc@1.212 +18 -3
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp.conf.def@1.15 +16 -1
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp.conf.man.in@1.212 +19 -4
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp.conf.mdoc.in@1.212 +18 -3
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_config.c@1.323 +8 -0
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_keyword.h@1.24 +492 -483
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_loopfilter.c@1.179 +27 -5
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_parser.c@1.90 +803 -797
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_parser.h@1.56 +81 -77
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+  ntpd/ntp_parser.y@1.83 +4 -0
+    [Bug 2763] Allow different thresholds for forward and backward steps
+
+ChangeSet@1.3305.2.2, 2015-03-13 10:28:32+01:00, martin@pc-martin.(none)
+  Removed non-ASCII characters from some copyright comments.
+  Removed trailing whitespace.
+  Updated definitions for Meinberg clocks from current Meinberg header files. Now use C99 fixed-width types and avoid non-ASCII characters in comments.
+  Account for updated definitions pulled from Meinberg header files.
+  Updated comments on Meinberg GPS receivers which are not only called GPS16x.
+  Replaced some constant numbers by defines from ntp_calendar.h
+  Modified creation of parse-specific variables for Meinberg devices in gps16x_message().
+  Reworked mk_utcinfo() to avoid printing of ambiguous leap second dates.
+  Modified mbg_tm_str() which now expexts an additional parameter controlling if the time status shall be printed.
+
+  ChangeLog@1.1622.2.2 +12 -0
+    Removed non-ASCII characters from some copyright comments.
+    Removed trailing whitespace.
+    Updated definitions for Meinberg clocks from current Meinberg header files. Now use C99 fixed-width types and avoid non-ASCII characters in comments.
+    Account for updated definitions pulled from Meinberg header files.
+    Updated comments on Meinberg GPS receivers which are not only called GPS16x.
+    Replaced some constant numbers by defines from ntp_calendar.h
+    Modified creation of parse-specific variables for Meinberg devices in gps16x_message().
+    Reworked mk_utcinfo() to avoid printing of ambiguous leap second dates.
+    Modified mbg_tm_str() which now expexts an additional parameter controlling if the time status shall be printed.
+
+  include/mbg_gps166.h@1.12 +841 -408
+    Updated definitions for Meinberg clocks from current Meinberg header files. Now use C99 fixed-width types and avoid non-ASCII characters in comments.
+    Updated prototype for mbg_tm_str() which now takes one more parameter.
+
+  include/ntp_calendar.h@1.17 +4 -2
+    Added definitions for DAYSPERWEEK and SECSPERWEEK.
+
+  include/parse.h@1.10 +14 -7
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+    Moved a few definitions from gpstolfp.c here so they can also be used in other c modules.
+
+  include/parse_conf.h@1.6 +1 -1
+    Removed non-ASCII characters from copyright comment.
+
+  kernel/sys/parsestreams.h@1.8 +1 -1
+    Removed non-ASCII characters from copyright comment.
+
+  libparse/clk_computime.c@1.11 +23 -23
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_dcf7000.c@1.11 +7 -7
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_meinberg.c@1.12 +71 -70
+    Updated comments on Meinberg GPS receivers which are not only called GPS16x.
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_rawdcf.c@1.18 +12 -12
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_schmid.c@1.11 +7 -7
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_trimtaip.c@1.11 +5 -5
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_trimtsip.c@1.12 +13 -13
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_varitext.c@1.10 +38 -38
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/clk_wharton.c@1.9 +1 -1
+    Fixed a typo.
+
+  libparse/data_mbg.c@1.14 +39 -36
+    Account for updated definitions pulled from Meinberg header files.
+    Updated definitions for Meinberg clocks from current Meinberg header files. Now use C99 fixed-width types and avoid non-ASCII characters in comments.
+    Replaced some constant numbers by defines from ntp_calendar.h.
+    Modified mbg_tm_str() which now expexts an additional parameter controlling if the time status shall be printed.
+
+  libparse/gpstolfp.c@1.11 +4 -6
+    Moved some commonly used constants to parse.h.
+    Removed duplicate defines and use those in ntp_calendar.h.
+    Also replaced some constant numbers by defines from ntp_calendar.h.
+
+  libparse/parse.c@1.17 +46 -46
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/parse_conf.c@1.11 +2 -2
+    Removed non-ASCII characters from copyright comment.
+
+  libparse/parsesolaris.c@1.12 +55 -55
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/parsestreams.c@1.8 +63 -63
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+
+  libparse/trim_info.c@1.6 +1 -1
+    Removed non-ASCII characters from copyright comment.
+
+  ntpd/refclock_parse.c@1.74 +326 -295
+    Removed non-ASCII characters from copyright comment.
+    Removed trailing whitespace.
+    Reworked mk_utcinfo() to avoid printing of ambiguous leap second dates.
+    Modified creation of parse-specific variables for Meinberg devices in gps16x_message().
+
+  parseutil/dcfd.c@1.27 +2 -2
+    Removed non-ASCII characters from copyright comment.
+
+  parseutil/testdcf.c@1.9 +2 -2
+    Removed non-ASCII characters from copyright comment.
+
+ChangeSet@1.3305.1.17, 2015-03-10 11:21:46+00:00, stenn@psp-fb1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1622.1.14 +1 -3
+    merge cleanup
+
+  ntpd/ntp_loopfilter.c@1.178 +5 -2
+    merge cleanup
+
+ChangeSet@1.3305.2.1, 2015-03-10 10:48:25+01:00, martin@pc-martin.(none)
+  Fixed loops and decoding of Meinberg GPS satellite info.
+
+  ChangeLog@1.1622.2.1 +1 -0
+    Fixed loops and decoding of Meinberg GPS satellite info.
+
+  libparse/data_mbg.c@1.13 +3 -3
+    Fixed loops handling Meinberg GPS satellite info.
+
+  ntpd/refclock_parse.c@1.73 +44 -68
+    Fixed loops and decoding of Meinberg GPS satellite info.
+
+ChangeSet@1.3305.1.16, 2015-03-09 06:36:19-04:00, murray@pogo.udel.edu
+  ChangeLog, ntp_loopfilter.c:
+    Fix for bug 2774
+
+  ChangeLog@1.1622.1.13 +3 -0
+    Fix for bug 2774
+
+  ntpd/ntp_loopfilter.c@1.177 +4 -1
+    Fix for bug 2774
+
+ChangeSet@1.3305.1.15, 2015-03-05 10:17:02+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2783] Quiet autoconf warnings about missing AC_LANG_SOURCE
+
+  ChangeLog@1.1622.1.12 +1 -0
+    [Bug 2783] Quiet autoconf warnings about missing AC_LANG_SOURCE
+
+  configure.ac@1.584 +24 -22
+    [Bug 2783] Quiet autoconf warnings about missing AC_LANG_SOURCE
+
+  sntp/libopts/m4/libopts.m4@1.33 +12 -12
+    [Bug 2783] Quiet autoconf warnings about missing AC_LANG_SOURCE
+
+  sntp/m4/ntp_libntp.m4@1.29 +4 -4
+    [Bug 2783] Quiet autoconf warnings about missing AC_LANG_SOURCE
+
+ChangeSet@1.3305.1.14, 2015-03-04 11:16:31+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2775] ntp-keygen.c fails to compile under Windows
+
+  ChangeLog@1.1622.1.11 +1 -0
+    [Bug 2775] ntp-keygen.c fails to compile under Windows.
+
+  util/ntp-keygen.c@1.103 +7 -1
+    [Bug 2775] ntp-keygen.c fails to compile under Windows
+
+ChangeSet@1.3305.1.13, 2015-03-01 21:46:56-05:00, stenn@pogo.udel.edu
+  cleanup
+
+  ChangeLog@1.1622.1.10 +1 -2
+    cleanup
+
+ChangeSet@1.3305.1.12, 2015-03-01 02:50:18-05:00, murray@pogo.udel.edu
+  refclock_palisade.h, ChangeLog, refclock_palisade.c:
+    Fix bug 2773 - early leap from Palisade/Thunderbolt
+
+  ChangeLog@1.1622.1.9 +2 -0
+    Fix bug 2773 - early leap from Palisade/Thunderbolt
+
+  ntpd/refclock_palisade.c@1.42 +8 -2
+    Fix bug 2773 - early leap from Palisade/Thunderbolt
+
+  ntpd/refclock_palisade.h@1.15 +1 -0
+    Fix bug 2773 - early leap from Palisade/Thunderbolt
+
+ChangeSet@1.3305.1.11, 2015-02-28 12:12:13+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2751] jitter.h has stale copies of l_fp macros
+
+  util/Makefile.am@1.78 +1 -1
+    [Bug 2751] jitter.h has stale copies of l_fp macros
+
+ChangeSet@1.3305.1.10, 2015-02-28 12:04:02+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2771] nonvolatile value is documented in wrong units
+
+  ChangeLog@1.1622.1.8 +1 -0
+    [Bug 2771] nonvolatile value is documented in wrong units
+
+  html/miscopt.html@1.80 +2 -2
+    [Bug 2771] nonvolatile value is documented in wrong units
+
+ChangeSet@1.3305.1.9, 2015-02-28 11:34:24+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2767] ntp-keygen -M should symlink to ntp.keys
+
+  ChangeLog@1.1622.1.7 +1 -0
+    [Bug 2767] ntp-keygen -M should symlink to ntp.keys
+
+  util/ntp-keygen.c@1.102 +6 -2
+    [Bug 2767] ntp-keygen -M should symlink to ntp.keys
+
+ChangeSet@1.3305.1.8, 2015-02-28 11:28:04+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2766] ntp-keygen output files should not be world-readable
+
+  ChangeLog@1.1622.1.6 +1 -0
+    [Bug 2766] ntp-keygen output files should not be world-readable
+
+  util/ntp-keygen.c@1.101 +5 -1
+    [Bug 2766] ntp-keygen output files should not be world-readable
+
+ChangeSet@1.3305.1.7, 2015-02-28 11:18:57+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2759] Expose nonvolatile/clk_wander_threshold to ntpq
+
+  ChangeLog@1.1622.1.5 +1 -0
+    [Bug 2759] Expose nonvolatile/clk_wander_threshold to ntpq
+
+  ntpd/ntp_control.c@1.196 +56 -51
+    [Bug 2759] Expose nonvolatile/clk_wander_threshold to ntpq
+
+ChangeSet@1.3305.1.6, 2015-02-28 09:47:20+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2757] Quiet compiler warnings.
+
+  lib/isc/inet_ntop.c@1.14 +1 -0
+    [Bug 2757] Quiet compiler warnings.
+
+  lib/isc/log.c@1.8 +12 -12
+    [Bug 2757] Quiet compiler warnings.
+
+  ntpd/ntp_leapsec.c@1.16 +6 -6
+    [Bug 2757] Quiet compiler warnings.
+
+  parseutil/dcfd.c@1.26 +7 -0
+    [Bug 2757] Quiet compiler warnings.
+
+  sntp/libevent/include/event2/event.h@1.11 +4 -0
+    [Bug 2757] Quiet compiler warnings.
+
+ChangeSet@1.3305.1.5, 2015-02-28 09:11:24+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2756] ntpd hangs in startup with gcc 3.3.5 on ARM
+
+  ChangeLog@1.1622.1.4 +1 -0
+    [Bug 2756] ntpd hangs in startup with gcc 3.3.5 on ARM
+
+  configure.ac@1.583 +0 -2
+    [Bug 2756] ntpd hangs in startup with gcc 3.3.5 on ARM
+
+  include/ntp_fp.h@1.32 +4 -1
+    [Bug 2756] ntpd hangs in startup with gcc 3.3.5 on ARM
+
+ChangeSet@1.3305.1.4, 2015-02-25 07:58:47+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2751] jitter.h has stale copies of l_fp macros
+
+  BitKeeper/deleted/fd/jitter.h~11d7c056cb18e28@1.5 +0 -0
+    Delete: util/jitter.h
+
+  ChangeLog@1.1622.1.3 +1 -0
+    [Bug 2751] jitter.h has stale copies of l_fp macros
+
+  util/jitter.c@1.11 +1 -2
+    [Bug 2751] jitter.h has stale copies of l_fp macros
+
+ChangeSet@1.3305.1.3, 2015-02-21 05:56:16-05:00, stenn@deacon.udel.edu
+  Update triggers for bk-6
+
+  BitKeeper/triggers/post-incoming.license-warn@1.9 +3 -0
+    Update triggers for bk-6
+
+  BitKeeper/triggers/pre-resolve.license-chk@1.10 +3 -0
+    Update triggers for bk-6
+
+  BitKeeper/triggers/send@1.16 +2 -2
+    Update triggers for bk-6
+
+ChangeSet@1.3305.1.2, 2015-02-21 10:35:38+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2757] Quiet compiler warnings
+
+  ChangeLog@1.1622.1.2 +1 -0
+    [Bug 2757] Quiet compiler warnings
+
+  lib/isc/result.c@1.4 +6 -6
+    [Bug 2757] Quiet compiler warnings
+
+  lib/isc/unix/file.c@1.7 +3 -3
+    [Bug 2757] Quiet compiler warnings
+
+  lib/isc/unix/ifiter_ioctl.c@1.32.1.1 +4 -0
+    [Bug 2757] Quiet compiler warnings
+
+  lib/isc/unix/net.c@1.19 +2 -1
+    [Bug 2757] Quiet compiler warnings
+
+  libntp/work_fork.c@1.13 +1 -1
+    [Bug 2757] Quiet compiler warnings
+
+  ntpd/ntp_crypto.c@1.174 +1 -1
+    [Bug 2757] Quiet compiler warnings
+
+ChangeSet@1.3305.1.1, 2015-02-21 09:51:32+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2749] ntp/lib/NTP/Util.pm needs update for ntpq -w, IPv6, .POOL.
+
+  ChangeLog@1.1622.1.1 +1 -0
+    [Bug 2749] ntp/lib/NTP/Util.pm needs update for ntpq -w, IPv6, .POOL.
+
+  scripts/lib/NTP/Util.pm@1.3 +15 -4
+    [Bug 2749] ntp/lib/NTP/Util.pm needs update for ntpq -w, IPv6, .POOL.
+
+ChangeSet@1.3306, 2015-02-21 09:28:08+00:00, stenn@psp-fb1.ntp.org
+  [Bug 1960] setsockopt IPV6_MULTICAST_IF: Invalid argument
+
+  ChangeLog@1.1623 +1 -0
+    [Bug 1960] setsockopt IPV6_MULTICAST_IF: Invalid argument
+
+  lib/isc/unix/ifiter_getifaddrs.c@1.14 +3 -0
+    [Bug 1960] setsockopt IPV6_MULTICAST_IF: Invalid argument
+
+  lib/isc/unix/ifiter_ioctl.c@1.33 +12 -2
+    [Bug 1960] setsockopt IPV6_MULTICAST_IF: Invalid argument
+
+ChangeSet@1.3302.1.1, 2015-02-21 07:15:54+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2728] See if C99-style structure initialization works
+
+  ChangeLog@1.1620.1.1 +3 -0
+    [Bug 2728] See if C99-style structure initialization works
+
+  configure.ac@1.582 +1 -0
+    [Bug 2728] See if C99-style structure initialization works
+
+  ntpq/ntpq-subs.c@1.104 +1 -1
+    [Bug 2728] See if C99-style structure initialization works
+
+  ports/winnt/include/config.h@1.111 +1 -1
+    [Bug 2728] See if C99-style structure initialization works
+
+  sntp/m4/ax_c99_struct_init.m4@1.1 +59 -0
+    BitKeeper file /home/stenn/ntp-stable-2728/sntp/m4/ax_c99_struct_init.m4
+
+  sntp/m4/ax_c99_struct_init.m4@1.0 +0 -0
+
+ChangeSet@1.3304, 2015-02-11 09:08:51+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  ChangeLog@1.1621 +3 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+ChangeSet@1.3303, 2015-02-11 09:05:59+00:00, stenn@psp-fb1.ntp.org
+  [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  BitKeeper/deleted/5b/README~3a69bb76c676898e@1.7 +0 -0
+    Delete: sntp/libevent/README
+
+  sntp/libevent/ChangeLog@1.9 +726 -60
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/Makefile.am@1.13 +3 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/README.md@1.1 +318 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/README.md
+
+  sntp/libevent/README.md@1.0 +0 -0
+
+  sntp/libevent/WIN32-Code/getopt.c@1.1 +149 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/WIN32-Code/getopt.c
+
+  sntp/libevent/WIN32-Code/getopt.c@1.0 +0 -0
+
+  sntp/libevent/WIN32-Code/getopt.h@1.1 +33 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/WIN32-Code/getopt.h
+
+  sntp/libevent/WIN32-Code/getopt.h@1.0 +0 -0
+
+  sntp/libevent/WIN32-Code/getopt_long.c@1.1 +233 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/WIN32-Code/getopt_long.c
+
+  sntp/libevent/WIN32-Code/getopt_long.c@1.0 +0 -0
+
+  sntp/libevent/WIN32-Code/nmake/event2/event-config.h@1.2 +2 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/WIN32-Code/tree.h@1.2 +0 -677
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/buffer.c@1.10 +74 -10
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/bufferevent.c@1.8 +9 -4
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/bufferevent_async.c@1.7 +6 -4
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/bufferevent_filter.c@1.7 +50 -23
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/bufferevent_openssl.c@1.9 +2 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/bufferevent_pair.c@1.8 +32 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/configure.ac@1.17 +15 -18
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evbuffer-internal.h@1.8 +13 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evdns.c@1.10 +80 -33
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/event.c@1.13 +38 -10
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/event_tagging.c@1.5 +14 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evrpc-internal.h@1.3 +1 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evthread-internal.h@1.7 +7 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evthread.c@1.8 +17 -6
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evutil.c@1.10 +28 -14
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/evutil_time.c@1.5 +50 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/ht-internal.h@1.4 +0 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/http-internal.h@1.6 +2 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/http.c@1.10 +45 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/buffer.h@1.7 +3 -8
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/bufferevent.h@1.6 +5 -4
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/dns.h@1.7 +17 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/event.h@1.10 +6 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/http.h@1.7 +14 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/listener.h@1.4 +9 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/include/event2/util.h@1.7 +69 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/kqueue.c@1.7 +17 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/listener.c@1.7 +5 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/sample/http-server.c@1.10 +5 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/sample/https-client.c@1.2 +15 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/sample/include.am@1.3 +2 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/include.am@1.4 +2 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/print-winsock-errors.c@1.1 +84 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/test/print-winsock-errors.c
+
+  sntp/libevent/test/print-winsock-errors.c@1.0 +0 -0
+
+  sntp/libevent/test/regress.c@1.6 +29 -8
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress.h@1.5 +5 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_buffer.c@1.8 +47 -6
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_bufferevent.c@1.6 +150 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_dns.c@1.8 +141 -14
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_finalize.c@1.2 +1 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_http.c@1.8 +107 -9
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_main.c@1.7 +4 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_minheap.c@1.3 +3 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_ssl.c@1.7 +1 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_thread.c@1.6 +3 -2
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_util.c@1.7 +19 -17
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/regress_zlib.c@1.5 +10 -7
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/test-fdleak.c@1.2 +10 -10
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/test-ratelim.c@1.9 +5 -6
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/test-ratelim.sh@1.1 +88 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/test/test-ratelim.sh
+
+  sntp/libevent/test/test-ratelim.sh@1.0 +0 -0
+
+  sntp/libevent/test/test-time.c@1.5 +9 -6
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/tinytest.c@1.6 +33 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/tinytest.h@1.4 +2 -0
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/test/tinytest_demo.c@1.1 +260 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-2747/sntp/libevent/test/tinytest_demo.c
+
+  sntp/libevent/test/tinytest_demo.c@1.0 +0 -0
+
+  sntp/libevent/test/tinytest_macros.h@1.3 +21 -6
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/time-internal.h@1.2 +0 -3
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/util-internal.h@1.10 +1 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/libevent/whatsnew-2.1.txt@1.4 +52 -1
+    [Bug 2747] Upgrade libevent to 2.1.5-beta
+
+  sntp/m4/LICENSE-OPENLDAP@1.2 +0 -0
+    Rename: sntp/libevent/m4/LICENSE-OPENLDAP -> sntp/m4/LICENSE-OPENLDAP
+
+  sntp/m4/openldap-thread-check.m4@1.5 +0 -0
+    Rename: sntp/libevent/m4/openldap-thread-check.m4 -> sntp/m4/openldap-thread-check.m4
+
+  sntp/m4/openldap.m4@1.2 +0 -0
+    Rename: sntp/libevent/m4/openldap.m4 -> sntp/m4/openldap.m4
+
 ChangeSet@1.3302, 2015-02-04 02:44:25-05:00, stenn@deacon.udel.edu
   NTP_4_2_8P1
   TAG: NTP_4_2_8P1
