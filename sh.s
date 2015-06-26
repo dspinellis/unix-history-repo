@@ -1,7 +1,7 @@
 / sh -- command interpreter
 	mov	sp,r5
 	mov	r5,shellarg / save orig sp in shellarg
-	cmpb	*2(r5),$'- / was this sh calleZd by init or loginx~
+	cmpb	*2(r5),$'- / was this sh called by init or loginx~
 	bne	2f / no
 	sys	intr; 0 / yes, turn off interrupts
 	sys	quit; 0
