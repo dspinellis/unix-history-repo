@@ -1,3 +1,4916 @@
+ChangeSet@1.3577, 2015-10-21 12:42:02-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P4
+  TAG: NTP_4_2_8P4
+
+  ChangeLog@1.1757 +1 -0
+    NTP_4_2_8P4
+
+  ntpd/invoke-ntp.conf.texi@1.193 +1 -1
+    NTP_4_2_8P4
+
+  ntpd/invoke-ntp.keys.texi@1.185 +1 -1
+    NTP_4_2_8P4
+
+  ntpd/invoke-ntpd.texi@1.502 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntp.conf.5man@1.227 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntp.conf.5mdoc@1.227 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntp.conf.html@1.181 +94 -107
+    NTP_4_2_8P4
+
+  ntpd/ntp.conf.man.in@1.227 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntp.conf.mdoc.in@1.227 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntp.keys.5man@1.219 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntp.keys.5mdoc@1.219 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntp.keys.html@1.181 +21 -33
+    NTP_4_2_8P4
+
+  ntpd/ntp.keys.man.in@1.219 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntp.keys.mdoc.in@1.219 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntpd-opts.c@1.524 +245 -245
+    NTP_4_2_8P4
+
+  ntpd/ntpd-opts.h@1.523 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntpd.1ntpdman@1.331 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntpd.1ntpdmdoc@1.331 +2 -2
+    NTP_4_2_8P4
+
+  ntpd/ntpd.html@1.175 +142 -186
+    NTP_4_2_8P4
+
+  ntpd/ntpd.man.in@1.331 +3 -3
+    NTP_4_2_8P4
+
+  ntpd/ntpd.mdoc.in@1.331 +2 -2
+    NTP_4_2_8P4
+
+  ntpdc/invoke-ntpdc.texi@1.499 +2 -2
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc-opts.c@1.517 +107 -107
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc-opts.h@1.516 +3 -3
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc.1ntpdcman@1.330 +3 -3
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.330 +2 -2
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc.html@1.343 +75 -95
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc.man.in@1.330 +3 -3
+    NTP_4_2_8P4
+
+  ntpdc/ntpdc.mdoc.in@1.330 +2 -2
+    NTP_4_2_8P4
+
+  ntpq/invoke-ntpq.texi@1.506 +2 -2
+    NTP_4_2_8P4
+
+  ntpq/ntpq-opts.c@1.523 +106 -106
+    NTP_4_2_8P4
+
+  ntpq/ntpq-opts.h@1.521 +3 -3
+    NTP_4_2_8P4
+
+  ntpq/ntpq.1ntpqman@1.334 +3 -3
+    NTP_4_2_8P4
+
+  ntpq/ntpq.1ntpqmdoc@1.334 +2 -2
+    NTP_4_2_8P4
+
+  ntpq/ntpq.html@1.172 +132 -155
+    NTP_4_2_8P4
+
+  ntpq/ntpq.man.in@1.334 +3 -3
+    NTP_4_2_8P4
+
+  ntpq/ntpq.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P4
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.501 +2 -2
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.519 +68 -68
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.518 +3 -3
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.330 +3 -3
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.330 +2 -2
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd.html@1.170 +10 -14
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd.man.in@1.330 +3 -3
+    NTP_4_2_8P4
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.330 +2 -2
+    NTP_4_2_8P4
+
+  packageinfo.sh@1.520 +3 -3
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.91 +3 -3
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.92 +2 -2
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/calc_tickadj.html@1.93 +30 -42
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.90 +3 -3
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.92 +2 -2
+    NTP_4_2_8P4
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.95 +1 -1
+    NTP_4_2_8P4
+
+  scripts/invoke-plot_summary.texi@1.112 +2 -2
+    NTP_4_2_8P4
+
+  scripts/invoke-summary.texi@1.112 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.322 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait-opts@1.58 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.319 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.320 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait.html@1.339 +41 -59
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait.man.in@1.319 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.320 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.110 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep-opts@1.60 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.98 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.98 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep.html@1.111 +46 -57
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep.man.in@1.98 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.99 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.111 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace-opts@1.60 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.98 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.99 +2 -2
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace.html@1.112 +38 -47
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace.man.in@1.98 +3 -3
+    NTP_4_2_8P4
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.100 +2 -2
+    NTP_4_2_8P4
+
+  scripts/plot_summary-opts@1.60 +2 -2
+    NTP_4_2_8P4
+
+  scripts/plot_summary.1plot_summaryman@1.110 +3 -3
+    NTP_4_2_8P4
+
+  scripts/plot_summary.1plot_summarymdoc@1.110 +2 -2
+    NTP_4_2_8P4
+
+  scripts/plot_summary.html@1.113 +40 -58
+    NTP_4_2_8P4
+
+  scripts/plot_summary.man.in@1.110 +3 -3
+    NTP_4_2_8P4
+
+  scripts/plot_summary.mdoc.in@1.110 +2 -2
+    NTP_4_2_8P4
+
+  scripts/summary-opts@1.60 +2 -2
+    NTP_4_2_8P4
+
+  scripts/summary.1summaryman@1.110 +3 -3
+    NTP_4_2_8P4
+
+  scripts/summary.1summarymdoc@1.110 +2 -2
+    NTP_4_2_8P4
+
+  scripts/summary.html@1.113 +37 -49
+    NTP_4_2_8P4
+
+  scripts/summary.man.in@1.110 +3 -3
+    NTP_4_2_8P4
+
+  scripts/summary.mdoc.in@1.110 +2 -2
+    NTP_4_2_8P4
+
+  scripts/update-leap/invoke-update-leap.texi@1.11 +1 -1
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap-opts@1.11 +2 -2
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap.1update-leapman@1.11 +3 -3
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.11 +2 -2
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap.html@1.11 +48 -72
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap.man.in@1.11 +3 -3
+    NTP_4_2_8P4
+
+  scripts/update-leap/update-leap.mdoc.in@1.11 +2 -2
+    NTP_4_2_8P4
+
+  sntp/invoke-sntp.texi@1.499 +2 -2
+    NTP_4_2_8P4
+
+  sntp/sntp-opts.c@1.518 +159 -159
+    NTP_4_2_8P4
+
+  sntp/sntp-opts.h@1.516 +3 -3
+    NTP_4_2_8P4
+
+  sntp/sntp.1sntpman@1.334 +3 -3
+    NTP_4_2_8P4
+
+  sntp/sntp.1sntpmdoc@1.334 +2 -2
+    NTP_4_2_8P4
+
+  sntp/sntp.html@1.514 +111 -135
+    NTP_4_2_8P4
+
+  sntp/sntp.man.in@1.334 +3 -3
+    NTP_4_2_8P4
+
+  sntp/sntp.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P4
+
+  util/invoke-ntp-keygen.texi@1.502 +2 -2
+    NTP_4_2_8P4
+
+  util/ntp-keygen-opts.c@1.520 +173 -173
+    NTP_4_2_8P4
+
+  util/ntp-keygen-opts.h@1.518 +3 -3
+    NTP_4_2_8P4
+
+  util/ntp-keygen.1ntp-keygenman@1.330 +3 -3
+    NTP_4_2_8P4
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.330 +2 -2
+    NTP_4_2_8P4
+
+  util/ntp-keygen.html@1.176 +157 -216
+    NTP_4_2_8P4
+
+  util/ntp-keygen.man.in@1.330 +3 -3
+    NTP_4_2_8P4
+
+  util/ntp-keygen.mdoc.in@1.330 +2 -2
+    NTP_4_2_8P4
+
+ChangeSet@1.3576, 2015-10-21 11:58:26-04:00, stenn@deacon.udel.edu
+  4.2.8p4
+
+  packageinfo.sh@1.519 +1 -1
+    4.2.8p4
+
+ChangeSet@1.3575, 2015-10-21 15:35:31+00:00, stenn@psp-deb1.ntp.org
+  Update severity information
+
+  NEWS@1.150 +2 -2
+    Update severity information
+
+ChangeSet@1.3574, 2015-10-20 08:00:43+00:00, stenn@psp-deb1.ntp.org
+  Update CVEs
+
+  NEWS@1.149 +16 -16
+    Update CVEs
+
+ChangeSet@1.3573, 2015-10-17 06:28:49+00:00, stenn@psp-deb1.ntp.org
+  ntp-4.2.8p4-sec-RC2
+
+  NEWS@1.148 +336 -4
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/invoke-ntp.conf.texi@1.192 +1 -1
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/invoke-ntp.keys.texi@1.184 +1 -1
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/invoke-ntpd.texi@1.501 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.conf.5man@1.226 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.conf.5mdoc@1.226 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.conf.html@1.180 +107 -94
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.conf.man.in@1.226 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.conf.mdoc.in@1.226 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.keys.5man@1.218 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.keys.5mdoc@1.218 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.keys.html@1.180 +33 -21
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.keys.man.in@1.218 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntp.keys.mdoc.in@1.218 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd-opts.c@1.523 +245 -245
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd-opts.h@1.522 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd.1ntpdman@1.330 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd.1ntpdmdoc@1.330 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd.html@1.174 +186 -142
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd.man.in@1.330 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpd/ntpd.mdoc.in@1.330 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/invoke-ntpdc.texi@1.498 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc-opts.c@1.516 +107 -107
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc-opts.h@1.515 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc.1ntpdcman@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc.html@1.342 +95 -75
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc.man.in@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpdc/ntpdc.mdoc.in@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/invoke-ntpq.texi@1.505 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq-opts.c@1.522 +106 -106
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq-opts.h@1.520 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq.1ntpqman@1.333 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq.1ntpqmdoc@1.333 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq.html@1.171 +155 -132
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq.man.in@1.333 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpq/ntpq.mdoc.in@1.333 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.500 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.518 +68 -68
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.517 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd.html@1.169 +14 -10
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd.man.in@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  packageinfo.sh@1.518 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.90 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.91 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/calc_tickadj.html@1.92 +42 -30
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.89 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.91 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.94 +1 -1
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/invoke-plot_summary.texi@1.111 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/invoke-summary.texi@1.111 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.321 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait-opts@1.57 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.318 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.319 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait.html@1.338 +59 -41
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait.man.in@1.318 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.319 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.109 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep-opts@1.59 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.97 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.97 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep.html@1.110 +57 -46
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep.man.in@1.97 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.98 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.110 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace-opts@1.59 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.97 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.98 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace.html@1.111 +47 -38
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace.man.in@1.97 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.99 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary-opts@1.59 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary.1plot_summaryman@1.109 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary.1plot_summarymdoc@1.109 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary.html@1.112 +58 -40
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary.man.in@1.109 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/plot_summary.mdoc.in@1.109 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary-opts@1.59 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary.1summaryman@1.109 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary.1summarymdoc@1.109 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary.html@1.112 +49 -37
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary.man.in@1.109 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/summary.mdoc.in@1.109 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/invoke-update-leap.texi@1.10 +1 -1
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap-opts@1.10 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap.1update-leapman@1.10 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.10 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap.html@1.10 +72 -48
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap.man.in@1.10 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  scripts/update-leap/update-leap.mdoc.in@1.10 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/invoke-sntp.texi@1.498 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp-opts.c@1.517 +159 -159
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp-opts.h@1.515 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp.1sntpman@1.333 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp.1sntpmdoc@1.333 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp.html@1.513 +135 -111
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp.man.in@1.333 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  sntp/sntp.mdoc.in@1.333 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  util/invoke-ntp-keygen.texi@1.501 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen-opts.c@1.519 +173 -173
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen-opts.h@1.517 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen.1ntp-keygenman@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen.html@1.175 +216 -157
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen.man.in@1.329 +3 -3
+    ntp-4.2.8p4-sec-RC2
+
+  util/ntp-keygen.mdoc.in@1.329 +2 -2
+    ntp-4.2.8p4-sec-RC2
+
+ChangeSet@1.3572, 2015-10-17 03:10:01+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1756 +1 -5
+    cleanup
+
+ChangeSet@1.3571, 2015-10-17 01:39:22+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+  ChangeLog@1.1755 +4 -1
+    [Sec 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+ChangeSet@1.3558.3.3, 2015-10-11 08:10:20+02:00, jnperlin@hydra.localnet
+  [Bug 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+  ChangeLog@1.1743.3.3 +3 -0
+    [Bug 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+  ntpd/ntp_proto.c@1.364.1.1 +18 -0
+    [Bug 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+ChangeSet@1.3558.3.2, 2015-10-06 06:25:48-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P4_RC1
+  TAG: NTP_4_2_8P4_RC1
+
+  ChangeLog@1.1743.3.2 +1 -0
+    NTP_4_2_8P4_RC1
+
+  ntpd/invoke-ntp.conf.texi@1.191 +1 -1
+    NTP_4_2_8P4_RC1
+
+  ntpd/invoke-ntp.keys.texi@1.183 +1 -1
+    NTP_4_2_8P4_RC1
+
+  ntpd/invoke-ntpd.texi@1.500 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.conf.5man@1.225 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.conf.5mdoc@1.225 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.conf.html@1.179 +1196 -1524
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.conf.man.in@1.225 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.conf.mdoc.in@1.225 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.keys.5man@1.217 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.keys.5mdoc@1.217 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.keys.html@1.179 +1 -1
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.keys.man.in@1.217 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntp.keys.mdoc.in@1.217 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd-opts.c@1.522 +245 -245
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd-opts.h@1.521 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd.1ntpdman@1.329 +8 -4
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd.1ntpdmdoc@1.329 +7 -3
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd.html@1.173 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd.man.in@1.329 +8 -4
+    NTP_4_2_8P4_RC1
+
+  ntpd/ntpd.mdoc.in@1.329 +7 -3
+    NTP_4_2_8P4_RC1
+
+  ntpdc/invoke-ntpdc.texi@1.497 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc-opts.c@1.515 +107 -107
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc-opts.h@1.514 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc.1ntpdcman@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc.html@1.341 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc.man.in@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpdc/ntpdc.mdoc.in@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpq/invoke-ntpq.texi@1.504 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq-opts.c@1.521 +106 -106
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq-opts.h@1.519 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq.1ntpqman@1.332 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq.1ntpqmdoc@1.332 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq.html@1.170 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq.man.in@1.332 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpq/ntpq.mdoc.in@1.332 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.499 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.517 +68 -68
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.516 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd.html@1.168 +1 -1
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd.man.in@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+  packageinfo.sh@1.517 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.89 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.90 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/calc_tickadj.html@1.91 +1 -1
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.88 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.90 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.93 +1 -1
+    NTP_4_2_8P4_RC1
+
+  scripts/invoke-plot_summary.texi@1.110 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/invoke-summary.texi@1.110 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.320 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait-opts@1.56 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.317 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.318 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait.html@1.337 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait.man.in@1.317 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.318 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.108 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep-opts@1.58 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.96 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.96 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep.html@1.109 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep.man.in@1.96 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.97 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.109 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace-opts@1.58 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.96 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.97 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace.html@1.110 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace.man.in@1.96 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.98 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary-opts@1.58 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary.1plot_summaryman@1.108 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary.1plot_summarymdoc@1.108 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary.html@1.111 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary.man.in@1.108 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/plot_summary.mdoc.in@1.108 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/summary-opts@1.58 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/summary.1summaryman@1.108 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/summary.1summarymdoc@1.108 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/summary.html@1.111 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/summary.man.in@1.108 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/summary.mdoc.in@1.108 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/invoke-update-leap.texi@1.9 +1 -1
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap-opts@1.9 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap.1update-leapman@1.9 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.9 +2 -2
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap.html@1.9 +1 -1
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap.man.in@1.9 +3 -3
+    NTP_4_2_8P4_RC1
+
+  scripts/update-leap/update-leap.mdoc.in@1.9 +2 -2
+    NTP_4_2_8P4_RC1
+
+  sntp/invoke-sntp.texi@1.497 +2 -2
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp-opts.c@1.516 +159 -159
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp-opts.h@1.514 +3 -3
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp.1sntpman@1.332 +3 -3
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp.1sntpmdoc@1.332 +2 -2
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp.html@1.512 +2 -2
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp.man.in@1.332 +3 -3
+    NTP_4_2_8P4_RC1
+
+  sntp/sntp.mdoc.in@1.332 +2 -2
+    NTP_4_2_8P4_RC1
+
+  util/invoke-ntp-keygen.texi@1.500 +2 -2
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen-opts.c@1.518 +173 -173
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen-opts.h@1.516 +3 -3
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen.1ntp-keygenman@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen.html@1.174 +2 -2
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen.man.in@1.328 +3 -3
+    NTP_4_2_8P4_RC1
+
+  util/ntp-keygen.mdoc.in@1.328 +2 -2
+    NTP_4_2_8P4_RC1
+
+ChangeSet@1.3558.3.1, 2015-10-06 05:40:23-04:00, stenn@deacon.udel.edu
+  Prepare for 4.2.8p4-RC1
+
+  ChangeLog@1.1743.3.1 +1 -0
+    Prepare for 4.2.8p4-RC1
+
+  NEWS@1.147 +143 -4
+    Prepare for 4.2.8p4-RC1
+
+  packageinfo.sh@1.516 +1 -1
+    Prepare for 4.2.8p4-RC1
+
+ChangeSet@1.3568, 2015-10-06 08:51:27+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2922] decodenetnum() will ASSERT botch instead of returning FAIL on some bogus values.  Harlan Stenn.
+
+  ChangeLog@1.1752 +2 -0
+    [Sec 2922] decodenetnum() will ASSERT botch instead of returning FAIL on some [Sec 2922] decodenetnum() will ASSERT botch instead of returning FAIL on some bogus values.  Harlan Stenn.
+
+  libntp/decodenetnum.c@1.18 +4 -1
+    [Sec 2922] decodenetnum() will ASSERT botch instead of returning FAIL on some [Sec 2922] decodenetnum() will ASSERT botch instead of returning FAIL on some bogus values.  Harlan Stenn.
+
+ChangeSet@1.3567, 2015-10-06 08:02:23+00:00, stenn@psp-deb1.ntp.org
+  Log incoming packets that fail TEST2.  Harlan Stenn.
+
+  ChangeLog@1.1751 +1 -1
+    Log incoming packets that fail TEST2.  Harlan Stenn.
+
+  ntpd/ntp_proto.c@1.367 +7 -1
+    Log incoming packets that fail TEST2.  Harlan Stenn.
+
+ChangeSet@1.3566, 2015-10-06 07:47:24+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1750 +2 -1
+    cleanup
+
+  ntpd/ntp_proto.c@1.366 +113 -95
+    cleanup
+
+ChangeSet@1.3564, 2015-10-06 03:56:29+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2921] TALOS-CAN-0065: password length memory corruption. JPerlinger.
+
+  ChangeLog@1.1748 +1 -0
+    [Sec 2921] TALOS-CAN-0065: password length memory corruption. JPerlinger.
+    Fixed as part of [Sec 2916] TALOS-CAN-0054: memory corruption in password store. JPerlinger.
+
+ChangeSet@1.3562, 2015-10-05 21:11:21+00:00, stenn@psp-deb1.ntp.org
+  typo
+
+  libntp/authreadkeys.c@1.22 +1 -1
+    typo
+
+ChangeSet@1.3552.9.2, 2015-10-05 11:11:54+00:00, stenn@psp-deb1.ntp.org
+  2909 is a security bug
+
+  ChangeLog@1.1739.5.2 +1 -1
+    2909 is a security bug
+
+ChangeSet@1.3558.2.2, 2015-10-05 11:03:39+00:00, stenn@psp-deb1.ntp.org
+  2902 is a security bug
+
+  ChangeLog@1.1743.2.2 +2 -2
+    2902 is a security bug
+
+ChangeSet@1.3558.1.4, 2015-10-05 10:49:30+00:00, stenn@psp-deb1.ntp.org
+  Update the ChangeLog for 2899
+
+  ChangeLog@1.1743.1.4 +1 -1
+    Update the ChangeLog for 2899
+
+ChangeSet@1.3552.4.2, 2015-10-05 10:32:02+00:00, stenn@psp-deb1.ntp.org
+  typos
+
+  ntpd/ntp_crypto.c@1.183 +4 -4
+    typos
+
+ChangeSet@1.3558.1.2, 2015-10-05 06:26:46+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2912] no munlockall() under Windows.  David Taylor, Harlan Stenn.
+
+  ChangeLog@1.1743.1.2 +1 -0
+    [Bug 2912] no munlockall() under Windows.  David Taylor, Harlan Stenn.
+
+  ntpd/ntp_config.c@1.335 +4 -0
+    [Bug 2912] no munlockall() under Windows.  David Taylor, Harlan Stenn.
+
+ChangeSet@1.3561, 2015-10-03 09:08:20+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+
+  ChangeLog@1.1746 +2 -0
+    [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+
+  include/ntp_stdlib.h@1.79 +1 -0
+    [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+     - add 'mvsyslog()' function to make wrapping calls to syslog easier
+
+  include/ntp_syslog.h@1.9 +1 -0
+    [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+     - add 'mvsyslog()' function to make wrapping calls to syslog easier
+
+  libntp/authreadkeys.c@1.21 +71 -18
+    [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+     - Avoid endless loop by logging only the first 5 errors explicitely, counting the next 10 silently, and aborting
+       the parsing of the file  with proper diagnostic when more than 15 errors where encountered. 
+
+  libntp/msyslog.c@1.53 +12 -0
+    [TALOS-CAN-0055] Infinite loop if extended logging enabled and the logfile and keyfile are the same
+     - add 'mvsyslog()' function to make wrapping calls to syslog easier
+
+ChangeSet@1.3558.1.1, 2015-10-01 03:27:35-04:00, stenn@deacon.udel.edu
+  build system tweaks.  Harlan Stenn.
+
+  ChangeLog@1.1743.1.1 +2 -1
+    build system tweaks.  Harlan Stenn.
+
+  Makefile.am@1.134 +1 -1
+    build system tweaks.  Harlan Stenn.
+
+  sntp/m4/ntp_problemtests.m4@1.3 +14 -14
+    build system tweaks.  Harlan Stenn.
+
+ChangeSet@1.3560, 2015-09-30 22:47:45+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0062] prevent directory traversal for VMS, too, when using 'saveconfig' command.
+
+  ChangeLog@1.1745 +2 -0
+    [TALOS-CAN-0062] prevent directory traversal for VMS, too, when using 'saveconfig' command.
+
+  ntpd/ntp_control.c@1.204 +25 -9
+    [TALOS-CAN-0062] prevent directory traversal for VMS, too, when using 'saveconfig' command.
+
+ChangeSet@1.3559, 2015-09-30 21:55:09+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0064] signed/unsiged clash could lead to buffer overun
+
+  BitKeeper/etc/ignore@1.89 +4 -0
+    keep cscope files away from repo
+
+  ChangeLog@1.1744 +2 -0
+    [TALOS-CAN-0064] signed/unsiged clash could lead to buffer overun
+
+  ntpd/ntp_io.c@1.408 +9 -6
+    [TALOS-CAN-0064] signed/unsiged clash could lead to buffer overun
+
+ChangeSet@1.3552.11.4, 2015-09-30 20:15:13+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0063] avoid buffer overrun in ntpq
+
+  ChangeLog@1.1739.7.3 +1 -0
+    [TALOS-CAN-0063] avoid buffer overrun in ntpq
+
+  ntpq/ntpq.c@1.162 +6 -1
+    [TALOS-CAN-0063] avoid buffer overrun in ntpq
+
+ChangeSet@1.3552.11.3, 2015-09-30 18:44:18+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0054] memory corruption
+   - make sure there's *always* a new buffer for storing the key again
+
+  libntp/authkeys.c@1.27 +9 -5
+    [TALOS-CAN-0054] memory corruption
+     - make sure there's *always* a new buffer for storing the key again
+
+ChangeSet@1.3552.1.32, 2015-09-30 07:40:52+00:00, stenn@psp-deb1.ntp.org
+  formatting cleanup
+
+  ChangeLog@1.1739.1.18 +1 -1
+    formatting cleanup
+
+ChangeSet@1.3552.12.2, 2015-09-30 06:45:59+00:00, stenn@psp-deb1.ntp.org
+  Implement --disable-problem-tests (off by default).  Harlan Stenn.
+
+  ChangeLog@1.1739.8.1 +1 -0
+    Implement --disable-problem-tests (off by default).  Harlan Stenn.
+
+  sntp/m4/ntp_problemtests.m4@1.2 +20 -6
+    Implement --disable-problem-tests (off by default).  Harlan Stenn.
+
+ChangeSet@1.3552.12.1, 2015-09-30 06:11:05+00:00, stenn@psp-deb1.ntp.org
+  whitespace cleanup
+
+  ntpd/ntp_io.c@1.407 +13 -13
+    whitespace cleanup
+
+ChangeSet@1.3552.11.2, 2015-09-29 23:13:13+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0054] memory corruption in password store
+
+  ChangeLog@1.1739.7.2 +1 -0
+    [TALOS-CAN-0054] memory corruption in password store
+
+  libntp/authkeys.c@1.26 +4 -0
+    [TALOS-CAN-0054] memory corruption in password store
+     - make sure deallocated pointers are NULLed and new storage is allocated on demand
+
+ChangeSet@1.3552.11.1, 2015-09-29 22:00:10+02:00, jnperlin@hydra.localnet
+  [TALOS-CAN-0052] crash by loop counter underrun.
+
+  ChangeLog@1.1739.7.1 +1 -0
+    [TALOS-CAN-0052] crash by loop counter underrun.
+
+  ntpd/ntp_request.c@1.114 +7 -3
+    [TALOS-CAN-0052] crash by loop counter underrun.
+     - add missing reload of loop counter
+
+ChangeSet@1.3552.10.2, 2015-09-29 20:34:05+02:00, jnperlin@hydra.localnet
+  [Bug 2902] configuration directives "pidfile" and "driftfile" should be local-only.
+
+  ChangeLog@1.1739.6.2 +2 -0
+    [Bug 2902] configuration directives "pidfile" and "driftfile" should be local-only.
+
+  ntpd/ntp_parser.c@1.99 +235 -226
+    [Bug 2902] configuration directives "pidfile" and "driftfile" should be local-only.
+      - update bison-generated files
+
+  ntpd/ntp_parser.h@1.64 +3 -5
+    [Bug 2902] configuration directives "pidfile" and "driftfile" should be local-only.
+     - update bison-generated files
+
+  ntpd/ntp_parser.y@1.89 +26 -15
+    [Bug 2902] configuration directives "pidfile" and "driftfile" should be local-only.
+     - applied patch from Miroslav Lichvar, plus minor cosmetic changes
+
+ChangeSet@1.3552.10.1, 2015-09-29 06:10:38-04:00, stenn@pogo.udel.edu
+  Disable certain test programs on certain platforms.  Harlan Stenn.
+
+  ChangeLog@1.1739.6.1 +1 -0
+    Disable certain test programs on certain platforms.  Harlan Stenn.
+
+  configure.ac@1.602 +2 -0
+    Disable certain test programs on certain platforms.  Harlan Stenn.
+
+  sntp/m4/ntp_problemtests.m4@1.1 +42 -0
+    BitKeeper file /pogo/users/stenn/ntp-stable/sntp/m4/ntp_problemtests.m4
+
+  sntp/m4/ntp_problemtests.m4@1.0 +0 -0
+
+  tests/ntpd/Makefile.am@1.28 +14 -3
+    Disable certain test programs on certain platforms.  Harlan Stenn.
+
+ChangeSet@1.3552.9.1, 2015-09-28 18:22:06+02:00, jnperlin@hydra.localnet
+  [Bug 2909] - Slow memory leak in CRYPTO_ASSOC
+   - added missing call to 'free()' in ntp_crypto.c.
+
+  ChangeLog@1.1739.5.1 +1 -0
+    [Bug 2909] - Slow memory leak in CRYPTO_ASSOC
+     - added missing call to 'free()' in ntp_crypto.c.
+
+  ntpd/ntp_crypto.c@1.181.1.1 +1 -0
+    [Bug 2909] - Slow memory leak in CRYPTO_ASSOC
+     - added missing call to 'free()' in ntp_crypto.c.
+
+ChangeSet@1.3556, 2015-09-27 12:52:27+02:00, jnperlin@hydra.localnet
+  [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/buftvtots.c@1.5 +7 -7
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/calendar.c@1.9 +45 -35
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/clocktime.c@1.8 +16 -16
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/hextolfp.c@1.9 +9 -9
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/lfptostr.c@1.7 +14 -14
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/prettydate.c@1.4 +1 -1
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/strtolfp.c@1.6 +3 -3
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/tstotv.c@1.4 +3 -3
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/tvtots.c@1.6 +10 -10
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+  tests/libntp/uglydate.c@1.8 +1 -1
+    [Bug2888] Fixed compiler warnings, converted C++ comments to C comments
+
+ChangeSet@1.3552.8.1, 2015-09-27 02:30:13+00:00, mayer@psp-deb1.ntp.org
+  Drop invalid packet before checking KoD. Check for all KoD's
+
+  ChangeLog@1.1739.4.1 +1 -0
+    Drop invalid packet before checking KoD. Check for all KoD's
+
+  ntpd/ntp_proto.c@1.365 +66 -9
+    Drop invalid packet before checking KoD. Check for all KoD's
+
+ChangeSet@1.3552.1.29, 2015-09-26 13:17:13+00:00, perlinger@psp-deb1.ntp.org
+  [bug2332] Create & cancel a dummy thread to warm-up the pthread runtime
+   instead of linking against libgcc_s on Linux targets
+
+  ChangeLog@1.1739.1.15 +3 -0
+    [Bug2332](reopened) fixed
+
+  ntpd/ntpd.c@1.165 +74 -0
+    [bug2332] Create & cancel a dummy thread to warm-up the pthread runtime
+
+  sntp/m4/ntp_libntp.m4@1.32 +0 -14
+    [bug2332] Remove the forced link against 'libgcc_s' since it breaks other targets
+
+ChangeSet@1.3552.7.6, 2015-09-25 06:51:35+00:00, stenn@psp-deb1.ntp.org
+  gcc on older HPUX may need +allowdups.  Harlan Stenn.
+
+  sntp/m4/os_cflags.m4@1.12 +1 -1
+    gcc on older HPUX may need +allowdups.  Harlan Stenn.
+
+ChangeSet@1.3552.7.5, 2015-09-25 04:21:37+00:00, stenn@psp-deb1.ntp.org
+  Adding missing MCAST protection.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.14 +1 -0
+    Adding missing MCAST protection.  Harlan Stenn.
+
+  ntpd/ntp_io.c@1.406 +2 -0
+    Adding missing MCAST protection.  Harlan Stenn.
+
+ChangeSet@1.3552.7.4, 2015-09-25 04:13:23+00:00, stenn@psp-deb1.ntp.org
+  gcc on older HPUX may need +allowdups.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.13 +1 -0
+    gcc on older HPUX may need +allowdups.  Harlan Stenn.
+
+  sntp/m4/os_cflags.m4@1.11 +32 -2
+    gcc on older HPUX may need +allowdups.  Harlan Stenn.
+
+ChangeSet@1.3552.7.3, 2015-09-24 11:27:07+00:00, stenn@psp-deb1.ntp.org
+  More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntpd.c@1.164 +1 -1
+    More updates for bug 2817.  Harlan Stenn.
+
+ChangeSet@1.3552.7.2, 2015-09-24 10:27:51+00:00, stenn@psp-deb1.ntp.org
+  More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntpd.c@1.163 +6 -3
+    More updates for bug 2817.  Harlan Stenn.
+
+ChangeSet@1.3552.7.1, 2015-09-24 05:44:53+00:00, stenn@psp-deb1.ntp.org
+  Fix bugs in tests/ntpd/ntp_prio_q.c.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.12 +1 -0
+    Fix bugs in tests/ntpd/ntp_prio_q.c.  Harlan Stenn.
+
+  tests/ntpd/ntp_prio_q.c@1.2 +8 -7
+    Fix bugs in tests/ntpd/ntp_prio_q.c.  Harlan Stenn.
+
+ChangeSet@1.3552.1.23, 2015-09-23 07:49:24-04:00, stenn@deacon.udel.edu
+  More updates for bug 2817.  Harlan Stenn.
+
+  sntp/m4/ntp_rlimit.m4@1.5 +5 -5
+    More updates for bug 2817.  Harlan Stenn.
+
+ChangeSet@1.3552.1.22, 2015-09-23 10:29:51+00:00, stenn@psp-deb1.ntp.org
+  More updates for bug 2817.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.11 +1 -0
+    More updates for bug 2817.  Harlan Stenn.
+
+  html/miscopt.html@1.83 +2 -2
+    More updates for bug 2817.  Harlan Stenn.
+
+  include/ntp_config.h@1.83 +2 -2
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/invoke-ntp.conf.texi@1.190 +8 -5
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp.conf.5man@1.224 +9 -6
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp.conf.5mdoc@1.224 +9 -6
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp.conf.def@1.20 +6 -3
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp.conf.man.in@1.224 +9 -6
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp.conf.mdoc.in@1.224 +9 -6
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntp_config.c@1.334 +26 -4
+    More updates for bug 2817.  Harlan Stenn.
+
+  ntpd/ntpd.c@1.162 +1 -1
+    More updates for bug 2817.  Harlan Stenn.
+
+  sntp/m4/ntp_rlimit.m4@1.4 +2 -2
+    More updates for bug 2817.  Harlan Stenn.
+
+ChangeSet@1.3552.1.21, 2015-09-21 10:53:44+00:00, stenn@psp-deb1.ntp.org
+  Update the patch for bug 2817.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.10 +1 -0
+    Update the patch for bug 2817.  Harlan Stenn.
+
+  configure.ac@1.601 +0 -54
+    Update the patch for bug 2817.  Harlan Stenn.
+
+  sntp/m4/ntp_rlimit.m4@1.3 +57 -2
+    Update the patch for bug 2817.  Harlan Stenn.
+
+ChangeSet@1.3552.1.20, 2015-09-21 10:30:35+00:00, stenn@psp-deb1.ntp.org
+  Clean trailing whitespace in tests/ntpd/Makefile.am.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.9 +1 -0
+    Clean trailing whitespace in tests/ntpd/Makefile.am.  Harlan Stenn.
+
+  tests/ntpd/Makefile.am@1.27 +5 -5
+    Clean trailing whitespace in tests/ntpd/Makefile.am.  Harlan Stenn.
+
+ChangeSet@1.3552.1.19, 2015-09-21 08:09:33+00:00, stenn@psp-deb1.ntp.org
+  Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.8 +1 -0
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  sntp/tests/run-packetProcessing.c@1.9 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  sntp/tests/run-t-log.c@1.3 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  sntp/unity/auto/generate_test_runner.rb@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-a_md5encrypt.c@1.14 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-atoint.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-atouint.c@1.9 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-authkeys.c@1.11 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-buftvtots.c@1.6 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-calendar.c@1.8.1.1 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-caljulian.c@1.13 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-caltontp.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-calyearstart.c@1.7 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-clocktime.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-decodenetnum.c@1.9 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-hextoint.c@1.9 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-hextolfp.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-humandate.c@1.6 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-lfpfunc.c@1.17 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-lfptostr.c@1.7 +12 -12
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-modetoa.c@1.11 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-msyslog.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-netof.c@1.7 +2 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-numtoa.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-numtohost.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-octtoint.c@1.7 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-prettydate.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-recvbuff.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-refidsmear.c@1.6 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-refnumtoa.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-sfptostr.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-socktoa.c@1.12 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-ssl_init.c@1.9 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-statestr.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-strtolfp.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-timespecops.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-timevalops.c@1.12 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-tstotv.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-tvtots.c@1.6 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-uglydate.c@1.10 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-vi64ops.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/libntp/run-ymd2yd.c@1.11 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpd/run-leapsec.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpd/run-ntp_prio_q.c@1.4 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpd/run-rc_cmdlength.c@1.3 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpd/run-t-ntp_scanner.c@1.5 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpd/run-t-ntp_signd.c@1.8 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+  tests/ntpq/run-t-ntpq.c@1.3 +1 -1
+    Fix progname definition in unity runner scripts.  Harlan Stenn.
+
+ChangeSet@1.3552.1.18, 2015-09-21 08:06:14+00:00, stenn@psp-deb1.ntp.org
+  Pthread autoconf macro cleanup.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.7 +1 -0
+    Pthread autoconf macro cleanup.  Harlan Stenn.
+
+  sntp/m4/ntp_libevent.m4@1.15 +15 -19
+    Pthread autoconf macro cleanup.  Harlan Stenn.
+
+  sntp/m4/ntp_libntp.m4@1.31 +5 -2
+    Pthread autoconf macro cleanup.  Harlan Stenn.
+
+  sntp/m4/openldap-thread-check.m4@1.7 +6 -0
+    Pthread autoconf macro cleanup.  Harlan Stenn.
+
+ChangeSet@1.3552.1.16, 2015-09-17 11:09:07+00:00, stenn@psp-deb1.ntp.org
+  Avoid spurious SCCS get
+
+  ntpd/Makefile.am@1.134 +3 -0
+    Avoid spurious SCCS get
+
+ChangeSet@1.3552.6.3, 2015-09-16 11:10:41+00:00, stenn@psp-deb1.ntp.org
+  Cleanup various test Makefile.am files.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.6 +1 -0
+    Cleanup various test Makefile.am files.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.64.1.3 +5 -5
+    Cleanup various test Makefile.am files.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.93 +23 -23
+    Cleanup various test Makefile.am files.  Harlan Stenn.
+
+  tests/ntpd/Makefile.am@1.22.1.3 +7 -12
+    Cleanup various test Makefile.am files.  Harlan Stenn.
+
+  tests/ntpq/Makefile.am@1.5.1.1 +3 -10
+    Cleanup various test Makefile.am files.  Harlan Stenn.
+
+ChangeSet@1.3552.6.2, 2015-09-15 10:44:48+00:00, stenn@psp-deb1.ntp.org
+   Unit test dist cleanup. Harlan Stenn
+
+  ChangeLog@1.1739.1.5 +1 -0
+     Unit test dist cleanup. Harlan Stenn
+
+  sntp/configure.ac@1.82 +1 -0
+     Unit test dist cleanup. Harlan Stenn
+
+  sntp/tests/Makefile.am@1.64.1.2 +2 -0
+     Unit test dist cleanup. Harlan Stenn
+
+  tests/Makefile.am@1.17.1.1 +1 -0
+     Unit test dist cleanup. Harlan Stenn
+
+  tests/ntpd/Makefile.am@1.22.1.2 +0 -9
+     Unit test dist cleanup. Harlan Stenn
+
+ChangeSet@1.3552.5.6, 2015-09-15 07:45:39+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2906] make check needs better support for pthreads.  Harlan Stenn.
+
+  sntp/m4/ntp_libevent.m4@1.14 +23 -0
+    [Bug 2906] make check needs better support for pthreads.  Harlan Stenn.
+
+ChangeSet@1.3552.5.5, 2015-09-15 07:12:08+00:00, stenn@psp-deb1.ntp.org
+  documentation notes
+
+  sntp/m4/openldap-thread-check.m4@1.6 +3 -0
+    documentation notes
+
+ChangeSet@1.3552.5.4, 2015-09-14 06:36:37+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2906] "make check" needs better support for pthreads
+
+  ChangeLog@1.1739.3.4 +1 -0
+    [Bug 2906] "make check" needs better support for pthreads
+
+  sntp/m4/ntp_libevent.m4@1.13 +2 -0
+    [Bug 2906] "make check" needs better support for pthreads
+
+  sntp/tests/Makefile.am@1.62.2.1 +5 -0
+    [Bug 2906] "make check" needs better support for pthreads
+
+  tests/libntp/Makefile.am@1.90.1.1 +12 -12
+    [Bug 2906] "make check" needs better support for pthreads
+
+  tests/ntpd/Makefile.am@1.12.3.1 +4 -2
+    [Bug 2906] "make check" needs better support for pthreads
+
+ChangeSet@1.3552.5.3, 2015-09-14 05:50:02+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2907] dist* build targets require our libevent/ to be enabled.  HStenn.
+
+  ChangeLog@1.1739.3.3 +1 -0
+    [Bug 2907] dist* build targets require our libevent/ to be enabled.  HStenn.
+
+  sntp/Makefile.am@1.86.1.1 +7 -4
+    [Bug 2907] dist* build targets require our libevent/ to be enabled.  HStenn.
+
+ChangeSet@1.3552.5.2, 2015-09-13 22:11:31+00:00, stenn@psp-deb1.ntp.org
+  Autoconf cleanup
+
+  ChangeLog@1.1739.3.2 +1 -0
+    Autoconf cleanup
+
+  configure.ac@1.598.1.1 +1 -0
+    Autoconf cleanup
+
+ChangeSet@1.3552.5.1, 2015-09-13 22:10:03+00:00, stenn@psp-deb1.ntp.org
+  Update the NEWS file
+
+  ChangeLog@1.1739.3.1 +1 -0
+    Update the NEWS file
+
+  NEWS@1.146 +14 -0
+    Update the NEWS file
+
+ChangeSet@1.3552.1.15, 2015-08-20 17:13:37+02:00, viperus@ubuntu.(none)
+  t-ntp_scanner.c:
+    Rename: tests/ntpd/ntp_scanner.c -> tests/ntpd/t-ntp_scanner.c
+    new static functions tested
+  run-t-ntp_scanner.c:
+    Rename: tests/ntpd/run-ntp_scanner.c -> tests/ntpd/run-t-ntp_scanner.c
+  Makefile.am:
+    updates required for include *.c to work
+  run-t-ntp_scanner.c:
+    update
+
+  tests/ntpd/Makefile.am@1.25 +6 -5
+    updates required for include *.c to work
+
+  tests/ntpd/run-t-ntp_scanner.c@1.4 +18 -7
+    update
+
+  tests/ntpd/run-t-ntp_scanner.c@1.3 +0 -0
+    Rename: tests/ntpd/run-ntp_scanner.c -> tests/ntpd/run-t-ntp_scanner.c
+
+  tests/ntpd/t-ntp_scanner.c@1.5 +73 -2
+    new static functions tested
+
+  tests/ntpd/t-ntp_scanner.c@1.4 +0 -0
+    Rename: tests/ntpd/ntp_scanner.c -> tests/ntpd/t-ntp_scanner.c
+
+ChangeSet@1.3552.1.14, 2015-08-20 16:35:29+02:00, viperus@ubuntu.(none)
+  t-ntpq.c:
+    disabled for now, very trick to test static functions.
+  run-t-ntpq.c:
+    update
+  ntp_scanner.c:
+    added new test
+  Makefile.am:
+    added more include dirs
+
+  tests/ntpd/ntp_scanner.c@1.3 +11 -3
+    added new test
+
+  tests/ntpq/Makefile.am@1.7 +2 -3
+    added more include dirs
+
+  tests/ntpq/run-t-ntpq.c@1.2 +1 -2
+    update
+
+  tests/ntpq/t-ntpq.c@1.3 +25 -2
+    disabled for now, very trick to test static functions.
+
+ChangeSet@1.3552.1.13, 2015-08-20 10:15:12+02:00, viperus@ubuntu.(none)
+  http-server.c:
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+  Many files:
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/sample/http-server.c@1.12 +6 -2
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+
+  sntp/libevent/test/bench_httpclient.c@1.8 +5 -1
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/regress.c@1.8 +6 -2
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/regress_dns.c@1.10 +6 -5
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/regress_http.c@1.10 +8 -4
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/regress_minheap.c@1.5 +2 -1
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/test-ratelim.c@1.11 +6 -2
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+  sntp/libevent/test/test-time.c@1.7 +2 -1
+    reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
+    
+
+ChangeSet@1.3552.1.12, 2015-08-20 01:10:57+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    added 2 more temp files to CLEANFILES and DISTCLEAN, because it prevented make distcheck from finishing properly
+  pathfind.c:
+    reverted emalloc to malloc with if(result == NULL)... because sntp/ doesn't link libntp...probably for a reason unknown to me.
+
+  sntp/libopts/compat/pathfind.c@1.13 +17 -6
+    reverted emalloc to malloc with if(result == NULL)... because sntp/ doesn't link libntp...probably for a reason unknown to me.
+
+  sntp/tests/Makefile.am@1.65 +4 -0
+    added 2 more temp files to CLEANFILES and DISTCLEAN, because it prevented make distcheck from finishing properly
+
+ChangeSet@1.3552.1.11, 2015-08-20 01:04:40+02:00, viperus@ubuntu.(none)
+  run-packetProcessing.c:
+    manually updated due to char / const char progname issues when autogenerating
+  Makefile.am:
+    re-enabled ntpq dir
+
+  sntp/tests/run-packetProcessing.c@1.8 +1 -1
+    manually updated due to char / const char progname issues when autogenerating
+
+  tests/Makefile.am@1.18 +1 -0
+    re-enabled ntpq dir
+
+ChangeSet@1.3552.1.10, 2015-08-20 00:23:42+02:00, viperus@ubuntu.(none)
+  machines.c:
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+  Many files:
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  libntp/machines.c@1.26 +3 -3
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+
+  ntpd/refclock_palisade.c@1.43 +2 -2
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  ntpq/ntpq.c@1.161 +7 -7
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/sample/http-server.c@1.11 +2 -2
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/bench_httpclient.c@1.7 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/regress.c@1.7 +2 -2
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/regress_dns.c@1.9 +4 -4
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/regress_http.c@1.9 +3 -3
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/regress_minheap.c@1.4 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/test-ratelim.c@1.10 +2 -2
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libevent/test/test-time.c@1.6 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/libopts/compat/pathfind.c@1.12 +5 -5
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/tests/fileHandlingTest.c@1.3 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  sntp/tests/packetProcessing.c@1.8 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  tests/libntp/a_md5encrypt.c@1.12 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  tests/libntp/calendar.c@1.6.1.1 +4 -4
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+  tests/libntp/caljulian.c@1.10 +1 -1
+    Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
+    
+
+ChangeSet@1.3552.1.9, 2015-08-17 13:56:23+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    fixed minor typo which caused me a lot of headache
+  t-ntp_signd.c:
+    added a new test
+  run-t-ntp_signd.c:
+    autogen update
+  Makefile.am:
+    removed unnecessary CFLAG
+  t-ntp_signd.c:
+    minor update
+
+  tests/ntpd/Makefile.am@1.24 +2 -1
+    fixed minor typo which caused me a lot of headache
+
+  tests/ntpd/Makefile.am@1.23 +0 -3
+    removed unnecessary CFLAG
+
+  tests/ntpd/run-t-ntp_signd.c@1.7 +10 -5
+    autogen update
+
+  tests/ntpd/t-ntp_signd.c@1.10 +23 -14
+    added a new test
+
+  tests/ntpd/t-ntp_signd.c@1.9 +10 -3
+    minor update
+
+ChangeSet@1.3552.1.8, 2015-08-17 12:21:45+02:00, viperus@ubuntu.(none)
+  run-t-ntp_signd.c:
+    added more tests manually
+
+  tests/ntpd/run-t-ntp_signd.c@1.6 +2 -1
+    added more tests manually
+
+  tests/ntpd/t-ntp_signd.c@1.8 +0 -1
+
+ChangeSet@1.3552.1.7, 2015-08-17 12:15:56+02:00, viperus@ubuntu.(none)
+  t-ntp_signd.c:
+    adding more tests , added mocked functinos section
+
+  tests/ntpd/t-ntp_signd.c@1.7 +34 -0
+    adding more tests , added mocked functinos section
+
+ChangeSet@1.3552.1.6, 2015-08-17 11:28:21+02:00, viperus@ubuntu.(none)
+  t-ntp_signd.c:
+    new tests added
+  run-t-ntp_signd.c:
+    I had some issues with bk and this file
+  t-ntp_signd.c:
+    basic mocking concept added. connect() is mocked, and always returns 1
+
+  tests/ntpd/run-t-ntp_signd.c@1.5 +4 -2
+    I had some issues with bk and this file
+
+  tests/ntpd/t-ntp_signd.c@1.6 +13 -9
+    basic mocking concept added. connect() is mocked, and always returns 1
+
+  tests/ntpd/t-ntp_signd.c@1.5 +22 -2
+    new tests added
+
+ChangeSet@1.3552.4.1, 2015-08-17 07:54:01+02:00, jnperlin@hydra.(none)
+  CVE-2014-9297
+
+  ChangeLog@1.1739.2.1 +1 -0
+    CVE-2014-9297
+
+  ntpd/ntp_crypto.c@1.182 +78 -27
+    CVE-2014-9297: buffer overrun checks
+
+ChangeSet@1.3552.3.1, 2015-08-14 12:05:44+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    removed unnecessary CFLAGS
+
+  tests/ntpq/Makefile.am@1.6 +0 -5
+    removed unnecessary CFLAGS
+
+ChangeSet@1.3552.1.4, 2015-08-14 08:24:21+00:00, stenn@psp-at1.ntp.org
+  Unity test cleanup: move declaration of 'initializing'.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.3 +1 -0
+    Unity test cleanup: move declaration of 'initializing'.  Harlan Stenn.
+
+  ntpd/ntp_timer.c@1.92 +6 -0
+    Unity test cleanup: move declaration of 'initializing'.  Harlan Stenn.
+
+  ntpd/ntpd.c@1.161 +0 -6
+    Unity test cleanup: move declaration of 'initializing'.  Harlan Stenn.
+
+ChangeSet@1.3552.1.3, 2015-08-10 13:15:13+02:00, viperus@ubuntu.(none)
+  run-ntp_util.c:
+    new file, I guess?
+  Makefile.am:
+    changes to harlan's makefile after merge
+  run-ntp_prio_q.c:
+    hopefully, fixes stuff. Why is this here? Did harlan pull something from tfendrich?
+
+  tests/ntpd/Makefile.am@1.22 +13 -13
+    changes to harlan's makefile after merge
+
+  tests/ntpd/run-ntp_prio_q.c@1.3 +1 -1
+    hopefully, fixes stuff. Why is this here? Did harlan pull something from tfendrich?
+
+  tests/ntpd/run-ntp_util.c@1.1 +60 -0
+    new file, I guess?
+
+  tests/ntpd/run-ntp_util.c@1.0 +0 -0
+
+ChangeSet@1.3552.2.1, 2015-08-10 09:50:16+00:00, stenn@psp-at1.ntp.org
+  Retire google test - phase I.  Harlan Stenn.
+
+  BitKeeper/deleted/07/g_packetHandling.cpp~2e07085e82bde6c@1.2 +0 -0
+    Delete: sntp/tests/g_packetHandling.cpp
+
+  BitKeeper/deleted/09/tvtots.cpp~c58754a7b62dde1c@1.9 +0 -0
+    Delete: tests/libntp/g_tvtots.cpp
+
+  BitKeeper/deleted/0a/sntptest.h~c408c7764b75cd4f@1.7 +0 -0
+    Delete: sntp/tests/g_sntptest.h
+
+  BitKeeper/deleted/0a/utilities.cpp~2657edd0f94e49eb@1.12 +0 -0
+    Delete: sntp/tests/g_utilities.cpp
+
+  BitKeeper/deleted/0c/buftvtots.cpp~eababa3e59583108@1.6 +0 -0
+    Delete: tests/libntp/g_buftvtots.cpp
+
+  BitKeeper/deleted/0f/uglydate.cpp~a0fdfbbfdc636411@1.5 +0 -0
+    Delete: tests/libntp/g_uglydate.cpp
+
+  BitKeeper/deleted/10/sfptostr.cpp~cef5595e4f89eac8@1.4 +0 -0
+    Delete: tests/libntp/g_sfptostr.cpp
+
+  BitKeeper/deleted/13/g_lfptostr.cpp~386d730e91bb76de@1.3 +0 -0
+    Delete: tests/libntp/g_lfptostr.cpp
+
+  BitKeeper/deleted/14/humandate.cpp~c3b455ca717b631a@1.5 +0 -0
+    Delete: tests/libntp/g_humandate.cpp
+
+  BitKeeper/deleted/15/g_nameresolution.cpp~23956912aa26e0b9@1.2 +0 -0
+    Delete: sntp/tests/g_nameresolution.cpp
+
+  BitKeeper/deleted/17/a_md5encrypt.cpp~1013ff09a55a7336@1.8 +0 -0
+    Delete: tests/libntp/g_a_md5encrypt.cpp
+
+  BitKeeper/deleted/1c/crypto.cpp~77bbd0102246a5@1.7 +0 -0
+    Delete: sntp/tests/g_crypto.cpp
+
+  BitKeeper/deleted/24/atoint.cpp~533534d530ae4081@1.5 +0 -0
+    Delete: tests/libntp/g_atoint.cpp
+
+  BitKeeper/deleted/29/networking.cpp~a6f1b3f0b76192c9@1.11 +0 -0
+    Delete: sntp/tests/g_networking.cpp
+
+  BitKeeper/deleted/29/refnumtoa.cpp~ed3c5e075503bdf4@1.5 +0 -0
+    Delete: tests/libntp/g_refnumtoa.cpp
+
+  BitKeeper/deleted/2d/libntptest.h~1990ef7fb70295d6@1.6 +0 -0
+    Delete: tests/libntp/g_libntptest.h
+
+  BitKeeper/deleted/30/g_recvbuff.cpp~7b0d3114520a0616@1.3 +0 -0
+    Delete: tests/libntp/g_recvbuff.cpp
+
+  BitKeeper/deleted/30/main.cpp~62ec7f38f7d49413@1.10 +0 -0
+    Delete: sntp/tests_main.cpp
+
+  BitKeeper/deleted/37/statestr.cpp~65497a98bac68a52@1.5 +0 -0
+    Delete: tests/libntp/g_statestr.cpp
+
+  BitKeeper/deleted/3b/tvalops.cpp~fa0bb1554d1d08d4@1.11 +0 -0
+    Delete: tests/libntp/g_timevalops.cpp
+
+  BitKeeper/deleted/3c/g_octtoint.cpp~8124d76dd2b395e5@1.3 +0 -0
+    Delete: tests/libntp/g_octtoint.cpp
+
+  BitKeeper/deleted/3f/calendar.cpp~72447c9b8c0deced@1.4 +0 -0
+    Delete: tests/libntp/g_calendar.cpp
+
+  BitKeeper/deleted/4e/g_hextolfp.cpp~ba8561698c15b354@1.3 +0 -0
+    Delete: tests/libntp/g_hextolfp.cpp
+
+  BitKeeper/deleted/57/ntpdtest.h~25bdfa3eeda7b121@1.3 +0 -0
+    Delete: tests/ntpd/g_ntpdtest.h
+
+  BitKeeper/deleted/5b/sockaddrtest.h~4bf7e82961607bf0@1.6 +0 -0
+    Delete: tests/libntp/g_sockaddrtest.h
+
+  BitKeeper/deleted/5f/authkeys.cpp~24496a9d93173937@1.10 +0 -0
+    Delete: tests/libntp/g_authkeys.cpp
+
+  BitKeeper/deleted/62/g_strtolfp.cpp~5a50a9b282094e7f@1.3 +0 -0
+    Delete: tests/libntp/g_strtolfp.cpp
+
+  BitKeeper/deleted/77/lfpfunc.cpp~9ed51f8dc31368eb@1.5 +0 -0
+    Delete: tests/libntp/g_lfpfunc.cpp
+
+  BitKeeper/deleted/82/clocktime.cpp~7dd85c09c049ffd4@1.7 +0 -0
+    Delete: tests/libntp/g_clocktime.cpp
+
+  BitKeeper/deleted/8b/atouint.cpp~43abc72d64a1857a@1.4 +0 -0
+    Delete: tests/libntp/g_atouint.cpp
+
+  BitKeeper/deleted/8b/leapsec.cpp~11be64d438063292@1.17 +0 -0
+    Delete: tests/ntpd/g_leapsec.cpp
+
+  BitKeeper/deleted/93/g_vi64ops.cpp~e023cb72bff45261@1.3 +0 -0
+    Delete: tests/libntp/g_vi64ops.cpp
+
+  BitKeeper/deleted/96/numtoa.cpp~b3b85b1ebc36fc2b@1.5 +0 -0
+    Delete: tests/libntp/g_numtoa.cpp
+
+  BitKeeper/deleted/98/g_tstotv.cpp~37896736f73c48b0@1.3 +0 -0
+    Delete: tests/libntp/g_tstotv.cpp
+
+  BitKeeper/deleted/9a/packetProcessing.cpp~4822a1d49ca16be5@1.8 +0 -0
+    Delete: sntp/tests/g_packetProcessing.cpp
+
+  BitKeeper/deleted/9c/kodDatabase.cpp~f9244577ca9f0aa9@1.6 +0 -0
+    Delete: sntp/tests/g_kodDatabase.cpp
+
+  BitKeeper/deleted/a4/g_msyslog.cpp~ec51c9e8395b3e4b@1.3 +0 -0
+    Delete: tests/libntp/g_msyslog.cpp
+
+  BitKeeper/deleted/ae/lfptest.h~a452179b90fdedaa@1.8 +0 -0
+    Delete: tests/libntp/g_lfptest.h
+
+  BitKeeper/deleted/af/calyearstart.cpp~586f44f58a75b25e@1.6 +0 -0
+    Delete: tests/libntp/g_calyearstart.cpp
+
+  BitKeeper/deleted/b2/ntpdtest.cpp~d4e605db974f754d@1.4 +0 -0
+    Delete: tests/ntpd/g_ntpdtest.cpp
+
+  BitKeeper/deleted/b3/timestructs.cpp~2bc53cc52f6599d5@1.7 +0 -0
+    Delete: tests/libntp/g_timestructs.cpp
+
+  BitKeeper/deleted/c1/ssl_init.cpp~81ce47bbb0e4fbbc@1.6 +0 -0
+    Delete: tests/libntp/g_ssl_init.cpp
+
+  BitKeeper/deleted/c3/modetoa.cpp~50f2955120b0ed6f@1.4 +0 -0
+    Delete: tests/libntp/g_modetoa.cpp
+
+  BitKeeper/deleted/c6/kodFile.cpp~c593859a65c8e9e3@1.11 +0 -0
+    Delete: sntp/tests/g_kodFile.cpp
+
+  BitKeeper/deleted/c9/main.h~44cc5c4040b89c30@1.9 +0 -0
+    Delete: sntp/tests_main.h
+
+  BitKeeper/deleted/ce/timestructs.h~a7213e57006326f@1.6 +0 -0
+    Delete: tests/libntp/g_timestructs.h
+
+  BitKeeper/deleted/cf/libntptest.cpp~fb911e064fe18517@1.6 +0 -0
+    Delete: tests/libntp/g_libntptest.cpp
+
+  BitKeeper/deleted/d0/g_caltontp.cpp~ea2471ca2734873a@1.3 +0 -0
+    Delete: tests/libntp/g_caltontp.cpp
+
+  BitKeeper/deleted/d8/hextoint.cpp~78aeb35b2f896bed@1.6 +0 -0
+    Delete: tests/libntp/g_hextoint.cpp
+
+  BitKeeper/deleted/dd/keyFile.cpp~7ca67d971ffc97ae@1.9 +0 -0
+    Delete: sntp/tests/g_keyFile.cpp
+
+  BitKeeper/deleted/e0/g_socktoa.cpp~9f28a4451c7f0c1a@1.3 +0 -0
+    Delete: tests/libntp/g_socktoa.cpp
+
+  BitKeeper/deleted/eb/g_prettydate.cpp~7800800c1dbf9688@1.3 +0 -0
+    Delete: tests/libntp/g_prettydate.cpp
+
+  BitKeeper/deleted/ee/caljulian.cpp~4c368703107f888@1.8 +0 -0
+    Delete: tests/libntp/g_caljulian.cpp
+
+  BitKeeper/deleted/ef/fileHandlingTest.h~212fb01783c1dfd7@1.7 +0 -0
+    Delete: sntp/tests/g_fileHandlingTest.h
+
+  BitKeeper/deleted/f6/g_decodenetnum.cpp~5b151a58bf8417a2@1.3 +0 -0
+    Delete: tests/libntp/g_decodenetnum.cpp
+
+  BitKeeper/deleted/f8/g_netof.cpp~a772fe4f2f1b84e8@1.3 +0 -0
+    Delete: tests/libntp/g_netof.cpp
+
+  BitKeeper/deleted/fa/tspecops.cpp~fabae81f65cd8134@1.11 +0 -0
+    Delete: tests/libntp/g_timespecops.cpp
+
+  BitKeeper/deleted/fd/ymd2yd.cpp~eeb76d1d2a534b6@1.4 +0 -0
+    Delete: tests/libntp/g_ymd2yd.cpp
+
+  BitKeeper/deleted/ff/numtohost.cpp~c346ee31ae5ffefe@1.4 +0 -0
+    Delete: tests/libntp/g_numtohost.cpp
+
+  ChangeLog@1.1739.1.2 +1 -1
+    Retire google test - phase I.  Harlan Stenn.
+
+  ChangeLog@1.1739.1.1 +1 -0
+    Retire google test - phase I
+
+  sntp/Makefile.am@1.87 +0 -1
+    Retire google test - phase I.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.62.1.1 +15 -28
+    Retire google test - phase I.  Harlan Stenn.
+
+  tests/Makefile.am@1.12.1.1 +0 -13
+    Retire google test - phase I.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.91 +0 -63
+    Retire google test - phase I.  Harlan Stenn.
+
+  tests/ntpd/Makefile.am@1.12.2.1 +32 -50
+    Retire google test - phase I.  Harlan Stenn.
+
+  tests/sandbox/Makefile.am@1.7 +14 -5
+    Retire google test - phase I.  Harlan Stenn.
+
+ChangeSet@1.3548.1.16, 2015-08-07 08:07:50+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    re-added ntpq,  works now
+  run-t-ntpq.c:
+    added
+  Makefile.am:
+    minor cleanup
+  configure.ac:
+    added ntpq dir
+
+  configure.ac@1.599 +1 -0
+    added ntpq dir
+
+  tests/Makefile.am@1.16 +2 -0
+    re-added ntpq,  works now
+
+  tests/ntpq/Makefile.am@1.5 +0 -1
+    minor cleanup
+
+  tests/ntpq/run-t-ntpq.c@1.1 +55 -0
+    added
+
+  tests/ntpq/run-t-ntpq.c@1.0 +0 -0
+
+ChangeSet@1.3548.1.15, 2015-08-06 21:42:18+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    removed ntpq becuase it doesnt work?!
+
+  tests/Makefile.am@1.15 +0 -2
+    removed ntpq becuase it doesnt work?!
+
+ChangeSet@1.3548.1.14, 2015-08-06 21:03:10+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    adding new Makefile
+    minor change
+  Makefile.am, t-ntpq.c:
+    update
+
+  tests/Makefile.am@1.14 +1 -0
+    update
+
+  tests/ntpq/Makefile.am@1.4 +3 -1
+    minor change
+
+  tests/ntpq/Makefile.am@1.3 +6 -15
+    adding new Makefile
+
+  tests/ntpq/t-ntpq.c@1.2 +1 -1
+    update
+
+ChangeSet@1.3548.1.13, 2015-08-06 20:41:02+02:00, viperus@ubuntu.(none)
+  socktoa.c:
+    fixed. Tests are skipped when you do ./build --disable-ipv6
+    
+  t-ntpq.c:
+    new test file
+  decodenetnum.c:
+    fixed. Tests are skipped when you do ./build --disable-ipv6
+  Makefile.am:
+    changes
+  run-t-log.c:
+    updated
+
+  sntp/tests/run-t-log.c@1.2 +4 -3
+    updated
+
+  tests/libntp/decodenetnum.c@1.9 +3 -3
+    fixed. Tests are skipped when you do ./build --disable-ipv6
+
+  tests/libntp/socktoa.c@1.9 +2 -2
+    fixed. Tests are skipped when you do ./build --disable-ipv6
+    
+
+  tests/ntpq/Makefile.am@1.2 +8 -37
+    changes
+
+  tests/ntpq/t-ntpq.c@1.1 +14 -0
+    new test file
+
+  tests/ntpq/t-ntpq.c@1.0 +0 -0
+
+ChangeSet@1.3548.1.12, 2015-08-06 20:24:05+02:00, viperus@ubuntu.(none)
+  log.c:
+    modified to allow calling of multiple atexit(cleanup_log) without causing a segfault.
+  t-log.c:
+    minor cleanup, fixes, stuff works (in combination with updated log.c)
+
+  sntp/log.c@1.24 +15 -6
+    modified to allow calling of multiple atexit(cleanup_log) without causing a segfault.
+
+  sntp/tests/t-log.c@1.2 +13 -11
+    minor cleanup, fixes, stuff works (in combination with updated log.c)
+
+ChangeSet@1.3548.1.11, 2015-08-06 10:27:35+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    small fix
+  socktoa.c, run-decodenetnum.c:
+    update
+  decodenetnum.c:
+    Minor changes due to the autogenerated ruby script
+  run-socktoa.c:
+    Minor changes due to the autogenerated ruby script
+    
+
+  tests/libntp/decodenetnum.c@1.8 +22 -6
+    Minor changes due to the autogenerated ruby script
+
+  tests/libntp/run-decodenetnum.c@1.8 +4 -5
+    update
+
+  tests/libntp/run-socktoa.c@1.11 +7 -7
+    Minor changes due to the autogenerated ruby script
+    
+
+  tests/libntp/socktoa.c@1.8 +22 -6
+    update
+
+  tests/ntpd/Makefile.am@1.20 +0 -1
+    small fix
+
+ChangeSet@1.3548.1.10, 2015-08-05 16:53:22+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    new file
+    added ntpq dir
+    added a new test, test-log
+  t-log.c:
+    removed the 2nd test because only one open_logfile per program can be used (segfault otherwise)
+  run-t-log.c:
+    new file, HAS ISSUES WITH CONST CHAR *progname. 
+
+  sntp/tests/Makefile.am@1.63 +11 -0
+    added a new test, test-log
+
+  sntp/tests/run-t-log.c@1.1 +56 -0
+    new file, HAS ISSUES WITH CONST CHAR *progname. 
+
+  sntp/tests/run-t-log.c@1.0 +0 -0
+
+  sntp/tests/t-log.c@1.1 +66 -0
+    removed the 2nd test because only one open_logfile per program can be used (segfault otherwise)
+
+  sntp/tests/t-log.c@1.0 +0 -0
+
+  tests/Makefile.am@1.13 +2 -0
+    added ntpq dir
+
+  tests/ntpq/Makefile.am@1.1 +146 -0
+    BitKeeper file /home/viperus/Desktop/ntp-stable-unity/tests/ntpq/Makefile.am
+
+  tests/ntpq/Makefile.am@1.0 +0 -0
+
+ChangeSet@1.3554, 2015-08-03 20:59:21+02:00, jnperlin@nemesis.localnet
+  [Bug 2888] streamline calendar functions
+   - MSVC compilation issue
+
+  libntp/ntp_calendar.c@1.17 +3 -1
+    [Bug 2888] streamline calendar functions
+     - 'uint' not known with MSVC; use u_int instead
+
+ChangeSet@1.3529.4.1, 2015-08-03 20:34:01+02:00, jnperlin@hydra.(none)
+  [Bug 2888] streamline calendar functions.
+
+  ChangeLog@1.1725.2.1 +1 -1
+    [Bug 2888] streamline calendar functions.
+
+  include/ntp_calendar.h@1.18 +13 -0
+    [Bug 2888] streamline calendar functions.
+
+  libntp/ntp_calendar.c@1.16 +495 -321
+    [Bug 2888] streamline calendar functions.
+     - reduce number of divisions for gregorian calendar
+     - rewrite divisions to use explicit 2's complement calculation via unsigned types
+     - avoid branches in calculations where possible
+
+  tests/libntp/calendar.c@1.7 +211 -132
+    [Bug 2888] streamline calendar functions.
+     - added tests for ISO8601 week calendar
+     - streamlined string formatting
+     - converted struct-by-value to struct-by-pointer in several cases
+     - fixed prototypes
+
+  tests/libntp/run-calendar.c@1.9 +19 -11
+    [Bug 2888] streamline calendar functions.
+     - update of test runner
+
+ChangeSet@1.3548.1.9, 2015-08-03 11:43:07+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    changed signdT -> t-ntp_signd. All tests files will from now on be named t-name.c , where name.c is the name of the tested file.
+  run-ntp_signdT.c~8aba306cc0dcbfc:
+    Delete: tests/ntpd/run-ntp_signdT.c
+  run-t-ntp_signd.c:
+    Rename: tests/ntpd/run-ntp_signd.c -> tests/ntpd/run-t-ntp_signd.c
+  t-ntp_signd.c:
+    Rename: tests/ntpd/ntp_signdT.c -> tests/ntpd/t-ntp_signd.c
+
+  BitKeeper/deleted/3a/run-ntp_signdT.c~8aba306cc0dcbfc@1.3 +0 -0
+    Delete: tests/ntpd/run-ntp_signdT.c
+
+  tests/ntpd/Makefile.am@1.19 +17 -17
+    changed signdT -> t-ntp_signd. All tests files will from now on be named t-name.c , where name.c is the name of the tested file.
+
+  tests/ntpd/run-t-ntp_signd.c@1.4 +0 -0
+    Rename: tests/ntpd/run-ntp_signd.c -> tests/ntpd/run-t-ntp_signd.c
+
+  tests/ntpd/t-ntp_signd.c@1.4 +0 -0
+    Rename: tests/ntpd/ntp_signdT.c -> tests/ntpd/t-ntp_signd.c
+
+ChangeSet@1.3548.1.8, 2015-08-03 08:48:00+00:00, viperus@psp-deb1.ntp.org
+  Makefile.am:
+    minor fixes, trying to link on psp-deb1
+
+  tests/ntpd/Makefile.am@1.18 +3 -4
+    minor fixes, trying to link on psp-deb1
+
+ChangeSet@1.3548.1.7, 2015-08-03 10:36:05+02:00, viperus@ubuntu.(none)
+  ntp_signdT.c:
+    added extern, hopefully, it will work
+
+  tests/ntpd/ntp_signdT.c@1.3 +1 -1
+    added extern, hopefully, it will work
+
+ChangeSet@1.3548.1.6, 2015-08-03 10:18:52+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    added rc_cmdlength.o
+
+  tests/ntpd/Makefile.am@1.17 +1 -0
+    added rc_cmdlength.o
+
+ChangeSet@1.3548.1.5, 2015-08-03 10:14:12+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    minor fix
+
+  tests/ntpd/Makefile.am@1.16 +1 -1
+    minor fix
+
+ChangeSet@1.3547.1.1, 2015-08-03 12:30:29+05:30, loki@dadasgift.(none)
+  ntp_util.c:
+    new file
+
+  tests/libntp/decodenetnum.c@1.7 +7 -1
+
+  tests/libntp/socktoa.c@1.7 +8 -1
+
+  tests/ntpd/Makefile.am@1.12.1.1 +23 -0
+
+  tests/ntpd/ntp_util.c@1.1 +74 -0
+    BitKeeper file /home/loki/ntp_gsoc/2_damir_code/ntp-stable-unity/tests/ntpd/ntp_util.c
+
+  tests/ntpd/ntp_util.c@1.0 +0 -0
+
+ChangeSet@1.3548.1.3, 2015-08-03 08:51:53+02:00, viperus@ubuntu.(none)
+  ntp_signd.c~736d4c4a37ef4b86:
+    Delete: tests/ntpd/ntp_signd.c
+
+  BitKeeper/deleted/7f/ntp_signd.c~736d4c4a37ef4b86@1.3 +0 -0
+    Delete: tests/ntpd/ntp_signd.c
+
+ChangeSet@1.3552, 2015-08-03 08:16:57+02:00, jnperlin@nemesis.localnet
+  [Bug 2889] ntp-dev-4.3.67 does not build on Windows
+
+  ChangeLog@1.1739 +1 -0
+    [Bug 2889] ntp-dev-4.3.67 does not build on Windows
+
+  libntp/msyslog.c@1.52 +2 -2
+    [Bug 2889] ntp-dev-4.3.67 does not build on Windows
+     - fixed a Windows-specific const clash in string processing
+
+ChangeSet@1.3548.1.2, 2015-08-01 22:40:51+02:00, viperus@ubuntu.(none)
+  ntp_signdT.c:
+    MUST ADD #define HAVE_NTP_NAME above the #include "ntp_NAME.c"
+  Makefile.am:
+    
+    
+    Added test ntp_singd again, renamed it to ntp_signdT (including the original ntp_signd.c doesn't work if you have 2 files with the same name).
+    I included the original ntp_signd.c, so static functions can be tested.
+    Additional .o objects had to be added for everyhting to work.
+    
+    
+  run-ntp_signdT.c:
+    autogenerated
+
+  tests/ntpd/Makefile.am@1.14 +7 -2
+    
+    
+    Added test ntp_singd again, renamed it to ntp_signdT (including the original ntp_signd.c doesn't work if you have 2 files with the same name).
+    I included the original ntp_signd.c, so static functions can be tested.
+    Additional .o objects had to be added for everyhting to work.
+    
+    
+
+  tests/ntpd/ntp_signdT.c@1.2 +17 -2
+    MUST ADD #define HAVE_NTP_NAME above the #include "ntp_NAME.c"
+
+  tests/ntpd/run-ntp_signdT.c@1.2 +2 -2
+    autogenerated
+
+ChangeSet@1.3548.1.1, 2015-08-01 20:49:22+02:00, viperus@ubuntu.(none)
+  Makefile.am:
+    added ntp_signdT 
+  ntp_signdT.c, run-ntp_signdT.c:
+    new file
+
+  tests/ntpd/Makefile.am@1.13 +11 -9
+    added ntp_signdT 
+
+  tests/ntpd/ntp_signdT.c@1.1 +28 -0
+    new file
+
+  tests/ntpd/ntp_signdT.c@1.0 +0 -0
+
+  tests/ntpd/run-ntp_signdT.c@1.1 +58 -0
+    new file
+
+  tests/ntpd/run-ntp_signdT.c@1.0 +0 -0
+
+ChangeSet@1.3549.1.1, 2015-07-31 07:58:11+00:00, stenn@psp-at1.ntp.org
+  [Bug 2890] Ignore ENOBUFS on routing netlink socket.  Konstantin Khlebnikov.
+
+  ChangeLog@1.1736.1.1 +1 -0
+    [Bug 2890] Ignore ENOBUFS on routing netlink socket.  Konstantin Khlebnikov.
+
+  ntpd/ntp_io.c@1.405 +9 -4
+    [Bug 2890] Ignore ENOBUFS on routing netlink socket.  Konstantin Khlebnikov.
+
+ChangeSet@1.3550, 2015-07-29 22:50:29+02:00, jnperlin@hydra.(none)
+  Bug 2821: minor build issues: fixed refclock_gpsdjson.c
+
+  ChangeLog@1.1737 +1 -0
+    Bug 2821: minor build issues: fixed refclock_gpsdjson.c
+
+  ntpd/refclock_gpsdjson.c@1.23 +9 -9
+    Bug 2821: minor build issues: fixed refclock_gpsdjson.c
+     - 'isprint()' is called with u_char argument
+     - unified 'unsigned char' and 'u_char' to 'u_char'
+
+ChangeSet@1.3549, 2015-07-29 10:04:53+00:00, stenn@psp-at1.ntp.org
+  ChangeLog cleanup
+
+  ChangeLog@1.1736 +5 -3
+    ChangeLog cleanup
+
+ChangeSet@1.3548, 2015-07-29 12:01:10+02:00, viperus@ubuntu.(none)
+  ChangeLog:
+    updated ChangeLog
+
+  ChangeLog@1.1735 +3 -1
+    updated ChangeLog
+
+ChangeSet@1.3529.3.1, 2015-07-29 13:18:47+05:30, loki@dadasgift.(none)
+  ntp_util
+
+  tests/ntpd/Makefile.am@1.6.2.1 +13 -10
+
+ChangeSet@1.3545, 2015-07-28 09:37:25+00:00, stenn@psp-at1.ntp.org
+  update tests/libntp/run-socktoa.c
+
+  tests/libntp/run-socktoa.c@1.8.1.1 +6 -6
+    update tests/libntp/run-socktoa.c
+
+ChangeSet@1.3544, 2015-07-28 09:36:24+00:00, stenn@psp-at1.ntp.org
+  Typo fix for GCC warning suppression.  Harlan Stenn.
+
+  ChangeLog@1.1734 +1 -0
+    Typo fix for GCC warning suppression.  Harlan Stenn.
+
+  ntpd/ntp_config.c@1.333 +5 -5
+    Typo fix for GCC warning suppression.  Harlan Stenn.
+
+  ntpd/ntp_proto.c@1.364 +1 -1
+    Typo fix for GCC warning suppression.  Harlan Stenn.
+
+ChangeSet@1.3529.1.18, 2015-07-27 19:46:25+02:00, viperus@ubuntu.(none)
+  Many files:
+    update
+    
+  run-leapsec.c:
+    minor change
+  run-ntp_scanner.c, run-decodenetnum.c:
+    update
+  ntp_scanner.c:
+    Added more tests
+  lfptest.h:
+    minor move after merge with lokesh
+  Makefile.am:
+    Merge
+
+  tests/libntp/lfptest.h@1.5.1.2 +0 -16
+    minor move after merge with lokesh
+
+  tests/libntp/run-decodenetnum.c@1.7 +1 -0
+    update
+
+  tests/libntp/run-lfptostr.c@1.6 +11 -11
+    update
+    
+
+  tests/libntp/run-netof.c@1.6 +0 -1
+    update
+    
+
+  tests/libntp/run-socktoa.c@1.9 +6 -6
+    update
+    
+
+  tests/ntpd/Makefile.am@1.6.1.4 +8 -3
+    Merge
+
+  tests/ntpd/ntp_scanner.c@1.2 +30 -2
+    Added more tests
+
+  tests/ntpd/run-leapsec.c@1.4 +9 -3
+    minor change
+
+  tests/ntpd/run-ntp_scanner.c@1.2 +7 -1
+    update
+
+  tests/ntpd/run-ntp_signd.c@1.3 +2 -2
+    update
+    
+
+  tests/ntpd/run-rc_cmdlength.c@1.2 +8 -3
+    update
+    
+
+ChangeSet@1.3543, 2015-07-27 04:11:08+00:00, stenn@psp-at1.ntp.org
+  [Bug 2595] ntpdate man page quirks.  Hal Murray, Harlan Stenn
+
+  ChangeLog@1.1733 +1 -0
+    [Bug 2595] ntpdate man page quirks.  Hal Murray, Harlan Stenn
+
+  ntpd/ntp.conf.def@1.19 +1 -1
+    [Bug 2595] ntpdate man page quirks.  Hal Murray, Harlan Stenn
+
+  ntpd/ntpd-opts.def@1.13 +5 -1
+    [Bug 2595] ntpdate man page quirks.  Hal Murray, Harlan Stenn
+
+ChangeSet@1.3542, 2015-07-27 03:16:04+00:00, stenn@psp-at1.ntp.org
+  [Bug 2625] Deprecate flag1 in local refclock.  Hal Murray, Harlan Stenn.
+
+  ChangeLog@1.1732 +1 -0
+    [Bug 2625] Deprecate flag1 in local refclock.  Hal Murray, Harlan Stenn.
+
+  ntpd/refclock_local.c@1.21 +2 -16
+    [Bug 2625] Deprecate flag1 in local refclock.  Hal Murray, Harlan Stenn.
+
+ChangeSet@1.3540, 2015-07-27 00:07:00+00:00, tflendrich@psp-at1.ntp.org
+  ChangeLog:
+    updated with info about progname and ntp_restrict.c
+
+  ChangeLog@1.1730 +4 -0
+    updated with info about progname and ntp_restrict.c
+
+ChangeSet@1.3529.2.1, 2015-07-26 22:04:07+00:00, stenn@psp-at1.ntp.org
+  [Bug 2817] Stop locking ntpd into memory by default under Linux.  H.Stenn.
+
+  ChangeLog@1.1725.1.8 +1 -0
+    [Bug 2817] Stop locking ntpd into memory by default under Linux.  H.Stenn.
+
+  sntp/m4/ntp_rlimit.m4@1.2 +5 -1
+    [Bug 2817] Stop locking ntpd into memory by default under Linux.  H.Stenn.
+
+ChangeSet@1.3529.1.17, 2015-07-26 21:48:29+02:00, viperus@ubuntu.(none)
+  run-ntp_scanner.c, ntp_scanner.c:
+    new file
+
+  tests/ntpd/ntp_scanner.c@1.1 +29 -0
+    BitKeeper file /home/viperus/Desktop/ntp-stable-unity/tests/ntpd/ntp_scanner.c
+
+  tests/ntpd/ntp_scanner.c@1.0 +0 -0
+
+  tests/ntpd/run-ntp_scanner.c@1.1 +55 -0
+    BitKeeper file /home/viperus/Desktop/ntp-stable-unity/tests/ntpd/run-ntp_scanner.c
+
+  tests/ntpd/run-ntp_scanner.c@1.0 +0 -0
+
+ChangeSet@1.3529.1.16, 2015-07-26 21:34:45+02:00, viperus@ubuntu.(none)
+
+  tests/ntpd/Makefile.am@1.6.1.3 +20 -1
+
+  tests/ntpd/ntp_signd.c@1.2 +3 -1
+
+  tests/ntpd/run-ntp_signd.c@1.2 +9 -3
+
+ChangeSet@1.3529.1.14, 2015-07-26 07:23:22+00:00, stenn@psp-at1.ntp.org
+  update tests/sec-2853/run-sec-2853.
+
+  tests/sec-2853/run-sec-2853.c@1.3.1.1 +4 -5
+    update
+
+ChangeSet@1.3529.1.13, 2015-07-26 07:14:53+00:00, stenn@psp-at1.ntp.org
+  Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+  ChangeLog@1.1725.1.7 +1 -0
+    Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.62 +4 -0
+    Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.85.1.4 +4 -0
+    Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+  tests/ntpd/Makefile.am@1.4.1.1 +4 -0
+    Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+  tests/sandbox/Makefile.am@1.6 +4 -0
+    Add std_unity_tests to various Makefile.am files.  Harlan Stenn.
+
+ChangeSet@1.3529.1.12, 2015-07-26 06:43:54+00:00, stenn@psp-at1.ntp.org
+  [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  NEWS@1.145 +10 -0
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+ChangeSet@1.3529.1.11, 2015-07-26 06:37:30+00:00, stenn@psp-at1.ntp.org
+  [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ChangeLog@1.1725.1.6 +1 -0
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  html/decode.html@1.26 +2 -2
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  html/stats.html@1.4 +24 -24
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  include/ntp_control.h@1.59 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  libntp/statestr.c@1.28 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/invoke-ntp.conf.texi@1.189 +2 -2
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.5man@1.223 +4 -4
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.5mdoc@1.223 +3 -3
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.def@1.18 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.html@1.178 +1522 -1191
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.man.in@1.223 +4 -4
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp.conf.mdoc.in@1.223 +3 -3
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp_loopfilter.c@1.185 +4 -4
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpd/ntp_proto.c@1.363 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpq/libntpq.h@1.10 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+  ntpq/ntpq-subs.c@1.111 +1 -1
+    [Bug 2886] Mis-spelling: "outlyer" should be "outlier".  dave@horsfall.org
+
+ChangeSet@1.3537, 2015-07-25 18:08:16+02:00, tomek@tomek-n56vz.(none)
+  Changed "char * progname;" variable to be "char const * progname;", so now it is consistent
+  Many files:
+    changed a variable to be const
+    autogenerated
+
+  adjtimed/adjtimed.c@1.5 +1 -1
+    changed a variable to be const
+
+  clockstuff/chutest.c@1.7 +1 -1
+    changed a variable to be const
+
+  clockstuff/propdelay.c@1.8 +1 -1
+    changed a variable to be const
+
+  libntp/msyslog.c@1.51 +3 -3
+    changed a variable to be const
+
+  libntp/ntp_lineedit.c@1.13 +1 -1
+    changed a variable to be const
+
+  ntpdate/ntpdate.c@1.94 +1 -1
+    changed a variable to be const
+
+  ntpdc/ntpdc.c@1.104 +1 -1
+    changed a variable to be const
+
+  ntpq/ntpq.c@1.160 +1 -1
+    changed a variable to be const
+
+  sntp/log.c@1.23 +1 -1
+    changed a variable to be const
+
+  sntp/log.h@1.12 +1 -1
+    changed a variable to be const
+
+  sntp/tests/run-crypto.c@1.6 +1 -1
+    autogenerated
+
+  sntp/tests/run-keyFile.c@1.9 +1 -1
+    autogenerated
+
+  sntp/tests/run-kodDatabase.c@1.7 +1 -1
+    autogenerated
+
+  sntp/tests/run-kodFile.c@1.7 +1 -1
+    autogenerated
+
+  sntp/tests/run-networking.c@1.3 +1 -1
+    autogenerated
+
+  sntp/tests/run-packetHandling.c@1.6 +1 -1
+    autogenerated
+
+  sntp/tests/run-packetProcessing.c@1.7 +1 -1
+    autogenerated
+
+  sntp/tests/run-utilities.c@1.6 +1 -1
+    autogenerated
+
+  tests/ntpd/run-ntp_restrict.c@1.4 +1 -1
+    autogenerated
+
+  tests/sandbox/run-modetoa.c@1.3 +7 -4
+    autogenerated
+
+  tests/sandbox/run-uglydate.c@1.3 +9 -4
+    autogenerated
+
+  tests/sandbox/run-ut-2803.c@1.2 +7 -4
+    autogenerated
+
+  util/ntp-keygen.c@1.106 +1 -1
+    changed a variable to be const
+
+  util/ntptime.c@1.27 +1 -1
+    changed a variable to be const
+
+ChangeSet@1.3529.1.10, 2015-07-25 16:54:29+02:00, viperus@ubuntu.(none)
+  Many files:
+    added declarations
+    
+  lfpfunc.c:
+    adding declarations, reorganizing
+  Many files:
+    adding declarations
+    
+    update
+    
+  run-clocktime.c:
+    update
+  clocktime.c:
+    adding declarations
+  socktoa.c:
+    added declarations
+
+  tests/libntp/clocktime.c@1.7 +1 -0
+    adding declarations
+
+  tests/libntp/lfpfunc.c@1.13 +28 -7
+    adding declarations, reorganizing
+
+  tests/libntp/netof.c@1.3.1.1 +8 -0
+    adding declarations
+    
+
+  tests/libntp/numtoa.c@1.6 +2 -0
+    adding declarations
+    
+
+  tests/libntp/numtohost.c@1.5 +2 -0
+    adding declarations
+    
+
+  tests/libntp/octtoint.c@1.3.1.1 +10 -0
+    adding declarations
+    
+
+  tests/libntp/prettydate.c@1.3 +3 -0
+    adding declarations
+    
+
+  tests/libntp/recvbuff.c@1.5 +4 -0
+    adding declarations
+    
+
+  tests/libntp/refidsmear.c@1.5 +6 -3
+    adding declarations
+    
+
+  tests/libntp/refnumtoa.c@1.5 +4 -0
+    adding declarations
+    
+
+  tests/libntp/run-clocktime.c@1.9 +1 -1
+    update
+
+  tests/libntp/run-lfpfunc.c@1.16 +9 -9
+    update
+    
+
+  tests/libntp/run-netof.c@1.5 +4 -4
+    update
+    
+
+  tests/libntp/run-numtoa.c@1.9 +2 -2
+    update
+    
+
+  tests/libntp/run-numtohost.c@1.9 +1 -1
+    update
+    
+
+  tests/libntp/run-octtoint.c@1.6 +7 -7
+    update
+    
+
+  tests/libntp/run-prettydate.c@1.4 +1 -1
+    update
+    
+
+  tests/libntp/run-recvbuff.c@1.4 +3 -3
+    update
+    
+
+  tests/libntp/run-refidsmear.c@1.5 +1 -1
+    update
+    
+
+  tests/libntp/run-refnumtoa.c@1.7 +2 -2
+    update
+    
+
+  tests/libntp/run-sfptostr.c@1.4 +7 -7
+    update
+    
+
+  tests/libntp/run-socktoa.c@1.8 +6 -6
+    update
+    
+
+  tests/libntp/run-ssl_init.c@1.8 +5 -5
+    update
+    
+
+  tests/libntp/run-statestr.c@1.9 +4 -4
+    update
+    
+
+  tests/libntp/run-strtolfp.c@1.4 +6 -6
+    update
+    
+
+  tests/libntp/run-timespecops.c@1.9 +28 -28
+    update
+    
+
+  tests/libntp/run-timevalops.c@1.11 +28 -28
+    update
+    
+
+  tests/libntp/run-tstotv.c@1.4 +3 -3
+    update
+    
+
+  tests/libntp/run-tvtots.c@1.5 +3 -3
+    update
+    
+
+  tests/libntp/run-vi64ops.c@1.7 +3 -3
+    update
+    
+
+  tests/libntp/run-ymd2yd.c@1.10 +4 -4
+    update
+    
+
+  tests/libntp/sfptostr.c@1.3 +10 -0
+    update
+    
+
+  tests/libntp/sockaddrtest.c@1.2 +1 -0
+    update
+    
+
+  tests/libntp/socktoa.c@1.3.1.1 +6 -0
+    added declarations
+
+  tests/libntp/ssl_init.c@1.8 +6 -0
+    added declarations
+    
+
+  tests/libntp/statestr.c@1.5 +4 -0
+    added declarations
+    
+
+  tests/libntp/strtolfp.c@1.2.1.1 +9 -0
+    added declarations
+    
+
+  tests/libntp/timespecops.c@1.8 +40 -1
+    added declarations
+    
+
+  tests/libntp/timevalops.c@1.11 +37 -1
+    added declarations
+    
+
+  tests/libntp/tstotv.c@1.3 +5 -0
+    added declarations
+    
+
+  tests/libntp/tvtots.c@1.5 +3 -0
+    added declarations
+    
+
+  tests/libntp/vi64ops.c@1.6 +6 -0
+    added declarations
+    
+
+  tests/libntp/ymd2yd.c@1.6 +5 -0
+    added declarations
+    
+
+ChangeSet@1.3536, 2015-07-25 02:08:32+02:00, tomek@tomek-n56vz.(none)
+  run-ntp_restrict.c:
+    autogenerated, but modified manually...
+  Makefile.am:
+    removed something not longer in use
+  ntp_restrict.c:
+    added another test
+  run-ntp_restrict.c, run-ntp_prio_q.c, run-sec-2853.c, run-bug-2803.c:
+    autogenerated
+
+  tests/bug-2803/run-bug-2803.c@1.8 +8 -4
+    autogenerated
+
+  tests/ntpd/Makefile.am@1.9 +0 -3
+    removed something not longer in use
+
+  tests/ntpd/ntp_restrict.c@1.2 +17 -4
+    added another test
+
+  tests/ntpd/run-ntp_prio_q.c@1.2 +9 -4
+    autogenerated
+
+  tests/ntpd/run-ntp_restrict.c@1.3 +1 -1
+    autogenerated, but modified manually...
+
+  tests/ntpd/run-ntp_restrict.c@1.2 +8 -4
+    autogenerated
+
+  tests/sec-2853/run-sec-2853.c@1.4 +5 -6
+    autogenerated
+
+ChangeSet@1.3529.1.9, 2015-07-24 18:38:05+02:00, viperus@ubuntu.(none)
+  calendar.c:
+    added function declarations + minor comment fixes
+    
+  Many files:
+    added declarations
+    
+    updated
+    
+  run-buftvtots.c, run-calendar.c:
+    update
+  lfptest.c:
+    added #include
+  buftvtots.c:
+    added function declarations
+  caljulian.c:
+    added declarations
+  run-caljulian.c:
+    updated
+
+  tests/libntp/buftvtots.c@1.4 +4 -0
+    added function declarations
+
+  tests/libntp/calendar.c@1.6 +42 -18
+    added function declarations + minor comment fixes
+    
+
+  tests/libntp/caljulian.c@1.9 +10 -0
+    added declarations
+
+  tests/libntp/caltontp.c@1.3 +5 -0
+    added declarations
+    
+
+  tests/libntp/calyearstart.c@1.4 +5 -0
+    added declarations
+    
+
+  tests/libntp/clocktime.c@1.6 +11 -0
+    added declarations
+    
+
+  tests/libntp/decodenetnum.c@1.3.1.1 +7 -0
+    added declarations
+    
+
+  tests/libntp/hextoint.c@1.4 +6 -0
+    added declarations
+    
+
+  tests/libntp/hextolfp.c@1.5.1.1 +7 -0
+    added declarations
+    
+
+  tests/libntp/humandate.c@1.5 +4 -0
+    added declarations
+    
+
+  tests/libntp/lfpfunc.c@1.12 +13 -0
+    added declarations
+    
+
+  tests/libntp/lfptest.c@1.2 +1 -0
+    added #include
+
+  tests/libntp/lfptostr.c@1.3.1.1 +15 -0
+    added declarations
+    
+
+  tests/libntp/modetoa.c@1.7 +3 -0
+    added declarations
+    
+
+  tests/libntp/msyslog.c@1.6 +10 -0
+    added declarations
+    
+
+  tests/libntp/run-buftvtots.c@1.5 +10 -10
+    update
+
+  tests/libntp/run-calendar.c@1.8 +11 -11
+    update
+
+  tests/libntp/run-caljulian.c@1.12 +4 -4
+    updated
+
+  tests/libntp/run-caltontp.c@1.4 +4 -4
+    updated
+    
+
+  tests/libntp/run-calyearstart.c@1.6 +3 -3
+    updated
+    
+
+  tests/libntp/run-clocktime.c@1.8 +8 -8
+    updated
+    
+
+  tests/libntp/run-decodenetnum.c@1.6 +6 -6
+    updated
+    
+
+  tests/libntp/run-hextoint.c@1.8 +5 -5
+    updated
+    
+
+  tests/libntp/run-hextolfp.c@1.7 +6 -6
+    updated
+    
+
+  tests/libntp/run-humandate.c@1.5 +2 -2
+    updated
+    
+
+  tests/libntp/run-lfpfunc.c@1.15 +9 -9
+    updated
+    
+
+  tests/libntp/run-lfptostr.c@1.5 +10 -10
+    updated
+    
+
+  tests/libntp/run-modetoa.c@1.10 +2 -2
+    updated
+    
+
+  tests/libntp/run-msyslog.c@1.7 +8 -8
+    updated
+    
+
+ChangeSet@1.3523.2.7, 2015-07-24 12:01:24+05:30, loki@dadasgift.(none)
+  ntp signd testing
+
+  tests/ntpd/ntp_signd.c@1.1 +24 -0
+    BitKeeper file /home/loki/ntp_gsoc/2_damir_code/ntp-stable-unity/tests/ntpd/ntp_signd.c
+
+  tests/ntpd/ntp_signd.c@1.0 +0 -0
+
+ChangeSet@1.3523.2.6, 2015-07-24 11:55:00+05:30, loki@dadasgift.(none)
+  ntp_signd test changes
+
+  tests/ntpd/Makefile.am@1.6.1.1 +21 -0
+
+  tests/ntpd/run-ntp_signd.c@1.1 +52 -0
+    BitKeeper file /home/loki/ntp_gsoc/2_damir_code/ntp-stable-unity/tests/ntpd/run-ntp_signd.c
+
+  tests/ntpd/run-ntp_signd.c@1.0 +0 -0
+
+ChangeSet@1.3535, 2015-07-23 19:19:08+02:00, tomek@tomek-n56vz.(none)
+  Wrote tests for ntpd/ntp_restrict.c
+  ntp_restrict.c, run-ntp_restrict.c:
+    new file
+  Makefile.am:
+    added ntp_restrict.c test
+  ntp_restrict.c:
+    added assertions (I prefer them to a segfault)
+
+  ntpd/ntp_restrict.c@1.39 +6 -0
+    added assertions (I prefer them to a segfault)
+
+  tests/ntpd/Makefile.am@1.8 +25 -0
+    added ntp_restrict.c test
+
+  tests/ntpd/ntp_restrict.c@1.1 +185 -0
+    BitKeeper file /home/tomek/ntp/ntpd_tests/ntp-stable-unity/tests/ntpd/ntp_restrict.c
+
+  tests/ntpd/ntp_restrict.c@1.0 +0 -0
+
+  tests/ntpd/run-ntp_restrict.c@1.1 +64 -0
+    BitKeeper file /home/tomek/ntp/ntpd_tests/ntp-stable-unity/tests/ntpd/run-ntp_restrict.c
+
+  tests/ntpd/run-ntp_restrict.c@1.0 +0 -0
+
+ChangeSet@1.3529.1.8, 2015-07-23 18:37:16+02:00, viperus@ubuntu.(none)
+  reduced number of warnings in sntp/tests/
+
+  sntp/tests/crypto.c@1.9 +6 -0
+    added declarations for tests
+
+  sntp/tests/fileHandlingTest.c@1.2 +1 -1
+    commented out unnecessary array
+
+  sntp/tests/keyFile.c@1.7 +4 -0
+    added declarations for tests
+    
+
+  sntp/tests/kodDatabase.c@1.7 +6 -0
+    added declarations for tests
+    
+
+  sntp/tests/kodFile.c@1.8 +8 -0
+    added declarations for tests
+    
+
+  sntp/tests/nameresolution.c@1.2 +3 -0
+    added declarations for tests
+    
+
+  sntp/tests/packetHandling.c@1.5 +13 -0
+    added declarations for tests
+    
+
+  sntp/tests/packetProcessing.c@1.7 +24 -0
+    added declarations for tests
+    
+
+  sntp/tests/run-crypto.c@1.5 +5 -5
+    added declarations for tests
+    
+
+  sntp/tests/run-keyFile.c@1.8 +4 -4
+    updated
+
+  sntp/tests/run-kodDatabase.c@1.6 +5 -5
+    updated
+
+  sntp/tests/run-kodFile.c@1.6 +6 -6
+    updated
+
+  sntp/tests/run-packetHandling.c@1.5 +10 -10
+    updated
+
+  sntp/tests/run-packetProcessing.c@1.6 +18 -18
+    updated
+
+  sntp/tests/run-utilities.c@1.5 +7 -7
+    updated
+
+  sntp/tests/utilities.c@1.4 +12 -0
+    added declarations for tests
+    
+
+ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
+  Updated unity ruby testRunner generator with mark's latest fixes. Modified tests/libntp/Makefile.am and sntp/tests/Makefile.am accordingly. Also, split some .h files into .h and .c because they contained declarations and definitions which caused error in the newly generated test runners. Started fixing some warnings. We can add both declarations and defitions in a single test.c file without any issues now. Autogenerated tests will be run in order of the declarations in the test file.
+
+  sntp/tests/Makefile.am@1.61 +4 -0
+    New ruby generator script required some changes. Removed some definitions form header files and created their own .c files.
+
+  sntp/tests/crypto.c@1.8 +2 -0
+    started adding declarations at the top of the file
+
+  sntp/tests/fileHandlingTest.c@1.1 +74 -0
+    new file. Contains definitions from fileHandlingTest.h.in
+
+  sntp/tests/fileHandlingTest.c@1.0 +0 -0
+
+  sntp/tests/fileHandlingTest.h.in@1.14 +7 -46
+    changes stuff a bit, to work with the updated ruby generator
+
+  sntp/tests/keyFile.c@1.6 +4 -0
+    added declarations to avoid warnings
+
+  sntp/tests/run-crypto.c@1.4 +12 -9
+    updated autogenerated code
+
+  sntp/tests/run-keyFile.c@1.7 +12 -8
+    updated autogenerated code
+    
+
+  sntp/tests/run-kodDatabase.c@1.5 +9 -3
+    updated autogenerated code
+    
+
+  sntp/tests/run-kodFile.c@1.5 +7 -3
+    updated autogenerated code
+    
+
+  sntp/tests/run-networking.c@1.2 +5 -2
+    updated autogenerated code
+    
+
+  sntp/tests/run-packetHandling.c@1.4 +11 -3
+    updated autogenerated code
+    
+
+  sntp/tests/run-packetProcessing.c@1.5 +6 -3
+    updated autogenerated code
+    
+
+  sntp/tests/run-utilities.c@1.4 +8 -3
+    updated autogenerated code
+    
+
+  sntp/tests/sntptest.c@1.1 +33 -0
+    definitions placed from .h to .c
+
+  sntp/tests/sntptest.c@1.0 +0 -0
+
+  sntp/tests/sntptest.h@1.6 +0 -29
+    added sntptest.c and put definitions in it.
+
+  sntp/unity/auto/generate_test_runner.rb@1.9 +3 -3
+    some changes were needed after mark's update to work better with NTP
+
+  sntp/unity/auto/generate_test_runner.rb@1.8 +209 -110
+    updated the ruby script with new stuff from Mark
+
+  sntp/unity/auto/parseOutput.rb@1.1 +191 -0
+    mark's new file from the update
+
+  sntp/unity/auto/parseOutput.rb@1.0 +0 -0
+
+  sntp/unity/auto/type_sanitizer.rb@1.1 +8 -0
+    mark's new file from the update
+    
+
+  sntp/unity/auto/type_sanitizer.rb@1.0 +0 -0
+
+  sntp/unity/auto/unity_test_summary.py@1.1 +135 -0
+    mark's new file from the update
+    
+
+  sntp/unity/auto/unity_test_summary.py@1.0 +0 -0
+
+  sntp/unity/auto/unity_test_summary.rb@1.3 +48 -25
+    added Marks new changes
+
+  tests/libntp/Makefile.am@1.85.1.3 +7 -0
+    New ruby generator script required some changes. Removed some definitions form header files and created their own .c files.
+    
+
+  tests/libntp/a_md5encrypt.c@1.11 +8 -0
+    added declarations
+
+  tests/libntp/atoint.c@1.4 +9 -0
+    added declarations
+    
+
+  tests/libntp/atouint.c@1.5 +8 -0
+    added declarations
+    
+
+  tests/libntp/authkeys.c@1.10 +17 -6
+    added declarations
+    
+
+  tests/libntp/lfptest.c@1.1 +10 -0
+    new file, contains definitions from lfptest.h
+
+  tests/libntp/lfptest.c@1.0 +0 -0
+
+  tests/libntp/lfptest.h@1.4.1.3 +2 -8
+    split to .h and .c which now contains definitions
+
+  tests/libntp/run-a_md5encrypt.c@1.13 +9 -7
+    autogenerated file update
+
+  tests/libntp/run-atoint.c@1.7 +10 -7
+    autogenerated file update
+    
+
+  tests/libntp/run-atouint.c@1.8 +10 -7
+    autogenerated file update
+    
+
+  tests/libntp/run-authkeys.c@1.10 +12 -9
+    autogenerated file update
+    
+
+  tests/libntp/run-buftvtots.c@1.4 +8 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-calendar.c@1.7 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-caljulian.c@1.11 +7 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-caltontp.c@1.3 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-calyearstart.c@1.5 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-clocktime.c@1.7 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-decodenetnum.c@1.5 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-hextoint.c@1.7 +6 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-hextolfp.c@1.6 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-humandate.c@1.4 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-lfpfunc.c@1.14 +7 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-lfptostr.c@1.4 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-modetoa.c@1.9 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-msyslog.c@1.6 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-netof.c@1.4 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-numtoa.c@1.8 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-numtohost.c@1.8 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-octtoint.c@1.5 +4 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-prettydate.c@1.3 +6 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-recvbuff.c@1.3 +4 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-refidsmear.c@1.4 +7 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-refnumtoa.c@1.6 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-sfptostr.c@1.3 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-socktoa.c@1.7 +6 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-ssl_init.c@1.7 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-statestr.c@1.8 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-strtolfp.c@1.3 +6 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-timespecops.c@1.8 +8 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-timevalops.c@1.10 +7 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-tstotv.c@1.3 +5 -2
+    autogenerated file update
+    
+
+  tests/libntp/run-tvtots.c@1.4 +6 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-uglydate.c@1.9 +6 -4
+    autogenerated file update
+    
+
+  tests/libntp/run-vi64ops.c@1.6 +5 -3
+    autogenerated file update
+    
+
+  tests/libntp/run-ymd2yd.c@1.9 +4 -3
+    autogenerated file update
+    
+
+  tests/libntp/sockaddrtest.c@1.1 +50 -0
+    New file created by splitting sockaddrtest.h. 
+
+  tests/libntp/sockaddrtest.c@1.0 +0 -0
+
+  tests/libntp/sockaddrtest.h@1.6 +4 -45
+    removed definitions and placed them in sockaddrtest.c
+
+  tests/libntp/uglydate.c@1.7 +1 -0
+    added some declarations to test the new generator. Unfinished
+
+ChangeSet@1.3523.3.18, 2015-07-21 06:47:23+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2883] ntpd crashes on exit with empty driftfile.  Miroslav Lichvar.
+
+  ChangeLog@1.1708.1.19 +1 -0
+    [Bug 2883] ntpd crashes on exit with empty driftfile.  Miroslav Lichvar.
+
+  ntpd/ntp_parser.c@1.98 +1141 -1381
+    [Bug 2883] ntpd crashes on exit with empty driftfile.  Miroslav Lichvar.
+
+  ntpd/ntp_parser.h@1.63 +216 -230
+    [Bug 2883] ntpd crashes on exit with empty driftfile.  Miroslav Lichvar.
+
+  ntpd/ntp_parser.y@1.88 +1 -1
+    [Bug 2883] ntpd crashes on exit with empty driftfile.  Miroslav Lichvar.
+
+ChangeSet@1.3523.3.17, 2015-07-20 07:32:09+00:00, stenn@psp-at1.ntp.org
+  ntpd/ntp_peer.c:newpeer(): added a DEBUG_REQUIRE(srcadr).  Harlan Stenn.
+
+  ChangeLog@1.1708.1.18 +1 -0
+    ntpd/ntp_peer.c:newpeer(): added a DEBUG_REQUIRE(srcadr).  Harlan Stenn.
+
+  ntpd/ntp_peer.c@1.158 +2 -0
+    ntpd/ntp_peer.c:newpeer(): added a DEBUG_REQUIRE(srcadr).  Harlan Stenn.
+
+ChangeSet@1.3523.3.16, 2015-07-20 07:20:04+00:00, stenn@psp-at1.ntp.org
+  [Bug 2849] Systems with more than one default route may never synchronize.  Brian Utterback.
+
+  ChangeLog@1.1708.1.17 +3 -0
+    [Bug 2849] Systems with more than one default route may never synchronize.  Brian Utterback.
+
+  ntpd/ntp_peer.c@1.157 +7 -3
+    [Bug 2849] Systems with more than one default route may never synchronize.  Brian Utterback.
+
+ChangeSet@1.3523.3.15, 2015-07-20 06:38:37+00:00, stenn@psp-at1.ntp.org
+  util/ntptime.c: initialization nit.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.16 +1 -0
+    util/ntptime.c: initialization nit.  Harlan Stenn.
+
+  util/ntptime.c@1.26 +1 -1
+    util/ntptime.c: initialization nit.  Harlan Stenn.
+
+ChangeSet@1.3523.3.14, 2015-07-19 21:49:06-04:00, stenn@deacon.udel.edu
+  Typo
+
+  ChangeLog@1.1708.1.15 +1 -1
+    Typo
+
+ChangeSet@1.3523.3.13, 2015-07-19 21:46:59-04:00, stenn@deacon.udel.edu
+  libntp/icom.c: Typos fix.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.14 +1 -0
+    libntp/icom.c: Typos fix.  Harlan Stenn.
+
+  libntp/icom.c@1.20 +1 -1
+    libntp/icom.c: Typos fix.  Harlan Stenn.
+
+ChangeSet@1.3523.3.12, 2015-07-19 05:37:40+00:00, stenn@psp-at1.ntp.org
+  Code cleanup.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.13 +1 -0
+    Code cleanup.  Harlan Stenn.
+
+  include/Makefile.am@1.52 +1 -0
+    Code cleanup.  Harlan Stenn.
+
+  include/rc_cmdlength.h@1.1 +2 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable/include/rc_cmdlength.h
+
+  include/rc_cmdlength.h@1.0 +0 -0
+
+  libntp/audio.c@1.36 +8 -5
+    Code cleanup.  Harlan Stenn.
+
+  libntp/icom.c@1.19 +23 -7
+    Code cleanup.  Harlan Stenn.
+
+  libntp/ntp_worker.c@1.5 +1 -1
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_config.c@1.332 +10 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_control.c@1.203 +1 -2
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_crypto.c@1.181 +1 -1
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_monitor.c@1.44 +4 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_peer.c@1.156 +1 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_proto.c@1.362 +3 -1
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/ntp_restrict.c@1.38 +4 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/rc_cmdlength.c@1.2 +1 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/refclock_arc.c@1.33 +1 -1
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/refclock_chu.c@1.57 +1 -1
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/refclock_nmea.c@1.78 +4 -3
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/refclock_parse.c@1.81 +3 -0
+    Code cleanup.  Harlan Stenn.
+
+  ntpd/refclock_wwv.c@1.80 +4 -2
+    Code cleanup.  Harlan Stenn.
+
+  ntpq/ntpq.c@1.159 +0 -1
+    Code cleanup.  Harlan Stenn.
+
+  sntp/networking.c@1.66 +1 -1
+    Code cleanup.  Harlan Stenn.
+
+  tests/sec-2853/run-sec-2853.c@1.3 +2 -2
+    Code cleanup.  Harlan Stenn.
+
+  tests/sec-2853/sec-2853.c@1.5 +2 -2
+    Code cleanup.  Harlan Stenn.
+
+  util/ntp-keygen.c@1.105 +2 -2
+    Code cleanup.  Harlan Stenn.
+
+ChangeSet@1.3523.3.11, 2015-07-16 07:37:32+00:00, stenn@psp-at1.ntp.org
+  Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.12 +1 -0
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  include/ntp_assert.h@1.9 +0 -4
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  include/ntp_lists.h@1.15 +3 -3
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/atolfp.c@1.6 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/caljulian.c@1.16 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/caltontp.c@1.7 +8 -8
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/decodenetnum.c@1.17 +3 -3
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/msyslog.c@1.50 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/ntp_intres.c@1.99 +12 -12
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/ntp_rfc2553.c@1.48 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/prettydate.c@1.20 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/recvbuff.c@1.40 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/socket.c@1.10 +2 -2
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  libntp/socktohost.c@1.15 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_config.c@1.331 +7 -8
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_control.c@1.202 +18 -18
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_crypto.c@1.180 +14 -14
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_io.c@1.404 +15 -15
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_monitor.c@1.43 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_peer.c@1.155 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_refclock.c@1.120 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpd/ntp_restrict.c@1.37 +9 -9
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpdc/ntpdc.c@1.103 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ntpq/ntpq-subs.c@1.110 +7 -7
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ports/winnt/libntp/termios.c@1.31 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ports/winnt/ntpd/nt_clockstuff.c@1.66 +1 -1
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.71 +7 -8
+    Get rid of the NTP_ prefix on our assertion macros.  Harlan Stenn.
+
+ChangeSet@1.3523.3.10, 2015-07-13 04:28:29+00:00, stenn@psp-at1.ntp.org
+  [Bug 2823] ntpsweep with recursive peers option doesn't work.  H.Stenn.
+
+  ChangeLog@1.1708.1.11 +1 -0
+    [Bug 2823] ntpsweep with recursive peers option doesn't work.  H.Stenn.
+
+  scripts/ntpsweep/ntpsweep.in@1.9 +2 -1
+    [Bug 2823] ntpsweep with recursive peers option doesn't work.  H.Stenn.
+
+ChangeSet@1.3523.3.9, 2015-07-13 04:18:36+00:00, stenn@psp-at1.ntp.org
+  scripts/lib/NTP/Util.pm: stratum output is version-dependent.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.10 +1 -0
+    scripts/lib/NTP/Util.pm: stratum output is version-dependent.  Harlan Stenn.
+
+  scripts/lib/NTP/Util.pm@1.5 +8 -1
+    scripts/lib/NTP/Util.pm: stratum output is version-dependent.  Harlan Stenn.
+
+ChangeSet@1.3531, 2015-07-13 04:21:50+02:00, tomek@tomek-n56vz.(none)
+  wrote tests for ntpd/ntp_prio_q.c
+  
+  Makefile.am:
+    added ntp_prio_q.c
+  ntp_prio_q.c, run-ntp_prio_q.c:
+    new file
+  ChangeLog:
+    added info about the test of ntpd/ntp_prio_q.c
+
+  ChangeLog@1.1726 +1 -0
+    added info about the test of ntpd/ntp_prio_q.c
+
+  tests/ntpd/Makefile.am@1.7 +28 -0
+    added ntp_prio_q.c
+
+  tests/ntpd/ntp_prio_q.c@1.1 +261 -0
+    BitKeeper file /home/tomek/ntp/ntpd_tests/ntp-stable-unity/tests/ntpd/ntp_prio_q.c
+
+  tests/ntpd/ntp_prio_q.c@1.0 +0 -0
+
+  tests/ntpd/run-ntp_prio_q.c@1.1 +64 -0
+    BitKeeper file /home/tomek/ntp/ntpd_tests/ntp-stable-unity/tests/ntpd/run-ntp_prio_q.c
+
+  tests/ntpd/run-ntp_prio_q.c@1.0 +0 -0
+
+ChangeSet@1.3523.2.5, 2015-07-12 22:59:46+05:30, loki@dadasgift.(none)
+  rc_cmdlength test
+
+  tests/ntpd/rc_cmdlength.c@1.2 +20 -4
+
+  tests/ntpd/run-rc_cmdlength.c@1.1 +52 -0
+    BitKeeper file /home/loki/ntp_gsoc/2_damir_code/ntp-stable-unity/tests/ntpd/run-rc_cmdlength.c
+
+  tests/ntpd/run-rc_cmdlength.c@1.0 +0 -0
+
+ChangeSet@1.3523.3.8, 2015-07-11 19:20:33-04:00, stenn@deacon.udel.edu
+  br-flock: --enable-local-libevent.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.9 +1 -0
+    br-flock: --enable-local-libevent.  Harlan Stenn.
+
+  br-flock@1.17 +1 -1
+    br-flock: --enable-local-libevent.  Harlan Stenn.
+
+ChangeSet@1.3523.3.7, 2015-07-11 18:46:20-04:00, stenn@deacon.udel.edu
+  [Bug 2875] libevent is improperly bundled in the tarball
+
+  Makefile.am@1.133 +1 -1
+    [Bug 2875] libevent is improperly bundled in the tarball
+
+ChangeSet@1.3523.4.1, 2015-07-11 20:28:26+00:00, stenn@psp-at1.ntp.org
+  [Bug 2875] sntp/Makefile.am: Get rid of DIST_SUBDIRS.  libevent must be configured for the distribution targets.  Harlan Stenn.
+
+  ChangeLog@1.1708.2.1 +2 -0
+    [Bug 2875] sntp/Makefile.am: Get rid of DIST_SUBDIRS.  libevent must be configured for the distribution targets.  Harlan Stenn.
+
+  sntp/Makefile.am@1.86 +13 -24
+    [Bug 2875] sntp/Makefile.am: Get rid of DIST_SUBDIRS.  libevent must be configured for the distribution targets.  Harlan Stenn.
+
+ChangeSet@1.3523.2.4, 2015-07-11 00:19:36+05:30, loki@dadasgift.(none)
+  rc_cmdlength testing
+
+  tests/ntpd/Makefile.am@1.6 +20 -0
+
+  tests/ntpd/rc_cmdlength.c@1.1 +22 -0
+    BitKeeper file /home/loki/ntp_gsoc/2_damir_code/ntp-stable-unity/tests/ntpd/rc_cmdlength.c
+
+  tests/ntpd/rc_cmdlength.c@1.0 +0 -0
+
+ChangeSet@1.3523.3.5, 2015-07-09 09:03:46+00:00, stenn@psp-at1.ntp.org
+  tests/libntp/test_caltontp needs -lpthread.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.7 +1 -0
+    tests/libntp/test_caltontp needs -lpthread.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.85.1.2 +5 -0
+    tests/libntp/test_caltontp needs -lpthread.  Harlan Stenn.
+
+ChangeSet@1.3523.3.4, 2015-07-09 03:42:45-04:00, stenn@deacon.udel.edu
+  Don't build sntp/libevent/sample/.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.6 +1 -0
+    Don't build sntp/libevent/sample/.  Harlan Stenn.
+
+  sntp/libevent/Makefile.am@1.14 +1 -1
+    Don't build sntp/libevent/sample/.  Harlan Stenn.
+
+ChangeSet@1.3523.3.3, 2015-07-09 06:06:50+00:00, stenn@psp-at1.ntp.org
+  Phase 1 deprecation of google test in tests/libntp/.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.5 +1 -0
+    Phase 1 deprecation of google test in tests/libntp/.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.85.1.1 +113 -408
+    Phase 1 deprecation of google test in tests/libntp/.  Harlan Stenn.
+
+ChangeSet@1.3527, 2015-07-09 04:25:01+02:00, tomek@tomek-n56vz.(none)
+  lfptest.h:
+    now it uses NTP's conventions
+  ChangeLog:
+    add info about lfptest.h
+  test-libntp.c:
+    fixed formatting
+  sockaddrtest.h:
+    formatting fix
+  kodDatabase.c:
+    formatting, adding const, adding a missing library
+  ChangeLog:
+    added info about timespecops.c
+  kodFile.c:
+    formatting, changes to usage of unity macros to get better print messages, cleanup
+  crypto.c, lfptest.h:
+    cleanup
+  ChangeLog:
+    add info about test-libntp.c
+  timespecops.c:
+    further formatting changes
+  ChangeLog:
+    added info about timevalops.c
+  fileHandlingTest.h.in:
+    fixed buffer overflow problem and fixed one function that previously did nothing
+  timevalops.c:
+    fixed the order of includes, deleted unnecessary
+  packetProcessing.c:
+    formatting, sprintf->snprintf
+  packetHandling.c:
+    formatting, using better unity functions, using proper unity functions, deleting unused variable
+  keyFile.c:
+    formatting, using proper unity's macros
+  ChangeLog:
+    fileHandlingTest.h info
+    updating with info about sockaddrtest.h
+  timespecops.c:
+    forgot to delete one comment
+  ChangeLog:
+    added info about my code review changes in sntp/tests/
+  kodDatabase.c:
+    missed something in formatting
+  sntptest.h:
+    formatting
+  Many files:
+    autogenerated
+  kodDatabase.c:
+    added a header. now it's windows compliant too!
+  fileHandlingTest.h.in:
+    formatting, deleted unnecessary prints
+  timespecops.c:
+    fixed formatting, fixed the order of includes,
+      removed unnecessary comments, cleanup
+  utilities.c:
+    the order of includes, formatting, removing unnecessary comments, using proper unity assertions
+
+  ChangeLog@1.1723 +2 -1
+    fileHandlingTest.h info
+
+  ChangeLog@1.1722 +17 -0
+    added info about my code review changes in sntp/tests/
+
+  ChangeLog@1.1721 +1 -0
+    add info about test-libntp.c
+
+  ChangeLog@1.1720 +2 -0
+    updating with info about sockaddrtest.h
+
+  ChangeLog@1.1719 +1 -0
+    add info about lfptest.h
+
+  ChangeLog@1.1718 +2 -0
+    added info about timevalops.c
+
+  ChangeLog@1.1717 +3 -1
+    added info about timespecops.c
+
+  sntp/tests/crypto.c@1.7 +14 -8
+    cleanup
+
+  sntp/tests/fileHandlingTest.h.in@1.13 +6 -6
+    fixed buffer overflow problem and fixed one function that previously did nothing
+
+  sntp/tests/fileHandlingTest.h.in@1.12 +13 -39
+    formatting, deleted unnecessary prints
+
+  sntp/tests/keyFile.c@1.5 +33 -24
+    formatting, using proper unity's macros
+
+  sntp/tests/kodDatabase.c@1.6 +1 -1
+    added a header. now it's windows compliant too!
+
+  sntp/tests/kodDatabase.c@1.5 +1 -2
+    missed something in formatting
+
+  sntp/tests/kodDatabase.c@1.4 +39 -31
+    formatting, adding const, adding a missing library
+
+  sntp/tests/kodFile.c@1.7 +34 -32
+    formatting, changes to usage of unity macros to get better print messages, cleanup
+
+  sntp/tests/packetHandling.c@1.4 +46 -31
+    formatting, using better unity functions, using proper unity functions, deleting unused variable
+
+  sntp/tests/packetProcessing.c@1.6 +67 -25
+    formatting, sprintf->snprintf
+
+  sntp/tests/run-crypto.c@1.3 +6 -6
+    autogenerated
+
+  sntp/tests/run-keyFile.c@1.6 +5 -5
+    autogenerated
+
+  sntp/tests/run-kodDatabase.c@1.4 +5 -5
+    autogenerated
+
+  sntp/tests/run-kodDatabase.c@1.3 +4 -4
+    autogenerated
+
+  sntp/tests/run-kodFile.c@1.4 +5 -5
+    autogenerated
+
+  sntp/tests/run-packetHandling.c@1.3 +10 -10
+    autogenerated
+
+  sntp/tests/run-packetProcessing.c@1.4 +18 -18
+    autogenerated
+
+  sntp/tests/run-utilities.c@1.3 +7 -7
+    autogenerated
+
+  sntp/tests/sntptest.h@1.5 +9 -3
+    formatting
+
+  sntp/tests/utilities.c@1.3 +38 -20
+    the order of includes, formatting, removing unnecessary comments, using proper unity assertions
+
+  tests/libntp/lfptest.h@1.4.1.2 +2 -3
+    now it uses NTP's conventions
+
+  tests/libntp/lfptest.h@1.4.1.1 +7 -16
+    cleanup
+
+  tests/libntp/run-timespecops.c@1.5.1.3 +28 -28
+    autogenerated
+
+  tests/libntp/run-timespecops.c@1.5.1.2 +28 -28
+    autogenerated
+
+  tests/libntp/run-timespecops.c@1.5.1.1 +28 -28
+    autogenerated
+
+  tests/libntp/run-timevalops.c@1.7.1.1 +28 -28
+    autogenerated
+
+  tests/libntp/sockaddrtest.h@1.5 +6 -5
+    formatting fix
+
+  tests/libntp/test-libntp.c@1.10 +6 -11
+    fixed formatting
+
+  tests/libntp/timespecops.c@1.5.1.3 +7 -6
+    further formatting changes
+
+  tests/libntp/timespecops.c@1.5.1.2 +0 -1
+    forgot to delete one comment
+
+  tests/libntp/timespecops.c@1.5.1.1 +129 -85
+    fixed formatting, fixed the order of includes,
+      removed unnecessary comments, cleanup
+
+  tests/libntp/timevalops.c@1.8.1.1 +137 -87
+    fixed the order of includes, deleted unnecessary
+
+ChangeSet@1.3523.3.2, 2015-07-07 01:27:49+00:00, stenn@psp-at1.ntp.org
+  sntp/unity/unity.c: Clean up a printf().  Harlan Stenn
+
+  ChangeLog@1.1708.1.4 +1 -0
+    sntp/unity/unity.c: Clean up a printf().  Harlan Stenn
+
+  sntp/unity/unity.c@1.3 +1 -3
+    sntp/unity/unity.c: Clean up a printf().  Harlan Stenn
+
+ChangeSet@1.3523.3.1, 2015-07-07 01:21:36+00:00, stenn@psp-at1.ntp.org
+  [Bug 2873] libevent should not include .deps/ in the tarball.  H.Stenn
+
+  ChangeLog@1.1708.1.3 +1 -0
+    [Bug 2873] libevent should not include .deps/ in the tarball.  H.Stenn
+
+  sntp/Makefile.am@1.85 +1 -1
+    [Bug 2873] libevent should not include .deps/ in the tarball.  H.Stenn
+
+ChangeSet@1.3523.2.2, 2015-07-06 20:30:39+05:30, loki@dadasgift.(none)
+  code review changes
+
+  tests/libntp/lfptest.h@1.5 +7 -6
+
+  tests/libntp/strtolfp.c@1.3 +20 -19
+
+ChangeSet@1.3514.1.2, 2015-07-06 19:55:50+05:30, loki@dadasgift.(none)
+  Code review changes
+
+  tests/libntp/decodenetnum.c@1.2.1.1 +13 -9
+
+  tests/libntp/hextolfp.c@1.4.1.1 +0 -1
+
+  tests/libntp/lfptostr.c@1.2.1.1 +23 -12
+
+  tests/libntp/netof.c@1.4 +9 -6
+
+  tests/libntp/octtoint.c@1.4 +14 -7
+
+  tests/libntp/socktoa.c@1.4 +16 -13
+
+ChangeSet@1.3523.1.3, 2015-07-06 08:37:13+00:00, stenn@psp-at1.ntp.org
+  [Bug 2874] Don't distribute generated sntp/tests/fileHandlingTest.h. H.Stenn
+
+  ChangeLog@1.1708.1.2 +1 -0
+    [Bug 2874] Don't distribute generated sntp/tests/fileHandlingTest.h. H.Stenn
+
+  sntp/tests/Makefile.am@1.60 +0 -1
+    [Bug 2874] Don't distribute generated sntp/tests/fileHandlingTest.h. H.Stenn
+
+ChangeSet@1.3523.1.2, 2015-07-06 08:31:19+00:00, stenn@psp-at1.ntp.org
+  update tests/libntp/run-lfpfunc.c
+
+  tests/libntp/run-lfpfunc.c@1.13 +9 -9
+    update
+
+ChangeSet@1.3523.1.1, 2015-07-06 05:48:25+00:00, stenn@psp-at1.ntp.org
+  sntp/unity/Makefile.am: fix some broken paths.  Harlan Stenn.
+
+  ChangeLog@1.1708.1.1 +1 -0
+    sntp/unity/Makefile.am: fix some broken paths.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.59 +4 -4
+    sntp/unity/Makefile.am: fix some broken paths.  Harlan Stenn.
+
+ChangeSet@1.3524, 2015-07-05 23:58:57+02:00, tomek@tomek-n56vz.(none)
+  vi64ops.c:
+    deleted a comment
+  ymd2yd.c:
+    fixed formatting, deleted empty setUp() and tearDown()
+  ssl_init.c:
+    fixed formatting
+  ChangeLog:
+    updated the changes to vi64ops.c
+  vi64ops.c:
+    fixed formatting (trailing spaces, the order of includes, return type of a function in a new line)
+  ChangeLog:
+    info about tvtots.c
+  ymd2yd.c:
+    removed an include
+  ChangeLog:
+    info about ymd2yd.c
+  uglydate.c:
+    removed an unnecessary include
+  ChangeLog:
+    info about uglydate.c
+  statestr.c:
+    deleted unnecessary empty functions, fixed formatting, removed an unnecessary include
+  ChangeLog:
+    info about vi64ops.c
+  tvtots.c:
+    fixed a bug, fixed formatting
+  Many files:
+    autogenerated
+
+  ChangeLog@1.1714 +2 -3
+    info about ymd2yd.c
+
+  ChangeLog@1.1713 +2 -0
+    info about ymd2yd.c
+
+  ChangeLog@1.1712 +2 -1
+    updated the changes to vi64ops.c
+
+  ChangeLog@1.1711 +1 -0
+    info about vi64ops.c
+
+  ChangeLog@1.1710 +1 -0
+    info about uglydate.c
+
+  ChangeLog@1.1709 +4 -0
+    info about tvtots.c
+
+  tests/libntp/run-ssl_init.c@1.6 +5 -5
+    autogenerated
+
+  tests/libntp/run-statestr.c@1.7 +5 -4
+    autogenerated
+
+  tests/libntp/run-tvtots.c@1.3 +4 -3
+    autogenerated
+
+  tests/libntp/run-uglydate.c@1.8 +2 -1
+    autogenerated
+
+  tests/libntp/run-vi64ops.c@1.5 +3 -3
+    autogenerated
+
+  tests/libntp/run-ymd2yd.c@1.8 +4 -4
+    autogenerated
+
+  tests/libntp/run-ymd2yd.c@1.7 +5 -4
+    autogenerated
+
+  tests/libntp/ssl_init.c@1.7 +11 -6
+    fixed formatting
+
+  tests/libntp/statestr.c@1.4 +12 -15
+    deleted unnecessary empty functions, fixed formatting, removed an unnecessary include
+
+  tests/libntp/tvtots.c@1.4 +12 -5
+    fixed a bug, fixed formatting
+
+  tests/libntp/uglydate.c@1.6 +0 -1
+    removed an unnecessary include
+
+  tests/libntp/vi64ops.c@1.5 +1 -1
+    deleted a comment
+
+  tests/libntp/vi64ops.c@1.4 +17 -14
+    fixed formatting (trailing spaces, the order of includes, return type of a function in a new line)
+
+  tests/libntp/ymd2yd.c@1.5 +0 -1
+    removed an include
+
+  tests/libntp/ymd2yd.c@1.4 +14 -16
+    fixed formatting, deleted empty setUp() and tearDown()
+
+ChangeSet@1.3523, 2015-07-05 18:41:36+02:00, tomek@tomek-n56vz.(none)
+  refnumtoa.c:
+    fixed formatting
+  numtoa.c:
+    remove unnecessary empty functions, fix formatting
+  lfpfunc.c:
+    remove unnecessary include, remove old comments, fix formatting, cleanup
+  numtohost.c:
+    added const, fixed formatting
+  lfptostr.c:
+    fix formatting, delete an include
+  lfpfunc.c:
+    removed an endline
+  ChangeLog:
+    update with new changes to numtoa.c
+  numtoa.c:
+    added "const"
+  ChangeLog:
+    changes with numtohost.c
+    added changes to lfpfunc.c
+    add info about numtoa.c
+    updated with modetoa.c changes
+    add info about lfptostr.c
+  msyslog.c, modetoa.c:
+    fix formatting
+  Many files:
+    autogenerated
+  ChangeLog:
+    add info about msyslog.c
+  lfpfunc.c:
+    added spaces after the commas
+  ChangeLog:
+    updated info about refnumtoa.c
+
+  ChangeLog@1.1708 +1 -0
+    updated info about refnumtoa.c
+
+  ChangeLog@1.1707 +1 -0
+    changes with numtohost.c
+
+  ChangeLog@1.1706 +2 -2
+    update with new changes to numtoa.c
+
+  ChangeLog@1.1705 +2 -0
+    add info about numtoa.c
+
+  ChangeLog@1.1704 +1 -0
+    add info about msyslog.c
+
+  ChangeLog@1.1703 +1 -0
+    updated with modetoa.c changes
+
+  ChangeLog@1.1702 +3 -1
+    add info about lfptostr.c
+
+  ChangeLog@1.1701 +2 -0
+    added changes to lfpfunc.c
+
+  tests/libntp/lfpfunc.c@1.11 +0 -2
+    removed an endline
+
+  tests/libntp/lfpfunc.c@1.10 +55 -55
+    added spaces after the commas
+
+  tests/libntp/lfpfunc.c@1.9 +100 -188
+    remove unnecessary include, remove old comments, fix formatting, cleanup
+
+  tests/libntp/lfptostr.c@1.3 +20 -13
+    fix formatting, delete an include
+
+  tests/libntp/modetoa.c@1.6 +5 -5
+    fix formatting
+
+  tests/libntp/msyslog.c@1.5 +11 -2
+    fix formatting
+
+  tests/libntp/numtoa.c@1.5 +3 -3
+    added "const"
+
+  tests/libntp/numtoa.c@1.4 +12 -20
+    remove unnecessary empty functions, fix formatting
+
+  tests/libntp/numtohost.c@1.4 +3 -4
+    added const, fixed formatting
+
+  tests/libntp/refnumtoa.c@1.4 +10 -12
+    fixed formatting
+
+  tests/libntp/run-lfpfunc.c@1.12 +9 -9
+    autogenerated
+
+  tests/libntp/run-lfptostr.c@1.3 +11 -10
+    autogenerated
+
+  tests/libntp/run-modetoa.c@1.8 +2 -1
+    autogenerated
+
+  tests/libntp/run-msyslog.c@1.5 +8 -8
+    autogenerated
+
+  tests/libntp/run-numtoa.c@1.7 +3 -2
+    autogenerated
+
+  tests/libntp/run-numtohost.c@1.7 +1 -0
+    autogenerated
+
+  tests/libntp/run-refnumtoa.c@1.5 +1 -1
+    autogenerated
+
+ChangeSet@1.3514.2.2, 2015-07-04 21:58:49+00:00, stenn@psp-at1.ntp.org
+  sntp/libevent/evconfig-private.h: remove generated filefrom SCM.  H.Stenn.
+
+  BitKeeper/deleted/42/evconfig-private.h~c311ed41afa56d3b@1.2 +0 -0
+    Delete: sntp/libevent/evconfig-private.h
+
+  ChangeLog@1.1695.1.2 +1 -0
+    sntp/libevent/evconfig-private.h: remove generated filefrom SCM.  H.Stenn.
+
+ChangeSet@1.3514.2.1, 2015-07-04 21:44:33+00:00, stenn@psp-at1.ntp.org
+  sntp/unity/unity_config.h: Distribute it.  Harlan Stenn.
+
+  ChangeLog@1.1695.1.1 +1 -0
+    sntp/unity/unity_config.h: Distribute it.  Harlan Stenn.
+
+  sntp/unity/Makefile.am@1.6.1.1 +1 -0
+    sntp/unity/unity_config.h: Distribute it.  Harlan Stenn.
+
+ChangeSet@1.3513.1.1, 2015-07-04 23:32:08+02:00, viperus@ubuntu.(none)
+  timevalops.c:
+    added timevaltoa() and fixed the printfs
+  timespecops.c:
+    added timespectoa() and fixed the printfs
+
+  tests/libntp/run-timespecops.c@1.6 +28 -28
+
+  tests/libntp/run-timevalops.c@1.8 +28 -28
+
+  tests/libntp/timespecops.c@1.6 +58 -1
+    added timespectoa() and fixed the printfs
+
+  tests/libntp/timevalops.c@1.9 +53 -1
+    added timevaltoa() and fixed the printfs
+
+ChangeSet@1.3520, 2015-07-04 14:10:34+00:00, tflendrich@psp-deb1.ntp.org
+  ChangeLog:
+    updated my changes
+
+  ChangeLog@1.1698 +1 -0
+    updated my changs
+
+ChangeSet@1.3519, 2015-07-04 15:41:50+02:00, tomek@tomek-n56vz.(none)
+  ChangeLog:
+    updated to match my changes
+
+  ChangeLog@1.1697 +3 -3
+    updated to match my changes
+
+ChangeSet@1.3518, 2015-07-04 15:39:51+02:00, tomek@tomek-n56vz.(none)
+  humandate.c:
+    reordered code so that it is C90-compilant, renamed variables so that they are different that function names, fixed formatting to match NTP's convention
+  hextolfp.c:
+    removed a trailing endline, changed formatting to match NTP's convention, 
+  decodenetnum.c:
+    changed the order of imports, removed an unnecessary import, removed a trailing space, changed the return type from a function to be in a new line
+  run-humandate.c, run-hextolfp.c, run-decodenetnum.c:
+    autogenerated
+
+  tests/libntp/decodenetnum.c@1.3 +16 -11
+    changed the order of imports, removed an unnecessary import, removed a trailing space, changed the return type from a function to be in a new line
+
+  tests/libntp/hextolfp.c@1.5 +12 -7
+    removed a trailing endline, changed formatting to match NTP's convention, 
+
+  tests/libntp/humandate.c@1.4 +11 -9
+    reordered code so that it is C90-compilant, renamed variables so that they are different that function names, fixed formatting to match NTP's convention
+
+  tests/libntp/run-decodenetnum.c@1.4 +5 -5
+    autogenerated
+
+  tests/libntp/run-hextolfp.c@1.5 +6 -6
+    autogenerated
+
+  tests/libntp/run-humandate.c@1.3 +3 -2
+    autogenerated
+
+ChangeSet@1.3517, 2015-07-04 12:38:08+00:00, tflendrich@psp-deb1.ntp.org
+  Makefile.am:
+    adding a forgotten header, so that "make distcheck" works
+
+  sntp/unity/Makefile.am@1.7 +1 -0
+    adding a forgotten header, so that "make distcheck" works
+
+ChangeSet@1.3516, 2015-07-04 11:55:26+00:00, tflendrich@psp-deb1.ntp.org
+  ChangeLog:
+    updated with my changes
+
+  ChangeLog@1.1696 +4 -0
+    updated with my changes
+
+ChangeSet@1.3499.1.1, 2015-07-04 13:39:28+02:00, tomek@tomek-n56vz.(none)
+  buftvtots.c:
+    fix formatting, declarations before code (C90)
+  authkeys.c:
+    fixed formatting, removed unnecessary comment
+  calendar.c:
+    further cleanup: deleted unnecessary comments, made first declaration, then code
+  clocktime.c:
+    removed comments, fixed formatting
+  a_md5encrypt.c:
+    fix formatting, add (void) as argument to a function etc
+  caltontp.c:
+    fixed the order of #includes
+  run-buftvtots.c, run-a_md5encrypt.c:
+    adding autogenerated file
+  calendar.c:
+    deleted comments, fixed formatting, used snprintf instead of sprintf, change variable names to be meaningful, 
+  caljulian.c:
+    changed sprintf to snprintf, fixed formatting etc
+  a_md5encrypt.c:
+    changed to first declaration, then code (C90 compatibility)
+  Many files:
+    autogenerated
+  authkeys.c:
+    further changes of formatting
+
+  tests/libntp/a_md5encrypt.c@1.9 +8 -3
+    changed to first declaration, then code (C90 compatibility)
+
+  tests/libntp/a_md5encrypt.c@1.8 +17 -21
+    fix formatting, add (void) as argument to a function etc
+
+  tests/libntp/authkeys.c@1.8 +20 -10
+    further changes of formatting
+
+  tests/libntp/authkeys.c@1.7 +5 -11
+    fixed formatting, removed unnecessary comment
+
+  tests/libntp/buftvtots.c@1.2 +10 -7
+    fix formatting, declarations before code (C90)
+
+  tests/libntp/calendar.c@1.4 +12 -7
+    further cleanup: deleted unnecessary comments, made first declaration, then code
+
+  tests/libntp/calendar.c@1.3 +121 -114
+    deleted comments, fixed formatting, used snprintf instead of sprintf, change variable names to be meaningful, 
+
+  tests/libntp/caljulian.c@1.7 +41 -39
+    changed sprintf to snprintf, fixed formatting etc
+
+  tests/libntp/caltontp.c@1.2 +1 -1
+    fixed the order of #includes
+
+  tests/libntp/clocktime.c@1.4 +24 -15
+    removed comments, fixed formatting
+
+  tests/libntp/run-a_md5encrypt.c@1.11 +4 -4
+    adding autogenerated file
+
+  tests/libntp/run-a_md5encrypt.c@1.10 +10 -10
+    adding autogenerated file
+
+  tests/libntp/run-authkeys.c@1.8 +6 -5
+    autogenerated
+
+  tests/libntp/run-buftvtots.c@1.2 +9 -8
+    adding autogenerated file
+
+  tests/libntp/run-calendar.c@1.5 +10 -10
+    autogenerated
+
+  tests/libntp/run-calendar.c@1.4 +22 -21
+    autogenerated
+
+  tests/libntp/run-caljulian.c@1.9 +7 -7
+    autogenerated
+
+  tests/libntp/run-caltontp.c@1.2 +1 -0
+    autogenerated
+
+  tests/libntp/run-clocktime.c@1.5 +17 -16
+    autogenerated
+
+ChangeSet@1.3514, 2015-07-04 10:24:57+00:00, viperus@psp-at1.ntp.org
+  cleanup
+
+  ChangeLog@1.1695 +2 -3
+    cleanup
+
+ChangeSet@1.3512, 2015-07-04 12:19:42+02:00, viperus@ubuntu.(none)
+  fixes to unsigned printing in timespecops.c and timevalops.c
+
+  tests/libntp/timespecops.c@1.5 +1 -1
+
+  tests/libntp/timevalops.c@1.8 +1 -1
+
+ChangeSet@1.3511, 2015-07-04 12:15:31+02:00, viperus@ubuntu.(none)
+  ChangeLog:
+    added my changes
+  timespecops.c:
+    many fixes, better printfs etc.
+    minor fixes to printf, formatting, etc.
+  timevalops.c:
+    minor fixes to printf, formatting, etc.
+
+  ChangeLog@1.1692.1.1 +3 -0
+    added my changes
+
+  tests/libntp/run-timespecops.c@1.5 +28 -28
+
+  tests/libntp/run-timevalops.c@1.7 +28 -28
+
+  tests/libntp/timespecops.c@1.4 +7 -13
+    many fixes, better printfs etc.
+    minor fixes to printf, formatting, etc.
+
+  tests/libntp/timevalops.c@1.7 +5 -9
+    minor fixes to printf, formatting, etc.
+
+ChangeSet@1.3509.1.1, 2015-07-04 09:34:18+00:00, stenn@psp-at1.ntp.org
+  [Bug 2866] segmentation fault at initgroups().  Harlan Stenn.
+
+  ChangeLog@1.1693 +1 -0
+    [Bug 2866] segmentation fault at initgroups().  Harlan Stenn.
+
+  ntpd/ntpd.c@1.160 +11 -4
+    [Bug 2866] segmentation fault at initgroups().  Harlan Stenn.
+
+ChangeSet@1.3510, 2015-07-04 11:27:04+02:00, viperus@ubuntu.(none)
+  sockaddrtest.h:
+    fully converted some tricky cout to printf (af_inet, sockaddr etc.)
+
+  tests/libntp/sockaddrtest.h@1.4 +3 -7
+    fully converted some tricky cout to printf (af_inet, sockaddr etc.)
+
+ChangeSet@1.3505.1.3, 2015-07-04 09:19:48+00:00, stenn@psp-at1.ntp.org
+  sntp/unity/unity_internals.h: handle *INTPTR_MAX on old Solaris.  Harlan Stenn.
+
+  ChangeLog@1.1690.1.2 +1 -0
+    sntp/unity/unity_internals.h: handle *INTPTR_MAX on old Solaris.  Harlan Stenn.
+
+  sntp/unity/unity_internals.h@1.4 +6 -6
+    sntp/unity/unity_internals.h: handle *INTPTR_MAX on old Solaris.  Harlan Stenn.
+
+ChangeSet@1.3505.1.2, 2015-07-04 09:16:51+00:00, stenn@psp-at1.ntp.org
+  sntp/unity/unity_config.h: handle stdint.h.  Harlan Stenn.
+
+  ChangeLog@1.1690.1.1 +1 -0
+    sntp/unity/unity_config.h: handle stdint.h.  Harlan Stenn.
+
+  sntp/unity/unity_config.h@1.2 +4 -0
+    sntp/unity/unity_config.h: handle stdint.h.  Harlan Stenn.
+
+ChangeSet@1.3508, 2015-07-04 09:11:47+00:00, stenn@psp-at1.ntp.org
+  tests/{libntp,ntpd} function parameter cleanup from Damir
+
+  ChangeLog@1.1691 +2 -0
+    tests/{libntp,ntpd} function parameter cleanup from Damir
+
+ChangeSet@1.3505.1.1, 2015-07-04 08:56:15+00:00, stenn@psp-at1.ntp.org
+  Update sntp/tests/run-crypto.c
+
+  sntp/tests/run-crypto.c@1.2 +6 -6
+    Update sntp/tests/run-crypto.c
+
+ChangeSet@1.3504.1.2, 2015-07-04 10:38:08+02:00, viperus@ubuntu.(none)
+  minor fixes, adding void, cleanup...
+
+  tests/libntp/a_md5encrypt.c@1.7.1.1 +5 -5
+
+  tests/libntp/atouint.c@1.4 +5 -5
+
+  tests/libntp/authkeys.c@1.6.1.1 +6 -6
+
+  tests/libntp/buftvtots.c@1.1.1.1 +4 -4
+
+  tests/libntp/calendar.c@1.2.1.1 +27 -32
+
+  tests/libntp/caljulian.c@1.6.1.1 +6 -8
+
+  tests/libntp/calyearstart.c@1.3 +6 -6
+
+  tests/libntp/clocktime.c@1.3.1.1 +10 -10
+
+  tests/libntp/lfpfunc.c@1.8 +9 -10
+
+  tests/libntp/lfptest.h@1.4 +2 -0
+
+  tests/libntp/msyslog.c@1.4 +0 -1
+
+  tests/libntp/refnumtoa.c@1.3 +2 -2
+
+  tests/libntp/run-a_md5encrypt.c@1.9.1.1 +5 -5
+
+  tests/libntp/run-atouint.c@1.7 +6 -5
+
+  tests/libntp/run-authkeys.c@1.7.1.1 +7 -6
+
+  tests/libntp/run-buftvtots.c@1.1.1.1 +5 -4
+
+  tests/libntp/run-calendar.c@1.3.1.1 +23 -22
+
+  tests/libntp/run-caljulian.c@1.8.1.1 +8 -8
+
+  tests/libntp/run-calyearstart.c@1.4 +4 -3
+
+  tests/libntp/run-clocktime.c@1.4.1.1 +9 -8
+
+  tests/libntp/run-lfpfunc.c@1.11 +17 -17
+
+  tests/libntp/run-msyslog.c@1.4 +8 -8
+
+  tests/libntp/run-refidsmear.c@1.3 +1 -1
+
+  tests/libntp/run-refnumtoa.c@1.4 +3 -2
+
+  tests/libntp/run-ssl_init.c@1.5 +6 -5
+
+  tests/libntp/run-timespecops.c@1.4 +29 -28
+
+  tests/libntp/run-timevalops.c@1.6 +29 -28
+
+  tests/libntp/run-vi64ops.c@1.4 +6 -6
+
+  tests/libntp/ssl_init.c@1.6 +5 -5
+
+  tests/libntp/timespecops.c@1.3 +28 -28
+
+  tests/libntp/timevalops.c@1.6 +37 -37
+
+  tests/libntp/vi64ops.c@1.3 +10 -11
+
+ChangeSet@1.3504.1.1, 2015-07-04 10:08:41+02:00, viperus@ubuntu.(none)
+  minor warning fixes, adding voids etc.
+
+  tests/ntpd/leapsec.c@1.3 +40 -45
+
+  tests/ntpd/run-leapsec.c@1.3 +66 -66
+
+ChangeSet@1.3505, 2015-07-04 08:08:23+00:00, stenn@psp-at1.ntp.org
+  sntp/tests/ function parameter list cleanup.  Damir Tomi\xc4\x87.
+
+  ChangeLog@1.1690 +1 -0
+    sntp/tests/ function parameter list cleanup.  Damir Tomi\xc4\x87.
+
+ChangeSet@1.3504, 2015-07-04 09:49:26+02:00, viperus@ubuntu.(none)
+  minor warning fixes like adding void etc.
+
+  sntp/tests/crypto.c@1.6 +1 -0
+
+  sntp/tests/keyFile.c@1.4 +5 -5
+
+  sntp/tests/kodDatabase.c@1.3 +5 -5
+
+  sntp/tests/kodFile.c@1.6 +8 -8
+
+  sntp/tests/packetProcessing.c@1.5 +2 -2
+
+  sntp/tests/run-keyFile.c@1.5 +6 -5
+
+  sntp/tests/run-kodDatabase.c@1.2 +6 -5
+
+  sntp/tests/run-kodFile.c@1.3 +7 -6
+
+  sntp/tests/run-utilities.c@1.2 +14 -14
+
+  sntp/tests/sntptest.h@1.4 +6 -3
+
+  sntp/tests/utilities.c@1.2 +7 -9
+
+ChangeSet@1.3503, 2015-07-04 07:25:15+00:00, stenn@psp-at1.ntp.org
+  top_srcdir can change based on ntp v. sntp.  Harlan Stenn.
+
+  ChangeLog@1.1689 +1 -0
+    top_srcdir can change based on ntp v. sntp.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.58 +1 -1
+    top_srcdir can change based on ntp v. sntp.  Harlan Stenn.
+
+ChangeSet@1.3502, 2015-07-04 00:44:41-04:00, stenn@deacon.udel.edu
+  On some versions of HP-UX, inttypes.h does not include stdint.h.  H.Stenn.
+
+  ChangeLog@1.1688 +1 -0
+    On some versions of HP-UX, inttypes.h does not include stdint.h.  H.Stenn.
+
+  include/ntp_types.h@1.35 +2 -1
+    On some versions of HP-UX, inttypes.h does not include stdint.h.  H.Stenn.
+
+ChangeSet@1.3501, 2015-07-04 03:49:10+00:00, stenn@psp-at1.ntp.org
+  Phase 1 deprecation of google test in sntp/tests/.  Harlan Stenn.
+
+  ChangeLog@1.1687 +1 -0
+    Phase 1 deprecation of google test in sntp/tests/.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.57 +20 -97
+    Phase 1 deprecation of google test in sntp/tests/.  Harlan Stenn.
+
+ChangeSet@1.3500, 2015-07-03 20:30:06+00:00, stenn@psp-fb1.ntp.org
+  tests/ntpd/g_leapsec.cpp typo fix.  Harlan Stenn.
+
+  ChangeLog@1.1686 +1 -0
+    tests/ntpd/g_leapsec.cpp typo fix.  Harlan Stenn.
+
+  tests/ntpd/g_leapsec.cpp@1.16 +1 -1
+    tests/ntpd/g_leapsec.cpp typo fix.  Harlan Stenn.
+
+ChangeSet@1.3498, 2015-07-03 19:27:53+00:00, stenn@psp-at1.ntp.org
+  Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  ChangeLog@1.1685 +1 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  sntp/tests/Makefile.am@1.56 +4 -2
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  sntp/unity/Makefile.am@1.6 +1 -1
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  sntp/unity/unity_config.h@1.1 +8 -0
+    BitKeeper file /a/etc/amd.stage/thump2-g3/export/ntp/home/stenn/ntp-stable-unity/sntp/unity/unity_config.h
+
+  sntp/unity/unity_config.h@1.0 +0 -0
+
+  tests/bug-2803/Makefile.am@1.13 +2 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  tests/libntp/Makefile.am@1.83.1.1 +2 -4
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  tests/ntpd/Makefile.am@1.1.1.1 +2 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  tests/sandbox/Makefile.am@1.5 +2 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  tests/sandbox/smeartest.c@1.3.1.3 +12 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+  tests/sec-2853/Makefile.am@1.3 +2 -0
+    Put Unity CPPFLAGS items in unity_config.h.  Harlan Stenn.
+
+ChangeSet@1.3497, 2015-07-03 09:30:02+00:00, stenn@psp-at1.ntp.org
+  libntp/emalloc.c: Remove explicit include of stdint.h.  Harlan Stenn.
+
+  ChangeLog@1.1684 +1 -0
+    libntp/emalloc.c: Remove explicit include of stdint.h.  Harlan Stenn.
+
+  libntp/emalloc.c@1.19 +0 -2
+    libntp/emalloc.c: Remove explicit include of stdint.h.  Harlan Stenn.
+
+ChangeSet@1.3492.1.3, 2015-07-02 09:34:06+00:00, stenn@psp-at1.ntp.org
+  Fix ChangeLog
+
+  ChangeLog@1.1680.1.2 +3 -1
+    Fix ChangeLog
+
+ChangeSet@1.3495, 2015-07-02 09:32:14+00:00, stenn@psp-at1.ntp.org
+  Fix ChangeLog
+
+  ChangeLog@1.1682 +3 -1
+    Fix ChangeLog
+
+ChangeSet@1.3473.1.23, 2015-07-01 10:06:49+02:00, viperus@ubuntu.(none)
+  leapsec.c:
+    added include to fix everything, yey!
+  Makefile.am:
+    changed the order of libntp.a and libntpd.a, stuff builds now
+
+  tests/ntpd/Makefile.am@1.3 +11 -9
+    changed the order of libntp.a and libntpd.a, stuff builds now
+
+  tests/ntpd/leapsec.c@1.2 +8 -4
+    added include to fix everything, yey!
+
+  tests/ntpd/run-leapsec.c@1.2 +33 -33
+
+ChangeSet@1.3473.1.22, 2015-07-01 09:31:35+02:00, viperus@ubuntu.(none)
+  g_leapsec.cpp:
+    Rename: tests/ntpd/leapsec.cpp -> tests/ntpd/g_leapsec.cpp
+  run-leapsec.c, leapsec.c:
+    new file
+  Makefile.am:
+    added /tests/ntpd/ dir
+    unity tests
+    removed a comment line
+  g_ntpdtest.h:
+    Rename: tests/ntpd/ntpdtest.h -> tests/ntpd/g_ntpdtest.h
+  Makefile.am:
+    added support for unity tests
+  test-libntp.h:
+    added new headers
+  g_ntpdtest.cpp:
+    minor change in the header name
+    Rename: tests/ntpd/ntpdtest.cpp -> tests/ntpd/g_ntpdtest.cpp
+
+  tests/Makefile.am@1.9.1.1 +6 -5
+    added /tests/ntpd/ dir
+    unity tests
+
+  tests/libntp/Makefile.am@1.84 +0 -1
+    removed a comment line
+
+  tests/libntp/test-libntp.h@1.7 +5 -0
+    added new headers
+
+  tests/ntpd/Makefile.am@1.2 +62 -6
+    added support for unity tests
+
+  tests/ntpd/g_leapsec.cpp@1.15 +0 -0
+    Rename: tests/ntpd/leapsec.cpp -> tests/ntpd/g_leapsec.cpp
+
+  tests/ntpd/g_ntpdtest.cpp@1.3 +1 -1
+    minor change in the header name
+
+  tests/ntpd/g_ntpdtest.cpp@1.2 +0 -0
+    Rename: tests/ntpd/ntpdtest.cpp -> tests/ntpd/g_ntpdtest.cpp
+
+  tests/ntpd/g_ntpdtest.h@1.2 +0 -0
+    Rename: tests/ntpd/ntpdtest.h -> tests/ntpd/g_ntpdtest.h
+
+  tests/ntpd/leapsec.c@1.1 +1230 -0
+    BitKeeper file /home/viperus/Desktop/ntp-stable-unity/tests/ntpd/leapsec.c
+
+  tests/ntpd/leapsec.c@1.0 +0 -0
+
+  tests/ntpd/run-leapsec.c@1.1 +116 -0
+    BitKeeper file /home/viperus/Desktop/ntp-stable-unity/tests/ntpd/run-leapsec.c
+
+  tests/ntpd/run-leapsec.c@1.0 +0 -0
+
+ChangeSet@1.3492.2.1, 2015-07-01 03:11:28-04:00, stenn@deacon.udel.edu
+  Update the repo's description and contact email
+
+  BitKeeper/etc/config@1.11 +2 -2
+    Update the repo's description and contact email
+
+ChangeSet@1.3492.1.1, 2015-07-01 08:53:24+02:00, jnperlin@hydra.(none)
+  [Bug 2867] ntpd with autokey active crashed by 'ntpq -crv'
+
+  ChangeLog@1.1680.1.1 +1 -0
+    [Bug 2867] ntpd with autokey active crashed by 'ntpq -crv'
+    
+
+  ntpd/ntp_control.c@1.201 +5 -2
+    [Bug 2867] ntpd with autokey active crashed by 'ntpq -crv'
+      make sure 'ctl_var' table matches indices (CS_LEAPSMEAR* is unconditionally defined and affects AUTOKEY vars)
+
+ChangeSet@1.3493, 2015-07-01 08:40:44+02:00, jnperlin@nemesis.localnet
+  [Bug 2864] 4.2.8p3 fails to compile on Windows.
+    fixed project files. (tested with VS2008 and VS2013)
+
+  ChangeLog@1.1681 +1 -0
+    [Bug 2864] 4.2.8p3 fails to compile on Windows.
+      fix project files. (tested with VS2008 and VS2013)
+
+  ports/winnt/vs2005/ntpd.vcproj@1.20 +22 -0
+    [Bug 2864] 4.2.8p3 fails to compile on Windows.
+      fixed project files. (UNTESTED!)
+
+  ports/winnt/vs2008/ntpd/ntpd.vcproj@1.49 +4 -0
+    [Bug 2864] 4.2.8p3 fails to compile on Windows.
+      fixed project files. (tested)
+
+  ports/winnt/vs2013/ntpd/ntpd.vcxproj@1.7 +1 -0
+    [Bug 2864] 4.2.8p3 fails to compile on Windows.
+      fixed project files. (tested)
+
+  ports/winnt/vs2013/ntpd/ntpd.vcxproj.filters@1.5 +3 -0
+    [Bug 2864] 4.2.8p3 fails to compile on Windows.
+      fixed project files. (tested)
+
+ChangeSet@1.3492, 2015-06-29 16:52:34-04:00, stenn@deacon.udel.edu
+  Makefile.in should not be checked in
+
+  BitKeeper/deleted/bd/Makefile.in~a06c74c485656b20@1.3 +0 -0
+    Delete: tests/sec-2853/Makefile.in
+
 ChangeSet@1.3491, 2015-06-29 16:34:44-04:00, stenn@deacon.udel.edu
   NTP_4_2_8P3
   TAG: NTP_4_2_8P3
@@ -344,7 +5257,16 @@ ChangeSet@1.3489, 2015-06-29 19:33:22+00:00, stenn@psp-at1.ntp.org
   NEWS@1.144 +18 -3
     NEWS file update for bug 2853
 
-ChangeSet@1.3473.1.40, 2015-06-29 06:00:52+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.1.21, 2015-06-29 20:33:15+02:00, viperus@ubuntu.(none)
+  a_md5encrypt.c:
+    minor change to memory compare, suggested by Tomasz
+
+  tests/libntp/a_md5encrypt.c@1.7 +2 -1
+    minor change to memory compare, suggested by Tomasz
+
+  tests/libntp/run-a_md5encrypt.c@1.9 +5 -4
+
+ChangeSet@1.3473.3.23, 2015-06-29 06:00:52+00:00, stenn@psp-at1.ntp.org
   html/miscopt.html: Document leapsmearinterval, other cleanup.  Harlan Stenn.
 
   ChangeLog@1.1666.1.19 +1 -0
@@ -353,7 +5275,7 @@ ChangeSet@1.3473.1.40, 2015-06-29 06:00:52+00:00, stenn@psp-at1.ntp.org
   html/miscopt.html@1.82 +18 -15
     html/miscopt.html: Document leapsmearinterval, other cleanup.  Harlan Stenn.
 
-ChangeSet@1.3473.1.39, 2015-06-29 05:28:47+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.22, 2015-06-29 05:28:47+00:00, stenn@psp-at1.ntp.org
   ntpd/ntp.conf.def: Document DSCP and leapsmearinterval.  Harlan Stenn.
 
   ChangeLog@1.1666.1.18 +1 -0
@@ -383,14 +5305,14 @@ ChangeSet@1.3486, 2015-06-29 03:39:39+00:00, stenn@psp-at1.ntp.org
   ChangeLog@1.1677 +2 -1
     Updated entry for Sec 2853
 
-ChangeSet@1.3473.3.2, 2015-06-29 04:57:16+02:00, tomek@tomek-n56vz.(none)
+ChangeSet@1.3473.4.2, 2015-06-29 04:57:16+02:00, tomek@tomek-n56vz.(none)
   ChangeLog:
     moved a change to the proper place
 
   ChangeLog@1.1666.2.2 +1 -1
     moved a change to the proper place
 
-ChangeSet@1.3473.3.1, 2015-06-29 04:50:55+02:00, tomek@tomek-n56vz.(none)
+ChangeSet@1.3473.4.1, 2015-06-29 04:50:55+02:00, tomek@tomek-n56vz.(none)
   ChangeLog:
     updated my changes
   msyslog.c:
@@ -407,7 +5329,7 @@ ChangeSet@1.3473.3.1, 2015-06-29 04:50:55+02:00, tomek@tomek-n56vz.(none)
   tests/libntp/run-msyslog.c@1.3 +1 -0
     checking in the autogenerated file
 
-ChangeSet@1.3473.1.37, 2015-06-29 01:16:44+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.20, 2015-06-29 01:16:44+00:00, stenn@psp-at1.ntp.org
   [Bug 2860] ntpq ifstats sanity check is too stringent.  Frank Kardel.
 
   ChangeLog@1.1666.1.16 +1 -0
@@ -419,13 +5341,13 @@ ChangeSet@1.3473.1.37, 2015-06-29 01:16:44+00:00, stenn@psp-at1.ntp.org
   ntpq/ntpq-subs.c@1.109 +1 -1
     [Bug 2860] ntpq ifstats sanity check is too stringent.  Frank Kardel.
 
-ChangeSet@1.3473.1.36, 2015-06-29 01:13:38+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.19, 2015-06-29 01:13:38+00:00, stenn@psp-at1.ntp.org
   Update the NEWS file with info about README.leapsmear
 
   NEWS@1.142 +2 -1
     Update the NEWS file with info about README.leapsmear
 
-ChangeSet@1.3473.1.35, 2015-06-29 00:10:53+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.18, 2015-06-29 00:10:53+00:00, stenn@psp-at1.ntp.org
   README.leapsmear edited.  Harlan Stenn.
 
   ChangeLog@1.1666.1.15 +1 -0
@@ -434,7 +5356,7 @@ ChangeSet@1.3473.1.35, 2015-06-29 00:10:53+00:00, stenn@psp-at1.ntp.org
   README.leapsmear@1.2 +240 -75
     README.leapsmear edited.  Harlan Stenn.
 
-ChangeSet@1.3473.1.34, 2015-06-28 21:20:27+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.17, 2015-06-28 21:20:27+00:00, stenn@psp-at1.ntp.org
   README.leapsmear added.  Martin Burnicki.
 
   ChangeLog@1.1666.1.14 +1 -0
@@ -448,19 +5370,19 @@ ChangeSet@1.3473.1.34, 2015-06-28 21:20:27+00:00, stenn@psp-at1.ntp.org
 
   README.leapsmear@1.0 +0 -0
 
-ChangeSet@1.3473.1.33, 2015-06-27 23:05:51-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.16, 2015-06-27 23:05:51-04:00, stenn@deacon.udel.edu
   [Bug 2846] Report 'unsynchronized' status during the leap second.  Fixed in Martin's changes to Bug 2855.  Martin Burnicki.
 
   ChangeLog@1.1666.1.13 +2 -0
     [Bug 2846] Report 'unsynchronized' status during the leap second.  Fixed in Martin's changes to Bug 2855.  Martin Burnicki.
 
-ChangeSet@1.3473.1.32, 2015-06-27 21:34:55+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.15, 2015-06-27 21:34:55+00:00, stenn@psp-at1.ntp.org
   NEWS file update
 
   NEWS@1.141 +12 -0
     NEWS file update
 
-ChangeSet@1.3473.1.31, 2015-06-27 19:25:39+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.14, 2015-06-27 19:25:39+00:00, stenn@psp-at1.ntp.org
   [Bug 2859] Improve raw DCF77 robustness deconding.  Frank Kardel.
 
   ChangeLog@1.1666.1.12 +4 -0
@@ -487,7 +5409,7 @@ ChangeSet@1.3473.1.31, 2015-06-27 19:25:39+00:00, stenn@psp-at1.ntp.org
   parseutil/testdcf.c@1.11 +1 -1
     [Bug 2859] Improve raw DCF77 robustness deconding.  Frank Kardel.
 
-ChangeSet@1.3473.1.30, 2015-06-27 05:21:56-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.13, 2015-06-27 05:21:56-04:00, stenn@deacon.udel.edu
   NTP_4_2_8P3_RC3
   TAG: NTP_4_2_8P3_RC3
 
@@ -821,13 +5743,13 @@ ChangeSet@1.3473.1.30, 2015-06-27 05:21:56-04:00, stenn@deacon.udel.edu
   util/ntp-keygen.mdoc.in@1.326 +2 -2
     NTP_4_2_8P3_RC3
 
-ChangeSet@1.3473.1.29, 2015-06-27 04:45:02-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.12, 2015-06-27 04:45:02-04:00, stenn@deacon.udel.edu
   Update the NEWS file for 4.2.8p3-RC3
 
   NEWS@1.140 +26 -0
     Update the NEWS file for 4.2.8p3-RC3
 
-ChangeSet@1.3473.1.28, 2015-06-27 04:20:07-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.11, 2015-06-27 04:20:07-04:00, stenn@deacon.udel.edu
   html/drivers/driver22.html: typo fix.  Harlan Stenn.
 
   ChangeLog@1.1666.1.10 +1 -0
@@ -836,7 +5758,7 @@ ChangeSet@1.3473.1.28, 2015-06-27 04:20:07-04:00, stenn@deacon.udel.edu
   html/drivers/driver22.html@1.23 +1 -1
     html/drivers/driver22.html: typo fix.  Harlan Stenn.
 
-ChangeSet@1.3473.1.27, 2015-06-27 02:22:09-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.10, 2015-06-27 02:22:09-04:00, stenn@deacon.udel.edu
   [Bug 2857] Stratus VOS does not support SIGIO.  Paul Green.
 
   ChangeLog@1.1666.1.9 +1 -0
@@ -848,7 +5770,7 @@ ChangeSet@1.3473.1.27, 2015-06-27 02:22:09-04:00, stenn@deacon.udel.edu
   sntp/m4/ntp_libntp.m4@1.30 +9 -0
     [Bug 2857] Stratus VOS does not support SIGIO.  Paul Green.
 
-ChangeSet@1.3473.1.26, 2015-06-27 01:58:07-04:00, stenn@deacon.udel.edu
+ChangeSet@1.3473.3.9, 2015-06-27 01:58:07-04:00, stenn@deacon.udel.edu
   [Bug 2856] ntpd should wait() on terminated child processes.  Paul Green.
 
   ChangeLog@1.1666.1.8 +1 -0
@@ -857,7 +5779,7 @@ ChangeSet@1.3473.1.26, 2015-06-27 01:58:07-04:00, stenn@deacon.udel.edu
   libntp/work_fork.c@1.14 +23 -4
     [Bug 2856] ntpd should wait() on terminated child processes.  Paul Green.
 
-ChangeSet@1.3473.1.25, 2015-06-27 05:12:21+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.8, 2015-06-27 05:12:21+00:00, stenn@psp-at1.ntp.org
   [Bug 2855] Report leap smear in the REFID.  Harlan Stenn.
 
   ChangeLog@1.1666.1.7 +1 -0
@@ -866,7 +5788,7 @@ ChangeSet@1.3473.1.25, 2015-06-27 05:12:21+00:00, stenn@psp-at1.ntp.org
   ntpd/ntp_proto.c@1.361 +8 -2
     [Bug 2855] Report leap smear in the REFID.  Harlan Stenn.
 
-ChangeSet@1.3473.1.24, 2015-06-27 04:53:42+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.7, 2015-06-27 04:53:42+00:00, stenn@psp-at1.ntp.org
   refidsmear test cleanup.  Tomasz Flendrich.
 
   ChangeLog@1.1666.1.6 +1 -0
@@ -875,14 +5797,14 @@ ChangeSet@1.3473.1.24, 2015-06-27 04:53:42+00:00, stenn@psp-at1.ntp.org
   tests/libntp/refidsmear.c@1.4 +4 -5
     refidsmear test cleanup.  Tomasz Flendrich.
 
-ChangeSet@1.3473.1.23, 2015-06-27 06:44:17+02:00, tomek@tomek-n56vz.(none)
+ChangeSet@1.3473.3.6, 2015-06-27 06:44:17+02:00, tomek@tomek-n56vz.(none)
   refidsmear.c:
     moved assertions to proper places
 
   tests/libntp/refidsmear.c@1.3 +4 -2
     moved assertions to proper places
 
-ChangeSet@1.3473.1.22, 2015-06-27 04:46:21+02:00, tomek@tomek-n56vz.(none)
+ChangeSet@1.3473.3.5, 2015-06-27 04:46:21+02:00, tomek@tomek-n56vz.(none)
   run-refidsmear.c:
     updated autogenerated file
   refidsmear.c:
@@ -894,7 +5816,7 @@ ChangeSet@1.3473.1.22, 2015-06-27 04:46:21+02:00, tomek@tomek-n56vz.(none)
   tests/libntp/run-refidsmear.c@1.2 +1 -1
     updated autogenerated file
 
-ChangeSet@1.3473.1.21, 2015-06-27 01:16:47+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.4, 2015-06-27 01:16:47+00:00, stenn@psp-at1.ntp.org
   refidsmear function support and tests.  Harlan Stenn.
 
   ChangeLog@1.1666.1.5 +1 -0
@@ -929,23 +5851,30 @@ ChangeSet@1.3473.1.21, 2015-06-27 01:16:47+00:00, stenn@psp-at1.ntp.org
 
   tests/libntp/run-refidsmear.c@1.0 +0 -0
 
-ChangeSet@1.3473.1.20, 2015-06-26 22:45:16+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.3, 2015-06-26 22:45:16+00:00, stenn@psp-at1.ntp.org
   tests/sandbox/smeartest.c: Harlan Stenn, Damir Tomic, Juergen Perlinger.
 
   ChangeLog@1.1666.1.4 +1 -0
     tests/sandbox/smeartest.c: Harlan Stenn, Damir Tomic, Juergen Perlinger.
 
-ChangeSet@1.3473.1.19, 2015-06-26 20:10:51+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.2, 2015-06-26 20:10:51+00:00, stenn@psp-at1.ntp.org
   smeartest.c fixes from Harlan
 
-  tests/sandbox/smeartest.c@1.5 +52 -1
+  tests/sandbox/smeartest.c@1.3.1.2 +52 -1
     smeartest.c fixes from Harlan
 
-ChangeSet@1.3473.1.18, 2015-06-26 18:43:39+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3473.3.1, 2015-06-26 18:43:39+00:00, stenn@psp-at1.ntp.org
   smeartest.c fixes from Juergen, Damir, and Harlan
 
-  tests/sandbox/smeartest.c@1.4 +26 -17
+  tests/sandbox/smeartest.c@1.3.1.1 +26 -17
     smeartest.c fixes from Juergen, Damir, and Harlan
+
+ChangeSet@1.3473.1.18, 2015-06-26 15:17:10+02:00, viperus@ubuntu.(none)
+  smeartest.c:
+    maybed fixed both funtions, needs checking!!!
+
+  tests/sandbox/smeartest.c@1.4 +69 -26
+    maybed fixed both funtions, needs checking!!!
 
 ChangeSet@1.3473.1.17, 2015-06-26 11:24:43+00:00, stenn@psp-at1.ntp.org
   smeartest.c - Harlan Stenn
