@@ -1,8 +1,633 @@
-ChangeSet@1.3623, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
+ChangeSet@1.3628, 2016-01-20 04:20:12-05:00, stenn@deacon.udel.edu
+  NTP_4_2_8P6
+  TAG: NTP_4_2_8P6
+
+  ChangeLog@1.1793 +1 -0
+    NTP_4_2_8P6
+
+  ntpd/invoke-ntp.conf.texi@1.196 +1 -1
+    NTP_4_2_8P6
+
+  ntpd/invoke-ntp.keys.texi@1.188 +1 -1
+    NTP_4_2_8P6
+
+  ntpd/invoke-ntpd.texi@1.504 +2 -2
+    NTP_4_2_8P6
+
+  ntpd/ntp.conf.5man@1.230 +3 -3
+    NTP_4_2_8P6
+
+  ntpd/ntp.conf.5mdoc@1.230 +2 -3
+    NTP_4_2_8P6
+
+  ntpd/ntp.conf.html@1.183 +60 -2
+    NTP_4_2_8P6
+
+  ntpd/ntp.conf.man.in@1.230 +3 -3
+    NTP_4_2_8P6
+
+  ntpd/ntp.conf.mdoc.in@1.230 +2 -3
+    NTP_4_2_8P6
+
+  ntpd/ntp.keys.5man@1.222 +2 -2
+    NTP_4_2_8P6
+
+  ntpd/ntp.keys.5mdoc@1.222 +3 -3
+    NTP_4_2_8P6
+
+  ntpd/ntp.keys.html@1.184 +21 -33
+    NTP_4_2_8P6
+
+  ntpd/ntp.keys.man.in@1.222 +2 -2
+    NTP_4_2_8P6
+
+  ntpd/ntp.keys.mdoc.in@1.222 +3 -3
+    NTP_4_2_8P6
+
+  ntpd/ntpd-opts.c@1.526 +10 -10
+    NTP_4_2_8P6
+
+  ntpd/ntpd-opts.h@1.525 +4 -4
+    NTP_4_2_8P6
+
+  ntpd/ntpd.1ntpdman@1.333 +4 -4
+    NTP_4_2_8P6
+
+  ntpd/ntpd.1ntpdmdoc@1.333 +3 -3
+    NTP_4_2_8P6
+
+  ntpd/ntpd.html@1.177 +2 -2
+    NTP_4_2_8P6
+
+  ntpd/ntpd.man.in@1.333 +4 -4
+    NTP_4_2_8P6
+
+  ntpd/ntpd.mdoc.in@1.333 +3 -3
+    NTP_4_2_8P6
+
+  ntpdc/invoke-ntpdc.texi@1.501 +2 -2
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc-opts.c@1.519 +10 -10
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc-opts.h@1.518 +4 -4
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc.1ntpdcman@1.332 +4 -4
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.332 +3 -3
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc.html@1.345 +2 -2
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc.man.in@1.332 +4 -4
+    NTP_4_2_8P6
+
+  ntpdc/ntpdc.mdoc.in@1.332 +3 -3
+    NTP_4_2_8P6
+
+  ntpq/invoke-ntpq.texi@1.508 +2 -2
+    NTP_4_2_8P6
+
+  ntpq/ntpq-opts.c@1.525 +10 -10
+    NTP_4_2_8P6
+
+  ntpq/ntpq-opts.h@1.523 +4 -4
+    NTP_4_2_8P6
+
+  ntpq/ntpq.1ntpqman@1.336 +4 -4
+    NTP_4_2_8P6
+
+  ntpq/ntpq.1ntpqmdoc@1.336 +3 -3
+    NTP_4_2_8P6
+
+  ntpq/ntpq.html@1.174 +2 -2
+    NTP_4_2_8P6
+
+  ntpq/ntpq.man.in@1.336 +4 -4
+    NTP_4_2_8P6
+
+  ntpq/ntpq.mdoc.in@1.336 +3 -3
+    NTP_4_2_8P6
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.503 +2 -2
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.521 +10 -10
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.520 +4 -4
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.332 +4 -4
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.332 +3 -3
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd.html@1.172 +1 -1
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd.man.in@1.332 +4 -4
+    NTP_4_2_8P6
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.332 +3 -3
+    NTP_4_2_8P6
+
+  packageinfo.sh@1.524 +2 -2
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.93 +3 -3
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.94 +2 -2
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/calc_tickadj.html@1.95 +1 -1
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.92 +3 -3
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.94 +2 -2
+    NTP_4_2_8P6
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.97 +1 -1
+    NTP_4_2_8P6
+
+  scripts/invoke-plot_summary.texi@1.114 +2 -2
+    NTP_4_2_8P6
+
+  scripts/invoke-summary.texi@1.114 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.324 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait-opts@1.60 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.321 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.322 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait.html@1.341 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait.man.in@1.321 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.322 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.112 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep-opts@1.62 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.100 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.100 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep.html@1.113 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep.man.in@1.100 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.101 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.113 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace-opts@1.62 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.100 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.101 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace.html@1.114 +2 -2
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace.man.in@1.100 +3 -3
+    NTP_4_2_8P6
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.102 +2 -2
+    NTP_4_2_8P6
+
+  scripts/plot_summary-opts@1.62 +2 -2
+    NTP_4_2_8P6
+
+  scripts/plot_summary.1plot_summaryman@1.112 +3 -3
+    NTP_4_2_8P6
+
+  scripts/plot_summary.1plot_summarymdoc@1.112 +2 -2
+    NTP_4_2_8P6
+
+  scripts/plot_summary.html@1.115 +2 -2
+    NTP_4_2_8P6
+
+  scripts/plot_summary.man.in@1.112 +3 -3
+    NTP_4_2_8P6
+
+  scripts/plot_summary.mdoc.in@1.112 +2 -2
+    NTP_4_2_8P6
+
+  scripts/summary-opts@1.62 +2 -2
+    NTP_4_2_8P6
+
+  scripts/summary.1summaryman@1.112 +3 -3
+    NTP_4_2_8P6
+
+  scripts/summary.1summarymdoc@1.112 +2 -2
+    NTP_4_2_8P6
+
+  scripts/summary.html@1.115 +2 -2
+    NTP_4_2_8P6
+
+  scripts/summary.man.in@1.112 +3 -3
+    NTP_4_2_8P6
+
+  scripts/summary.mdoc.in@1.112 +2 -2
+    NTP_4_2_8P6
+
+  scripts/update-leap/invoke-update-leap.texi@1.13 +1 -1
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap-opts@1.13 +2 -2
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap.1update-leapman@1.13 +3 -3
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.13 +2 -2
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap.html@1.13 +1 -1
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap.man.in@1.13 +3 -3
+    NTP_4_2_8P6
+
+  scripts/update-leap/update-leap.mdoc.in@1.13 +2 -2
+    NTP_4_2_8P6
+
+  sntp/invoke-sntp.texi@1.501 +2 -2
+    NTP_4_2_8P6
+
+  sntp/sntp-opts.c@1.520 +10 -10
+    NTP_4_2_8P6
+
+  sntp/sntp-opts.h@1.518 +4 -4
+    NTP_4_2_8P6
+
+  sntp/sntp.1sntpman@1.336 +4 -4
+    NTP_4_2_8P6
+
+  sntp/sntp.1sntpmdoc@1.336 +3 -3
+    NTP_4_2_8P6
+
+  sntp/sntp.html@1.516 +2 -2
+    NTP_4_2_8P6
+
+  sntp/sntp.man.in@1.336 +4 -4
+    NTP_4_2_8P6
+
+  sntp/sntp.mdoc.in@1.336 +3 -3
+    NTP_4_2_8P6
+
+  util/invoke-ntp-keygen.texi@1.504 +2 -2
+    NTP_4_2_8P6
+
+  util/ntp-keygen-opts.c@1.522 +10 -10
+    NTP_4_2_8P6
+
+  util/ntp-keygen-opts.h@1.520 +4 -4
+    NTP_4_2_8P6
+
+  util/ntp-keygen.1ntp-keygenman@1.332 +4 -4
+    NTP_4_2_8P6
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.332 +3 -3
+    NTP_4_2_8P6
+
+  util/ntp-keygen.html@1.178 +2 -2
+    NTP_4_2_8P6
+
+  util/ntp-keygen.man.in@1.332 +4 -4
+    NTP_4_2_8P6
+
+  util/ntp-keygen.mdoc.in@1.332 +3 -3
+    NTP_4_2_8P6
+
+ChangeSet@1.3627, 2016-01-20 04:14:51-05:00, stenn@deacon.udel.edu
+  solaris hack
+
+  libntp/work_thread.c@1.20 +2 -0
+    solaris hack
+
+ChangeSet@1.3626, 2016-01-20 01:50:09-05:00, stenn@deacon.udel.edu
+  4.2.8p6
+
+  packageinfo.sh@1.523 +1 -1
+    4.2.8p6
+
+ChangeSet@1.3625, 2016-01-20 00:34:15+00:00, stenn@psp-deb1.ntp.org
+  updates
+
+  NEWS@1.160 +24 -24
+    updates
+
+ChangeSet@1.3624, 2016-01-19 22:28:41+00:00, stenn@psp-deb1.ntp.org
+  typo
+
+  NEWS@1.159 +1 -1
+    typo
+
+ChangeSet@1.3623, 2016-01-18 11:55:56+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ChangeLog@1.1792 +1 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  NEWS@1.158 +40 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  include/Makefile.am@1.54 +1 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  include/ntp_io.h@1.23 +2 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  include/ntp_keyacc.h@1.1 +13 -0
+    BitKeeper file /home/stenn/ntp-stable-2936/include/ntp_keyacc.h
+
+  include/ntp_keyacc.h@1.0 +0 -0
+
+  include/ntp_stdlib.h@1.81 +4 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  include/ntp_types.h@1.36 +1 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  libntp/Makefile.am@1.77 +1 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  libntp/authkeys.c@1.31 +60 -6
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  libntp/authreadkeys.c@1.25 +50 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  libntp/authusekey.c@1.11 +1 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  libntp/is_ip_address.c@1.1 +129 -0
+    BitKeeper file /home/stenn/ntp-stable-2936/libntp/is_ip_address.c
+
+  libntp/is_ip_address.c@1.0 +0 -0
+
+  ntpd/invoke-ntp.keys.texi@1.187 +11 -3
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.5man@1.221 +13 -5
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.5mdoc@1.221 +14 -6
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.def@1.11 +10 -2
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.html@1.183 +42 -22
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.man.in@1.221 +13 -5
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp.keys.mdoc.in@1.221 +14 -6
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp_crypto.c@1.186 +1 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp_io.c@1.412 +0 -72
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  ntpd/ntp_proto.c@1.373 +34 -0
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+  tests/libntp/authkeys.c@1.15 +1 -1
+    [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
+
+ChangeSet@1.3622, 2016-01-17 09:03:57+00:00, stenn@psp-deb1.ntp.org
+  Disable incomplete t-ntp_signd.c test.  Harlan Stenn.
+
+  ChangeLog@1.1791 +1 -0
+    Disable incomplete t-ntp_signd.c test.  Harlan Stenn.
+
+  tests/ntpd/t-ntp_signd.c@1.16 +4 -0
+    Disable incomplete t-ntp_signd.c test.  Harlan Stenn.
+
+ChangeSet@1.3621, 2016-01-17 05:51:14+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS file for 2942
+
+  NEWS@1.157 +22 -0
+    Update NEWS file for 2942
+
+ChangeSet@1.3615.13.1, 2016-01-17 05:07:22+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ChangeLog@1.1786.13.1 +4 -0
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  html/miscopt.html@1.85 +11 -3
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  include/ntp.h@1.213.1.1 +3 -0
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/invoke-ntp.conf.texi@1.195 +64 -3
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/keyword-gen-utd@1.27 +1 -1
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/keyword-gen.c@1.33 +3 -0
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp.conf.5man@1.229 +71 -7
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp.conf.5mdoc@1.229 +71 -7
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp.conf.def@1.21 +67 -4
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp.conf.man.in@1.229 +71 -7
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp.conf.mdoc.in@1.229 +71 -7
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_config.c@1.335.1.1 +12 -0
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_keyword.h@1.29 +505 -468
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_parser.c@1.101 +1762 -1513
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_parser.h@1.65 +257 -235
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_parser.y@1.91 +6 -0
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+  ntpd/ntp_proto.c@1.368.2.1 +40 -4
+    [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
+
+ChangeSet@1.3619, 2016-01-14 12:19:16+00:00, stenn@psp-at1.ntp.org
+  NEWS file updates
+
+  NEWS@1.156 +21 -0
+    NEWS file updates
+
+ChangeSet@1.3615.1.9, 2016-01-14 11:33:43+00:00, stenn@psp-at1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1786.1.9 +3 -0
+    merge cleanup
+
+ChangeSet@1.3615.1.5, 2016-01-14 10:44:13+00:00, stenn@psp-at1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1786.1.5 +0 -1
+    merge cleanup
+
+ChangeSet@1.3615.12.4, 2016-01-14 10:27:23+00:00, stenn@psp-at1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1786.12.4 +1 -1
+    merge cleanup
+
+ChangeSet@1.3615.12.2, 2016-01-14 09:49:52+00:00, stenn@psp-at1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1786.12.2 +2 -2
+    merge cleanup
+
+ChangeSet@1.3615.3.17, 2016-01-14 09:33:56+00:00, stenn@psp-at1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1786.3.14 +1 -1
+    merge cleanup
+
+ChangeSet@1.3615.3.14, 2016-01-14 07:36:57+00:00, stenn@psp-at1.ntp.org
+  NEWS update
+
+  NEWS@1.155 +98 -7
+    NEWS update
+
+ChangeSet@1.3615.3.12, 2016-01-13 08:07:30+00:00, stenn@psp-deb1.ntp.org
+  typo
+
+  ChangeLog@1.1786.3.10 +1 -1
+    typo
+
+ChangeSet@1.3615.3.10, 2016-01-13 06:08:29+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS file for bug 2938
+
+  NEWS@1.154 +29 -2
+    Update NEWS file for bug 2938
+
+ChangeSet@1.3615.3.8, 2016-01-13 04:23:46+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS file for bug 2935
+
+  NEWS@1.153 +52 -0
+    Update NEWS file for bug 2935
+
+ChangeSet@1.3615.7.12, 2016-01-12 09:53:06+00:00, stenn@psp-at1.ntp.org
+  [Sec 2935] use L_SUB instead of L_ISGT.  Juergen Perlinger
+
+  ntpd/ntp_proto.c@1.368.1.5 +4 -1
+    [Sec 2935] use L_SUB instead of L_ISGT.  Juergen Perlinger
+
+ChangeSet@1.3615.7.11, 2016-01-11 03:02:53-08:00, harlan@max.pfcs.com
+  [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
+
+  ChangeLog@1.1786.9.1 +4 -0
+    [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
+
+  include/ntp.h@1.215 +1 -0
+    [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
+
+  ntpd/ntp_proto.c@1.368.1.4 +67 -0
+    [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
+
+ChangeSet@1.3615.7.10, 2016-01-11 02:44:25-08:00, harlan@max.pfcs.com
+  make leapsec_query messages less verbose.
+
+  ntpd/ntp_timer.c@1.93.1.1 +6 -4
+    make leapsec_query messages less verbose.
+
+ChangeSet@1.3615.9.1, 2016-01-11 10:26:12+01:00, jnperlin@hydra.localnet
+  [Bug 2985] bogus calculation in authkeys.c
+   - implement 'auth_log2()' using integer bithack instead of float calculation
+
+  ChangeLog@1.1786.7.5 +2 -0
+    [Bug 2985] bogus calculation in authkeys.c
+     - implement 'auth_log2()' using integer bithack instead of float calculation
+
+  libntp/authkeys.c@1.30 +33 -10
+    [Bug 2985] bogus calculation in authkeys.c
+     - implement 'auth_log2()' using integer bithack instead of float calculation
+
+  tests/libntp/authkeys.c@1.14 +38 -0
+    [Bug 2985] bogus calculation in authkeys.c
+     - test bithack implementation of 'auth_log2()'
+
+  tests/libntp/run-authkeys.c@1.12 +9 -6
+    [Bug 2985] bogus calculation in authkeys.c
+     - update auto-generated file
+
+ChangeSet@1.3615.7.9, 2016-01-09 09:52:44+00:00, stenn@psp-at1.ntp.org
+  Add timelastrec to the peer structure
+
+  include/ntp.h@1.214 +2 -1
+    Add timelastrec to the peer structure
+
+ChangeSet@1.3615.3.6, 2016-01-08 10:00:03+00:00, stenn@psp-at1.ntp.org
+  4.2.8p5 merge cleanup
+
+  ChangeLog@1.1786.3.6 +1 -1
+    4.2.8p5 merge cleanup
+
+ChangeSet@1.3615.7.8, 2016-01-08 00:26:09+00:00, stenn@deacon.udel.edu
+  Update copyright year
+
+  sntp/include/copyright.def@1.26 +1 -1
+    Update copyright year
+
+ChangeSet@1.3615.7.7, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
   NTP_4_2_8P5
   TAG: NTP_4_2_8P5
 
-  ChangeLog@1.1791 +1 -0
+  ChangeLog@1.1786.7.4 +1 -0
     NTP_4_2_8P5
 
   ntpd/invoke-ntp.conf.texi@1.194 +1 -1
@@ -332,59 +957,348 @@ ChangeSet@1.3623, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
   util/ntp-keygen.mdoc.in@1.331 +2 -2
     NTP_4_2_8P5
 
-ChangeSet@1.3622, 2016-01-07 17:52:24-05:00, stenn@deacon.udel.edu
+ChangeSet@1.3615.7.6, 2016-01-07 17:52:24-05:00, stenn@deacon.udel.edu
   ntp-4.2.8p5
 
   packageinfo.sh@1.521 +1 -1
     ntp-4.2.8p5
 
-ChangeSet@1.3621, 2016-01-07 22:20:05+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.7.5, 2016-01-07 22:20:05+00:00, stenn@psp-at1.ntp.org
   cleanup
 
   NEWS@1.152 +2 -2
     cleanup
 
-ChangeSet@1.3620, 2016-01-07 09:33:11+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.7.4, 2016-01-07 09:33:11+00:00, stenn@psp-at1.ntp.org
   typo in ntp_proto.c - leap smear.  Reported by Martin Burnicki
 
-  ntpd/ntp_proto.c@1.371 +1 -1
+  ntpd/ntp_proto.c@1.368.1.3 +1 -1
     typo in ntp_proto.c - leap smear.  Reported by Martin Burnicki
 
-ChangeSet@1.3619, 2016-01-07 06:33:08+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.7.3, 2016-01-07 06:33:08+00:00, stenn@psp-at1.ntp.org
   Update scripts/calc_tickadj/Makefile.am.  Harlan Stenn.
 
-  ChangeLog@1.1790 +1 -0
+  ChangeLog@1.1786.7.3 +1 -0
     Update scripts/calc_tickadj/Makefile.am.  Harlan Stenn.
 
   scripts/calc_tickadj/Makefile.am@1.11 +2 -0
     Update scripts/calc_tickadj/Makefile.am.  Harlan Stenn.
 
-ChangeSet@1.3616.1.1, 2016-01-05 10:57:45+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.3.2, 2016-01-05 12:34:56+00:00, stenn@psp-at1.ntp.org
+  ntp-4.2.8p6
+
+  ChangeLog@1.1786.3.2 +2 -0
+    ntp-4.2.8p6
+
+ChangeSet@1.3615.8.1, 2016-01-05 10:57:45+00:00, stenn@psp-at1.ntp.org
   Bug 2952 fixes
 
-  ChangeLog@1.1787.1.1 +1 -0
+  ChangeLog@1.1786.8.1 +1 -0
     Bug 2952 fixes
 
-  ntpd/ntp_proto.c@1.370 +165 -152
+  ntpd/ntp_proto.c@1.368.1.2 +165 -152
     Bug 2952 fixes
 
-ChangeSet@1.3617, 2016-01-05 09:56:31+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.7.1, 2016-01-05 09:56:31+00:00, stenn@psp-at1.ntp.org
   ntp-4.2.8p5 prep
 
-  ChangeLog@1.1788 +2 -1
+  ChangeLog@1.1786.7.1 +2 -1
     ntp-4.2.8p5 prep
 
   NEWS@1.151 +104 -3
     ntp-4.2.8p5 prep
 
-ChangeSet@1.3616, 2015-12-06 11:20:02+00:00, stenn@psp-deb1.ntp.org
+ChangeSet@1.3615.5.1, 2015-12-13 13:35:12+01:00, jnperlin@hydra.localnet
+  [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+    Found this already fixed, but validation lead to further cleanup:
+     - source code formatting
+     - inline variable definitions moved to start of block
+     - made some pure input data pointers 'const void*' instead of 'char*'; avoids casts and warnings
+
+  ChangeLog@1.1786.5.1 +3 -0
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+
+  sntp/crypto.c@1.19 +13 -12
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - sidekick: make pure input pointers 'const void*' instead of 'char*'
+     - sidekick: remove unnecessary casts
+
+  sntp/crypto.h@1.11 +11 -9
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - sidekick: make pure input pointers 'const void*' instead of 'char*'
+     - source formatting
+
+  sntp/main.c@1.99 +1 -1
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - no need to cast input to 'make_mac()' any more
+
+  sntp/networking.c@1.68 +1 -1
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - no need to cast input to 'auth_md5()' any more
+
+  sntp/tests/crypto.c@1.10 +41 -27
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - remove unnecessary casts
+     - source code formatting
+
+  sntp/tests/fileHandlingTest.c@1.4 +43 -20
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - create 'DestroyPath()' companion to 'CreatePath()' to avoid trouble with 'free()' on 'const char*'
+
+  sntp/tests/fileHandlingTest.h.in@1.15 +6 -15
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - create 'DestroyPath()' companion to 'CreatePath()' to avoid trouble with 'free()' on 'const char*'
+
+  sntp/tests/keyFile.c@1.13 +66 -46
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - use 'DestroyPath()' avoid trouble with 'free()' on 'const char*'
+     - printf() combined
+     - source code formatting
+     - move variable declarations to front
+
+  sntp/tests/packetHandling.c@1.6 +75 -64
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - move variable declarations to front
+     - source code formatting
+
+  sntp/tests/packetProcessing.c@1.9 +124 -90
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - move variable declarations to front
+     - source code formatting
+     - drop unnecessary casts
+
+  sntp/tests/run-packetProcessing.c@1.10 +18 -18
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+
+  sntp/unity/unity_internals.h@1.6 +1 -1
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - added missing 'const' in pointer casts
+
+  tests/libntp/decodenetnum.c@1.11 +33 -23
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - source code formatting +  cleanup
+
+  tests/libntp/run-decodenetnum.c@1.11 +4 -4
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+
+  tests/libntp/run-socktoa.c@1.14 +5 -5
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+
+  tests/libntp/socktoa.c@1.12 +23 -17
+    [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
+     - source code formatting +  cleanup
+
+ChangeSet@1.3615.4.1, 2015-12-11 18:24:16+01:00, jnperlin@hydra.localnet
+  [Bug 2882] Look at ntp_request.c:list_peers_sum()
+
+  ChangeLog@1.1786.4.1 +1 -0
+    [Bug 2882] Look at ntp_request.c:list_peers_sum()
+
+  ntpd/ntp_request.c@1.116 +57 -72
+    [Bug 2882] Look at ntp_request.c:list_peers_sum()
+     - 'list_peers()' and 'list_peers_sum()' skip IPv6 entires if client does not support them,
+       but continue processing until end of list now.
+
+ChangeSet@1.3615.1.3, 2015-12-09 18:23:31+01:00, jnperlin@hydra.localnet
+  [Bug 2891] Deadlock in deferred DNS lookup framework.
+
+  ChangeLog@1.1786.1.3 +1 -0
+    [Bug 2891] Deadlock in deferred DNS lookup framework.
+
+  include/ntp_worker.h@1.5 +31 -22
+    [Bug 2891] Deadlock in deferred DNS lookup framework.
+     - provide signal-safe result-ready detection
+
+  libntp/ntp_worker.c@1.7 +27 -0
+    [Bug 2891] Deadlock in deferred DNS lookup framework.
+     - support signal-safe result-ready detection
+     - provide function to harvest async results from mainloop
+
+  ntpd/ntp_io.c@1.409.1.1 +160 -133
+    [Bug 2891] Deadlock in deferred DNS lookup framework.
+     - do not process async-resolver results from signal handler
+     - set notification tags to harvest asyn-resolver results from mainloop
+     - avoid double select for synchronous IO
+     - avoid several syslog calls in signal-handler context
+     - refactor / conditionalize some functions that cannot be used in signal-driven IO
+
+  ntpd/ntpd.c@1.169 +4 -0
+    [Bug 2891] Deadlock in deferred DNS lookup framework.
+     - reap/harvest async resolver results from mainloop
+
+ChangeSet@1.3615.1.2, 2015-12-06 21:33:26+01:00, jnperlin@hydra.localnet
+  [Bug 2814] msyslog deadlock when signaled. perlinger@ntp.org
+   - applied patch by shenpeng11@huawei.com with minor adjustments
+
+  ChangeLog@1.1786.1.2 +2 -0
+    [Bug 2814] msyslog deadlock when signaled. perlinger@ntp.org
+     - applied patch by shenpeng11@huawei.com with minor adjustments
+
+  ntpd/ntpd.c@1.168 +26 -3
+    [Bug 2814] msyslog deadlock when signaled. perlinger@ntp.org
+     - applied patch by shenpeng11@huawei.com with minor adjustments
+
+ChangeSet@1.3615.2.1, 2015-12-06 20:19:32+01:00, jnperlin@hydra.localnet
+  [Bug 2772] adj_systime overflows tv_usec
+
+  ChangeLog@1.1786.2.1 +1 -0
+    [Bug 2772] adj_systime overflows tv_usec
+
+  libntp/systime.c@1.71 +12 -3
+    [Bug 2772] adj_systime overflows tv_usec
+     - add missing normalisation for nitpicking implementations of 'adjtime()'
+
+ChangeSet@1.3615.1.1, 2015-12-06 11:20:02+00:00, stenn@psp-deb1.ntp.org
   Quiet a warning from clang.  Harlan Stenn.
 
-  ChangeLog@1.1787 +1 -0
+  ChangeLog@1.1786.1.1 +1 -0
     Quiet a warning from clang.  Harlan Stenn.
 
   libntp/ntp_rfc2553.c@1.50 +3 -2
     Quiet a warning from clang.  Harlan Stenn.
+
+ChangeSet@1.3616, 2015-12-05 20:28:19+00:00, perlinger@psp-deb1.ntp.org
+  [Bug 2980] reduce number of warnings
+   - string formatting(arguments should be literals)
+   - applying constness where necessary
+   - removing bad consts that are superfluous
+   - avoid signed/unsigned clashes in conditionals (either by cast or type change)
+   - signed/unsigned and promotion conflicts
+   - add prototypes for function pointer tables
+   - force unsigned argument promotion in calls to 'ctype' functions (is{digit,cntrl,...})
+
+  ChangeLog@1.1787 +2 -0
+    [Bug 2980] reduce number of warnings
+
+  include/parse.h@1.14 +3 -3
+    [Bug 2980] reduce number of warnings
+     - make GPSWRAP and GPSWEEK unqualified literals to avoid signed/unsigned clashes
+
+  ntpd/ntp_config.c@1.336 +2 -0
+    [Bug 2980] reduce number of warnings
+     - add forward declaration of yyparse()
+
+  ntpd/ntp_io.c@1.410 +1 -1
+    [Bug 2980] reduce number of warnings
+     - fix a signedness comparison by adding a cast to size_t
+
+  ntpd/ntp_scanner.c@1.49 +1 -1
+    [Bug 2980] reduce number of warnings
+     - for type compatibility, make counter 'i' a size_t
+
+  ntpd/ntp_timer.c@1.94 +5 -6
+    [Bug 2980] reduce number of warnings
+     - fix a signed / unsigned compare
+
+  ntpd/refclock_chu.c@1.58 +1 -1
+    [Bug 2980] reduce number of warnings
+     - rewrite check to avoid warning about integer overflow
+
+  ntpd/refclock_gpsdjson.c@1.24 +13 -15
+    [Bug 2980] reduce number of warnings
+     - reshuffle to use a literal format string
+     - fix signed/unsigned clashes in compare
+
+  ntpd/refclock_jjy.c@1.30 +47 -44
+    Bug 2980 - reduce number of warnings
+     - make several pointers 'const char*'
+     - add prototypes for function pointer tables
+     - force unsigned argument promotion in calls to 'ctype' functions (is{digit,cntrl,...})
+
+  ntpd/refclock_shm.c@1.39 +1 -1
+    [Bug 2980] reduce number of warnings
+     - fix signed/unsigned clashes in compare
+
+  ntpq/ntpq-subs.c@1.114.1.1 +1 -1
+    [Bug 2980] reduce number of warnings
+     - avoid signed/unsigned clashe in compare
+
+  ntpq/ntpq.c@1.165.1.1 +47 -7
+    [Bug 2980] reduce number of warnings
+     - avoid juggling with formatting into dynamic buffers by a 'asprintf' like function
+
+  sntp/libopts/configfile.c@1.24 +22 -22
+    [Bug 2980] reduce number of warnings
+     - add some pointer constness to avoid casting it away
+
+  sntp/libopts/enum.c@1.14 +5 -5
+    [Bug 2980] reduce number of warnings
+     - avoid some unnecessary casts
+     - avoid shift/promote ambiguity by proper typing
+
+  sntp/libopts/find.c@1.13 +1 -1
+    [Bug 2980] reduce number of warnings
+     - Use VOIDP instead of a (char*) cast
+
+  sntp/libopts/init.c@1.9 +2 -3
+    [Bug 2980] reduce number of warnings
+     - use VOIDP() to replace a complicated double cast
+     - remove one useless cast
+
+  sntp/libopts/load.c@1.22 +1 -1
+    [Bug 2980] reduce number of warnings
+     - remove a useless cast
+
+  sntp/libopts/makeshell.c@1.21 +3 -3
+    [Bug 2980] reduce number of warnings
+     - fix integer promotion in calls to toupper/tolower
+
+  sntp/libopts/nested.c@1.17 +3 -1
+    [Bug 2980] reduce number of warnings
+     - avoid casting away constness by using a helper variable
+
+  sntp/libopts/parse-duration.c@1.15 +8 -2
+    [Bug 2980] reduce number of warnings
+     - avoid casting away constness by using a helper variable
+
+  sntp/libopts/reset.c@1.18 +1 -1
+    [Bug 2980] reduce number of warnings
+     - remove a useless cast
+
+  sntp/libopts/save.c@1.19 +2 -2
+    [Bug 2980] reduce number of warnings
+     - use VOIDP() instead of cast via (void**)
+
+  sntp/libopts/tokenize.c@1.14 +1 -1
+    [Bug 2980] reduce number of warnings
+     - add a required const qualification
+
+ChangeSet@1.3597.1.5, 2015-12-05 14:29:10+01:00, jnperlin@hydra.localnet
+  [Bug 2971] ntpq bails on ^C: select fails: Interrupted system call
+    - make CTRL-C work for retrieval and printing od MRU list.
+
+  ChangeLog@1.1770.1.3 +1 -0
+    [Bug 2971] ntpq bails on ^C: select fails: Interrupted system call
+      - make CTRL-C work for retrieval and printing od MRU list.
+
+  ntpq/ntpq-subs.c@1.115 +6 -0
+    [Bug 2971] ntpq bails on ^C: select fails: Interrupted system call
+     - make CTRL-C work for retrieval and printing od MRU list:
+        1) CTRL-C while collecting terminates the assembling of respose.
+        2) CTRL-C while printing will terminate the print loop.
+        3) both work independently of each other.
+
+  ntpq/ntpq.c@1.166 +16 -0
+    [Bug 2971] ntpq bails on ^C: select fails: Interrupted system call
+     - when collecting fragments, CTRL-C will try to cleanly return the list of fragments so far.
+
+ChangeSet@1.3597.5.1, 2015-12-05 13:44:57+01:00, jnperlin@hydra.localnet
+  [Bug 2905] DNS lookups broken.
+    - added limits to stack consumption, fixed some return code handling
+
+  ChangeLog@1.1770.5.1 +2 -0
+    [Bug 2905] DNS lookups broken.
+      - added limits to stack consumption, fixed some return code handling
+
+  libntp/work_thread.c@1.19 +55 -17
+    [Bug 2905] DNS lookups broken.
+     - added limits to stack consumption
+     - fixed some return code handling
+     - harden queue handling
+
+  ntpd/ntpd.c@1.166.1.1 +21 -4
+    [Bug 2905] DNS lookups broken.
+      - added limits to stack consumption of wartmup thread
 
 ChangeSet@1.3615, 2015-12-05 10:41:51+00:00, stenn@psp-at1.ntp.org
   CID 1341677: Nits in sntp/tests/keyFile.c.  HStenn.
@@ -1113,7 +2027,7 @@ ChangeSet@1.3584.1.1, 2015-11-13 22:54:35+01:00, jnperlin@hydra.localnet
     [Bug 2962] truncation of size_t/ptrdiff_t on 64bit targets
      - avoid 'unused' warnings
 
-  ntpd/ntp_proto.c@1.369 +8 -6
+  ntpd/ntp_proto.c@1.368.1.1 +8 -6
     [Bug 2962] truncation of size_t/ptrdiff_t on 64bit targets
      - promote use of 'size_t' for values that express a size
      - format string fixes 
@@ -1164,7 +2078,7 @@ ChangeSet@1.3584.1.1, 2015-11-13 22:54:35+01:00, jnperlin@hydra.localnet
      - promote use of 'size_t' for values that express a size
      - avoid truncation of SOCKET handles
 
-  ntpdc/ntpdc.c@1.105 +36 -34
+  ntpdc/ntpdc.c@1.104.1.1 +36 -34
     [Bug 2962] truncation of size_t/ptrdiff_t on 64bit targets
      - promote use of 'size_t' for values that express a size
      - format string fixes
@@ -1827,6 +2741,31 @@ ChangeSet@1.3574, 2015-10-20 08:00:43+00:00, stenn@psp-deb1.ntp.org
   NEWS@1.149 +16 -16
     Update CVEs
 
+ChangeSet@1.3558.8.1, 2015-10-17 23:19:57+02:00, jnperlin@hydra.localnet
+  [Bug 2945] Zero Origin Timestamp Bypass
+
+  ChangeLog@1.1743.8.1 +2 -0
+    [Bug 2945] Zero Origin Timestamp Bypass
+
+  ntpd/ntp_proto.c@1.364.2.1 +9 -1
+    [Bug 2945] Zero Origin Timestamp Bypass
+     - in basic mode 'aorg' is cleared to indicate a response has been received. So a reply has to be dropped
+       when it either does not match the origin timestamp OR the origin time stamp is zero.
+
+ChangeSet@1.3558.7.1, 2015-10-17 21:15:39+02:00, jnperlin@hydra.localnet
+  [Bug 2948] Potential Infinite Loop in ntpq and ntpdc
+
+  ChangeLog@1.1743.7.1 +2 -0
+    [Bug 2948] Potential Infinite Loop in ntpq and ntpdc
+
+  ntpdc/ntpdc.c@1.105 +20 -1
+    [Bug 2948] Potential Infinite Loop in ntpq and ntpdc
+     - check timeout between request and valid response(s) instead of *any* incoming data
+
+  ntpq/ntpq.c@1.161.2.1 +22 -2
+    [Bug 2948] Potential Infinite Loop in ntpq and ntpdc
+     - check timeout between request and valid response(s) instead of *any* incoming data
+
 ChangeSet@1.3573, 2015-10-17 06:28:49+00:00, stenn@psp-deb1.ntp.org
   ntp-4.2.8p4-sec-RC2
 
@@ -2171,6 +3110,53 @@ ChangeSet@1.3571, 2015-10-17 01:39:22+00:00, stenn@psp-deb1.ntp.org
 
   ChangeLog@1.1755 +4 -1
     [Sec 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
+
+ChangeSet@1.3558.6.2, 2015-10-13 23:31:28+02:00, jnperlin@hydra.localnet
+  [Bug 2938] ntpq saveconfig command allows dangerous characters in filenames.
+   - make sure the file does not exist (no overwrite allowed)
+   - ensure text mode where applicable (windows)
+
+  ntpd/ntp_control.c@1.203.1.2 +17 -3
+    [Bug 2938] ntpq saveconfig command allows dangerous characters in filenames.
+     - make sure the file does not exist (no overwrite allowed)
+     - ensure text mode where applicable (windows)
+
+ChangeSet@1.3558.6.1, 2015-10-12 08:18:56+02:00, jnperlin@hydra.localnet
+  [Bug 2938] ntpq saveconfig command allows dangerous characters in filenames
+
+  ChangeLog@1.1743.6.1 +3 -0
+    [Bug 2938] ntpq saveconfig command allows dangerous characters in filenames
+
+  ntpd/ntp_control.c@1.203.1.1 +161 -37
+    [Bug 2938] ntpq saveconfig command allows dangerous characters in filenames
+     - added function to check safe file names ([_A-Za-z0-9][-+._A-Za-z0-9]*)
+     - checked for truncation, too, not only overrun safey
+
+ChangeSet@1.3558.5.1, 2015-10-11 14:12:31+02:00, jnperlin@hydra.localnet
+  [Bug 2939] reslist NULL pointer dereference
+  [Bug 2940] Stack exhaustion in recursive traversal of restriction list
+    -- these two where fixed together --
+
+  ChangeLog@1.1743.5.1 +4 -0
+    [Bug 2939] reslist NULL pointer dereference
+    [Bug 2940] Stack exhaustion in recursive traversal of restriction list
+
+  ntpd/ntp_request.c@1.113.1.1 +127 -39
+    [Bug 2939] reslist NULL pointer dereference
+    [Bug 2940] Stack exhaustion in recursive traversal of restriction list
+     - use iteration and a scratch pad stack to do the list reversal; deep recusrsion can be dangerous in C
+     - properly terminate processing when 'more_pkt()' indicates packet full
+     - check the return value of 'more_pkt()' when used in iterations, or trash it explicitely
+     - fixed uint32_t vs. u_long clash that would cause security problems on big-endian 64bit machines
+
+ChangeSet@1.3558.4.1, 2015-10-11 09:32:40+02:00, jnperlin@hydra.localnet
+  [Bug 2937] (NTPQ) nextvar() missing length check
+
+  ChangeLog@1.1743.4.1 +2 -0
+    [Bug 2937] (NTPQ) nextvar() missing length check
+
+  ntpq/ntpq.c@1.161.1.1 +2 -0
+    [Bug 2937] (NTPQ) nextvar() missing length check
 
 ChangeSet@1.3558.3.3, 2015-10-11 08:10:20+02:00, jnperlin@hydra.localnet
   [Bug 2941] NAK to the Future: Symmetric association authentication bypass via crypto-NAK
