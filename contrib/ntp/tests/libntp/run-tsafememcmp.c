@@ -24,22 +24,17 @@
 #include <stdio.h>
 #include "config.h"
 #include "ntp_stdlib.h"
-#include "ntp_fp.h"
-#include <float.h>
-#include <math.h>
+#include "isc/string.h"
 
 //=======External Functions This Runner Calls=====
 extern void setUp(void);
 extern void tearDown(void);
-extern void test_AdditionLR(void);
-extern void test_AdditionRL(void);
-extern void test_SubtractionLR(void);
-extern void test_SubtractionRL(void);
-extern void test_Negation(void);
-extern void test_Absolute(void);
-extern void test_FDF_RoundTrip(void);
-extern void test_SignedRelOps(void);
-extern void test_UnsignedRelOps(void);
+extern void test_Empty(void);
+extern void test_Equal(void);
+extern void test_FirstByte(void);
+extern void test_LastByte(void);
+extern void test_MiddleByte(void);
+extern void test_MiddleByteUpLo(void);
 
 
 //=======Test Reset Option=====
@@ -57,16 +52,13 @@ char const *progname;
 int main(int argc, char *argv[])
 {
   progname = argv[0];
-  UnityBegin("lfpfunc.c");
-  RUN_TEST(test_AdditionLR, 48);
-  RUN_TEST(test_AdditionRL, 49);
-  RUN_TEST(test_SubtractionLR, 50);
-  RUN_TEST(test_SubtractionRL, 51);
-  RUN_TEST(test_Negation, 52);
-  RUN_TEST(test_Absolute, 53);
-  RUN_TEST(test_FDF_RoundTrip, 54);
-  RUN_TEST(test_SignedRelOps, 55);
-  RUN_TEST(test_UnsignedRelOps, 56);
+  UnityBegin("tsafememcmp.c");
+  RUN_TEST(test_Empty, 10);
+  RUN_TEST(test_Equal, 11);
+  RUN_TEST(test_FirstByte, 12);
+  RUN_TEST(test_LastByte, 13);
+  RUN_TEST(test_MiddleByte, 14);
+  RUN_TEST(test_MiddleByteUpLo, 15);
 
   return (UnityEnd());
 }
