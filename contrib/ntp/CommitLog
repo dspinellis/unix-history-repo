@@ -1,3 +1,1130 @@
+ChangeSet@1.3669, 2016-04-26 20:30:51-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P7
+  TAG: NTP_4_2_8P7
+
+  ChangeLog@1.1820 +1 -0
+    NTP_4_2_8P7
+
+  ntpd/invoke-ntp.conf.texi@1.198 +38 -20
+    NTP_4_2_8P7
+
+  ntpd/invoke-ntp.keys.texi@1.189 +1 -1
+    NTP_4_2_8P7
+
+  ntpd/invoke-ntpd.texi@1.505 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntp.conf.5man@1.232 +43 -24
+    NTP_4_2_8P7
+
+  ntpd/ntp.conf.5mdoc@1.232 +40 -18
+    NTP_4_2_8P7
+
+  ntpd/ntp.conf.html@1.184 +34 -10
+    NTP_4_2_8P7
+
+  ntpd/ntp.conf.man.in@1.232 +43 -24
+    NTP_4_2_8P7
+
+  ntpd/ntp.conf.mdoc.in@1.232 +40 -18
+    NTP_4_2_8P7
+
+  ntpd/ntp.keys.5man@1.223 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntp.keys.5mdoc@1.223 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntp.keys.html@1.185 +1 -1
+    NTP_4_2_8P7
+
+  ntpd/ntp.keys.man.in@1.223 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntp.keys.mdoc.in@1.223 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntpd-opts.c@1.527 +7 -7
+    NTP_4_2_8P7
+
+  ntpd/ntpd-opts.h@1.526 +3 -3
+    NTP_4_2_8P7
+
+  ntpd/ntpd.1ntpdman@1.334 +3 -3
+    NTP_4_2_8P7
+
+  ntpd/ntpd.1ntpdmdoc@1.334 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntpd.html@1.178 +2 -2
+    NTP_4_2_8P7
+
+  ntpd/ntpd.man.in@1.334 +3 -3
+    NTP_4_2_8P7
+
+  ntpd/ntpd.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P7
+
+  ntpdc/invoke-ntpdc.texi@1.502 +2 -2
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc-opts.c@1.520 +7 -7
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc-opts.h@1.519 +3 -3
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc.1ntpdcman@1.333 +3 -3
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.333 +2 -2
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc.html@1.346 +2 -2
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc.man.in@1.333 +3 -3
+    NTP_4_2_8P7
+
+  ntpdc/ntpdc.mdoc.in@1.333 +2 -2
+    NTP_4_2_8P7
+
+  ntpq/invoke-ntpq.texi@1.510 +2 -2
+    NTP_4_2_8P7
+
+  ntpq/ntpq-opts.c@1.527 +7 -7
+    NTP_4_2_8P7
+
+  ntpq/ntpq-opts.h@1.525 +3 -3
+    NTP_4_2_8P7
+
+  ntpq/ntpq.1ntpqman@1.338 +3 -3
+    NTP_4_2_8P7
+
+  ntpq/ntpq.1ntpqmdoc@1.338 +2 -2
+    NTP_4_2_8P7
+
+  ntpq/ntpq.html@1.175 +36 -6
+    NTP_4_2_8P7
+
+  ntpq/ntpq.man.in@1.338 +3 -3
+    NTP_4_2_8P7
+
+  ntpq/ntpq.mdoc.in@1.338 +2 -2
+    NTP_4_2_8P7
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.504 +2 -2
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.522 +7 -7
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.521 +3 -3
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.333 +3 -3
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.333 +2 -2
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd.html@1.173 +1 -1
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd.man.in@1.333 +3 -3
+    NTP_4_2_8P7
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.333 +2 -2
+    NTP_4_2_8P7
+
+  packageinfo.sh@1.526 +2 -2
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.94 +3 -3
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.95 +2 -2
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/calc_tickadj.html@1.96 +1 -1
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.93 +3 -3
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.95 +2 -2
+    NTP_4_2_8P7
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.98 +1 -1
+    NTP_4_2_8P7
+
+  scripts/invoke-plot_summary.texi@1.115 +2 -2
+    NTP_4_2_8P7
+
+  scripts/invoke-summary.texi@1.115 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.325 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait-opts@1.61 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.322 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.323 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait.html@1.342 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait.man.in@1.322 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.323 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.113 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep-opts@1.63 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.101 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.101 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep.html@1.114 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep.man.in@1.101 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.102 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.114 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace-opts@1.63 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.101 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.102 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace.html@1.115 +2 -2
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace.man.in@1.101 +3 -3
+    NTP_4_2_8P7
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.103 +2 -2
+    NTP_4_2_8P7
+
+  scripts/plot_summary-opts@1.63 +2 -2
+    NTP_4_2_8P7
+
+  scripts/plot_summary.1plot_summaryman@1.113 +3 -3
+    NTP_4_2_8P7
+
+  scripts/plot_summary.1plot_summarymdoc@1.113 +2 -2
+    NTP_4_2_8P7
+
+  scripts/plot_summary.html@1.116 +2 -2
+    NTP_4_2_8P7
+
+  scripts/plot_summary.man.in@1.113 +3 -3
+    NTP_4_2_8P7
+
+  scripts/plot_summary.mdoc.in@1.113 +2 -2
+    NTP_4_2_8P7
+
+  scripts/summary-opts@1.63 +2 -2
+    NTP_4_2_8P7
+
+  scripts/summary.1summaryman@1.113 +3 -3
+    NTP_4_2_8P7
+
+  scripts/summary.1summarymdoc@1.113 +2 -2
+    NTP_4_2_8P7
+
+  scripts/summary.html@1.116 +2 -2
+    NTP_4_2_8P7
+
+  scripts/summary.man.in@1.113 +3 -3
+    NTP_4_2_8P7
+
+  scripts/summary.mdoc.in@1.113 +2 -2
+    NTP_4_2_8P7
+
+  scripts/update-leap/invoke-update-leap.texi@1.14 +1 -1
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap-opts@1.14 +2 -2
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap.1update-leapman@1.14 +3 -3
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.14 +2 -2
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap.html@1.14 +1 -1
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap.man.in@1.14 +3 -3
+    NTP_4_2_8P7
+
+  scripts/update-leap/update-leap.mdoc.in@1.14 +2 -2
+    NTP_4_2_8P7
+
+  sntp/invoke-sntp.texi@1.502 +2 -2
+    NTP_4_2_8P7
+
+  sntp/sntp-opts.c@1.521 +7 -7
+    NTP_4_2_8P7
+
+  sntp/sntp-opts.h@1.519 +3 -3
+    NTP_4_2_8P7
+
+  sntp/sntp.1sntpman@1.337 +3 -3
+    NTP_4_2_8P7
+
+  sntp/sntp.1sntpmdoc@1.337 +2 -2
+    NTP_4_2_8P7
+
+  sntp/sntp.html@1.517 +2 -2
+    NTP_4_2_8P7
+
+  sntp/sntp.man.in@1.337 +3 -3
+    NTP_4_2_8P7
+
+  sntp/sntp.mdoc.in@1.337 +2 -2
+    NTP_4_2_8P7
+
+  util/invoke-ntp-keygen.texi@1.505 +2 -2
+    NTP_4_2_8P7
+
+  util/ntp-keygen-opts.c@1.523 +7 -7
+    NTP_4_2_8P7
+
+  util/ntp-keygen-opts.h@1.521 +3 -3
+    NTP_4_2_8P7
+
+  util/ntp-keygen.1ntp-keygenman@1.333 +3 -3
+    NTP_4_2_8P7
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.333 +2 -2
+    NTP_4_2_8P7
+
+  util/ntp-keygen.html@1.179 +2 -2
+    NTP_4_2_8P7
+
+  util/ntp-keygen.man.in@1.333 +3 -3
+    NTP_4_2_8P7
+
+  util/ntp-keygen.mdoc.in@1.333 +2 -2
+    NTP_4_2_8P7
+
+ChangeSet@1.3668, 2016-04-26 20:07:48-04:00, stenn@deacon.udel.edu
+  ntp-4.2.8p7
+
+  packageinfo.sh@1.525 +1 -1
+    ntp-4.2.8p7
+
+ChangeSet@1.3667, 2016-04-26 23:24:25+00:00, stenn@psp-deb1.ntp.org
+  4.2.8p7 documentation cleanup
+
+  ChangeLog@1.1819 +9 -9
+    4.2.8p7 documentation cleanup
+
+  NEWS@1.169 +123 -36
+    4.2.8p7 documentation cleanup
+
+ChangeSet@1.3666, 2016-04-24 09:17:06+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+  ntpd/ntp_proto.c@1.386 +0 -1
+    [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+ChangeSet@1.3665, 2016-04-21 23:42:43+00:00, stenn@psp-deb1.ntp.org
+  Update 3007
+
+  NEWS@1.168 +1 -1
+    Update 3007
+
+ChangeSet@1.3664, 2016-04-21 23:29:30+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3007] Fix bug in crypto-NAK check
+
+  ChangeLog@1.1818 +1 -1
+    [Bug 3007] Fix bug in crypto-NAK check
+
+  ntpd/ntp_proto.c@1.385 +3 -1
+    [Bug 3007] Fix bug in crypto-NAK check
+
+ChangeSet@1.3663, 2016-04-21 09:29:31+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+  NEWS@1.167 +1 -0
+    [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+ChangeSet@1.3661, 2016-04-21 09:24:12+00:00, stenn@psp-deb1.ntp.org
+  tweak some ntp_proto.c timestamp log messages
+
+  ntpd/ntp_proto.c@1.383 +4 -3
+    tweak some ntp_proto.c timestamp log messages
+
+ChangeSet@1.3630.1.17, 2016-04-21 09:11:51+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+  ChangeLog@1.1794.1.15 +1 -0
+    [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+  ntpd/ntp_proto.c@1.373.2.7 +6 -1
+    [Bug 3036] autokey trips an INSIST in authistrustedip()
+
+ChangeSet@1.3660, 2016-04-19 05:29:57+00:00, stenn@psp-deb1.ntp.org
+  Windows cleanup for Bug 2978 mitigation
+
+  ports/winnt/include/config.h@1.114 +6 -0
+    Windows cleanup for Bug 2978 mitigation
+
+ChangeSet@1.3659, 2016-04-18 05:38:06+00:00, stenn@psp-deb1.ntp.org
+  4.2.8p7 update: [Bug 2831] Segmentation Fault in DNS lookup during startup
+
+  NEWS@1.166 +2 -0
+    4.2.8p7 update: [Bug 2831] Segmentation Fault in DNS lookup during startup
+
+ChangeSet@1.3630.15.1, 2016-04-18 06:07:25+02:00, perlinger@ntp.org
+  [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+   - fixed yet another race condition in the threaded resolver code.
+
+  ChangeLog@1.1794.15.1 +2 -0
+    [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+     - fixed yet another race condition in the threaded resolver code.
+
+  include/ntp_worker.h@1.7 +2 -0
+    [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+     - fixed yet another race condition in the threaded resolver code: global locker prototype
+
+  libntp/ntp_intres.c@1.100 +20 -28
+    [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+     - fixed yet another race condition in the threaded resolver code:
+        lock global context table during access
+        remove dangerous wrapper
+
+  libntp/work_fork.c@1.14.1.1 +5 -0
+    [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+     - fixed yet another race condition in the threaded resolver code: global locker dummy
+
+  libntp/work_thread.c@1.21 +23 -0
+    [Bug 2831]  Segmentation Fault in DNS lookup during startup.
+     - fixed yet another race condition in the threaded resolver code: create&handle global lock
+
+ChangeSet@1.3657, 2016-04-16 07:59:23+00:00, stenn@psp-deb1.ntp.org
+  type
+
+  NEWS@1.165 +1 -1
+    type
+
+ChangeSet@1.3656, 2016-04-14 09:03:11+00:00, stenn@psp-deb1.ntp.org
+  Update the NEWS file for 4.2.8p7
+
+  NEWS@1.164 +7 -0
+    Update the NEWS file for 4.2.8p7
+
+ChangeSet@1.3655, 2016-04-14 01:59:45+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2978] Interleave can be partially triggered
+
+  ChangeLog@1.1815 +1 -0
+    [Sec 2978] Interleave can be partially triggered
+
+  configure.ac@1.605 +22 -0
+    [Sec 2978] Interleave can be partially triggered
+
+  ntpd/ntp_proto.c@1.382 +11 -3
+    [Sec 2978] Interleave can be partially triggered
+
+ChangeSet@1.3654, 2016-04-14 01:46:50+00:00, stenn@psp-deb1.ntp.org
+  Update the NEWS file for 4.2.8p7
+
+  NEWS@1.163 +168 -26
+    Update the NEWS file for 4.2.8p7
+
+ChangeSet@1.3653, 2016-04-12 22:29:18+00:00, stenn@psp-deb1.ntp.org
+  4.2.8p7 prep
+
+  NEWS@1.162 +105 -5
+    4.2.8p7 prep
+
+ChangeSet@1.3652, 2016-04-12 09:01:09+00:00, stenn@psp-deb1.ntp.org
+  Credit Aleksandr Kostikov on bug 3019
+
+  ChangeLog@1.1814 +1 -0
+    Credit Aleksandr Kostikov on bug 3019
+
+ChangeSet@1.3630.13.6, 2016-04-12 07:43:08+00:00, stenn@psp-deb1.ntp.org
+  comment tweak
+
+  ntpd/ntp_proto.c@1.373.2.6 +1 -1
+    comment tweak
+
+ChangeSet@1.3650, 2016-04-11 20:26:29-07:00, harlan@max.pfcs.com
+  [Bug 2952] Symmetric active/passive mode is broken
+
+  ChangeLog@1.1812 +1 -0
+    [Bug 2952] Symmetric active/passive mode is broken
+
+  ntpd/ntp_proto.c@1.380 +21 -12
+    [Bug 2952] Symmetric active/passive mode is broken
+
+ChangeSet@1.3649, 2016-04-11 19:56:06-07:00, harlan@max.pfcs.com
+  Cleanup to include/ntp.h
+
+  ChangeLog@1.1811 +1 -0
+    Cleanup to include/ntp.h
+
+  include/ntp.h@1.218 +7 -0
+    cleanup
+
+ChangeSet@1.3630.13.5, 2016-04-01 19:18:25+02:00, jnperlin@nemesis.localnet
+  [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed
+   - adjust pull cycle of broadcast client to trensmission of brodcast server
+
+  libntp/ntp_worker.c@1.7.1.1 +1 -1
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed
+     - side kick: fix annoying signed/unsigned clash
+
+  ntpd/ntp_proto.c@1.373.2.5 +1 -0
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed
+     - adjust pull cycle of broadcast client to trensmission of brodcast server
+
+ChangeSet@1.3630.13.4, 2016-03-30 23:55:33+02:00, jnperlin@nemesis.localnet
+  [Bug 3031] modify deadband
+
+  ntpd/ntp_proto.c@1.373.2.4 +13 -12
+    [Bug 3031] broadcast issues
+     - modify deadband for first round after volley
+
+ChangeSet@1.3630.14.1, 2016-03-30 17:28:04+00:00, perlinger@psp-deb1.ntp.org
+  [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+   - Check the initial delay calculation and reject/unpeer the broadcast server if the delay exceeds
+     the cutoff limit. (default 50ms)
+     Retry again after the next broadcast packet.
+
+  ChangeLog@1.1794.14.1 +5 -0
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+
+  ntpd/ntp_io.c@1.414.3.1 +28 -10
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+     - improve/fix handling of opening broadcast sockets (-> EADDRNOTAVAIL)
+
+  ntpd/ntp_proto.c@1.373.3.1 +23 -4
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+     - Check the initial delay calculation and reject/unpeer the broadcast server if the delay exceeds 50ms.
+       Retry again after the next broadcast packet.
+     - the absolute value of negative broadcastdelays is cutoff limit for peer removal.
+
+ChangeSet@1.3630.13.2, 2016-03-30 19:23:06+02:00, jnperlin@nemesis.localnet
+  [Bug 3031]
+
+  ntpd/ntp_io.c@1.414.2.1 +28 -10
+    [Bug 3031]
+     - improve/fix handling of opening broadcast sockets (-> EADDRNOTAVAIL)
+
+  ntpd/ntp_proto.c@1.373.2.2 +14 -6
+    [Bug 3031]
+     - the absolute value of negative broadcastdelays is cutoff limit for peer removal
+
+ChangeSet@1.3630.1.14, 2016-03-30 10:29:07+00:00, stenn@psp-deb1.ntp.org
+  [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+  ChangeLog@1.1794.1.12 +2 -0
+    [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+  libntp/work_fork.c@1.15 +1 -1
+    [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+  ntpd/ntp_timer.c@1.96 +6 -0
+    [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+  ntpd/ntpd.c@1.171 +15 -0
+    [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+  sntp/m4/ntp_libntp.m4@1.33 +1 -0
+    [Bug 2960] async name resolution fixes for chroot() environments.  Reinhard Max
+
+ChangeSet@1.3630.13.1, 2016-03-29 18:22:03+02:00, perlinger@ntp.org
+  [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+   - Check the initial delay calculation and reject/unpeer the broadcast server if the delay exceeds 50ms.
+     Retry again after the next broadcast packet.
+
+  ChangeLog@1.1794.13.1 +5 -0
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+
+  ntpd/ntp_proto.c@1.373.2.1 +11 -0
+    [Bug 3031] ntp broadcastclient unable to synchronize to an server when the time of server changed.
+     - Check the initial delay calculation and reject/unpeer the broadcast server if the delay exceeds 50ms.
+       Retry again after the next broadcast packet.
+
+ChangeSet@1.3630.12.1, 2016-03-27 23:59:51+02:00, jnperlin@nemesis.localnet
+  [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+   - complete refurbishment of overlapped IO engine
+   - cleanup
+
+  ChangeLog@1.1794.12.1 +2 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+      - work around windows network issues, improve overlapped IO. perlinger@ntp.org
+
+  include/ntp.h@1.216.1.1 +1 -0
+    [Bug 3019] NTPD stops processing packets ERROR_HOST_UNREACHABLE
+     - add IOCPL registration handle to interface
+
+  include/ntp_refclock.h@1.38 +2 -1
+    [Bug 3019] NTPD stops processing packets ERROR_HOST_UNREACHABLE
+     - add IOCPL registration handle to RIO structure
+
+  include/recvbuff.h@1.26 +2 -2
+    [Bug 3019] NTPD stops processing packets ERROR_HOST_UNREACHABLE
+     - fix SOCKET vs. FD clash
+     - 'get_free_recv_buffer_alloc()': extended comment
+
+  libntp/ntp_worker.c@1.8 +1 -1
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+      - fix signed/unsigned clash
+
+  libntp/recvbuff.c@1.41 +15 -13
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - API cleanup: accept and silently ignore NULL pointer in 'freerecvbuf()'
+     - fix SOCKET vs. FD clash
+
+  ntpd/ntp_io.c@1.414.1.1 +42 -12
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - first invalidate FDs in shared structure, then close handles
+     - defer free() via cooling pond when doing overlapped IO 
+    ---
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - proper wiring to IO completion ports
+    ---
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - first invalidate FDs in shared structure, then close handles
+     - defer free() via cooling pond when doing overlapped IO 
+     - proper wiring to IO completion ports
+    ---
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - wired the needed unregistration functions for overlapped IO
+
+  ports/winnt/include/ntp_iocompletionport.h@1.22 +17 -10
+    Bug 3019 - NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - extend API to provide essential information
+     - added missing unregistration functions to API
+
+  ports/winnt/include/ntp_iocplmem.h@1.1 +24 -0
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - refactored IOCPL heap into separate file
+
+  ports/winnt/include/ntp_iocplmem.h@1.0 +0 -0
+
+  ports/winnt/include/ntp_iocpltypes.h@1.1 +160 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - refactored helper objects (locks, PPS/device context, IO context,...) into separate file
+
+  ports/winnt/include/ntp_iocpltypes.h@1.0 +0 -0
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.73 +875 -791
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - make sure ALL operations are overlapped for sockets
+     - use APC queue for deferred error processing
+     - take extra care to deal with interfaces/clocks being removed while overlapped IO in flight
+     - minor WINAPI cleanups (VS2008 vs VS2013)
+     - extend API to provide essential information
+     - better context checking
+     - implemented the missing unregistration functions
+     - implemented shared locking between clocks/interfaces and IO operations
+     - made sure minimal locking is engaged
+     - fixed / locked / avoided access to global / shared values from IO thread
+     - made sure interfaces and clocks cannot be deleted wile accessed from worker thread
+     - made sure feeding the receive queue stops with deregistration
+    In other words, a complete refurbishment.
+     - further refactoring, better handling of received packets
+
+  ports/winnt/ntpd/ntp_iocplmem.c@1.1 +123 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - refactored IOCPL heap into separate file
+
+  ports/winnt/ntpd/ntp_iocplmem.c@1.0 +0 -0
+
+  ports/winnt/ntpd/ntp_iocpltypes.c@1.1 +366 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - refactored helper objects (locks, PPS/device context, IO context,...) into separate file
+
+  ports/winnt/ntpd/ntp_iocpltypes.c@1.0 +0 -0
+
+  ports/winnt/ntpd/ntservice.c@1.30 +13 -3
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - log request from SCM in INFO level
+
+  ports/winnt/vs2005/ntpd.vcproj@1.21 +8 -18
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - added ntp_iocpl{mem,types}.c to sources.
+
+  ports/winnt/vs2008/ntpd/ntpd.vcproj@1.51 +16 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - added ntp_iocpl{mem,types}.c to sources.
+
+  ports/winnt/vs2013/debug-x64.props@1.2 +1 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - sidekick: property sheet name
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj.filters@1.7.1.1 +3 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - auto update
+
+  ports/winnt/vs2013/ntpd/ntpd.vcxproj@1.9 +4 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - added ntp_iocpl{mem,types}.c to sources.
+
+  ports/winnt/vs2013/ntpd/ntpd.vcxproj.filters@1.6 +12 -0
+    [Bug 3019] NTPD stops processing packets after hitting ERROR_HOST_UNREACHABLE
+     - auto update
+
+  ports/winnt/vs2013/release-x64.props@1.2 +1 -0
+    [Bug 3019] NTPD stops processing packets after ERROR_HOST_UNREACHABLE
+     - sidekick: property sheet name
+
+ChangeSet@1.3630.1.12, 2016-03-19 09:09:07+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  tests/ntpq/Makefile.am@1.9 +1 -0
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+ChangeSet@1.3630.1.10, 2016-03-16 09:22:31+00:00, stenn@psp-deb1.ntp.org
+  Add README.pullrequests.  Harlan Stenn
+
+  ChangeLog@1.1794.1.9 +1 -0
+    Add README.pullrequests.  Harlan Stenn
+
+  Makefile.am@1.135 +1 -0
+    Add README.pullrequests.  Harlan Stenn
+
+  README.pullrequests@1.1 +90 -0
+    BitKeeper file /home/stenn/ntp-stable/README.pullrequests
+
+  README.pullrequests@1.0 +0 -0
+
+ChangeSet@1.3630.11.1, 2016-03-16 08:46:16+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ChangeLog@1.1794.11.1 +1 -0
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/invoke-ntpq.texi@1.509 +28 -1
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq-opts.c@1.526 +108 -50
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq-opts.def@1.27 +12 -0
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq-opts.h@1.524 +21 -8
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq-subs.c@1.116.1.1 +17 -10
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.1ntpqman@1.337 +24 -3
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.1ntpqmdoc@1.337 +22 -2
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.c@1.169 +53 -2
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.h@1.32 +3 -0
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.man.in@1.337 +24 -3
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+  ntpq/ntpq.mdoc.in@1.337 +22 -2
+    [Bug 3030] ntpq needs a general way to specify refid output format.  HStenn.
+
+ChangeSet@1.3630.10.1, 2016-03-01 08:30:22+01:00, perlinger@ntp.org
+  [Bug 3023] ntpdate cannot correct dates in the future.
+
+  ChangeLog@1.1794.10.1 +1 -0
+    [Bug 3023] ntpdate cannot correct dates in the future.
+
+  ntpdate/ntpdate.c@1.98 +9 -5
+    [Bug 3023] ntpdate cannot correct dates in the future.
+
+ChangeSet@1.3642, 2016-03-01 05:46:29+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1805 +0 -1
+    cleanup
+
+ChangeSet@1.3641, 2016-02-29 23:01:01+00:00, stenn@psp-deb1.ntp.org
+  [Sec 3020] Refclock impersonation.  HStenn.
+
+  ChangeLog@1.1804 +1 -0
+    [Sec 3020] Refclock impersonation.  HStenn.
+
+  configure.ac@1.604 +18 -0
+    [Sec 3020] Refclock impersonation.  HStenn.
+
+  ntpd/ntp_io.c@1.415 +12 -0
+    [Sec 3020] Refclock impersonation.  HStenn.
+
+ChangeSet@1.3630.9.1, 2016-02-29 20:03:59+01:00, jnperlin@hydra.localnet
+  [Bug 3022] authkeys.c should be refactored
+
+  ChangeLog@1.1794.9.1 +4 -0
+    [Bug 3022] authkeys.c should be refactored
+
+  include/ntp_keyacc.h@1.2 +6 -0
+    [Bug 3022] authkeys.c should be refactored
+     - refactoring of key access handling
+
+  libntp/authkeys.c@1.34 +146 -85
+    [Bug 3022] authkeys.c should be refactored
+     - refactoring of key access handling
+     - fixed memory leak in access list
+
+  libntp/authreadkeys.c@1.25.1.1 +52 -44
+    [Bug 3022] authkeys.c should be refactored
+     - refactoring of key access handling
+     - reduced number of error branches
+
+ChangeSet@1.3638.2.2, 2016-02-22 05:33:56+00:00, stenn@psp-deb1.ntp.org
+  [Sec 3008] Always check the return value of ctl_getitem().  HStenn.
+
+  ChangeLog@1.1801.2.1 +1 -0
+    [Sec 3008] Always check the return value of ctl_getitem().  HStenn.
+
+  ntpd/ntp_control.c@1.206.2.1 +11 -2
+    [Sec 3008] Always check the return value of ctl_getitem().  HStenn.
+
+ChangeSet@1.3638.2.1, 2016-02-22 05:12:39+00:00, stenn@psp-deb1.ntp.org
+  Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.def@1.23 +38 -16
+    Update ntp.conf documentation.  Harlan Stenn.
+
+ChangeSet@1.3638.1.3, 2016-02-22 03:39:39+00:00, stenn@psp-deb1.ntp.org
+  Bug 3007 cleanup
+
+  ntpd/ntp_proto.c@1.379 +4 -1
+    Bug 3007 cleanup
+
+ChangeSet@1.3630.8.1, 2016-02-21 15:09:37+01:00, perlinger@ntp.org
+  [Bug 3009] Crafted addpeer with hmode > 7 causes OOB error
+
+  ChangeLog@1.1794.8.1 +2 -0
+    [Bug 3009] Crafted addpeer with hmode > 7 causes OOB error
+
+  ntpd/ntp_request.c@1.117.2.1 +29 -2
+    [Bug 3009] Crafted addpeer with hmode > 7 causes OOB error
+     - added more stringent checks on packet content:
+       hmode <= 6 (7 is already out of range for a peer mode!)
+
+ChangeSet@1.3630.7.2, 2016-02-21 09:39:25+01:00, perlinger@ntp.org
+  Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+   - sidekick: Ignore keys that have an unsupported MAC algorithm but are otherwise well-formed
+
+  ChangeLog@1.1794.7.2 +2 -0
+    Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+     - sidekick: Ignore keys that have an unsupported MAC algorithm but are otherwise well-formed
+
+  libntp/authreadkeys.c@1.26 +48 -26
+    [Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+     - sidekick: Ignore keys that have an unsupported MAC algorithm but are otherwise well-formed
+
+ChangeSet@1.3630.7.1, 2016-02-19 22:42:25+01:00, perlinger@ntp.org
+  [Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+
+  ChangeLog@1.1794.7.1 +2 -0
+    [Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+
+  ntpd/ntp_request.c@1.117.1.1 +41 -25
+    [Bug 3010] remote configuration trustedkey/requestkey values are not properly validated
+     - make sure the new keyids are valid static key IDs and present in the key table
+
+ChangeSet@1.3630.6.1, 2016-02-19 19:47:31+01:00, perlinger@ntp.org
+  [Bug 3013] Fix for ssl_init.c SHA1 test
+
+  ChangeLog@1.1794.6.1 +2 -0
+    [Bug 3013] Fix for ssl_init.c SHA1 test
+
+  tests/libntp/ssl_init.c@1.9 +2 -2
+    [Bug 3013] Fix for ssl_init.c SHA1 test
+     - Require SHA1 explicitely, to avoid confusion with (deprecated) SHA0.
+       Patch provided by Ch. Weisgerber
+
+ChangeSet@1.3630.5.1, 2016-02-17 18:36:10+01:00, perlinger@ntp.org
+  [Bug 3015] ntpq: config-from-file: "request contains an unprintable character"
+
+  ChangeLog@1.1794.5.1 +3 -0
+    [Bug 3015] ntpq: config-from-file: "request contains an unprintable character"
+
+  ntpq/ntpq-subs.c@1.117 +35 -16
+    [Bug 3015] ntpq: config-from-file: "request contains an unprintable character"
+     - remove trailing whitespace in remote config command
+     - remove comments, too.
+
+ChangeSet@1.3639, 2016-02-17 09:30:05+01:00, jnperlin@hydra.localnet
+  [Bug 3008] ctl_getitem() return value not always checked
+
+  ChangeLog@1.1802 +3 -0
+    [Bug 3008] ctl_getitem() return value not always checked
+
+  ntpd/ntp_control.c@1.206.1.1 +101 -58
+    [Bug 3008] ctl_getitem() return value not always checked
+     - also some cleanup of ctl_getitem
+
+ChangeSet@1.3630.3.3, 2016-02-14 10:15:57+00:00, stenn@psp-deb1.ntp.org
+  Fix typo in html/monopt.html.  Harlan Stenn.
+
+  ChangeLog@1.1794.3.3 +1 -0
+    Fix typo in html/monopt.html.  Harlan Stenn.
+
+  html/monopt.html@1.39 +2 -2
+    Fix typo in html/monopt.html.  Harlan Stenn.
+
+ChangeSet@1.3630.3.2, 2016-02-13 09:15:45+00:00, stenn@psp-deb1.ntp.org
+  Fix some Credit: attributions in the NEWS file.  Harlan Stenn.
+
+  ChangeLog@1.1794.3.2 +1 -0
+    Fix some Credit: attributions in the NEWS file.  Harlan Stenn.
+
+  NEWS@1.161 +3 -2
+    Fix some Credit: attributions in the NEWS file.  Harlan Stenn.
+
+ChangeSet@1.3630.4.1, 2016-02-10 20:11:21+01:00, perlinger@ntp.org
+  [Bug 3011] Duplicate IPs on unconfig directives will cause an assertion botch
+
+  ChangeLog@1.1794.4.1 +2 -0
+    [Bug 3011] Duplicate IPs on unconfig directives will cause an assertion botch
+
+  ntpd/ntp_request.c@1.118 +48 -78
+    [Bug 3011] Duplicate IPs on unconfig directives will cause an assertion botch
+     - reworked 'do_unconf()' to survive the effect of having peers named multiple times
+
+ChangeSet@1.3630.2.3, 2016-02-09 00:46:57+00:00, mayer@psp-deb1.ntp.org
+  Allow Active and Passive peer for crypto-NAK and added reporting
+
+  ntpd/ntp_proto.c@1.373.1.2 +6 -2
+    Allow Active and Passive peer for crypto-NAK and added reporting
+
+ChangeSet@1.3638, 2016-02-07 07:35:03+00:00, stenn@psp-deb1.ntp.org
+  Update ntp.conf documentation.  Harlan Stenn.
+
+  ChangeLog@1.1801 +1 -0
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/invoke-ntp.conf.texi@1.197 +37 -10
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.5man@1.231 +42 -12
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.5mdoc@1.231 +38 -11
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.def@1.22 +36 -9
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.man.in@1.231 +42 -12
+    Update ntp.conf documentation.  Harlan Stenn.
+
+  ntpd/ntp.conf.mdoc.in@1.231 +38 -11
+    Update ntp.conf documentation.  Harlan Stenn.
+
+ChangeSet@1.3637, 2016-02-06 07:39:44+00:00, stenn@psp-deb1.ntp.org
+  Update html/xleave.html documentation.  Harlan Stenn.
+
+  ChangeLog@1.1800 +1 -0
+    Update html/xleave.html documentation.  Harlan Stenn.
+
+  html/xleave.html@1.11 +6 -6
+    Update html/xleave.html documentation.  Harlan Stenn.
+
+ChangeSet@1.3630.2.2, 2016-02-05 10:50:33+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1794.2.2 +1 -1
+    cleanup
+
+ChangeSet@1.3630.3.1, 2016-02-05 09:21:00+00:00, stenn@psp-deb1.ntp.org
+  Document ntp.key's optional IP list in authenetic.html.  Harlan Stenn.
+
+  ChangeLog@1.1794.3.1 +1 -0
+    Document ntp.key's optional IP list in authenetic.html.  Harlan Stenn.
+
+  html/authentic.html@1.15 +16 -16
+    Document ntp.key's optional IP list in authenetic.html.  Harlan Stenn.
+
+ChangeSet@1.3630.2.1, 2016-02-05 04:29:08+00:00, mayer@psp-deb1.ntp.org
+  Validate crypto-NAK's
+
+  ChangeLog@1.1794.2.1 +1 -0
+    Validate crypto-NAK's
+
+  include/ntp.h@1.217 +2 -0
+    Add badNAM to peer struct and specify min V4 len
+
+  ntpd/ntp_proto.c@1.373.1.1 +78 -2
+    Validate crypto-NAM's
+
+ChangeSet@1.3630.1.4, 2016-01-28 08:08:42+01:00, jnperlin@hydra.localnet
+  [Bug 2999] out-of-bounds access in 'is_safe_filename()'
+
+  ChangeLog@1.1794.1.3 +1 -0
+    [Bug 2999] out-of-bounds access in 'is_safe_filename()'
+
+  ntpd/ntp_control.c@1.207 +3 -3
+    [Bug 2999] out-of-bounds access in 'is_safe_filename()'
+     - fixed array bound test
+     - make function NULL-pointer safe
+
+ChangeSet@1.3635, 2016-01-26 08:47:08+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ntpd/ntp_proto.c@1.377 +20 -18
+    cleanup
+
+ChangeSet@1.3630.1.2, 2016-01-24 03:02:29+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  libntp/authkeys.c@1.33 +15 -13
+    cleanup
+
+ChangeSet@1.3630.1.1, 2016-01-24 02:11:14+00:00, stenn@psp-deb1.ntp.org
+  ChangeLog cleanup
+
+  ChangeLog@1.1794.1.1 +3 -0
+    ChangeLog cleanup
+
+ChangeSet@1.3628.1.7, 2016-01-23 14:26:48+00:00, stenn@psp-deb1.ntp.org
+  Reclassify KoD timestamp checks to 2945
+
+  ChangeLog@1.1793.1.6 +1 -1
+    Reclassify KoD timestamp checks to 2945
+
+ChangeSet@1.3628.1.6, 2016-01-23 13:52:03+00:00, stenn@psp-deb1.ntp.org
+  revert use of isc_tsmemcmp in sntp/crypto.c until it is in a more accessible place.  This is not a critical use of that function.
+
+  sntp/crypto.c@1.21 +8 -3
+    revert use of isc_tsmemcmp in sntp/crypto.c until it is in a more accessible place.  This is not a critical use of that function.
+
+ChangeSet@1.3628.1.5, 2016-01-23 12:54:39+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2901] Additional KoD packet checks.  HStenn.
+
+  ChangeLog@1.1793.1.5 +1 -0
+    [Sec 2901] Additional KoD packet checks.  HStenn.
+
+  ntpd/ntp_proto.c@1.376 +53 -0
+    [Sec 2901] Additional KoD packet checks.  HStenn.
+
+ChangeSet@1.3628.1.4, 2016-01-23 11:36:37+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2901] KoD packets must have non-zero transmit timestamps.  HStenn.
+
+  ChangeLog@1.1793.1.4 +1 -0
+    [Sec 2901] KoD packets must have non-zero transmit timestamps.  HStenn.
+
+  ntpd/ntp_proto.c@1.375 +10 -0
+    [Sec 2901] KoD packets must have non-zero transmit timestamps.  HStenn.
+
+ChangeSet@1.3628.1.3, 2016-01-23 10:34:17+00:00, stenn@psp-deb1.ntp.org
+  [Sec 2936] Skeleton Key: Any system knowing the trusted key can serve time. Include passive servers in this check. HStenn.
+
+  ChangeLog@1.1793.1.3 +2 -0
+    [Sec 2936] Skeleton Key: Any system knowing the trusted key can serve time. Include passive servers in this check. HStenn.
+
+  ntpd/ntp_proto.c@1.374 +1 -1
+    [Sec 2936] Skeleton Key: Any system knowing the trusted key can serve time. Include passive servers in this check. HStenn.
+
+ChangeSet@1.3628.3.1, 2016-01-21 20:27:05+01:00, jnperlin@hydra.localnet
+  [Bug 2994] Systems with HAVE_SIGNALED_IO fail to compile
+
+  ChangeLog@1.1793.3.1 +3 -0
+    [Bug 2994] Systems with HAVE_SIGNALED_IO fail to compile
+
+  ntpd/ntp_io.c@1.412.1.1 +0 -4
+    [Bug 2994] Systems with HAVE_SIGNALED_IO fail to compile
+     - removed unsetting DEBUG_TIMING. (The timing debugging code is IMHO still not async-safe, but DEBUG_TIMING is a developer-option anyway. perlinger@ntp.org)
+
+ChangeSet@1.3628.2.1, 2016-01-21 00:47:12-08:00, harlan@nb7-a.pfcs.com
+  [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  ChangeLog@1.1793.2.1 +4 -0
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  configure.ac@1.603 +3 -1
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  include/ntp_types.h@1.37 +7 -0
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  tests/libntp/lfpfunc.c@1.16 +0 -3
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  tests/libntp/run-lfpfunc.c@1.19 +9 -9
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  tests/libntp/run-timevalops.c@1.14 +28 -28
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  tests/libntp/timespecops.c@1.11 +0 -2
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+  tests/libntp/timevalops.c@1.14 +0 -2
+    [Bug 2858] bool support.  Use stdbool.h when available.  HStenn.
+
+ChangeSet@1.3628.1.2, 2016-01-21 07:35:48+00:00, stenn@psp-deb1.ntp.org
+  merge cleanup
+
+  ChangeLog@1.1793.1.2 +7 -3
+    merge cleanup
+
+ChangeSet@1.3630, 2016-01-21 03:55:23+00:00, mayer@psp-deb1.ntp.org
+  Bug fixes to compile Windows
+
+  ChangeLog@1.1794 +1 -0
+    Bug fixes to compile Windows
+
+ChangeSet@1.3629, 2016-01-21 03:52:41+00:00, mayer@psp-deb1.ntp.org
+  Bug fixes to compile Windows
+
+  include/ntp_stdlib.h@1.82 +1 -1
+    Bug fixes to compile Windows
+
+  include/ntp_worker.h@1.6 +2 -2
+    Bug fixes to compile Windows
+
+  libntp/authkeys.c@1.32 +64 -83
+    Bug fixes to compile Windows
+
+  libntp/is_ip_address.c@1.2 +0 -40
+    Bug fixes to compile Windows
+
+  ntpd/ntp_io.c@1.413 +3 -2
+    Bug fixes to compile Windows
+
+  ports/winnt/vs2008/libntp/libntp.vcproj@1.54.1.1 +5 -1
+    Bug fixes to compile Windows
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj@1.9.1.1 +1 -0
+    Bug fixes to compile Windows
+
 ChangeSet@1.3628, 2016-01-20 04:20:12-05:00, stenn@deacon.udel.edu
   NTP_4_2_8P6
   TAG: NTP_4_2_8P6
@@ -382,7 +1509,7 @@ ChangeSet@1.3623, 2016-01-18 11:55:56+00:00, stenn@psp-deb1.ntp.org
   include/ntp_types.h@1.36 +1 -0
     [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
 
-  libntp/Makefile.am@1.77 +1 -0
+  libntp/Makefile.am@1.76.1.1 +1 -0
     [Sec 2936] Skeleton Key: Any trusted key system can serve time. HStenn.
 
   libntp/authkeys.c@1.31 +60 -6
@@ -447,10 +1574,10 @@ ChangeSet@1.3621, 2016-01-17 05:51:14+00:00, stenn@psp-deb1.ntp.org
   NEWS@1.157 +22 -0
     Update NEWS file for 2942
 
-ChangeSet@1.3615.13.1, 2016-01-17 05:07:22+00:00, stenn@psp-deb1.ntp.org
+ChangeSet@1.3615.14.1, 2016-01-17 05:07:22+00:00, stenn@psp-deb1.ntp.org
   [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
 
-  ChangeLog@1.1786.13.1 +4 -0
+  ChangeLog@1.1786.14.1 +4 -0
     [Sec 2942]: Off-path DoS attack on auth broadcast mode.  HStenn.
 
   html/miscopt.html@1.85 +11 -3
@@ -519,16 +1646,16 @@ ChangeSet@1.3615.1.5, 2016-01-14 10:44:13+00:00, stenn@psp-at1.ntp.org
   ChangeLog@1.1786.1.5 +0 -1
     merge cleanup
 
-ChangeSet@1.3615.12.4, 2016-01-14 10:27:23+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.13.4, 2016-01-14 10:27:23+00:00, stenn@psp-at1.ntp.org
   merge cleanup
 
-  ChangeLog@1.1786.12.4 +1 -1
+  ChangeLog@1.1786.13.4 +1 -1
     merge cleanup
 
-ChangeSet@1.3615.12.2, 2016-01-14 09:49:52+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.13.2, 2016-01-14 09:49:52+00:00, stenn@psp-at1.ntp.org
   merge cleanup
 
-  ChangeLog@1.1786.12.2 +2 -2
+  ChangeLog@1.1786.13.2 +2 -2
     merge cleanup
 
 ChangeSet@1.3615.3.17, 2016-01-14 09:33:56+00:00, stenn@psp-at1.ntp.org
@@ -561,16 +1688,16 @@ ChangeSet@1.3615.3.8, 2016-01-13 04:23:46+00:00, stenn@psp-deb1.ntp.org
   NEWS@1.153 +52 -0
     Update NEWS file for bug 2935
 
-ChangeSet@1.3615.7.12, 2016-01-12 09:53:06+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.12, 2016-01-12 09:53:06+00:00, stenn@psp-at1.ntp.org
   [Sec 2935] use L_SUB instead of L_ISGT.  Juergen Perlinger
 
   ntpd/ntp_proto.c@1.368.1.5 +4 -1
     [Sec 2935] use L_SUB instead of L_ISGT.  Juergen Perlinger
 
-ChangeSet@1.3615.7.11, 2016-01-11 03:02:53-08:00, harlan@max.pfcs.com
+ChangeSet@1.3615.8.11, 2016-01-11 03:02:53-08:00, harlan@max.pfcs.com
   [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
 
-  ChangeLog@1.1786.9.1 +4 -0
+  ChangeLog@1.1786.10.1 +4 -0
     [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
 
   include/ntp.h@1.215 +1 -0
@@ -579,17 +1706,17 @@ ChangeSet@1.3615.7.11, 2016-01-11 03:02:53-08:00, harlan@max.pfcs.com
   ntpd/ntp_proto.c@1.368.1.4 +67 -0
     [Sec 2935] Deja Vu: Replay attack on authenticated broadcast mode.
 
-ChangeSet@1.3615.7.10, 2016-01-11 02:44:25-08:00, harlan@max.pfcs.com
+ChangeSet@1.3615.8.10, 2016-01-11 02:44:25-08:00, harlan@max.pfcs.com
   make leapsec_query messages less verbose.
 
   ntpd/ntp_timer.c@1.93.1.1 +6 -4
     make leapsec_query messages less verbose.
 
-ChangeSet@1.3615.9.1, 2016-01-11 10:26:12+01:00, jnperlin@hydra.localnet
+ChangeSet@1.3615.10.1, 2016-01-11 10:26:12+01:00, jnperlin@hydra.localnet
   [Bug 2985] bogus calculation in authkeys.c
    - implement 'auth_log2()' using integer bithack instead of float calculation
 
-  ChangeLog@1.1786.7.5 +2 -0
+  ChangeLog@1.1786.8.5 +2 -0
     [Bug 2985] bogus calculation in authkeys.c
      - implement 'auth_log2()' using integer bithack instead of float calculation
 
@@ -605,7 +1732,7 @@ ChangeSet@1.3615.9.1, 2016-01-11 10:26:12+01:00, jnperlin@hydra.localnet
     [Bug 2985] bogus calculation in authkeys.c
      - update auto-generated file
 
-ChangeSet@1.3615.7.9, 2016-01-09 09:52:44+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.9, 2016-01-09 09:52:44+00:00, stenn@psp-at1.ntp.org
   Add timelastrec to the peer structure
 
   include/ntp.h@1.214 +2 -1
@@ -617,17 +1744,17 @@ ChangeSet@1.3615.3.6, 2016-01-08 10:00:03+00:00, stenn@psp-at1.ntp.org
   ChangeLog@1.1786.3.6 +1 -1
     4.2.8p5 merge cleanup
 
-ChangeSet@1.3615.7.8, 2016-01-08 00:26:09+00:00, stenn@deacon.udel.edu
+ChangeSet@1.3615.8.8, 2016-01-08 00:26:09+00:00, stenn@deacon.udel.edu
   Update copyright year
 
   sntp/include/copyright.def@1.26 +1 -1
     Update copyright year
 
-ChangeSet@1.3615.7.7, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
+ChangeSet@1.3615.8.7, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
   NTP_4_2_8P5
   TAG: NTP_4_2_8P5
 
-  ChangeLog@1.1786.7.4 +1 -0
+  ChangeLog@1.1786.8.4 +1 -0
     NTP_4_2_8P5
 
   ntpd/invoke-ntp.conf.texi@1.194 +1 -1
@@ -957,28 +2084,28 @@ ChangeSet@1.3615.7.7, 2016-01-07 23:33:11+00:00, stenn@deacon.udel.edu
   util/ntp-keygen.mdoc.in@1.331 +2 -2
     NTP_4_2_8P5
 
-ChangeSet@1.3615.7.6, 2016-01-07 17:52:24-05:00, stenn@deacon.udel.edu
+ChangeSet@1.3615.8.6, 2016-01-07 17:52:24-05:00, stenn@deacon.udel.edu
   ntp-4.2.8p5
 
   packageinfo.sh@1.521 +1 -1
     ntp-4.2.8p5
 
-ChangeSet@1.3615.7.5, 2016-01-07 22:20:05+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.5, 2016-01-07 22:20:05+00:00, stenn@psp-at1.ntp.org
   cleanup
 
   NEWS@1.152 +2 -2
     cleanup
 
-ChangeSet@1.3615.7.4, 2016-01-07 09:33:11+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.4, 2016-01-07 09:33:11+00:00, stenn@psp-at1.ntp.org
   typo in ntp_proto.c - leap smear.  Reported by Martin Burnicki
 
   ntpd/ntp_proto.c@1.368.1.3 +1 -1
     typo in ntp_proto.c - leap smear.  Reported by Martin Burnicki
 
-ChangeSet@1.3615.7.3, 2016-01-07 06:33:08+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.3, 2016-01-07 06:33:08+00:00, stenn@psp-at1.ntp.org
   Update scripts/calc_tickadj/Makefile.am.  Harlan Stenn.
 
-  ChangeLog@1.1786.7.3 +1 -0
+  ChangeLog@1.1786.8.3 +1 -0
     Update scripts/calc_tickadj/Makefile.am.  Harlan Stenn.
 
   scripts/calc_tickadj/Makefile.am@1.11 +2 -0
@@ -990,35 +2117,35 @@ ChangeSet@1.3615.3.2, 2016-01-05 12:34:56+00:00, stenn@psp-at1.ntp.org
   ChangeLog@1.1786.3.2 +2 -0
     ntp-4.2.8p6
 
-ChangeSet@1.3615.8.1, 2016-01-05 10:57:45+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.9.1, 2016-01-05 10:57:45+00:00, stenn@psp-at1.ntp.org
   Bug 2952 fixes
 
-  ChangeLog@1.1786.8.1 +1 -0
+  ChangeLog@1.1786.9.1 +1 -0
     Bug 2952 fixes
 
   ntpd/ntp_proto.c@1.368.1.2 +165 -152
     Bug 2952 fixes
 
-ChangeSet@1.3615.7.1, 2016-01-05 09:56:31+00:00, stenn@psp-at1.ntp.org
+ChangeSet@1.3615.8.1, 2016-01-05 09:56:31+00:00, stenn@psp-at1.ntp.org
   ntp-4.2.8p5 prep
 
-  ChangeLog@1.1786.7.1 +2 -1
+  ChangeLog@1.1786.8.1 +2 -1
     ntp-4.2.8p5 prep
 
   NEWS@1.151 +104 -3
     ntp-4.2.8p5 prep
 
-ChangeSet@1.3615.5.1, 2015-12-13 13:35:12+01:00, jnperlin@hydra.localnet
+ChangeSet@1.3615.6.1, 2015-12-13 13:35:12+01:00, jnperlin@hydra.localnet
   [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
     Found this already fixed, but validation lead to further cleanup:
      - source code formatting
      - inline variable definitions moved to start of block
      - made some pure input data pointers 'const void*' instead of 'char*'; avoids casts and warnings
 
-  ChangeLog@1.1786.5.1 +3 -0
+  ChangeLog@1.1786.6.1 +3 -0
     [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
 
-  sntp/crypto.c@1.19 +13 -12
+  sntp/crypto.c@1.18.1.1 +13 -12
     [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
      - sidekick: make pure input pointers 'const void*' instead of 'char*'
      - sidekick: remove unnecessary casts
@@ -1087,6 +2214,77 @@ ChangeSet@1.3615.5.1, 2015-12-13 13:35:12+01:00, jnperlin@hydra.localnet
   tests/libntp/socktoa.c@1.12 +23 -17
     [Bug 2892] Several test cases assume IPv6 capabilities even when IPv6 is disabled in the build
      - source code formatting +  cleanup
+
+ChangeSet@1.3615.5.1, 2015-12-12 10:24:19+00:00, perlinger@psp-deb1.ntp.org
+  [Bug 2879] Improve NTP security against timing attacks.
+   - use timing-safe memcmp() for digest tests
+
+  ChangeLog@1.1786.5.1 +3 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - use timing-safe memcmp() for digest test
+
+  lib/isc/hmacmd5.c@1.3 +1 -1
+    [Bug 2879] Improve NTP security against timing attacks.
+     - use timing-safe memcmp() for digest tests
+
+  lib/isc/hmacsha.c@1.3 +5 -5
+    [Bug 2879] Improve NTP security against timing attacks.
+     - use timing-safe memcmp() for digest tests
+
+  lib/isc/include/isc/string.h@1.5 +18 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - prototype for timing-safe 'isc_tsmemcmp()'
+
+  lib/isc/tsmemcmp.c@1.1 +55 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - implement a timing safe (though less efficient) version of 'memcmp()'
+       as 'isc_tsmemcmp()'
+
+  lib/isc/tsmemcmp.c@1.0 +0 -0
+
+  libntp/Makefile.am@1.77 +1 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add new source file 'lib/isc/tsmemcmp.c'
+
+  libntp/a_md5encrypt.c@1.36 +2 -2
+    [Bug 2879] Improve NTP security against timing attacks.
+     - use timing-safe memcmp() for digest tests
+
+  ports/winnt/vs2005/libntp.vcproj@1.25 +4 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add new source file 'lib/isc/tsmemcmp.c'
+
+  ports/winnt/vs2008/libntp/libntp.vcproj@1.55 +4 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add new source file 'lib/isc/tsmemcmp.c'
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj@1.10 +3 -2
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add new source file 'lib/isc/tsmemcmp.c'
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj.filters@1.8 +5 -2
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add new source file 'lib/isc/tsmemcmp.c'
+
+  sntp/crypto.c@1.19 +2 -1
+    [Bug 2879] Improve NTP security against timing attacks.
+     - use timing-safe memcmp() for digest tests
+
+  tests/libntp/Makefile.am@1.94 +12 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - add unit test for timing-safe memcmp
+
+  tests/libntp/run-tsafememcmp.c@1.1 +64 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - auto-generated test runner
+
+  tests/libntp/run-tsafememcmp.c@1.0 +0 -0
+
+  tests/libntp/tsafememcmp.c@1.1 +85 -0
+    [Bug 2879] Improve NTP security against timing attacks.
+     - unit tests for timing-safe memcmp
+
+  tests/libntp/tsafememcmp.c@1.0 +0 -0
 
 ChangeSet@1.3615.4.1, 2015-12-11 18:24:16+01:00, jnperlin@hydra.localnet
   [Bug 2882] Look at ntp_request.c:list_peers_sum()
