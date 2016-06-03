@@ -1,3 +1,774 @@
+ChangeSet@1.3686, 2016-06-02 07:40:06-04:00, stenn@deacon.udel.edu
+  NTP_4_2_8P8
+  TAG: NTP_4_2_8P8
+
+  ChangeLog@1.1834 +1 -0
+    NTP_4_2_8P8
+
+  ntpd/invoke-ntp.conf.texi@1.200 +1 -1
+    NTP_4_2_8P8
+
+  ntpd/invoke-ntp.keys.texi@1.190 +1 -1
+    NTP_4_2_8P8
+
+  ntpd/invoke-ntpd.texi@1.506 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.conf.5man@1.234 +3 -3
+    NTP_4_2_8P8
+
+  ntpd/ntp.conf.5mdoc@1.234 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.conf.html@1.185 +55 -19
+    NTP_4_2_8P8
+
+  ntpd/ntp.conf.man.in@1.234 +3 -3
+    NTP_4_2_8P8
+
+  ntpd/ntp.conf.mdoc.in@1.234 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.keys.5man@1.224 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.keys.5mdoc@1.224 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.keys.html@1.186 +1 -1
+    NTP_4_2_8P8
+
+  ntpd/ntp.keys.man.in@1.224 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntp.keys.mdoc.in@1.224 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntpd-opts.c@1.528 +7 -7
+    NTP_4_2_8P8
+
+  ntpd/ntpd-opts.h@1.527 +3 -3
+    NTP_4_2_8P8
+
+  ntpd/ntpd.1ntpdman@1.335 +3 -3
+    NTP_4_2_8P8
+
+  ntpd/ntpd.1ntpdmdoc@1.335 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntpd.html@1.179 +2 -2
+    NTP_4_2_8P8
+
+  ntpd/ntpd.man.in@1.335 +3 -3
+    NTP_4_2_8P8
+
+  ntpd/ntpd.mdoc.in@1.335 +2 -2
+    NTP_4_2_8P8
+
+  ntpdc/invoke-ntpdc.texi@1.503 +2 -2
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc-opts.c@1.521 +7 -7
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc-opts.h@1.520 +3 -3
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc.1ntpdcman@1.334 +3 -3
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.334 +2 -2
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc.html@1.347 +2 -2
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc.man.in@1.334 +3 -3
+    NTP_4_2_8P8
+
+  ntpdc/ntpdc.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P8
+
+  ntpq/invoke-ntpq.texi@1.511 +2 -2
+    NTP_4_2_8P8
+
+  ntpq/ntpq-opts.c@1.528 +7 -7
+    NTP_4_2_8P8
+
+  ntpq/ntpq-opts.h@1.526 +3 -3
+    NTP_4_2_8P8
+
+  ntpq/ntpq.1ntpqman@1.339 +3 -3
+    NTP_4_2_8P8
+
+  ntpq/ntpq.1ntpqmdoc@1.339 +2 -2
+    NTP_4_2_8P8
+
+  ntpq/ntpq.html@1.176 +2 -2
+    NTP_4_2_8P8
+
+  ntpq/ntpq.man.in@1.339 +3 -3
+    NTP_4_2_8P8
+
+  ntpq/ntpq.mdoc.in@1.339 +2 -2
+    NTP_4_2_8P8
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.505 +2 -2
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.523 +7 -7
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.522 +3 -3
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.334 +3 -3
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.334 +2 -2
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd.html@1.174 +1 -1
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd.man.in@1.334 +3 -3
+    NTP_4_2_8P8
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P8
+
+  packageinfo.sh@1.528 +2 -2
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.95 +3 -3
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.96 +2 -2
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/calc_tickadj.html@1.97 +1 -1
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.94 +3 -3
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.96 +2 -2
+    NTP_4_2_8P8
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.99 +1 -1
+    NTP_4_2_8P8
+
+  scripts/invoke-plot_summary.texi@1.117 +2 -2
+    NTP_4_2_8P8
+
+  scripts/invoke-summary.texi@1.116 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.326 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait-opts@1.62 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.323 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.324 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait.html@1.343 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait.man.in@1.323 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.324 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.114 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep-opts@1.64 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.102 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.102 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep.html@1.115 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep.man.in@1.102 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.103 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.115 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace-opts@1.64 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.102 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.103 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace.html@1.116 +2 -2
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace.man.in@1.102 +3 -3
+    NTP_4_2_8P8
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.104 +2 -2
+    NTP_4_2_8P8
+
+  scripts/plot_summary-opts@1.65 +2 -2
+    NTP_4_2_8P8
+
+  scripts/plot_summary.1plot_summaryman@1.115 +3 -3
+    NTP_4_2_8P8
+
+  scripts/plot_summary.1plot_summarymdoc@1.115 +2 -2
+    NTP_4_2_8P8
+
+  scripts/plot_summary.html@1.118 +40 -58
+    NTP_4_2_8P8
+
+  scripts/plot_summary.man.in@1.115 +3 -3
+    NTP_4_2_8P8
+
+  scripts/plot_summary.mdoc.in@1.115 +2 -2
+    NTP_4_2_8P8
+
+  scripts/summary-opts@1.64 +2 -2
+    NTP_4_2_8P8
+
+  scripts/summary.1summaryman@1.114 +3 -3
+    NTP_4_2_8P8
+
+  scripts/summary.1summarymdoc@1.114 +2 -2
+    NTP_4_2_8P8
+
+  scripts/summary.html@1.117 +2 -2
+    NTP_4_2_8P8
+
+  scripts/summary.man.in@1.114 +3 -3
+    NTP_4_2_8P8
+
+  scripts/summary.mdoc.in@1.114 +2 -2
+    NTP_4_2_8P8
+
+  scripts/update-leap/invoke-update-leap.texi@1.15 +1 -1
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap-opts@1.15 +2 -2
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap.1update-leapman@1.15 +3 -3
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.15 +2 -2
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap.html@1.15 +1 -1
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap.man.in@1.15 +3 -3
+    NTP_4_2_8P8
+
+  scripts/update-leap/update-leap.mdoc.in@1.15 +2 -2
+    NTP_4_2_8P8
+
+  sntp/invoke-sntp.texi@1.503 +2 -2
+    NTP_4_2_8P8
+
+  sntp/sntp-opts.c@1.522 +7 -7
+    NTP_4_2_8P8
+
+  sntp/sntp-opts.h@1.520 +3 -3
+    NTP_4_2_8P8
+
+  sntp/sntp.1sntpman@1.338 +3 -3
+    NTP_4_2_8P8
+
+  sntp/sntp.1sntpmdoc@1.338 +2 -2
+    NTP_4_2_8P8
+
+  sntp/sntp.html@1.518 +2 -2
+    NTP_4_2_8P8
+
+  sntp/sntp.man.in@1.338 +3 -3
+    NTP_4_2_8P8
+
+  sntp/sntp.mdoc.in@1.338 +2 -2
+    NTP_4_2_8P8
+
+  util/invoke-ntp-keygen.texi@1.506 +2 -2
+    NTP_4_2_8P8
+
+  util/ntp-keygen-opts.c@1.524 +7 -7
+    NTP_4_2_8P8
+
+  util/ntp-keygen-opts.h@1.522 +3 -3
+    NTP_4_2_8P8
+
+  util/ntp-keygen.1ntp-keygenman@1.334 +3 -3
+    NTP_4_2_8P8
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.334 +2 -2
+    NTP_4_2_8P8
+
+  util/ntp-keygen.html@1.180 +2 -2
+    NTP_4_2_8P8
+
+  util/ntp-keygen.man.in@1.334 +3 -3
+    NTP_4_2_8P8
+
+  util/ntp-keygen.mdoc.in@1.334 +2 -2
+    NTP_4_2_8P8
+
+ChangeSet@1.3685, 2016-06-02 06:50:37-04:00, stenn@deacon.udel.edu
+  4.2.8p8
+
+  packageinfo.sh@1.527 +1 -1
+    4.2.8p8
+
+ChangeSet@1.3684, 2016-05-27 08:02:09+00:00, stenn@psp-deb1.ntp.org
+  typo
+
+  NEWS@1.174 +1 -1
+    typo
+
+ChangeSet@1.3683, 2016-05-27 00:07:22-07:00, harlan@max.pfcs.com
+  [Bug 3058] fetch_timestamp() mishandles 64-bit alignment. Brian Utterback, JPerlinger, HStenn.
+
+  ChangeLog@1.1833 +2 -0
+    [Bug 3058] fetch_timestamp() mishandles 64-bit alignment. Brian Utterback, JPerlinger, HStenn.
+
+  NEWS@1.173 +2 -0
+    [Bug 3058] fetch_timestamp() mishandles 64-bit alignment. Brian Utterback, JPerlinger, HStenn.
+
+  ntpd/ntp_io.c@1.417 +41 -41
+    [Bug 3058] fetch_timestamp() mishandles 64-bit alignment. Brian Utterback, JPerlinger, HStenn.
+
+ChangeSet@1.3682, 2016-05-26 22:37:19-07:00, harlan@max.pfcs.com
+  [Sec3043] - validate origin timestamps on bad MACs, too.  stenn@ntp.org
+
+  ChangeLog@1.1832 +2 -1
+    [Sec3043] - validate origin timestamps on bad MACs, too.  stenn@ntp.org
+
+  NEWS@1.172 +9 -9
+    [Sec3043] - validate origin timestamps on bad MACs, too.  stenn@ntp.org
+
+  ntpd/ntp_proto.c@1.392 +19 -6
+    [Sec3043] - validate origin timestamps on bad MACs, too.  stenn@ntp.org
+
+ChangeSet@1.3681, 2016-05-24 23:31:36+00:00, stenn@psp-deb1.ntp.org
+  Update the NEWS file for 4.2.8p8.  HStenn.
+
+  ChangeLog@1.1831 +1 -0
+    Update the NEWS file for 4.2.8p8.  HStenn.
+
+  NEWS@1.171 +103 -2
+    Update the NEWS file for 4.2.8p8.  HStenn.
+
+ChangeSet@1.3680, 2016-05-24 12:05:06+00:00, stenn@psp-deb1.ntp.org
+  [Sec 3044] Spoofed server packets are partially processed.  HStenn.
+
+  ChangeLog@1.1830 +3 -2
+    [Sec 3044] Spoofed server packets are partially processed.  HStenn.
+
+  ntpd/ntp_proto.c@1.391 +39 -24
+    [Sec 3044] Spoofed server packets are partially processed.  HStenn.
+
+ChangeSet@1.3669.3.2, 2016-05-24 02:58:00-07:00, harlan@hms-mbp11.pfcs.com
+  Make sure we have an "author" file for git imports.  HStenn.
+
+  ChangeLog@1.1820.3.3 +1 -0
+    Update the problem tests for MacOS for sntp.  HStenn.
+
+  ChangeLog@1.1820.3.2 +1 -0
+    Make sure we have an "author" file for git imports.  HStenn.
+
+  configure.ac@1.606 +1 -0
+    Make sure we have an "author" file for git imports.  HStenn.
+
+  scripts/build/Makefile.am@1.5 +1 -1
+    Make sure we have an "author" file for git imports.  HStenn.
+
+  scripts/build/genAuthors.in@1.1 +82 -0
+    BitKeeper file /Users/harlan/src/ntp-stable/scripts/build/genAuthors.in
+
+  scripts/build/genAuthors.in@1.0 +0 -0
+
+  sntp/configure.ac@1.83 +2 -0
+    Make sure we have an "author" file for git imports.  HStenn.
+
+  sntp/m4/ntp_problemtests.m4@1.5 +1 -0
+    Make sure we have an "author" file for git imports.  HStenn.
+
+  sntp/m4/sntp_problemtests.m4@1.1 +47 -0
+    BitKeeper file /Users/harlan/src/ntp-stable/sntp/m4/sntp_problemtests.m4
+
+  sntp/m4/sntp_problemtests.m4@1.0 +0 -0
+
+  sntp/tests/Makefile.am@1.67 +8 -2
+    Update the problem tests for MacOS for sntp.  HStenn.
+
+ChangeSet@1.3669.3.1, 2016-05-24 02:25:46-07:00, harlan@hms-mbp11.pfcs.com
+  [Sec 3042] Broadcast Interleave.  HStenn.
+
+  ChangeLog@1.1820.3.1 +4 -0
+    [Sec 3042] Broadcast Interleave.  HStenn.
+
+  ntpd/ntp_proto.c@1.386.1.1 +69 -14
+    [Sec 3042] Broadcast Interleave.  HStenn.
+
+ChangeSet@1.3678, 2016-05-23 09:53:37+00:00, stenn@psp-deb1.ntp.org
+  [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ChangeLog@1.1828 +1 -1
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  include/ntp.h@1.220 +1 -0
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/complete.conf.in@1.31 +1 -1
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/invoke-ntp.conf.texi@1.199 +23 -3
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/keyword-gen-utd@1.28 +1 -1
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/keyword-gen.c@1.34 +2 -1
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp.conf.5man@1.233 +27 -6
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp.conf.5mdoc@1.233 +24 -2
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp.conf.def@1.24 +22 -0
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp.conf.man.in@1.233 +27 -6
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp.conf.mdoc.in@1.233 +24 -2
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_config.c@1.338 +6 -2
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_keyword.h@1.30 +617 -597
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_parser.c@1.102 +1541 -1773
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_parser.h@1.66 +294 -306
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_parser.y@1.92 +2 -0
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+  ntpd/ntp_proto.c@1.389 +29 -8
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org, stenn@ntp.org
+
+ChangeSet@1.3671.1.3, 2016-05-17 06:49:41+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3054] miscopt.html documents the allan intercept in seconds. SWhite.
+
+  ChangeLog@1.1822.1.3 +1 -0
+    [Bug 3054] miscopt.html documents the allan intercept in seconds. SWhite.
+
+  html/miscopt.html@1.86 +2 -2
+    [Bug 3054] miscopt.html documents the allan intercept in seconds. SWhite.
+
+ChangeSet@1.3671.1.2, 2016-05-17 04:25:50+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3052] Add a .gitignore file.  Edmund Wong.
+
+  .gitignore@1.1 +9 -0
+    BitKeeper file /home/stenn/ntp-stable/.gitignore
+
+  .gitignore@1.0 +0 -0
+
+  BitKeeper/etc/ignore@1.91 +0 -1
+    [Bug 3052] Add a .gitignore file.  Edmund Wong.
+
+  ChangeLog@1.1822.1.2 +1 -0
+    [Bug 3052] Add a .gitignore file.  Edmund Wong.
+
+ChangeSet@1.3675, 2016-05-08 11:59:28+02:00, perlinger@ntp.org
+  [Sec 3043]  Autokey association reset. perlinger@ntp.org
+   (fixes [Sec 3044] and [Sec 3045], too)
+
+  ChangeLog@1.1825 +2 -0
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org
+
+  ntpd/ntp_proto.c@1.388 +28 -22
+    [Sec 3043]  Autokey association reset. perlinger@ntp.org
+     (fixes [Sec 3044] and [Sec 3045], too)
+
+ChangeSet@1.3674, 2016-05-06 11:05:44+00:00, stenn@psp-deb1.ntp.org
+  [Sec 3046] CRYPTO_NAK crash
+
+  ChangeLog@1.1824 +1 -0
+    [Sec 3046] CRYPTO_NAK crash
+
+  ntpd/ntp_proto.c@1.387 +2 -1
+    [Sec 3046] CRYPTO_NAK crash
+
+ChangeSet@1.3669.2.1, 2016-05-06 09:20:29+00:00, stenn@psp-deb1.ntp.org
+  Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  ChangeLog@1.1820.2.1 +4 -0
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/invoke-plot_summary.texi@1.116 +2 -2
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/ntp-wait/ntp-wait.in@1.12 +1 -1
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary-opts@1.64 +1 -1
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary-opts.def@1.3 +1 -1
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary.1plot_summaryman@1.114 +4 -4
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary.1plot_summarymdoc@1.114 +3 -3
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary.html@1.117 +58 -40
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary.man.in@1.114 +4 -4
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/plot_summary.mdoc.in@1.114 +3 -3
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+  scripts/t/ntp-wait.t@1.2 +1 -1
+    Fix typo in ntp-wait and plot_summary.  HStenn.
+
+ChangeSet@1.3672, 2016-05-05 06:17:20+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS file for 4.2.8p9 for Bug 3038
+
+  NEWS@1.170 +9 -0
+    Update NEWS file for 4.2.8p9 for Bug 3038
+
+ChangeSet@1.3671, 2016-05-05 06:09:53+00:00, stenn@psp-deb1.ntp.org
+  trivial cleanup
+
+  ChangeLog@1.1822 +1 -0
+    trivial cleanup
+
+ChangeSet@1.3670, 2016-04-27 21:54:12+02:00, perlinger@ntp.org
+  [Bug 3038] NTP fails to build in VS2015 Community Edition
+   - new build environment
+   - 'wint_t' and 'struct timespec' defined by VS2015
+   - fixed several format clashes in 'printf()' and 'scanf'
+
+  BitKeeper/etc/ignore@1.90 +1 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - skip next version of MSVC symbol database
+
+  ChangeLog@1.1821 +6 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+
+  ntpd/refclock_parse.c@1.83 +6 -6
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - work around clash SOCKET vs file descriptor formatting
+
+  ntpdc/ntpdc.c@1.107 +2 -2
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - fix format warnings/errors
+
+  ntpq/ntpq.c@1.170 +5 -2
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - fix format warnings/errors
+
+  ports/winnt/include/config.h@1.115 +4 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - VS2015 has 'wint_t'
+
+  ports/winnt/include/sys/time.h@1.9 +2 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - VS2015 has 'struct timespec'
+
+  ports/winnt/libntp/termios.c@1.33 +3 -3
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - fix format parsing error
+
+  ports/winnt/ppsapi/loopback/src/sys/time.h@1.2 +2 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - VS2015 has 'struct timespec'
+
+  ports/winnt/vs2013/common.props@1.3 +1 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     -enable multiprocessor build
+
+  ports/winnt/vs2015/common.props@1.1 +60 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/common.props@1.0 +0 -0
+
+  ports/winnt/vs2015/debug-x64.props@1.1 +24 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/debug-x64.props@1.0 +0 -0
+
+  ports/winnt/vs2015/debug.props@1.1 +24 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/debug.props@1.0 +0 -0
+
+  ports/winnt/vs2015/instsrv/instsrv.vcxproj@1.1 +269 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/instsrv/instsrv.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/instsrv/instsrv.vcxproj.filters@1.1 +28 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/instsrv/instsrv.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj@1.1 +431 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj.filters@1.1 +574 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/loopback-pps/loopback-ppsapi-provider.vcxproj@1.1 +252 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/loopback-pps/loopback-ppsapi-provider.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/loopback-pps/loopback-ppsapi-provider.vcxproj.filters@1.1 +39 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/loopback-pps/loopback-ppsapi-provider.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntp-keygen/ntp-keygen.vcxproj@1.1 +270 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntp-keygen/ntp-keygen.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntp-keygen/ntp-keygen.vcxproj.filters@1.1 +36 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntp-keygen/ntp-keygen.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntp.sln@1.1 +166 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntp.sln@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpd-keyword-gen/ntpd-keyword-gen.vcxproj@1.1 +227 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpd-keyword-gen/ntpd-keyword-gen.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpd-keyword-gen/ntpd-keyword-gen.vcxproj.filters@1.1 +69 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpd-keyword-gen/ntpd-keyword-gen.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpd/gen-ntp_keyword.bat@1.1 +53 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpd/gen-ntp_keyword.bat@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpd/ntpd.vcxproj@1.1 +515 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpd/ntpd.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpd/ntpd.vcxproj.filters@1.1 +556 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpd/ntpd.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpdate/ntpdate.vcxproj@1.1 +287 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpdate/ntpdate.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpdate/ntpdate.vcxproj.filters@1.1 +72 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpdate/ntpdate.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpdc/ntpdc.vcxproj@1.1 +278 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpdc/ntpdc.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpdc/ntpdc.vcxproj.filters@1.1 +45 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpdc/ntpdc.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpq/ntpq.vcxproj@1.1 +277 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpq/ntpq.vcxproj@1.0 +0 -0
+
+  ports/winnt/vs2015/ntpq/ntpq.vcxproj.filters@1.1 +42 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/ntpq/ntpq.vcxproj.filters@1.0 +0 -0
+
+  ports/winnt/vs2015/release-x64.props@1.1 +25 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/release-x64.props@1.0 +0 -0
+
+  ports/winnt/vs2015/release.props@1.1 +25 -0
+    [Bug 3038] NTP fails to build in VS2015 Community Edition
+     - add build environment
+
+  ports/winnt/vs2015/release.props@1.0 +0 -0
+
 ChangeSet@1.3669, 2016-04-26 20:30:51-04:00, stenn@deacon.udel.edu
   NTP_4_2_8P7
   TAG: NTP_4_2_8P7
