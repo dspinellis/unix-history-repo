@@ -1,3 +1,1866 @@
+ChangeSet@1.3720, 2016-11-21 08:08:21-05:00, stenn@deacon.udel.edu
+  NTP_4_2_8P9
+  TAG: NTP_4_2_8P9
+
+  ChangeLog@1.1852 +1 -0
+    NTP_4_2_8P9
+
+  ntpd/invoke-ntp.conf.texi@1.203 +1 -1
+    NTP_4_2_8P9
+
+  ntpd/invoke-ntp.keys.texi@1.192 +1 -1
+    NTP_4_2_8P9
+
+  ntpd/invoke-ntpd.texi@1.508 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntp.conf.5man@1.237 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntp.conf.5mdoc@1.237 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntp.conf.html@1.187 +157 -154
+    NTP_4_2_8P9
+
+  ntpd/ntp.conf.man.in@1.237 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntp.conf.mdoc.in@1.237 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntp.keys.5man@1.226 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntp.keys.5mdoc@1.226 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntp.keys.html@1.188 +21 -33
+    NTP_4_2_8P9
+
+  ntpd/ntp.keys.man.in@1.226 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntp.keys.mdoc.in@1.226 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntpd-opts.c@1.530 +245 -245
+    NTP_4_2_8P9
+
+  ntpd/ntpd-opts.h@1.529 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntpd.1ntpdman@1.337 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntpd.1ntpdmdoc@1.337 +2 -2
+    NTP_4_2_8P9
+
+  ntpd/ntpd.html@1.181 +142 -186
+    NTP_4_2_8P9
+
+  ntpd/ntpd.man.in@1.337 +3 -3
+    NTP_4_2_8P9
+
+  ntpd/ntpd.mdoc.in@1.337 +2 -2
+    NTP_4_2_8P9
+
+  ntpdc/invoke-ntpdc.texi@1.505 +2 -2
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc-opts.c@1.523 +106 -106
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc-opts.h@1.522 +3 -3
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc.1ntpdcman@1.336 +3 -3
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.336 +2 -2
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc.html@1.349 +75 -95
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc.man.in@1.336 +3 -3
+    NTP_4_2_8P9
+
+  ntpdc/ntpdc.mdoc.in@1.336 +2 -2
+    NTP_4_2_8P9
+
+  ntpq/invoke-ntpq.texi@1.513 +2 -2
+    NTP_4_2_8P9
+
+  ntpq/ntpq-opts.c@1.530 +113 -113
+    NTP_4_2_8P9
+
+  ntpq/ntpq-opts.h@1.528 +3 -3
+    NTP_4_2_8P9
+
+  ntpq/ntpq.1ntpqman@1.341 +3 -3
+    NTP_4_2_8P9
+
+  ntpq/ntpq.1ntpqmdoc@1.341 +2 -2
+    NTP_4_2_8P9
+
+  ntpq/ntpq.html@1.178 +136 -160
+    NTP_4_2_8P9
+
+  ntpq/ntpq.man.in@1.341 +3 -3
+    NTP_4_2_8P9
+
+  ntpq/ntpq.mdoc.in@1.341 +2 -2
+    NTP_4_2_8P9
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.507 +2 -2
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.525 +67 -67
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.524 +3 -3
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.336 +3 -3
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.336 +2 -2
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd.html@1.176 +10 -14
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd.man.in@1.336 +3 -3
+    NTP_4_2_8P9
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.336 +2 -2
+    NTP_4_2_8P9
+
+  packageinfo.sh@1.532 +2 -2
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.97 +3 -3
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.98 +2 -2
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/calc_tickadj.html@1.99 +30 -42
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.96 +3 -3
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.98 +2 -2
+    NTP_4_2_8P9
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.101 +1 -1
+    NTP_4_2_8P9
+
+  scripts/invoke-plot_summary.texi@1.119 +2 -2
+    NTP_4_2_8P9
+
+  scripts/invoke-summary.texi@1.118 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.328 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait-opts@1.64 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.325 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.326 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait.html@1.345 +41 -59
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait.man.in@1.325 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.326 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.116 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep-opts@1.66 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.104 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.104 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep.html@1.117 +46 -57
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep.man.in@1.104 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.105 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.117 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace-opts@1.66 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.104 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.105 +2 -2
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace.html@1.118 +38 -47
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace.man.in@1.104 +3 -3
+    NTP_4_2_8P9
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.106 +2 -2
+    NTP_4_2_8P9
+
+  scripts/plot_summary-opts@1.67 +2 -2
+    NTP_4_2_8P9
+
+  scripts/plot_summary.1plot_summaryman@1.117 +3 -3
+    NTP_4_2_8P9
+
+  scripts/plot_summary.1plot_summarymdoc@1.117 +2 -2
+    NTP_4_2_8P9
+
+  scripts/plot_summary.html@1.120 +40 -58
+    NTP_4_2_8P9
+
+  scripts/plot_summary.man.in@1.117 +3 -3
+    NTP_4_2_8P9
+
+  scripts/plot_summary.mdoc.in@1.117 +2 -2
+    NTP_4_2_8P9
+
+  scripts/summary-opts@1.66 +2 -2
+    NTP_4_2_8P9
+
+  scripts/summary.1summaryman@1.116 +3 -3
+    NTP_4_2_8P9
+
+  scripts/summary.1summarymdoc@1.116 +2 -2
+    NTP_4_2_8P9
+
+  scripts/summary.html@1.119 +37 -49
+    NTP_4_2_8P9
+
+  scripts/summary.man.in@1.116 +3 -3
+    NTP_4_2_8P9
+
+  scripts/summary.mdoc.in@1.116 +2 -2
+    NTP_4_2_8P9
+
+  scripts/update-leap/invoke-update-leap.texi@1.17 +1 -1
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap-opts@1.17 +2 -2
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap.1update-leapman@1.17 +3 -3
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.17 +2 -2
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap.html@1.17 +48 -72
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap.man.in@1.17 +3 -3
+    NTP_4_2_8P9
+
+  scripts/update-leap/update-leap.mdoc.in@1.17 +2 -2
+    NTP_4_2_8P9
+
+  sntp/invoke-sntp.texi@1.505 +2 -2
+    NTP_4_2_8P9
+
+  sntp/sntp-opts.c@1.524 +158 -158
+    NTP_4_2_8P9
+
+  sntp/sntp-opts.h@1.522 +3 -3
+    NTP_4_2_8P9
+
+  sntp/sntp.1sntpman@1.340 +3 -3
+    NTP_4_2_8P9
+
+  sntp/sntp.1sntpmdoc@1.340 +2 -2
+    NTP_4_2_8P9
+
+  sntp/sntp.html@1.520 +111 -135
+    NTP_4_2_8P9
+
+  sntp/sntp.man.in@1.340 +3 -3
+    NTP_4_2_8P9
+
+  sntp/sntp.mdoc.in@1.340 +2 -2
+    NTP_4_2_8P9
+
+  util/invoke-ntp-keygen.texi@1.508 +2 -2
+    NTP_4_2_8P9
+
+  util/ntp-keygen-opts.c@1.526 +172 -172
+    NTP_4_2_8P9
+
+  util/ntp-keygen-opts.h@1.524 +3 -3
+    NTP_4_2_8P9
+
+  util/ntp-keygen.1ntp-keygenman@1.336 +3 -3
+    NTP_4_2_8P9
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.336 +2 -2
+    NTP_4_2_8P9
+
+  util/ntp-keygen.html@1.182 +157 -216
+    NTP_4_2_8P9
+
+  util/ntp-keygen.man.in@1.336 +3 -3
+    NTP_4_2_8P9
+
+  util/ntp-keygen.mdoc.in@1.336 +2 -2
+    NTP_4_2_8P9
+
+ChangeSet@1.3719, 2016-11-21 07:07:04-05:00, stenn@deacon.udel.edu
+  ntp-4.2.8p9
+
+  packageinfo.sh@1.531 +1 -1
+    ntp-4.2.8p9
+
+ChangeSet@1.3718, 2016-11-21 03:47:58+00:00, stenn@psp-deb1.ntp.org
+  NEWS updates, final p9 testing
+
+  NEWS@1.203 +25 -17
+    NEWS updates, final p9 testing
+
+  packageinfo.sh@1.530 +2 -2
+    NEWS updates, final p9 testing
+
+ChangeSet@1.3717, 2016-11-18 10:33:02+00:00, stenn@psp-deb1.ntp.org
+  NEWS update for 3142
+
+  NEWS@1.202 +2 -1
+    NEWS update for 3142
+
+ChangeSet@1.3686.23.1, 2016-11-18 08:55:13+01:00, perlinger@ntp.org
+  [Bug 3142] bug in netmask prefix length detection
+
+  ChangeLog@1.1834.23.1 +3 -0
+    [Bug 3142] bug in netmask prefix length detection
+
+  lib/isc/netaddr.c@1.15 +0 -1
+    [Bug 3142] bug in netmask prefix length detection
+
+ChangeSet@1.3715, 2016-11-16 21:25:49-08:00, harlan@fb-x86-a.pfcs.com
+  NEWS file update
+
+  NEWS@1.201 +7 -22
+    NEWS file update
+
+ChangeSet@1.3707.1.1, 2016-11-13 21:59:31-08:00, harlan@fb-x86-a.pfcs.com
+  cleanup
+
+  NEWS@1.197.1.1 +201 -77
+    cleanup
+
+ChangeSet@1.3713, 2016-11-13 21:56:18-08:00, harlan@hms-mbp11.pfcs.com
+  cleanip
+
+  ChangeLog@1.1850 +2 -0
+    cleanip
+
+ChangeSet@1.3712, 2016-11-13 02:43:02+00:00, stenn@psp-deb1.ntp.org
+  NEWS updates
+
+  NEWS@1.199 +17 -0
+    NEWS updates
+
+ChangeSet@1.3710, 2016-11-13 02:30:31+00:00, stenn@psp-deb1.ntp.org
+  NEWS cleanup
+
+  NEWS@1.198 +2 -0
+    NEWS cleanup
+
+ChangeSet@1.3707, 2016-11-12 17:36:54-08:00, harlan@fb-x86-a.pfcs.com
+  NEWS cleanup
+
+  NEWS@1.197 +41 -6
+    NEWS cleanup
+
+ChangeSet@1.3706, 2016-11-12 16:55:59-08:00, harlan@fb-x86-a.pfcs.com
+  [Bug 3067] Root distance calculation needs improvement.  HStenn
+
+  ChangeLog@1.1846.1.2 +1 -0
+    [Bug 3067] Root distance calculation needs improvement.  HStenn
+
+  NEWS@1.196 +1 -0
+    [Bug 3067] Root distance calculation needs improvement.  HStenn
+
+  ntpd/ntp_proto.c@1.396 +16 -11
+    [Bug 3067] Root distance calculation needs improvement.  HStenn
+
+ChangeSet@1.3705, 2016-11-12 15:57:34-08:00, harlan@fb-x86-a.pfcs.com
+  [Bug 3138] gpsdjson refclock should honor fudgetime1. stenn@ntp.org
+
+  ChangeLog@1.1846.1.1 +1 -0
+    [Bug 3138] gpsdjson refclock should honor fudgetime1. stenn@ntp.org
+
+  NEWS@1.195 +1 -0
+    [Bug 3138] gpsdjson refclock should honor fudgetime1. stenn@ntp.org
+
+  ntpd/refclock_gpsdjson.c@1.25 +1 -1
+    [Bug 3138] gpsdjson refclock should honor fudgetime1. stenn@ntp.org
+
+ChangeSet@1.3686.22.1, 2016-11-12 05:54:39+01:00, perlinger@ntp.org
+  [Bug 3129] Unknown hosts can put resolver thread into a hard loop
+
+  ChangeLog@1.1834.22.1 +4 -0
+    [Bug 3129] Unknown hosts can put resolver thread into a hard loop
+
+  include/ntp_intres.h@1.2 +6 -0
+    [Bug 3129] Unknown hosts can put resolver thread into a hard loop
+     - add flags and prototype for 'getaddrinfo_sometime_ex()'
+
+  libntp/ntp_intres.c@1.101 +48 -14
+    [Bug 3129] Unknown hosts can put resolver thread into a hard loop
+     - implement 'getaddrinfo_sometime_ex()', support ignoring all errors
+
+  ntpd/ntp_config.c@1.338.1.1 +11 -10
+    [Bug 3129] Unknown hosts can put resolver thread into a hard loop
+     - move decison about igoring DNS errors to resolver code
+
+ChangeSet@1.3703.1.2, 2016-11-09 12:32:07+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ChangeLog@1.1848 +1 -1
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  html/miscopt.html@1.87 +4 -2
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  include/ntp.h@1.223 +1 -0
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  include/ntpd.h@1.194 +1 -0
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/complete.conf.in@1.32 +1 -1
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/invoke-ntp.conf.texi@1.202 +16 -1
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/keyword-gen-utd@1.29 +1 -1
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/keyword-gen.c@1.35 +1 -0
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp.conf.5man@1.236 +29 -8
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp.conf.5mdoc@1.236 +21 -2
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp.conf.def@1.25 +19 -0
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp.conf.man.in@1.236 +29 -8
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp.conf.mdoc.in@1.236 +21 -2
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_config.c@1.339 +15 -0
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_keyword.h@1.31 +1068 -1058
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_parser.c@1.103 +1196 -1193
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_parser.h@1.67 +373 -371
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_parser.y@1.93 +3 -1
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+  ntpd/ntp_proto.c@1.394.1.2 +43 -26
+    [Bug 3114] bcpollbstep, tweaks and cleanup
+
+ChangeSet@1.3703, 2016-11-09 06:06:04+00:00, stenn@psp-deb1.ntp.org
+  typo
+
+  ChangeLog@1.1846 +1 -1
+    typo
+
+ChangeSet@1.3686.21.1, 2016-11-08 20:01:41+01:00, perlinger@ntp.org
+  [Bug 3089] Serial Parser does not work anymore for hopfser like device
+
+  ChangeLog@1.1834.21.1 +4 -0
+    [Bug 3089] Serial Parser does not work anymore for hopfser like device
+
+  libparse/clk_hopf6021.c@1.13 +43 -25
+    [Bug 3089] Serial Parser does not work anymore for hopfser like device
+     - simplified / refactored hex-decoding in driver.
+
+ChangeSet@1.3698.2.1, 2016-11-03 17:02:24-07:00, harlan@max.pfcs.com
+  Added leap smear/root dispersion comment
+
+  ntpd/ntp_proto.c@1.393.1.1 +4 -0
+    Added leap smear/root dispersion comment
+
+ChangeSet@1.3699.1.2, 2016-10-31 10:56:33+00:00, stenn@psp-deb1.ntp.org
+  Add bug 3125 to the NEWS file
+
+  NEWS@1.194 +2 -0
+    Add bug 3125 to the NEWS file
+
+ChangeSet@1.3701, 2016-10-24 07:37:25+02:00, perlinger@ntp.org
+  [winio2 - unlocked]
+   - the great lock removal
+   - the great renaming
+
+  ChangeLog@1.1844 +1 -0
+    [winio2 - unlocked] notes on changes
+
+  ntpd/ntp_refclock.c@1.123 +1 -1
+    [winio2 - unlocked]
+     - whitespace at EOL
+
+  ports/winnt/include/ntp_iocpltypes.h@1.3 +21 -24
+    [winio2 - unlocked]
+     - eliminate critical section, simplify API
+     - the great renaming
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.77 +331 -209
+    [winio2 - unlocked]
+     - the great lock removal
+     - handle context objects are only manipulated by IOCPL thread
+     - closing handles is done by main thread after informing IOCPL thread (RPC-style)
+     - the great renaming
+     - restructured UNIX line mode emulation
+
+  ports/winnt/ntpd/ntp_iocpltypes.c@1.3 +31 -95
+    [winio2 - unlocked]
+     - eliminate critical section, simplify API
+     - the great renaming
+    
+
+ChangeSet@1.3698.1.7, 2016-10-23 05:18:04+00:00, stenn@psp-deb1.ntp.org
+  ntp-4.2.8p9-PRE
+
+  ntpd/invoke-ntp.conf.texi@1.201 +1 -1
+    ntp-4.2.8p9-PRE
+
+  ntpd/invoke-ntp.keys.texi@1.191 +1 -1
+    ntp-4.2.8p9-PRE
+
+  ntpd/invoke-ntpd.texi@1.507 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.conf.5man@1.235 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.conf.5mdoc@1.235 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.conf.html@1.186 +104 -91
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.conf.man.in@1.235 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.conf.mdoc.in@1.235 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.keys.5man@1.225 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.keys.5mdoc@1.225 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.keys.html@1.187 +29 -17
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.keys.man.in@1.225 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntp.keys.mdoc.in@1.225 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd-opts.c@1.529 +245 -245
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd-opts.h@1.528 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd.1ntpdman@1.336 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd.1ntpdmdoc@1.336 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd.html@1.180 +146 -102
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd.man.in@1.336 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpd/ntpd.mdoc.in@1.336 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpdc/invoke-ntpdc.texi@1.504 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc-opts.c@1.522 +106 -106
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc-opts.h@1.521 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc.1ntpdcman@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc.html@1.348 +77 -57
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc.man.in@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpdc/ntpdc.mdoc.in@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpq/invoke-ntpq.texi@1.512 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq-opts.c@1.529 +113 -113
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq-opts.h@1.527 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq.1ntpqman@1.340 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq.1ntpqmdoc@1.340 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq.html@1.177 +129 -105
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq.man.in@1.340 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpq/ntpq.mdoc.in@1.340 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.506 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.524 +67 -67
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.523 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd.html@1.175 +14 -10
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd.man.in@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+  packageinfo.sh@1.529 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.96 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.97 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/calc_tickadj.html@1.98 +34 -22
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.95 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.97 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.100 +1 -1
+    ntp-4.2.8p9-PRE
+
+  scripts/invoke-plot_summary.texi@1.118 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/invoke-summary.texi@1.117 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.327 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait-opts@1.63 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.324 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.325 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait.html@1.344 +49 -31
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait.man.in@1.324 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.325 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.115 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep-opts@1.65 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.103 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.103 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep.html@1.116 +44 -33
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep.man.in@1.103 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.104 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.116 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace-opts@1.65 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.103 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.104 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace.html@1.117 +36 -27
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace.man.in@1.103 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.105 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary-opts@1.66 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary.1plot_summaryman@1.116 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary.1plot_summarymdoc@1.116 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary.html@1.119 +47 -29
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary.man.in@1.116 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/plot_summary.mdoc.in@1.116 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/summary-opts@1.65 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/summary.1summaryman@1.115 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/summary.1summarymdoc@1.115 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/summary.html@1.118 +39 -27
+    ntp-4.2.8p9-PRE
+
+  scripts/summary.man.in@1.115 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/summary.mdoc.in@1.115 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/invoke-update-leap.texi@1.16 +1 -1
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap-opts@1.16 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap.1update-leapman@1.16 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.16 +2 -2
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap.html@1.16 +59 -35
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap.man.in@1.16 +3 -3
+    ntp-4.2.8p9-PRE
+
+  scripts/update-leap/update-leap.mdoc.in@1.16 +2 -2
+    ntp-4.2.8p9-PRE
+
+  sntp/invoke-sntp.texi@1.504 +2 -2
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp-opts.c@1.523 +158 -158
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp-opts.h@1.521 +3 -3
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp.1sntpman@1.339 +3 -3
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp.1sntpmdoc@1.339 +2 -2
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp.html@1.519 +109 -85
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp.man.in@1.339 +3 -3
+    ntp-4.2.8p9-PRE
+
+  sntp/sntp.mdoc.in@1.339 +2 -2
+    ntp-4.2.8p9-PRE
+
+  util/invoke-ntp-keygen.texi@1.507 +2 -2
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen-opts.c@1.525 +172 -172
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen-opts.h@1.523 +3 -3
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen.1ntp-keygenman@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen.html@1.181 +183 -124
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen.man.in@1.335 +3 -3
+    ntp-4.2.8p9-PRE
+
+  util/ntp-keygen.mdoc.in@1.335 +2 -2
+    ntp-4.2.8p9-PRE
+
+ChangeSet@1.3688.4.1, 2016-10-20 19:28:06+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1836.4.1 +1 -0
+    cleanup
+
+ChangeSet@1.3686.20.1, 2016-10-20 20:13:40+02:00, perlinger@ntp.org
+  [Sec 3114] Broadcast Mode Replay Prevention DoS
+
+  ChangeLog@1.1834.20.1 +4 -0
+    [Sec 3114] Broadcast Mode Replay Prevention DoS
+
+  ntpd/ntp_proto.c@1.392.2.1 +39 -6
+    [Sec 3114] Broadcast Mode Replay Prevention DoS
+     - applied patches by Matthew Van Gundy, with some rework.
+
+ChangeSet@1.3686.19.1, 2016-10-20 09:21:04+02:00, perlinger@ntp.org
+  [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
+
+  ChangeLog@1.1834.19.1 +4 -0
+    [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
+    
+
+  include/ntp.h@1.220.1.1 +1 -1
+    [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
+
+  ntpd/ntp_proto.c@1.392.1.1 +12 -3
+    [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
+     - applied fix as suggested by Matthew Van Gundy
+
+ChangeSet@1.3698.1.5, 2016-10-13 01:26:54-07:00, harlan@max.pfcs.com
+  typo
+
+  ChangeLog@1.1841.1.3 +1 -1
+    typo
+
+ChangeSet@1.3698.1.4, 2016-10-13 01:24:48-07:00, harlan@max.pfcs.com
+  [Bug 3102] Zero origin issues
+
+  ChangeLog@1.1841.1.2 +1 -0
+    [Bug 3102] Zero origin issues
+
+  ntpd/ntp_proto.c@1.393 +28 -3
+    [Bug 3102] Zero origin issues
+
+ChangeSet@1.3698.1.3, 2016-10-11 01:33:28-07:00, harlan@max.pfcs.com
+  Distribute libssl_compat.h
+
+  include/Makefile.am@1.55 +1 -0
+    Distribute libssl_compat.h
+
+ChangeSet@1.3698.1.2, 2016-10-10 22:34:55-07:00, harlan@max.pfcs.com
+  bug 3102 tests
+
+  tests/bug-3102/README-3102.txt@1.1 +43 -0
+    BitKeeper file tests/bug-3102/README-3102.txt
+
+  tests/bug-3102/README-3102.txt@1.0 +0 -0
+
+  tests/bug-3102/zeroorg.py@1.1 +24 -0
+    BitKeeper file tests/bug-3102/zeroorg.py
+
+  tests/bug-3102/zeroorg.py@1.0 +0 -0
+
+ChangeSet@1.3688.3.2, 2016-10-10 01:46:05-07:00, harlan@max.pfcs.com
+  Fix typos in include/ntp.h
+
+  ChangeLog@1.1836.3.1 +1 -0
+    Fix typos in include/ntp.h
+
+  include/ntp.h@1.221 +3 -4
+    Fix typos in include/ntp.h
+
+ChangeSet@1.3699, 2016-10-04 08:36:17+02:00, perlinger@ntp.org
+  [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+
+  ChangeLog@1.1842 +2 -0
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+
+  ports/winnt/include/ntp_iocompletionport.h@1.23 +1 -1
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+     - minor type renaming
+
+  ports/winnt/include/termios.h@1.18 +3 -0
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+     - manage device context for IOCPL together with comport
+
+  ports/winnt/libntp/termios.c@1.34 +191 -120
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+     - manage device context for IOCPL together with comport
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.76 +91 -98
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+     - manage device context for IOCPL together with comport
+     - integrate Danny Mayers changes for docket error handling
+
+  ports/winnt/ntpd/ntp_iocpltypes.c@1.2 +2 -2
+    [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
+     - fix wrong instance initialisation
+
+ChangeSet@1.3698, 2016-10-01 10:52:11+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS for 3119
+
+  NEWS@1.193 +17 -0
+    Update NEWS for 3119
+
+ChangeSet@1.3696, 2016-10-01 10:43:24+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS for 3118
+
+  NEWS@1.192 +17 -0
+    Update NEWS for 3118
+
+ChangeSet@1.3694, 2016-10-01 10:29:06+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS for 3110
+
+  NEWS@1.191 +17 -0
+    Update NEWS for 3110
+
+ChangeSet@1.3688.3.1, 2016-10-01 11:36:55+02:00, perlinger@ntp.org
+  [Bug 3095]  Compatibility with openssl 1.1
+   - add new sources to project files
+
+  ports/winnt/vs2005/libntp.vcproj@1.26 +8 -0
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+  ports/winnt/vs2008/libntp/libntp.vcproj@1.57 +12 -0
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj@1.12 +4 -1
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj.filters@1.10 +14 -5
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj@1.2 +3 -0
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj.filters@1.2 +9 -0
+    [Bug 3095]  Compatibility with openssl 1.1
+     - add new sources to project
+
+ChangeSet@1.3691, 2016-10-01 09:18:25+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS for 3082
+
+  NEWS@1.190 +17 -0
+    Update NEWS for 3082
+
+ChangeSet@1.3688.1.33, 2016-10-01 08:32:28+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3072] tweaks
+
+  NEWS@1.189 +16 -1
+    [Bug 3072] tweaks
+
+  ntpd/ntp_peer.c@1.160 +6 -1
+    [Bug 3072] tweaks
+
+ChangeSet@1.3688.1.31, 2016-09-29 20:53:30+00:00, perlinger@ntp.org
+  created 'X509_get_signature_nid()' shim for OpenSSL < v1.1.0
+  fixed unit test for sntp/packetProcessing to work with or without AUTOKEY flag
+
+  include/libssl_compat.h@1.2 +8 -1
+    created 'X509_get_signature_nid()' shim for OpenSSL < v1.1.0
+
+  libntp/libssl_compat.c@1.2 +9 -1
+    created 'X509_get_signature_nid()' shim for OpenSSL < v1.1.0
+
+  libntp/ssl_init.c@1.21 +0 -11
+    moved 'X509_get_signature_nid()' for OpenSSL < v1.1.0 to 'libssl_compat.{c,h}'
+
+  sntp/tests/packetProcessing.c@1.12 +0 -13
+    fixed unit test to work with or without AUTOKEY flag
+
+ChangeSet@1.3688.1.30, 2016-09-29 12:03:17+00:00, stenn@psp-deb1.ntp.org
+  NEWS update
+
+  NEWS@1.188 +2 -0
+    NEWS update
+
+ChangeSet@1.3688.2.1, 2016-09-29 11:59:03+00:00, stenn@psp-deb1.ntp.org
+  X509_get_signature_nid() shim tweak
+
+  ChangeLog@1.1836.2.1, stenn@stenn.ntp.org +1 -0
+    Shim X509_get_signature_nid() if needed
+
+  NEWS@1.187, stenn@stenn.ntp.org +1 -0
+    Shim X509_get_signature_nid() if needed
+
+  libntp/ssl_init.c@1.17.1.3 +1 -1
+    X509_get_signature_nid() shim tweak
+
+  libntp/ssl_init.c@1.17.1.2, stenn@stenn.ntp.org +12 -0
+    Shim X509_get_signature_nid() if needed
+
+ChangeSet@1.3688.1.27, 2016-09-28 11:28:56+00:00, stenn@psp-deb1.ntp.org
+  NEWS
+
+  NEWS@1.186 +1 -0
+    NEWS
+
+ChangeSet@1.3688.1.25, 2016-09-28 11:24:36+00:00, stenn@psp-deb1.ntp.org
+  NEWS
+
+  NEWS@1.185 +2 -0
+    NEWS
+
+ChangeSet@1.3688.1.23, 2016-09-28 11:17:22+00:00, stenn@psp-deb1.ntp.org
+  Updated ChangeLog and NEWS
+
+  ChangeLog@1.1836.1.19 +2 -2
+    Updated ChangeLog and NEWS
+
+  NEWS@1.184 +2 -0
+    Updated ChangeLog and NEWS
+
+ChangeSet@1.3688.1.21, 2016-09-28 11:12:28+00:00, stenn@psp-deb1.ntp.org
+  NEWS
+
+  NEWS@1.183 +2 -0
+    NEWS
+
+ChangeSet@1.3688.1.19, 2016-09-28 11:01:29+00:00, stenn@psp-deb1.ntp.org
+  NEWS
+
+  NEWS@1.182 +3 -0
+    NEWS
+
+ChangeSet@1.3688.1.17, 2016-09-28 10:54:12+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS
+
+  NEWS@1.181 +3 -0
+    Update ChangeLog and NEWS
+
+ChangeSet@1.3688.1.15, 2016-09-28 10:45:21+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS
+
+  ChangeLog@1.1836.1.14 +2 -2
+    Update ChangeLog and NEWS
+
+  NEWS@1.180 +2 -0
+    Update ChangeLog and NEWS
+
+ChangeSet@1.3688.1.13, 2016-09-28 10:37:17+00:00, stenn@psp-deb1.ntp.org
+  NEWS updates
+
+  NEWS@1.179 +4 -0
+    NEWS updates
+
+ChangeSet@1.3688.1.11, 2016-09-28 10:25:01+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS
+
+  ChangeLog@1.1836.1.11 +1 -1
+    Update ChangeLog and NEWS
+
+  NEWS@1.178 +1 -0
+    Update ChangeLog and NEWS
+
+ChangeSet@1.3688.1.8, 2016-09-28 08:17:16+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS
+
+  ChangeLog@1.1836.1.8 +2 -4
+    Update ChangeLog and NEWS
+
+  NEWS@1.177 +3 -0
+    Update ChangeLog and NEWS
+
+ChangeSet@1.3688.1.6, 2016-09-28 08:10:35+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS
+
+  ChangeLog@1.1836.1.6 +4 -6
+    Update ChangeLog and NEWS
+
+  NEWS@1.176 +4 -0
+    Update ChangeLog and NEWS
+
+ChangeSet@1.3688.1.4, 2016-09-28 07:59:31+00:00, stenn@psp-deb1.ntp.org
+  ChangeLog and NEWS cleanup
+
+  ChangeLog@1.1836.1.4 +2 -4
+    ChangeLog and NEWS cleanup
+
+  NEWS@1.175 +20 -0
+    ChangeLog and NEWS cleanup
+
+ChangeSet@1.3686.9.2, 2016-09-26 08:24:48+02:00, perlinger@ntp.org
+  [Bug 3021] unity_fixture.c needs pragma weak
+   - add library implementation of empty setUp()/tearDown()
+
+  sntp/unity/Makefile.am@1.10 +2 -0
+    [Bug 3021] unity_fixture.c needs pragma weak
+     - add library implementation of empty setUp()/tearDown()
+
+  sntp/unity/ulib_setup.c@1.1 +14 -0
+    [Bug 3021] unity_fixture.c needs pragma weak
+     - add library implementation of empty setUp()/tearDown()
+
+  sntp/unity/ulib_setup.c@1.0 +0 -0
+
+  sntp/unity/ulib_teardown.c@1.1 +13 -0
+    [Bug 3021] unity_fixture.c needs pragma weak
+     - add library implementation of empty setUp()/tearDown()
+
+  sntp/unity/ulib_teardown.c@1.0 +0 -0
+
+ChangeSet@1.3686.18.1, 2016-09-25 10:58:43+02:00, perlinger@ntp.org
+  [Bug 2689] ATOM driver processes last PPS pulse at startup, even if it is very old
+   - make sure PPS source is alive before processing samples
+   - improve stability close to the 500ms phase jump by a 400ms phase gate
+
+  ChangeLog@1.1834.18.1 +6 -0
+    [Bug 2689] ATOM driver processes last PPS pulse at startup, even if it is very old
+
+  ntpd/ntp_refclock.c@1.122 +50 -10
+    [Bug 2689] ATOM driver processes last PPS pulse at startup, even if it is very old
+     - make sure PPS source is alive before processing samples
+     - improve stability close to the 500ms phase jump by a 400ms phase gate
+
+ChangeSet@1.3686.17.1, 2016-09-24 20:38:17+02:00, perlinger@ntp.org
+  [Sec 3118] Mode 6 information disclosure and DDoS vector
+
+  ChangeLog@1.1834.17.1 +4 -0
+    [Sec 3118] Mode 6 information disclosure and DDoS vector
+
+  ntpd/ntp_control.c@1.209.5.1 +3 -3
+    [Sec 3118] Mode 6 information disclosure and DDoS vector
+     - TRAP config via mode 6 packet requires AUTH now
+     - writing the clock status should require AUTH, too.
+
+ChangeSet@1.3686.16.1, 2016-09-23 20:00:55+02:00, perlinger@ntp.org
+  [Sec 3119] Trap crash
+
+  ChangeLog@1.1834.16.1 +3 -0
+    [Sec 3119] Trap crash
+
+  ntpd/ntp_control.c@1.209.4.1 +19 -4
+    [Sec 3119] Trap crash
+     - bail out if we hit a Peer Event without a peer.
+
+ChangeSet@1.3686.15.1, 2016-09-22 20:42:39+02:00, perlinger@ntp.org
+  [Bug 3116] unit tests for NTP time stamp expansion
+
+  ChangeLog@1.1834.15.1 +3 -0
+    [Bug 3116] unit tests for NTP time stamp expansion
+
+  libntp/ntp_calendar.c@1.18 +56 -29
+    [Bug 3116] unit tests for NTP time stamp expansion
+     - added back unsigned spec to constant to avoid confusion
+       and explained why there was no problem at all
+
+  tests/libntp/calendar.c@1.13 +127 -0
+    [Bug 3116] unit tests for NTP time stamp expansion
+     - added test cases for NTP time stamp expansion
+
+  tests/libntp/run-calendar.c@1.12 +20 -15
+    [Bug 3116] unit tests for NTP time stamp expansion
+     - update generated file
+
+ChangeSet@1.3688.1.2, 2016-09-16 08:26:08+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3053] ntp_loopfilter.c frequency calc precedence error.  Sarah White.
+
+  ChangeLog@1.1836.1.2 +1 -0
+    [Bug 3053] ntp_loopfilter.c frequency calc precedence error.  Sarah White.
+
+  ntpd/ntp_loopfilter.c@1.189 +6 -5
+    [Bug 3053] ntp_loopfilter.c frequency calc precedence error.  Sarah White.
+
+ChangeSet@1.3688.1.1, 2016-09-16 08:21:45+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1836.1.1 +1 -0
+    cleanup
+
+ChangeSet@1.3686.14.1, 2016-09-15 19:29:17+02:00, perlinger@ntp.org
+  [Bug 2959] refclock_jupiter: gps week correction
+
+  ChangeLog@1.1834.14.1 +5 -0
+    [Bug 2959] refclock_jupiter: gps week correction
+
+  ntpd/refclock_jupiter.c@1.30 +66 -1
+    [Bug 2959] refclock_jupiter: gps week correction
+    - fixed GPS week expansion to work based on build date. Special thanks to Craig Leres
+      for initial patch and testing.
+
+ChangeSet@1.3686.13.1, 2016-09-13 07:26:06+02:00, perlinger@ntp.org
+  [Bug 3072] Attack on interface selection
+
+  ChangeLog@1.1834.13.1 +6 -1
+    [Bug 3072] Attack on interface selection
+
+  ntpd/ntp_peer.c@1.159 +61 -50
+    [Bug 3072] Attack on interface selection
+     - implemented Miroslav Lichvars <mlichvar@redhat.com> suggestion to skip interface updates
+       based on incoming packets
+
+ChangeSet@1.3686.12.1, 2016-09-10 17:22:27+02:00, perlinger@ntp.org
+  [Bug 3095] Compatibility with openssl 1.1
+    - applied patches by Kurt Roeckx <kurt@roeckx.be> to source
+    - added shim layer for new SSL API calls
+
+  ChangeLog@1.1834.12.1 +5 -0
+    [Bug 3095] Compatibility with openssl 1.1
+
+  include/libssl_compat.h@1.1 +93 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     shim layer for OpenSSL v1.1 API compatibility
+
+  include/libssl_compat.h@1.0 +0 -0
+
+  libntp/Makefile.am@1.78.1.1 +1 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  libntp/a_md5encrypt.c@1.36.1.1 +26 -28
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  libntp/libssl_compat.c@1.1 +327 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     shim layer for OpenSSL v1.1 API compatibility
+
+  libntp/libssl_compat.c@1.0 +0 -0
+
+  libntp/ssl_init.c@1.17.1.1 +7 -3
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpd/ntp_control.c@1.209.3.1 +13 -10
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpd/ntp_crypto.c@1.186.1.1 +207 -138
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpq/ntpq.c@1.170.1.1 +6 -3
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  sntp/crypto.c@1.21.1.1 +11 -7
+    [Bug 3095] Compatibility with openssl 1.1
+     - switched to new OpenSSL API
+
+  util/ntp-keygen.c@1.107.1.1 +217 -150
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+     - replaced use of deprecated functions
+
+ChangeSet@1.3686.11.1, 2016-09-09 18:34:03+02:00, jnperlin@nemesis.localnet
+  [Sec 3110] Windows: ntpd DoS by oversized UDP packet
+
+  BitKeeper/etc/ignore@1.91.2.1 +2 -0
+    add more studio specific garbage
+
+  ChangeLog@1.1834.11.1 +4 -0
+    [Sec 3110] Windows: ntpd DoS by oversized UDP packet
+
+  ports/winnt/include/ntp_iocpltypes.h@1.2 +1 -0
+    [Sec 3110] Windows: ntpd DoS by oversized UDP packet
+     - add 'ioFlags' to context; should be persistent during overlapped IO
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.73.1.1 +48 -9
+    [Sec 3110] Windows: ntpd DoS by oversized UDP packet
+     - fixed error handling for truncated UDP packets
+     - sidekick: fixed handling of spurious ERROR_HOST_UNREACHABLE errors
+     - sidekick: fixed error message formatting for WaitForMultipleObjects() errors
+
+  ports/winnt/vs2015/ntp.sln@1.2 +3 -3
+    [Sec 3110] Windows: ntpd DoS by oversized UDP packet
+      - sidekick: set version of solution to match VS2015
+
+ChangeSet@1.3686.10.1, 2016-09-04 21:10:56+02:00, perlinger@ntp.org
+  [Bug 2951] ntpd tests fail: multiple definition of `send_via_ntp_signd'
+
+  ChangeLog@1.1834.10.1 +4 -0
+    [Bug 2951] ntpd tests fail: multiple definition of `send_via_ntp_signd'
+
+  tests/ntpd/Makefile.am@1.29 +0 -1
+    [Bug 2951] ntpd tests fail: multiple definition of `send_via_ntp_signd'
+     - removed source file that is included from t-ntp_signed.c
+
+ChangeSet@1.3686.9.1, 2016-09-04 19:19:34+02:00, perlinger@ntp.org
+  [Bug 3021] unity_fixture.c needs pragma weak
+
+  ChangeLog@1.1834.9.1 +4 -0
+    [Bug 3021] unity_fixture.c needs pragma weak
+
+  sntp/unity/unity_fixture.c@1.2 +0 -4
+    [Bug 3021] unity_fixture.c needs pragma weak
+     - removed unnecessary & harmful decls of 'setUp()' & 'tearDown()'
+       (no need to declare & implement locally unreferenced functions)
+
+ChangeSet@1.3686.8.1, 2016-09-04 17:37:34+02:00, perlinger@ntp.org
+  [Bug 3050] Fix for bug #2960 causes sntp to print a spurious error message
+
+  ChangeLog@1.1834.8.1 +5 -0
+    [Bug 3050] Fix for bug #2960 causes sntp to print a spurious error message
+
+  libntp/work_fork.c@1.17 +13 -5
+    [Bug 3050] Fix for bug #2960 causes sntp to print a spurious error message
+     - applied patches by Reinhard Max <max@suse.com> and Havard Eidnes <he@uninett.no>.
+       Reinhard fought the cause, Harvard the symptom -- having both should put an end to this issue.
+
+ChangeSet@1.3686.7.2, 2016-09-04 11:20:00+02:00, perlinger@ntp.org
+  [Bug 3059] Potential buffer overrun from oversized hash
+
+  ChangeLog@1.1834.7.2 +2 -0
+    [Bug 3059] Potential buffer overrun from oversized hash
+
+  libntp/a_md5encrypt.c@1.38 +7 -1
+    [Bug 3059] Potential buffer overrun from oversized hash
+     - applied patch by Brian Utterback <brian.utterback@oracle.com>
+
+ChangeSet@1.3686.7.1, 2016-09-04 08:48:03+02:00, perlinger@ntp.org
+  [Bug 3095] Compatibility with openssl 1.1
+    - applied patches by Kurt Roeckx <kurt@roeckx.be> to source
+    - added shim layer for SSL API calls with issues (both directions)
+
+  ChangeLog@1.1834.7.1 +5 -0
+    [Bug 3095] Compatibility with openssl 1.1
+
+  include/libssl_compat.h@1.1 +127 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     shim layer for OpenSSL v1.1 API compatibility
+
+  include/libssl_compat.h@1.0 +0 -0
+
+  libntp/Makefile.am@1.79 +1 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  libntp/a_md5encrypt.c@1.37 +26 -28
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+     - added shim layer for SSL API calls with issues (both directions)
+
+  libntp/libssl_compat.c@1.1 +452 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be> to source
+     - added shim layer for SSL API calls with issues (both directions)
+
+  libntp/libssl_compat.c@1.0 +0 -0
+
+  libntp/ssl_init.c@1.18 +7 -3
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpd/ntp_control.c@1.209.2.1 +13 -10
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpd/ntp_crypto.c@1.187 +207 -138
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  ntpq/ntpq.c@1.171 +6 -3
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+  sntp/crypto.c@1.22 +11 -7
+    [Bug 3095] Compatibility with openssl 1.1
+     - switched to new OpenSSL API
+
+  util/ntp-keygen.c@1.108 +147 -131
+    [Bug 3095] Compatibility with openssl 1.1
+     - applied patches by Kurt Roeckx <kurt@roeckx.be>
+
+ChangeSet@1.3686.6.1, 2016-08-21 09:29:00+02:00, perlinger@ntp.org
+  [Bug 3100] ntpq can't retrieve daemon_version
+   (extended sysvar lookup bug, introduced with fix for bug 3008)
+
+  ChangeLog@1.1834.6.1 +4 -0
+    [Bug 3100] ntpq can't retrieve daemon_version
+
+  ntpd/ntp_control.c@1.209.1.1 +10 -4
+    [Bug 3100] ntpq can't retrieve daemon_version
+     - extended sysvar lookup broken with fix for bug3008: extended sysvar text is "<name>=<val>",
+       name compare has to match if the name match stops at NUL or '='. Bug introduced with bug 3008 fix.
+
+ChangeSet@1.3686.5.1, 2016-08-01 09:09:19+02:00, perlinger@ntp.org
+  [Bug 3068] Linker warnings when building on Solaris.
+   - applied patch thanks to Andrew Stormont <andyjstormont@gmail.com>
+
+  ChangeLog@1.1834.5.1 +2 -0
+    [Bug 3068] Linker warnings when building on Solaris.
+
+  libntp/audio.c@1.37 +3 -3
+    [Bug 3068] Linker warnings when building on Solaris.
+     - applied patch thanks to Andrew Stormont <andyjstormont@gmail.com>
+
+ChangeSet@1.3686.4.1, 2016-07-26 08:56:44+02:00, perlinger@ntp.org
+  [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+
+  ChangeLog@1.1834.4.1 +1 -0
+    [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+
+  sntp/tests/packetProcessing.c@1.9.1.1 +107 -89
+    [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+     - make sure the tests compile when configured using --without-crypto --disable-autokey
+     - ensure the there is no buffer overrun when AUTOKEY is disabled
+
+  sntp/tests/run-packetProcessing.c@1.11 +18 -18
+    [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+     - automatic testrunner update
+
+  tests/libntp/a_md5encrypt.c@1.15 +1 -3
+    [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+     - side kick: avoid extra memset by using 'emalloc_zero()'
+
+  tests/libntp/sfptostr.c@1.6 +3 -3
+    [Bug 2998] sntp/tests/packetProcessing.c broken without openssl
+     - side kick: avoid warnings about left shift of negative integer
+
+ChangeSet@1.3686.3.1, 2016-07-23 09:20:53+02:00, perlinger@ntp.org
+  [Bug 3066] NMEA clock ignores pps.
+   (side kick: ignore msbuild 10 user settings file)
+
+  BitKeeper/etc/ignore@1.91.1.1 +1 -0
+    ignore msbuild 10 user setting
+
+  ChangeLog@1.1834.3.1 +4 -0
+    [Bug 3066] NMEA clock ignores pps. (actually, the PPS HACK stopped to work for all serial devices)
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.74 +20 -2
+    [Bug 3066] NMEA clock ignores pps. perlinger@ntp.org
+     - PPS-HACK works again; now controllable (explicitely) by the env var PPSAPI_HACK=true/yes/1 (anything else is NO)
+     - if PPSAPI_HACK is not set, a non-empty PPSAPI_DLLS list disables the PPS hack
+
+ChangeSet@1.3686.2.2, 2016-07-06 01:53:32-07:00, harlan@max.pfcs.com
+  [Bug 3084] update-leap mis-parses the leapfile name
+
+  ChangeLog@1.1834.2.2 +1 -0
+    [Bug 3084] update-leap mis-parses the leapfile name
+
+  scripts/update-leap/update-leap.in@1.3 +5 -2
+    [Bug 3084] update-leap mis-parses the leapfile name
+
+ChangeSet@1.3686.2.1, 2016-07-06 01:47:02-07:00, harlan@max.pfcs.com
+  [Bug 2961] sntp/tests/packetProcessing.c assumes AUTOKEY
+
+  ChangeLog@1.1834.2.1 +4 -0
+    [Bug 2961] sntp/tests/packetProcessing.c assumes AUTOKEY
+
+  sntp/tests/packetProcessing.c@1.10 +5 -3
+    [Bug 2961] sntp/tests/packetProcessing.c assumes AUTOKEY
+
+ChangeSet@1.3686.1.1, 2016-07-05 23:15:20+02:00, perlinger@ntp.org
+  [Sec 3075] Core Dump. Added missing paramter validation in read_mru_list(). 
+  [Sec 3082] (title too long -- Variation of [Sec 3075].)
+   - more hardening to read_mru_list().
+
+  ChangeLog@1.1834.1.1 +7 -1
+    [Sec 3075] Core Dump. Added missing paramter validation in read_mru_list()
+    [Sec 3082] (title too long -- Variation of [Sec 3075].)
+     - more hardening to read_mru_list().
+
+  ntpd/ntp_control.c@1.210 +57 -33
+    [Sec 3075] Core Dump. Added missing paramter validation in read_mru_list().
+    [Sec 3082] (title too long -- Variation of [Sec 3075].)
+     - more hardening to read_mru_list().
+
+ChangeSet@1.3688, 2016-06-14 05:57:34+00:00, stenn@psp-deb1.ntp.org
+  bk ignore file cleanup
+
+  BitKeeper/etc/ignore@1.92 +17 -13
+    bk ignore file cleanup
+
+  ChangeLog@1.1836 +1 -0
+    bk ignore file cleanup
+
+ChangeSet@1.3687, 2016-06-14 05:56:12+00:00, stenn@psp-deb1.ntp.org
+  git author attribution cleanup
+
+  BitKeeper/etc/Authors/a115350.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/a115350.txt
+
+  BitKeeper/etc/Authors/a115350.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/abe.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/abe.txt
+
+  BitKeeper/etc/Authors/abe.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/amidamaru.txt@1.1 +2 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/amidamaru.txt
+
+  BitKeeper/etc/Authors/amidamaru.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/bkorb.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/bkorb.txt
+
+  BitKeeper/etc/Authors/bkorb.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/blk.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/blk.txt
+
+  BitKeeper/etc/Authors/blk.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/blu.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/blu.txt
+
+  BitKeeper/etc/Authors/blu.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/bruckman.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/bruckman.txt
+
+  BitKeeper/etc/Authors/bruckman.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/burnicki.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/burnicki.txt
+
+  BitKeeper/etc/Authors/burnicki.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/claas.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/claas.txt
+
+  BitKeeper/etc/Authors/claas.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/clemens.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/clemens.txt
+
+  BitKeeper/etc/Authors/clemens.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/cov-build.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/cov-build.txt
+
+  BitKeeper/etc/Authors/cov-build.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/cprice.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/cprice.txt
+
+  BitKeeper/etc/Authors/cprice.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/davehart.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/davehart.txt
+
+  BitKeeper/etc/Authors/davehart.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/dietrich.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/dietrich.txt
+
+  BitKeeper/etc/Authors/dietrich.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/dunlop.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/dunlop.txt
+
+  BitKeeper/etc/Authors/dunlop.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/fernandoph.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/fernandoph.txt
+
+  BitKeeper/etc/Authors/fernandoph.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/fredb.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/fredb.txt
+
+  BitKeeper/etc/Authors/fredb.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/gerstung.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/gerstung.txt
+
+  BitKeeper/etc/Authors/gerstung.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/ginsbach.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/ginsbach.txt
+
+  BitKeeper/etc/Authors/ginsbach.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/gnu.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/gnu.txt
+
+  BitKeeper/etc/Authors/gnu.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/gopal.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/gopal.txt
+
+  BitKeeper/etc/Authors/gopal.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/gunturu.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/gunturu.txt
+
+  BitKeeper/etc/Authors/gunturu.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/harlan.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/harlan.txt
+
+  BitKeeper/etc/Authors/harlan.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/harlanst.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/harlanst.txt
+
+  BitKeeper/etc/Authors/harlanst.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/hart.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/hart.txt
+
+  BitKeeper/etc/Authors/hart.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/hilbrecht.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/hilbrecht.txt
+
+  BitKeeper/etc/Authors/hilbrecht.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/hstenn.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/hstenn.txt
+
+  BitKeeper/etc/Authors/hstenn.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/jhay.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/jhay.txt
+
+  BitKeeper/etc/Authors/jhay.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/jnperlin.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/jnperlin.txt
+
+  BitKeeper/etc/Authors/jnperlin.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/kamboj.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/kamboj.txt
+
+  BitKeeper/etc/Authors/kamboj.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/kardel.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/kardel.txt
+
+  BitKeeper/etc/Authors/kardel.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/karlsson.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/karlsson.txt
+
+  BitKeeper/etc/Authors/karlsson.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/kuehn.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/kuehn.txt
+
+  BitKeeper/etc/Authors/kuehn.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/linus.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/linus.txt
+
+  BitKeeper/etc/Authors/linus.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/loki.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/loki.txt
+
+  BitKeeper/etc/Authors/loki.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/martin.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/martin.txt
+
+  BitKeeper/etc/Authors/martin.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/matthias.andree.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/matthias.andree.txt
+
+  BitKeeper/etc/Authors/matthias.andree.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/mayer.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/mayer.txt
+
+  BitKeeper/etc/Authors/mayer.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/mbrett.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/mbrett.txt
+
+  BitKeeper/etc/Authors/mbrett.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/murray.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/murray.txt
+
+  BitKeeper/etc/Authors/murray.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/neal.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/neal.txt
+
+  BitKeeper/etc/Authors/neal.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/paul.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/paul.txt
+
+  BitKeeper/etc/Authors/paul.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/peda.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/peda.txt
+
+  BitKeeper/etc/Authors/peda.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/perlinger.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/perlinger.txt
+
+  BitKeeper/etc/Authors/perlinger.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/phk.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/phk.txt
+
+  BitKeeper/etc/Authors/phk.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/rayvt.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/rayvt.txt
+
+  BitKeeper/etc/Authors/rayvt.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/rick.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/rick.txt
+
+  BitKeeper/etc/Authors/rick.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/ro.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/ro.txt
+
+  BitKeeper/etc/Authors/ro.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/root.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/root.txt
+
+  BitKeeper/etc/Authors/root.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/skamboj.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/skamboj.txt
+
+  BitKeeper/etc/Authors/skamboj.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/stenn.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/stenn.txt
+
+  BitKeeper/etc/Authors/stenn.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/tflendrich.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/tflendrich.txt
+
+  BitKeeper/etc/Authors/tflendrich.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/tomek.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/tomek.txt
+
+  BitKeeper/etc/Authors/tomek.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/utterback.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/utterback.txt
+
+  BitKeeper/etc/Authors/utterback.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/venu.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/venu.txt
+
+  BitKeeper/etc/Authors/venu.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/viperus.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/viperus.txt
+
+  BitKeeper/etc/Authors/viperus.txt@1.0 +0 -0
+
+  BitKeeper/etc/Authors/wink.txt@1.1 +1 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/Authors/wink.txt
+
+  BitKeeper/etc/Authors/wink.txt@1.0 +0 -0
+
+  BitKeeper/etc/authors.txt@1.1 +58 -0
+    BitKeeper file /home/stenn/ntp-stable-p8/BitKeeper/etc/authors.txt
+
+  BitKeeper/etc/authors.txt@1.0 +0 -0
+
+  ChangeLog@1.1835 +3 -0
+    git author attribution cleanup
+
+  scripts/build/genAuthors.in@1.2 +7 -5
+    git author attribution cleanup
+
 ChangeSet@1.3686, 2016-06-02 07:40:06-04:00, stenn@deacon.udel.edu
   NTP_4_2_8P8
   TAG: NTP_4_2_8P8
@@ -386,13 +2249,13 @@ ChangeSet@1.3680, 2016-05-24 12:05:06+00:00, stenn@psp-deb1.ntp.org
   ntpd/ntp_proto.c@1.391 +39 -24
     [Sec 3044] Spoofed server packets are partially processed.  HStenn.
 
-ChangeSet@1.3669.3.2, 2016-05-24 02:58:00-07:00, harlan@hms-mbp11.pfcs.com
+ChangeSet@1.3669.4.2, 2016-05-24 02:58:00-07:00, harlan@hms-mbp11.pfcs.com
   Make sure we have an "author" file for git imports.  HStenn.
 
-  ChangeLog@1.1820.3.3 +1 -0
+  ChangeLog@1.1820.4.3 +1 -0
     Update the problem tests for MacOS for sntp.  HStenn.
 
-  ChangeLog@1.1820.3.2 +1 -0
+  ChangeLog@1.1820.4.2 +1 -0
     Make sure we have an "author" file for git imports.  HStenn.
 
   configure.ac@1.606 +1 -0
@@ -420,10 +2283,10 @@ ChangeSet@1.3669.3.2, 2016-05-24 02:58:00-07:00, harlan@hms-mbp11.pfcs.com
   sntp/tests/Makefile.am@1.67 +8 -2
     Update the problem tests for MacOS for sntp.  HStenn.
 
-ChangeSet@1.3669.3.1, 2016-05-24 02:25:46-07:00, harlan@hms-mbp11.pfcs.com
+ChangeSet@1.3669.4.1, 2016-05-24 02:25:46-07:00, harlan@hms-mbp11.pfcs.com
   [Sec 3042] Broadcast Interleave.  HStenn.
 
-  ChangeLog@1.1820.3.1 +4 -0
+  ChangeLog@1.1820.4.1 +4 -0
     [Sec 3042] Broadcast Interleave.  HStenn.
 
   ntpd/ntp_proto.c@1.386.1.1 +69 -14
@@ -506,6 +2369,13 @@ ChangeSet@1.3671.1.2, 2016-05-17 04:25:50+00:00, stenn@psp-deb1.ntp.org
   ChangeLog@1.1822.1.2 +1 -0
     [Bug 3052] Add a .gitignore file.  Edmund Wong.
 
+ChangeSet@1.3669.3.2, 2016-05-10 12:11:43+00:00, abe@psp-deb1.ntp.org
+  refclock_jjy.c:
+    [Bug 3047] Correct typo in the comment line.
+
+  ntpd/refclock_jjy.c@1.32 +1 -1
+    [Bug 3047] Correct typo in the comment line.
+
 ChangeSet@1.3675, 2016-05-08 11:59:28+02:00, perlinger@ntp.org
   [Sec 3043]  Autokey association reset. perlinger@ntp.org
    (fixes [Sec 3044] and [Sec 3045], too)
@@ -516,6 +2386,22 @@ ChangeSet@1.3675, 2016-05-08 11:59:28+02:00, perlinger@ntp.org
   ntpd/ntp_proto.c@1.388 +28 -22
     [Sec 3043]  Autokey association reset. perlinger@ntp.org
      (fixes [Sec 3044] and [Sec 3045], too)
+
+ChangeSet@1.3669.3.1, 2016-05-08 07:34:11+00:00, abe@psp-deb1.ntp.org
+  driver40.html, refclock_jjy.c, driver40-ja.html, ChangeLog:
+    [Bug 3047] Fix refclock_jjy C-DEX JST2000. abe@ntp.org
+
+  ChangeLog@1.1820.3.1 +2 -0
+    [Bug 3047] Fix refclock_jjy C-DEX JST2000. abe@ntp.org
+
+  html/drivers/driver40-ja.html@1.5 +2 -2
+    [Bug 3047] Fix refclock_jjy C-DEX JST2000. abe@ntp.org
+
+  html/drivers/driver40.html@1.20 +2 -2
+    [Bug 3047] Fix refclock_jjy C-DEX JST2000. abe@ntp.org
+
+  ntpd/refclock_jjy.c@1.31 +7 -3
+    [Bug 3047] Fix refclock_jjy C-DEX JST2000. abe@ntp.org
 
 ChangeSet@1.3674, 2016-05-06 11:05:44+00:00, stenn@psp-deb1.ntp.org
   [Sec 3046] CRYPTO_NAK crash
