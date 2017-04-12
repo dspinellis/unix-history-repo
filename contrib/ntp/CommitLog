@@ -1,3 +1,441 @@
+ChangeSet@1.3729, 2017-02-01 07:39:35-05:00, stenn@deacon.udel.edu
+  NTP_4_2_8P9_WIN
+  TAG: NTP_4_2_8P9_WIN
+
+  ChangeLog@1.1857 +3 -0
+    NTP_4_2_8P9_WIN
+
+  ntpd/invoke-ntp.conf.texi@1.204 +1 -1
+    NTP_4_2_8P9_WIN
+
+  ntpd/invoke-ntp.keys.texi@1.193 +1 -1
+    NTP_4_2_8P9_WIN
+
+  ntpd/invoke-ntpd.texi@1.509 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.conf.5man@1.238 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.conf.5mdoc@1.238 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.conf.html@1.188 +1 -1
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.conf.man.in@1.238 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.conf.mdoc.in@1.238 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.keys.5man@1.227 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.keys.5mdoc@1.227 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.keys.html@1.189 +1 -1
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.keys.man.in@1.227 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntp.keys.mdoc.in@1.227 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd-opts.c@1.531 +245 -245
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd-opts.h@1.530 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd.1ntpdman@1.338 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd.1ntpdmdoc@1.338 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd.html@1.182 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd.man.in@1.338 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpd/ntpd.mdoc.in@1.338 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpdc/invoke-ntpdc.texi@1.506 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc-opts.c@1.524 +107 -107
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc-opts.h@1.523 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc.1ntpdcman@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc.html@1.350 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc.man.in@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpdc/ntpdc.mdoc.in@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpq/invoke-ntpq.texi@1.514 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq-opts.c@1.531 +114 -114
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq-opts.h@1.529 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq.1ntpqman@1.342 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq.1ntpqmdoc@1.342 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq.html@1.179 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq.man.in@1.342 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpq/ntpq.mdoc.in@1.342 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.508 +11 -10
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.526 +68 -68
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.525 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd.html@1.177 +1 -1
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd.man.in@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+  packageinfo.sh@1.534 +1 -1
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.98 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.99 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/calc_tickadj.html@1.100 +1 -1
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.97 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.99 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.102 +1 -1
+    NTP_4_2_8P9_WIN
+
+  scripts/invoke-plot_summary.texi@1.120 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/invoke-summary.texi@1.119 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.329 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait-opts@1.65 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.326 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.327 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait.html@1.346 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait.man.in@1.326 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.327 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.117 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep-opts@1.67 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.105 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.105 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep.html@1.118 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep.man.in@1.105 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.106 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.118 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace-opts@1.67 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.105 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.106 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace.html@1.119 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace.man.in@1.105 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.107 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary-opts@1.68 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary.1plot_summaryman@1.118 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary.1plot_summarymdoc@1.118 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary.html@1.121 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary.man.in@1.118 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/plot_summary.mdoc.in@1.118 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/summary-opts@1.67 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/summary.1summaryman@1.117 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/summary.1summarymdoc@1.117 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/summary.html@1.120 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/summary.man.in@1.117 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/summary.mdoc.in@1.117 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/invoke-update-leap.texi@1.18 +1 -1
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap-opts@1.18 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap.1update-leapman@1.18 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.18 +2 -2
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap.html@1.18 +1 -1
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap.man.in@1.18 +3 -3
+    NTP_4_2_8P9_WIN
+
+  scripts/update-leap/update-leap.mdoc.in@1.18 +2 -2
+    NTP_4_2_8P9_WIN
+
+  sntp/invoke-sntp.texi@1.506 +2 -2
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp-opts.c@1.525 +159 -159
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp-opts.h@1.523 +3 -3
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp.1sntpman@1.341 +3 -3
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp.1sntpmdoc@1.341 +2 -2
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp.html@1.521 +2 -2
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp.man.in@1.341 +3 -3
+    NTP_4_2_8P9_WIN
+
+  sntp/sntp.mdoc.in@1.341 +2 -2
+    NTP_4_2_8P9_WIN
+
+  util/invoke-ntp-keygen.texi@1.509 +2 -2
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen-opts.c@1.527 +173 -173
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen-opts.h@1.525 +3 -3
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen.1ntp-keygenman@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen.html@1.183 +2 -2
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen.man.in@1.337 +3 -3
+    NTP_4_2_8P9_WIN
+
+  util/ntp-keygen.mdoc.in@1.337 +2 -2
+    NTP_4_2_8P9_WIN
+
+ChangeSet@1.3728, 2017-01-28 09:32:36-05:00, stenn@pogo.udel.edu
+  typos
+
+  sntp/m4/ntp_openssl.m4@1.26 +13 -13
+    typos
+
+ChangeSet@1.3726, 2017-01-27 11:21:38+00:00, stenn@psp-deb1.ntp.org
+  ntp-4.2.8p9-win
+
+  ChangeLog@1.1855 +4 -1
+    ntp-4.2.8p9-win
+
+  packageinfo.sh@1.533 +1 -1
+    ntp-4.2.8p9-win
+
+ChangeSet@1.3725, 2017-01-27 11:09:20+00:00, stenn@psp-deb1.ntp.org
+  bk-7 repos don't have a ChangeSet file
+
+  sntp/Makefile.am@1.89 +1 -1
+    bk-7 repos don't have a ChangeSet file
+
+ChangeSet@1.3724, 2017-01-21 15:12:35+01:00, perlinger@ntp.org
+  [Bug 3144] NTP does not build without openSSL <perlinger@ntp.org>
+   - pulled missing changeset, minor warning fixes
+
+  ChangeLog@1.1854 +2 -1
+    [Bug 3144] NTP does not build without openSSL <perlinger@ntp.org>
+     - pulled missing changeset, minor warning fixes
+
+  include/ssl_applink.c@1.3 +9 -1
+    [Bug 3144] NTP does not build without openSSL <perlinger@ntp.org>
+     - minor warning fixes
+
+  ports/winnt/ntpd/ntservice.c@1.31 +1 -0
+    [Bug 3144] NTP does not build without openSSL <perlinger@ntp.org>
+     - pulled missing changeset, minor warning fixes
+
+ChangeSet@1.3720.1.2, 2017-01-10 06:07:05-05:00, stenn@pogo.udel.edu
+  configure.ac cleanup
+
+  ChangeLog@1.1852.1.1 +5 -0
+    configure.ac cleanup
+
+  configure.ac@1.607 +1 -1
+    configure.ac cleanup
+
+ChangeSet@1.3720.1.1, 2017-01-10 06:05:44-05:00, stenn@pogo.udel.edu
+  openssl configure cleanup
+
+  sntp/m4/ntp_libntp.m4@1.34 +1 -3
+    openssl configure cleanup
+
+  sntp/m4/ntp_openssl.m4@1.25 +19 -1
+    openssl configure cleanup
+
+ChangeSet@1.3722, 2016-11-23 08:34:52+01:00, perlinger@ntp.org
+  Bug 3144 - NTP does not build without openSSL
+   - fix SNTP to build '--without-crypto',too
+   - remove some warnings that result from '--without-crypto'
+
+  ntpd/ntp_control.c@1.215 +4 -1
+    Bug 3144 - NTP does not build without openSSL
+     - remove some warnings that result from '--without-crypto'
+
+  ntpd/ntp_proto.c@1.398 +1 -1
+    Bug 3144 - NTP does not build without openSSL
+     - remove some warnings that result from '--without-crypto'
+
+  sntp/crypto.c@1.24 +1 -1
+    Bug 3144 - NTP does not build without openSSL
+     - fix SNTP to build '--without-crypto', too
+
+ChangeSet@1.3721, 2016-11-22 22:22:46+01:00, perlinger@ntp.org
+  [Bug 3144] NTP does not build without openSSL
+
+  ChangeLog@1.1853 +3 -1
+    [Bug 3144] NTP does not build without openSSL
+
+  include/ntp_md5.h@1.11 +4 -0
+    [Bug 3144] NTP does not build without openSSL
+     - pull in "libssl_compat.h" if built with openssl
+     - provide compliant API otherwise
+
+  libntp/a_md5encrypt.c@1.40 +0 -1
+    [Bug 3144] NTP does not build without openSSL
+     - do not directly include "libssl_compat.h" -- comes with "ntp_md5.h"
+
+  libntp/libssl_compat.c@1.2.1.1 +10 -7
+    [Bug 3144] NTP does not build without openSSL
+     - compiles code only if openssl is indeed required
+
+  ntpd/ntp_control.c@1.214 +1 -3
+    [Bug 3144] NTP does not build without openSSL
+     - do not directly include "libssl_compat.h" -- comes with "ntp_md5.h"
+     - fix long-standing warning
+
+  ntpd/ntp_io.c@1.418 +9 -5
+    [Bug 3144] NTP does not build without openSSL
+     - sidekick: Fix annoying warnings for Debug Build (Win64/32 issue)
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.78 +4 -6
+    [Bug 3144] NTP does not build without openSSL
+     - sidekick: Fix annoying warnings MSVC emits
+
 ChangeSet@1.3720, 2016-11-21 08:08:21-05:00, stenn@deacon.udel.edu
   NTP_4_2_8P9
   TAG: NTP_4_2_8P9
@@ -557,7 +995,6 @@ ChangeSet@1.3701, 2016-10-24 07:37:25+02:00, perlinger@ntp.org
     [winio2 - unlocked]
      - eliminate critical section, simplify API
      - the great renaming
-    
 
 ChangeSet@1.3698.1.7, 2016-10-23 05:18:04+00:00, stenn@psp-deb1.ntp.org
   ntp-4.2.8p9-PRE
@@ -889,7 +1326,7 @@ ChangeSet@1.3698.1.7, 2016-10-23 05:18:04+00:00, stenn@psp-deb1.ntp.org
   util/ntp-keygen.mdoc.in@1.335 +2 -2
     ntp-4.2.8p9-PRE
 
-ChangeSet@1.3688.4.1, 2016-10-20 19:28:06+00:00, stenn@psp-deb1.ntp.org
+ChangeSet@1.3688.5.1, 2016-10-20 19:28:06+00:00, stenn@psp-deb1.ntp.org
   cleanup
 
   ChangeLog@1.1836.4.1 +1 -0
@@ -910,7 +1347,6 @@ ChangeSet@1.3686.19.1, 2016-10-20 09:21:04+02:00, perlinger@ntp.org
 
   ChangeLog@1.1834.19.1 +4 -0
     [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
-    
 
   include/ntp.h@1.220.1.1 +1 -1
     [Sec 3113] Broadcast Mode Poll Interval Enforcement DoS
@@ -953,7 +1389,7 @@ ChangeSet@1.3698.1.2, 2016-10-10 22:34:55-07:00, harlan@max.pfcs.com
 
   tests/bug-3102/zeroorg.py@1.0 +0 -0
 
-ChangeSet@1.3688.3.2, 2016-10-10 01:46:05-07:00, harlan@max.pfcs.com
+ChangeSet@1.3688.4.1, 2016-10-10 01:46:05-07:00, harlan@max.pfcs.com
   Fix typos in include/ntp.h
 
   ChangeLog@1.1836.3.1 +1 -0
@@ -988,6 +1424,89 @@ ChangeSet@1.3699, 2016-10-04 08:36:17+02:00, perlinger@ntp.org
   ports/winnt/ntpd/ntp_iocpltypes.c@1.2 +2 -2
     [Bug 3125] NTPD doesn't fully start when ntp.conf entries are out of order using the loopback-ppsapi-provider.dll
      - fix wrong instance initialisation
+
+ChangeSet@1.3688.3.2, 2016-10-02 09:01:53+02:00, perlinger@ntp.org
+  [Bug 3095] Compatibility with openssl 1.1
+   - add autolib hader
+   - fix linker input selection
+
+  include/ssl_applink.c@1.2 +15 -3
+    [Bug 3095] Compatibility with openssl 1.1
+     - the graet renaming of v1.1.0
+
+  libntp/libssl_compat.c@1.3 +4 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - make sure 'inttypes.h' is included before SSL headers (macro definitiion order)
+
+  ports/winnt/include/msvc_ssl_autolib.h@1.1 +94 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     create automagic library selection header
+
+  ports/winnt/include/msvc_ssl_autolib.h@1.0 +0 -0
+
+  ports/winnt/vs2008/debug-x64.vsprops@1.2 +2 -2
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2008/debug.vsprops@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2008/release-x64.vsprops@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2008/release.vsprops@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2013/debug-x64.props@1.3 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2013/debug.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj@1.13 +2 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - add autolib hader
+
+  ports/winnt/vs2013/libntp/libntp.vcxproj.filters@1.11 +3 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - add autolib hader
+
+  ports/winnt/vs2013/release-x64.props@1.3 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2013/release.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2015/debug-x64.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2015/debug.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj@1.3 +1 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - add autolib hader
+
+  ports/winnt/vs2015/libntp/libntp.vcxproj.filters@1.3 +3 -0
+    [Bug 3095] Compatibility with openssl 1.1
+     - add autolib hader
+
+  ports/winnt/vs2015/release-x64.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
+
+  ports/winnt/vs2015/release.props@1.2 +1 -1
+    [Bug 3095] Compatibility with openssl 1.1
+     - fix linker input selection
 
 ChangeSet@1.3698, 2016-10-01 10:52:11+00:00, stenn@psp-deb1.ntp.org
   Update NEWS for 3119
@@ -8089,31 +8608,24 @@ ChangeSet@1.3552.1.13, 2015-08-20 10:15:12+02:00, viperus@ubuntu.(none)
 
   sntp/libevent/test/bench_httpclient.c@1.8 +5 -1
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/regress.c@1.8 +6 -2
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/regress_dns.c@1.10 +6 -5
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/regress_http.c@1.10 +8 -4
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/regress_minheap.c@1.5 +2 -1
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/test-ratelim.c@1.11 +6 -2
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
   sntp/libevent/test/test-time.c@1.7 +2 -1
     reverted emalloc (and similar) to malloc + added checks if malloc is NULL, because emalloc is not linked here.
-    
 
 ChangeSet@1.3552.1.12, 2015-08-20 01:10:57+02:00, viperus@ubuntu.(none)
   Makefile.am:
@@ -8151,67 +8663,51 @@ ChangeSet@1.3552.1.10, 2015-08-20 00:23:42+02:00, viperus@ubuntu.(none)
 
   ntpd/refclock_palisade.c@1.43 +2 -2
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   ntpq/ntpq.c@1.161 +7 -7
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/sample/http-server.c@1.11 +2 -2
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/bench_httpclient.c@1.7 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/regress.c@1.7 +2 -2
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/regress_dns.c@1.9 +4 -4
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/regress_http.c@1.9 +3 -3
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/regress_minheap.c@1.4 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/test-ratelim.c@1.10 +2 -2
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libevent/test/test-time.c@1.6 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/libopts/compat/pathfind.c@1.12 +5 -5
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/tests/fileHandlingTest.c@1.3 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   sntp/tests/packetProcessing.c@1.8 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   tests/libntp/a_md5encrypt.c@1.12 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   tests/libntp/calendar.c@1.6.1.1 +4 -4
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
   tests/libntp/caljulian.c@1.10 +1 -1
     Fixing bug 2898, replacing malloc with emalloc, calloc with emalloc_zero, strdup with estrup etc.
-    
 
 ChangeSet@1.3552.1.9, 2015-08-17 13:56:23+02:00, viperus@ubuntu.(none)
   Makefile.am:
@@ -8595,7 +9091,6 @@ ChangeSet@1.3548.1.13, 2015-08-06 20:41:02+02:00, viperus@ubuntu.(none)
 
   tests/libntp/socktoa.c@1.9 +2 -2
     fixed. Tests are skipped when you do ./build --disable-ipv6
-    
 
   tests/ntpq/Makefile.am@1.2 +8 -37
     changes
@@ -8636,7 +9131,6 @@ ChangeSet@1.3548.1.11, 2015-08-06 10:27:35+02:00, viperus@ubuntu.(none)
 
   tests/libntp/run-socktoa.c@1.11 +7 -7
     Minor changes due to the autogenerated ruby script
-    
 
   tests/libntp/socktoa.c@1.8 +22 -6
     update
@@ -8811,8 +9305,6 @@ ChangeSet@1.3548.1.2, 2015-08-01 22:40:51+02:00, viperus@ubuntu.(none)
     Added test ntp_singd again, renamed it to ntp_signdT (including the original ntp_signd.c doesn't work if you have 2 files with the same name).
     I included the original ntp_signd.c, so static functions can be tested.
     Additional .o objects had to be added for everyhting to work.
-    
-    
 
   tests/ntpd/ntp_signdT.c@1.2 +17 -2
     MUST ADD #define HAVE_NTP_NAME above the #include "ntp_NAME.c"
@@ -8918,15 +9410,12 @@ ChangeSet@1.3529.1.18, 2015-07-27 19:46:25+02:00, viperus@ubuntu.(none)
 
   tests/libntp/run-lfptostr.c@1.6 +11 -11
     update
-    
 
   tests/libntp/run-netof.c@1.6 +0 -1
     update
-    
 
   tests/libntp/run-socktoa.c@1.9 +6 -6
     update
-    
 
   tests/ntpd/Makefile.am@1.6.1.4 +8 -3
     Merge
@@ -8942,11 +9431,9 @@ ChangeSet@1.3529.1.18, 2015-07-27 19:46:25+02:00, viperus@ubuntu.(none)
 
   tests/ntpd/run-ntp_signd.c@1.3 +2 -2
     update
-    
 
   tests/ntpd/run-rc_cmdlength.c@1.2 +8 -3
     update
-    
 
 ChangeSet@1.3543, 2015-07-27 04:11:08+00:00, stenn@psp-at1.ntp.org
   [Bug 2595] ntpdate man page quirks.  Hal Murray, Harlan Stenn
@@ -9192,165 +9679,126 @@ ChangeSet@1.3529.1.10, 2015-07-25 16:54:29+02:00, viperus@ubuntu.(none)
 
   tests/libntp/netof.c@1.3.1.1 +8 -0
     adding declarations
-    
 
   tests/libntp/numtoa.c@1.6 +2 -0
     adding declarations
-    
 
   tests/libntp/numtohost.c@1.5 +2 -0
     adding declarations
-    
 
   tests/libntp/octtoint.c@1.3.1.1 +10 -0
     adding declarations
-    
 
   tests/libntp/prettydate.c@1.3 +3 -0
     adding declarations
-    
 
   tests/libntp/recvbuff.c@1.5 +4 -0
     adding declarations
-    
 
   tests/libntp/refidsmear.c@1.5 +6 -3
     adding declarations
-    
 
   tests/libntp/refnumtoa.c@1.5 +4 -0
     adding declarations
-    
 
   tests/libntp/run-clocktime.c@1.9 +1 -1
     update
 
   tests/libntp/run-lfpfunc.c@1.16 +9 -9
     update
-    
 
   tests/libntp/run-netof.c@1.5 +4 -4
     update
-    
 
   tests/libntp/run-numtoa.c@1.9 +2 -2
     update
-    
 
   tests/libntp/run-numtohost.c@1.9 +1 -1
     update
-    
 
   tests/libntp/run-octtoint.c@1.6 +7 -7
     update
-    
 
   tests/libntp/run-prettydate.c@1.4 +1 -1
     update
-    
 
   tests/libntp/run-recvbuff.c@1.4 +3 -3
     update
-    
 
   tests/libntp/run-refidsmear.c@1.5 +1 -1
     update
-    
 
   tests/libntp/run-refnumtoa.c@1.7 +2 -2
     update
-    
 
   tests/libntp/run-sfptostr.c@1.4 +7 -7
     update
-    
 
   tests/libntp/run-socktoa.c@1.8 +6 -6
     update
-    
 
   tests/libntp/run-ssl_init.c@1.8 +5 -5
     update
-    
 
   tests/libntp/run-statestr.c@1.9 +4 -4
     update
-    
 
   tests/libntp/run-strtolfp.c@1.4 +6 -6
     update
-    
 
   tests/libntp/run-timespecops.c@1.9 +28 -28
     update
-    
 
   tests/libntp/run-timevalops.c@1.11 +28 -28
     update
-    
 
   tests/libntp/run-tstotv.c@1.4 +3 -3
     update
-    
 
   tests/libntp/run-tvtots.c@1.5 +3 -3
     update
-    
 
   tests/libntp/run-vi64ops.c@1.7 +3 -3
     update
-    
 
   tests/libntp/run-ymd2yd.c@1.10 +4 -4
     update
-    
 
   tests/libntp/sfptostr.c@1.3 +10 -0
     update
-    
 
   tests/libntp/sockaddrtest.c@1.2 +1 -0
     update
-    
 
   tests/libntp/socktoa.c@1.3.1.1 +6 -0
     added declarations
 
   tests/libntp/ssl_init.c@1.8 +6 -0
     added declarations
-    
 
   tests/libntp/statestr.c@1.5 +4 -0
     added declarations
-    
 
   tests/libntp/strtolfp.c@1.2.1.1 +9 -0
     added declarations
-    
 
   tests/libntp/timespecops.c@1.8 +40 -1
     added declarations
-    
 
   tests/libntp/timevalops.c@1.11 +37 -1
     added declarations
-    
 
   tests/libntp/tstotv.c@1.3 +5 -0
     added declarations
-    
 
   tests/libntp/tvtots.c@1.5 +3 -0
     added declarations
-    
 
   tests/libntp/vi64ops.c@1.6 +6 -0
     added declarations
-    
 
   tests/libntp/ymd2yd.c@1.6 +5 -0
     added declarations
-    
 
 ChangeSet@1.3536, 2015-07-25 02:08:32+02:00, tomek@tomek-n56vz.(none)
   run-ntp_restrict.c:
@@ -9408,57 +9856,45 @@ ChangeSet@1.3529.1.9, 2015-07-24 18:38:05+02:00, viperus@ubuntu.(none)
 
   tests/libntp/calendar.c@1.6 +42 -18
     added function declarations + minor comment fixes
-    
 
   tests/libntp/caljulian.c@1.9 +10 -0
     added declarations
 
   tests/libntp/caltontp.c@1.3 +5 -0
     added declarations
-    
 
   tests/libntp/calyearstart.c@1.4 +5 -0
     added declarations
-    
 
   tests/libntp/clocktime.c@1.6 +11 -0
     added declarations
-    
 
   tests/libntp/decodenetnum.c@1.3.1.1 +7 -0
     added declarations
-    
 
   tests/libntp/hextoint.c@1.4 +6 -0
     added declarations
-    
 
   tests/libntp/hextolfp.c@1.5.1.1 +7 -0
     added declarations
-    
 
   tests/libntp/humandate.c@1.5 +4 -0
     added declarations
-    
 
   tests/libntp/lfpfunc.c@1.12 +13 -0
     added declarations
-    
 
   tests/libntp/lfptest.c@1.2 +1 -0
     added #include
 
   tests/libntp/lfptostr.c@1.3.1.1 +15 -0
     added declarations
-    
 
   tests/libntp/modetoa.c@1.7 +3 -0
     added declarations
-    
 
   tests/libntp/msyslog.c@1.6 +10 -0
     added declarations
-    
 
   tests/libntp/run-buftvtots.c@1.5 +10 -10
     update
@@ -9471,47 +9907,36 @@ ChangeSet@1.3529.1.9, 2015-07-24 18:38:05+02:00, viperus@ubuntu.(none)
 
   tests/libntp/run-caltontp.c@1.4 +4 -4
     updated
-    
 
   tests/libntp/run-calyearstart.c@1.6 +3 -3
     updated
-    
 
   tests/libntp/run-clocktime.c@1.8 +8 -8
     updated
-    
 
   tests/libntp/run-decodenetnum.c@1.6 +6 -6
     updated
-    
 
   tests/libntp/run-hextoint.c@1.8 +5 -5
     updated
-    
 
   tests/libntp/run-hextolfp.c@1.7 +6 -6
     updated
-    
 
   tests/libntp/run-humandate.c@1.5 +2 -2
     updated
-    
 
   tests/libntp/run-lfpfunc.c@1.15 +9 -9
     updated
-    
 
   tests/libntp/run-lfptostr.c@1.5 +10 -10
     updated
-    
 
   tests/libntp/run-modetoa.c@1.10 +2 -2
     updated
-    
 
   tests/libntp/run-msyslog.c@1.7 +8 -8
     updated
-    
 
 ChangeSet@1.3523.2.7, 2015-07-24 12:01:24+05:30, loki@dadasgift.(none)
   ntp signd testing
@@ -9567,31 +9992,24 @@ ChangeSet@1.3529.1.8, 2015-07-23 18:37:16+02:00, viperus@ubuntu.(none)
 
   sntp/tests/keyFile.c@1.7 +4 -0
     added declarations for tests
-    
 
   sntp/tests/kodDatabase.c@1.7 +6 -0
     added declarations for tests
-    
 
   sntp/tests/kodFile.c@1.8 +8 -0
     added declarations for tests
-    
 
   sntp/tests/nameresolution.c@1.2 +3 -0
     added declarations for tests
-    
 
   sntp/tests/packetHandling.c@1.5 +13 -0
     added declarations for tests
-    
 
   sntp/tests/packetProcessing.c@1.7 +24 -0
     added declarations for tests
-    
 
   sntp/tests/run-crypto.c@1.5 +5 -5
     added declarations for tests
-    
 
   sntp/tests/run-keyFile.c@1.8 +4 -4
     updated
@@ -9613,7 +10031,6 @@ ChangeSet@1.3529.1.8, 2015-07-23 18:37:16+02:00, viperus@ubuntu.(none)
 
   sntp/tests/utilities.c@1.4 +12 -0
     added declarations for tests
-    
 
 ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
   Updated unity ruby testRunner generator with mark's latest fixes. Modified tests/libntp/Makefile.am and sntp/tests/Makefile.am accordingly. Also, split some .h files into .h and .c because they contained declarations and definitions which caused error in the newly generated test runners. Started fixing some warnings. We can add both declarations and defitions in a single test.c file without any issues now. Autogenerated tests will be run in order of the declarations in the test file.
@@ -9640,31 +10057,24 @@ ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
 
   sntp/tests/run-keyFile.c@1.7 +12 -8
     updated autogenerated code
-    
 
   sntp/tests/run-kodDatabase.c@1.5 +9 -3
     updated autogenerated code
-    
 
   sntp/tests/run-kodFile.c@1.5 +7 -3
     updated autogenerated code
-    
 
   sntp/tests/run-networking.c@1.2 +5 -2
     updated autogenerated code
-    
 
   sntp/tests/run-packetHandling.c@1.4 +11 -3
     updated autogenerated code
-    
 
   sntp/tests/run-packetProcessing.c@1.5 +6 -3
     updated autogenerated code
-    
 
   sntp/tests/run-utilities.c@1.4 +8 -3
     updated autogenerated code
-    
 
   sntp/tests/sntptest.c@1.1 +33 -0
     definitions placed from .h to .c
@@ -9687,13 +10097,11 @@ ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
 
   sntp/unity/auto/type_sanitizer.rb@1.1 +8 -0
     mark's new file from the update
-    
 
   sntp/unity/auto/type_sanitizer.rb@1.0 +0 -0
 
   sntp/unity/auto/unity_test_summary.py@1.1 +135 -0
     mark's new file from the update
-    
 
   sntp/unity/auto/unity_test_summary.py@1.0 +0 -0
 
@@ -9702,22 +10110,18 @@ ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
 
   tests/libntp/Makefile.am@1.85.1.3 +7 -0
     New ruby generator script required some changes. Removed some definitions form header files and created their own .c files.
-    
 
   tests/libntp/a_md5encrypt.c@1.11 +8 -0
     added declarations
 
   tests/libntp/atoint.c@1.4 +9 -0
     added declarations
-    
 
   tests/libntp/atouint.c@1.5 +8 -0
     added declarations
-    
 
   tests/libntp/authkeys.c@1.10 +17 -6
     added declarations
-    
 
   tests/libntp/lfptest.c@1.1 +10 -0
     new file, contains definitions from lfptest.h
@@ -9732,151 +10136,114 @@ ChangeSet@1.3529.1.7, 2015-07-22 20:09:39+02:00, viperus@ubuntu.(none)
 
   tests/libntp/run-atoint.c@1.7 +10 -7
     autogenerated file update
-    
 
   tests/libntp/run-atouint.c@1.8 +10 -7
     autogenerated file update
-    
 
   tests/libntp/run-authkeys.c@1.10 +12 -9
     autogenerated file update
-    
 
   tests/libntp/run-buftvtots.c@1.4 +8 -3
     autogenerated file update
-    
 
   tests/libntp/run-calendar.c@1.7 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-caljulian.c@1.11 +7 -3
     autogenerated file update
-    
 
   tests/libntp/run-caltontp.c@1.3 +4 -3
     autogenerated file update
-    
 
   tests/libntp/run-calyearstart.c@1.5 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-clocktime.c@1.7 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-decodenetnum.c@1.5 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-hextoint.c@1.7 +6 -2
     autogenerated file update
-    
 
   tests/libntp/run-hextolfp.c@1.6 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-humandate.c@1.4 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-lfpfunc.c@1.14 +7 -3
     autogenerated file update
-    
 
   tests/libntp/run-lfptostr.c@1.4 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-modetoa.c@1.9 +4 -3
     autogenerated file update
-    
 
   tests/libntp/run-msyslog.c@1.6 +4 -3
     autogenerated file update
-    
 
   tests/libntp/run-netof.c@1.4 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-numtoa.c@1.8 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-numtohost.c@1.8 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-octtoint.c@1.5 +4 -2
     autogenerated file update
-    
 
   tests/libntp/run-prettydate.c@1.3 +6 -2
     autogenerated file update
-    
 
   tests/libntp/run-recvbuff.c@1.3 +4 -2
     autogenerated file update
-    
 
   tests/libntp/run-refidsmear.c@1.4 +7 -3
     autogenerated file update
-    
 
   tests/libntp/run-refnumtoa.c@1.6 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-sfptostr.c@1.3 +4 -3
     autogenerated file update
-    
 
   tests/libntp/run-socktoa.c@1.7 +6 -2
     autogenerated file update
-    
 
   tests/libntp/run-ssl_init.c@1.7 +4 -3
     autogenerated file update
-    
 
   tests/libntp/run-statestr.c@1.8 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-strtolfp.c@1.3 +6 -2
     autogenerated file update
-    
 
   tests/libntp/run-timespecops.c@1.8 +8 -3
     autogenerated file update
-    
 
   tests/libntp/run-timevalops.c@1.10 +7 -3
     autogenerated file update
-    
 
   tests/libntp/run-tstotv.c@1.3 +5 -2
     autogenerated file update
-    
 
   tests/libntp/run-tvtots.c@1.4 +6 -3
     autogenerated file update
-    
 
   tests/libntp/run-uglydate.c@1.9 +6 -4
     autogenerated file update
-    
 
   tests/libntp/run-vi64ops.c@1.6 +5 -3
     autogenerated file update
-    
 
   tests/libntp/run-ymd2yd.c@1.9 +4 -3
     autogenerated file update
-    
 
   tests/libntp/sockaddrtest.c@1.1 +50 -0
     New file created by splitting sockaddrtest.h. 
@@ -11193,7 +11560,6 @@ ChangeSet@1.3492.1.1, 2015-07-01 08:53:24+02:00, jnperlin@hydra.(none)
 
   ChangeLog@1.1680.1.1 +1 -0
     [Bug 2867] ntpd with autokey active crashed by 'ntpq -crv'
-    
 
   ntpd/ntp_control.c@1.201 +5 -2
     [Bug 2867] ntpd with autokey active crashed by 'ntpq -crv'
@@ -15518,7 +15884,6 @@ ChangeSet@1.3365, 2015-06-10 13:08:39+02:00, viperus@ubuntu.(none)
   	added -DUNITY.... to makefile when building lfpfunc.c. Maybe I should add -DUNITY... to CFLAGS_unity or something like that'
   lfpfunc.c:
   	converted more tests
-  
 
   sntp/unity/Makefile.am@1.2.1.1 +4 -0
     added -DUNITY_DOUBLE_INCLUDE to CFLAGS, so I don't get linker errors anymore (because asserting double is disabled by default in unity)
@@ -16864,7 +17229,6 @@ ChangeSet@1.3326.4.6, 2015-05-08 23:57:16+02:00, jnperlin@hydra.(none)
   ntpd/ntp_leapsec.c@1.18 +0 -8
     * [Bug 2745] ntpd -x steps clock on leap second
        removed dead test code block
-    
 
 ChangeSet@1.3326.4.5, 2015-05-08 23:35:42+02:00, jnperlin@hydra.(none)
   * [Bug 2745] ntpd -x steps clock on leap second
@@ -17590,17 +17954,14 @@ ChangeSet@1.3320.4.4, 2015-04-24 21:20:38+02:00, jnperlin@hydra.(none)
   ChangeLog@1.1635.3.2 +2 -0
     [Bug 2808] GPSD_JSON driver enhancements, step 1.
      Add a few more tallies as per Hal Murray's suggestions
-    
 
   html/drivers/driver46.html@1.6 +54 -16
     [Bug 2808] GPSD_JSON driver enhancements, step 1.
      Add a few more tallies as per Hal Murray's suggestions
-    
 
   ntpd/refclock_gpsdjson.c@1.18 +39 -18
     [Bug 2808] GPSD_JSON driver enhancements, step 1.
      Add a few more tallies as per Hal Murray's suggestions
-    
 
 ChangeSet@1.3320.2.7, 2015-04-24 09:25:09+00:00, stenn@psp-at1.ntp.org
   [Bug 2776] Improve ntpq's 'help keytype'
@@ -17651,12 +18012,10 @@ ChangeSet@1.3320.3.1, 2015-04-21 21:08:11+02:00, jnperlin@hydra.(none)
   ChangeLog@1.1635.2.1 +3 -0
     [Bug 2745] ntpd -x steps clock on leap second 
       Do leap second stepping only of the step adjustment is beyond the proper jump distance limit and step correction is allowed at all. 
-    
 
   ntpd/ntp_timer.c@1.83 +15 -5
     [Bug 2745] ntpd -x steps clock on leap second 
       Do leap second stepping only of the step adjustment is beyond the proper jump distance limit and step correction is allowed at all. 
-    
 
 ChangeSet@1.3320.2.3, 2015-04-21 09:48:05+00:00, stenn@psp-deb1.ntp.org
   [Bug 2776] Improve ntpq's 'help keytype'
@@ -21297,7 +21656,6 @@ ChangeSet@1.3292.4.1, 2015-01-27 16:33:33+01:00, martin@pc-martin.(none)
     [Bug 2738] Missing buffer initialisation in parsestate().
     [Bug 2739] Parse driver with PPS enabled occasionaly evaluates PPS timestamp with wrong sign.
     Removed some German umlauts.
-    
 
   ntpd/refclock_parse.c@1.70 +3 -2
     [Bug 2738] Missing buffer initialisation in parsestate().
@@ -32341,12 +32699,10 @@ ChangeSet@1.3188, 2014-08-22 18:36:17+02:00, jnperlin@hydra.(none)
   ChangeLog@1.1525 +2 -0
     [Bug 2636] Clutter in syslog if gpsd not running
      - found (hopefully) last cause for clutter in protocol version
-    
 
   ntpd/refclock_gpsdjson.c@1.13 +12 -13
     [Bug 2636] Clutter in syslog if gpsd not running
      - found (hopefully) last cause for clutter in protocol version
-    
 
 ChangeSet@1.3187, 2014-08-22 08:58:48+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P464
@@ -47006,7 +47362,6 @@ ChangeSet@1.3103.1.1, 2014-03-01 11:52:12+00:00, perlinger@psp-deb1.ntp.org
     [Bug 2570] add signature check when reading leapseconds file
      - define hash validation result definitions
      - provide argument how to handle validation results
-    
 
   ntpd/ntp_util.c@1.106.1.1 +10 -2
     [Bug 2570] add signature check when reading leapseconds file
@@ -47045,7 +47400,6 @@ ChangeSet@1.3104, 2014-03-01 11:13:10+00:00, perlinger@psp-deb1.ntp.org
     [Bug 2570] add signature check when reading leapseconds file
      - define hash validation result definitions
      - provide argument how to handle validation results
-    
 
   ntpd/ntp_util.c@1.107 +2 -2
     [Bug 2570] add signature check when reading leapseconds file
@@ -60698,7 +61052,6 @@ ChangeSet@1.2966.1.3, 2013-08-03 15:13:34-04:00, utterback@pogo.udel.edu
     [Bug 2454] Need way to set file descriptor limit.
     [Bug 2453] Need a way to avoid calling mlockall.
     [Bug 2451] rlimit command is missing from the table of contents in miscopt.html
-    
 
   html/miscopt.html@1.73 +3 -1
     [Bug 2454] Need way to set file descriptor limit.
@@ -78808,7 +79161,6 @@ ChangeSet@1.2822.2.1, 2012-10-05 01:53:46+00:00, davehart@dlh-7551.ad.hartbrothe
 
   sntp/libopts/enum.c@1.5 +3 -3
     Bring libopts/enum.c back to ANSI C compliance.
-    
 
 ChangeSet@1.2822.1.9, 2012-10-04 11:41:02+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P309
@@ -84611,7 +84963,6 @@ ChangeSet@1.2773.1.38, 2012-06-16 05:58:30+00:00, davehart@dlh-7551.ad.hartbroth
   ChangeLog@1.1146.1.30 +2 -0
     [Bug 2225] libevent configure hangs.
     Update bundled libevent to git master, post libevent 2.1.1-alpha.
-    
 
 ChangeSet@1.2773.1.36, 2012-06-16 04:51:53+00:00, davehart@dlh-7551.ad.hartbrothers.com
   Linux 2.6.26 and earlier will fail libevent's timerfd_create() call due to
@@ -88274,7 +88625,6 @@ ChangeSet@1.2773.1.1, 2012-04-09 05:25:13+00:00, davehart@dlh-7551.ad.hartbrothe
       -Idir flags are needed.
     Avoid overwriting user variable LDFLAGS with OpenSSL flags, instead
       they are added to LDFLAGS_NTP.
-    
 
   ntpd/Makefile.am@1.112.1.3 +4 -2
     Avoid overwriting user variable LDFLAGS with OpenSSL flags, instead
@@ -88309,7 +88659,6 @@ ChangeSet@1.2773.1.1, 2012-04-09 05:25:13+00:00, davehart@dlh-7551.ad.hartbrothe
       -Idir flags are needed.
     Avoid overwriting user variable LDFLAGS with OpenSSL flags, instead
       they are added to LDFLAGS_NTP.
-    
 
   sntp/tests/Makefile.am@1.27 +3 -1
     Avoid overwriting user variable LDFLAGS with OpenSSL flags, instead
@@ -90915,7 +91264,6 @@ ChangeSet@1.2762.4.2, 2012-02-20 22:16:37+00:00, davehart@dlh-7551.ad.hartbrothe
 
   ntpd/refclock_nmea.c@1.67 +39 -6
     Increase detail in clockstats for NMEA driver (from Hal Murray).
-    
 
 ChangeSet@1.2762.1.10, 2012-02-19 16:30:28+00:00, davehart@dlh-7551.ad.hartbrothers.com
   fix user-mode PPS end of line timestamp, and use wait I/O
@@ -91123,7 +91471,6 @@ ChangeSet@1.2762.1.5, 2012-02-15 02:48:49+00:00, davehart@dlh-7551.ad.hartbrothe
     Remove Windows-specific code from indicate_refclock_packet() as it is
       now used only on non-Windows systems.
     process_refclock_packet() is used only on Windows, #ifdef away elsewhere.
-    
 
   ntpd/refclock_parse.c@1.66 +1 -0
     Restore accidentally-removed "parsetime" local variable declaration
@@ -98740,7 +99087,6 @@ ChangeSet@1.2673.1.34, 2011-10-11 02:04:21+00:00, davehart@shiny.ad.hartbrothers
   ChangeLog@1.1032.1.27 +2 -0
     [Bug 2029] "make check" clutters syslog.
     Log signal description along with number on ntpd exit.
-    
 
   configure.ac@1.537 +1 -4
     Log signal description along with number on ntpd exit.
@@ -98751,7 +99097,6 @@ ChangeSet@1.2673.1.34, 2011-10-11 02:04:21+00:00, davehart@shiny.ad.hartbrothers
   ntpd/ntpd.c@1.129 +26 -47
     [Bug 2029] "make check" clutters syslog.
     Log signal description along with number on ntpd exit.
-    
 
 ChangeSet@1.2673.1.33, 2011-10-10 05:59:08+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P221
@@ -99572,7 +99917,6 @@ ChangeSet@1.2673.1.19, 2011-10-02 22:12:47+00:00, davehart@shiny.ad.hartbrothers
     ntp-keygen private key cipher default now triple-key triple DES CBC.
     ntp-keygen on Windows XP and later systems will now create links
       expected by ntpd.  They are hardlinks on Windows, soft on POSIX.
-    
 
   util/ntp-keygen-opts.c@1.219 +68 -38
     [Bug 2019] add -c/--cipher
@@ -99589,7 +99933,6 @@ ChangeSet@1.2673.1.19, 2011-10-02 22:12:47+00:00, davehart@shiny.ad.hartbrothers
     Use PEM_write_PKCS8PrivateKey() in place of deprecated predecessor.
       Existing clients going back to at least 2002 can use the new format
       with no changes to deployed code.
-    
 
 ChangeSet@1.2673.3.2, 2011-10-02 18:09:07-04:00, stenn@deacon.udel.edu
   Documentation updates from Dave Mills
@@ -99646,7 +99989,6 @@ ChangeSet@1.2673.1.17, 2011-10-02 08:47:56+00:00, davehart@shiny.ad.hartbrothers
       as reporting PPSAPI failure in NMEA and WWVB refclocks.
     Conditionalize NMEA serial open message under clockevent.
     Send all peer variables to trappers in report_event().
-    
 
   include/ntp_syslog.h@1.8 +8 -1
     Provide LOGIF(CLOCKINFO, (LOG_INFO, "msyslog %s", "args"))
@@ -102823,7 +103165,6 @@ ChangeSet@1.2636, 2011-08-12 17:17:54+00:00, davehart@shiny.ad.hartbrothers.com
     Require Visual C++ 2005 or later compilers in Windows port.
     Force .exe minimum Windows version to 0x0400 to allow NT4 in
       vs2005/*.vcproj files.
-    
 
   include/ntp_machine.h@1.36 +0 -5
     Remove long-untested SYS_CYGWIN32-specific block.
@@ -103134,15 +103475,12 @@ ChangeSet@1.2082.4.232, 2011-08-08 18:13:07+00:00, davehart@shiny.ad.hartbrother
 
   ChangeLog@1.496.26.165 +1 -0
     [Bug 1984] ntp/libisc fails to compile on OS X 10.7 (Lion).
-    
 
   configure.ac@1.465.1.30 +7 -0
     [Bug 1984] ntp/libisc fails to compile on OS X 10.7 (Lion).
-    
 
   sntp/configure.ac@1.31.1.10 +7 -0
     [Bug 1984] ntp/libisc fails to compile on OS X 10.7 (Lion).
-    
 
 ChangeSet@1.2627, 2011-08-05 04:59:41+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P201
@@ -105261,7 +105599,6 @@ ChangeSet@1.2598.1.5, 2011-07-24 01:41:56+00:00, davehart@shiny.ad.hartbrothers.
     Update libevent to 2.1 HEAD as of merge of 2.0.13-stable-dev.
     Match addr_eqprefix() sizeof and memcpy destination to make it clear
       to static analysis that there is no buffer overrun (CID 402).
-    
 
   ntpd/ntp_io.c@1.358 +2 -4
     Match addr_eqprefix() sizeof and memcpy destination to make it clear
@@ -108187,7 +108524,6 @@ ChangeSet@1.2461.1.5, 2011-06-05 11:16:07+00:00, davehart@shiny.ad.hartbrothers.
   BitKeeper/etc/ignore@1.77.1.1 +2 -4
     cleanup arlib cruft.
     add sntp/libevent/.git and .gitignore to ease shared bk/git repo for libevent upstream.
-    
 
 ChangeSet@1.2546, 2011-06-04 04:22:32-04:00, stenn@psp-deb1.ntp.org
   Produce ntpq.1 with the new autogen macros
@@ -109279,7 +109615,6 @@ ChangeSet@1.2517.2.1, 2011-05-25 07:35:27+00:00, davehart@shiny.ad.hartbrothers.
   ChangeLog@1.893.1.1 +2 -0
     parsesolaris.c compile fails on SPARC Solaris with conflicting printf.
     ntp_util.c compile fails on AIX and OSF with conflicting statsdir.
-    
 
   include/ntp_fp.h@1.24 +11 -2
     parsesolaris.c compile fails on SPARC Solaris with conflicting printf.
@@ -109426,7 +109761,6 @@ ChangeSet@1.2082.4.211, 2011-05-25 03:44:32+00:00, davehart@shiny.ad.hartbrother
   ntpdate/ntpdate.c@1.69.2.3 +50 -92
     [Bug 1695] ntpdate takes longer than necessary.
     [Bug 1832] ntpdate doesn't allow timeout > 2s.
-    
 
   ports/winnt/include/config.h@1.79.1.6 +2 -0
     Backport utility routines from ntp-dev: mprintf(), emalloc_zero().
@@ -109786,7 +110120,6 @@ ChangeSet@1.2517.1.3, 2011-05-19 02:46:37+00:00, davehart@shiny.ad.hartbrothers.
       gcc 2.95.
     Use 64-bit scalars in LFPTOD() and DTOLFP() on more platforms by
       conditionalizing on HAVE_U_INT64 rather than UINT64_MAX.
-    
 
   include/ntp_fp.h@1.23 +12 -8
     Use 64-bit scalars in LFPTOD() and DTOLFP() on more platforms by
@@ -110174,7 +110507,6 @@ ChangeSet@1.2082.4.209, 2011-05-15 19:19:24+00:00, davehart@shiny.ad.hartbrother
   include/ntp.h@1.168.1.6 +9 -9
     [Bug 1924] Billboard tally codes sometimes do not match operation,
       variables.
-    
 
   libntp/mktime.c@1.8.1.1 +2 -2
     leading spaces -> tabs
@@ -110190,7 +110522,6 @@ ChangeSet@1.2082.4.209, 2011-05-15 19:19:24+00:00, davehart@shiny.ad.hartbrother
     [Bug 1923] orphan parent favored over LOCAL, ACTS drivers.
     [Bug 1924] Billboard tally codes sometimes do not match operation,
       variables.
-    
 
   ports/winnt/include/config.h@1.79.1.5 +2 -0
     Use _mkgmtime() for timegm() in Windows ports, resolves crash at startup
@@ -115300,7 +115631,6 @@ ChangeSet@1.2479.2.1, 2011-02-23 18:57:00+00:00, davehart@shiny.ad.hartbrothers.
       scm-rev to avoid invoking GNU make implicit rules attempting to
       compile version.c into version.  Problem was with sntp/version.o
       during make distcheck after fix for spurious sntp rebuilds.
-    
 
   ports/winnt/vs2008/libntp/libntp.vcproj@1.39 +6 -2
     add gaa_compat.h reference
@@ -115782,7 +116112,6 @@ ChangeSet@1.2473, 2011-02-22 06:06:28+00:00, davehart@shiny.ad.hartbrothers.com
 
   Makefile.am@1.106 +1 -3
     Enable all relevant automake warnings.
-    
 
   adjtimed/Makefile.am@1.11 +7 -10
     automake deprecates INCLUDES, use AM_CPPFLAGS instead
@@ -115841,7 +116170,6 @@ ChangeSet@1.2473, 2011-02-22 06:06:28+00:00, davehart@shiny.ad.hartbrothers.com
 
   sntp/Makefile.am@1.56 +15 -17
     Enable all relevant automake warnings.
-    
 
   sntp/configure.ac@1.58 +10 -4
     Pass automake options via AM_INIT_AUTOMAKE so they apply to all Makefile.am
@@ -116324,7 +116652,6 @@ ChangeSet@1.2464, 2011-02-20 20:23:00+00:00, davehart@shiny.ad.hartbrothers.com
     Split up ntp_libntp.m4 into smaller, more specific subsets.
     Enable gcc -Wcast-align, fix many instances of warnings when casting
       a pointer to a more-strictly-aligned underlying type.
-    
 
   Makefile.am@1.105 +2 -23
     SUBDIRS and DIST_SUBDIRS were identical, remove definition of DIST_SUBDIRS
@@ -116420,7 +116747,6 @@ ChangeSet@1.2464, 2011-02-20 20:23:00+00:00, davehart@shiny.ad.hartbrothers.com
     Several files comment that ntp_unixtime.h includes sys/time.h and
       time.h, make it so.
     Provide GETTIMEOFDAY() macro on systems with getclock() for sntp.
-    
 
   include/ntp_worker.h@1.2 +120 -10
     Move blocking worker and intres from ntpd to libntp.
@@ -116453,7 +116779,6 @@ ChangeSet@1.2464, 2011-02-20 20:23:00+00:00, davehart@shiny.ad.hartbrothers.com
   lib/isc/unix/ifiter_ioctl.c@1.30 +2 -2
     lib/isc/unix/ifiter_ioctl.c:456: warning: cast increases required alignment of target type
     lib/isc/unix/ifiter_ioctl.c:669: warning: cast increases required alignment of target type
-    
 
   lib/isc/unix/interfaceiter.c@1.20 +2 -2
     lib/isc/unix/interfaceiter.c:83: warning: cast increases required alignment of target type
@@ -117032,11 +117357,9 @@ ChangeSet@1.2464, 2011-02-20 20:23:00+00:00, davehart@shiny.ad.hartbrothers.com
 
   sntp/libevent/test/regress_testutils.c@1.2 +2 -0
     libevent upgrade
-    
 
   sntp/libevent/test/test-eof.c@1.2 +9 -3
     Add a timeout for test-eof.c as it may hang under HP-UX 10.20.
-    
 
   sntp/libevent/test/test-ratelim.c@1.2 +5 -0
     cleanup
@@ -117444,7 +117767,6 @@ ChangeSet@1.2422.1.57, 2011-02-09 07:14:49+00:00, davehart@shiny.ad.hartbrothers
     Fix leak in ntp_control.c read_mru_list().
     Add missing "break;" to ntp_control.c ctl_putsys() for caliberrs, used
       by ntpq -c kerninfo introduced in 4.2.7p104.
-    
 
   ntpd/ntp_io.c@1.346.1.1 +5 -0
     Do not attempt setsockopt() for unopened -1 descriptors.
@@ -117975,7 +118297,6 @@ ChangeSet@1.2422.7.1, 2011-01-25 21:08:29+01:00, jnperlin@hydra.localnet
     moved useful code to timestructs.{h,cpp};
     closeness of l_fp and timeval values tested by special predicate objects;
     added some roundtrip tests;
-    
 
 ChangeSet@1.2422.1.47, 2011-01-25 19:25:52+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1794] ntpq -c rv missing clk_wander information.
@@ -117993,7 +118314,6 @@ ChangeSet@1.2422.1.47, 2011-01-25 19:25:52+00:00, davehart@shiny.ad.hartbrothers
   ChangeLog@1.784.1.9 +2 -0
     [Bug 1794] ntpq -c rv missing clk_wander information.
     [Bug 1795] ntpq readvar does not display last variable.
-    
 
   ntpq/ntpq-subs.c@1.83 +12 -11
     nonfunctional cleanup
@@ -118001,7 +118321,6 @@ ChangeSet@1.2422.1.47, 2011-01-25 19:25:52+00:00, davehart@shiny.ad.hartbrothers
   ntpq/ntpq.c@1.131 +7 -6
     [Bug 1794] ntpq -c rv missing clk_wander information.
     [Bug 1795] ntpq readvar does not display last variable.
-    
 
 ChangeSet@1.2422.1.46, 2011-01-25 11:16:51+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P124
@@ -118559,7 +118878,6 @@ ChangeSet@1.2422.1.35, 2011-01-20 08:27:32+00:00, davehart@shiny.ad.hartbrothers
   sntp/m4/ntp_libntp.m4@1.1.1.1 +53 -0
     Add configure support for SIZEOF_LONG_LONG to enable portable use of
       snprintf() with time_t.
-    
 
 ChangeSet@1.2462, 2011-01-20 03:07:50-05:00, stenn@psp-deb1.ntp.org
   Import libevent
@@ -119987,7 +120305,6 @@ ChangeSet@1.2422.1.18, 2011-01-12 05:23:49+00:00, davehart@shiny.ad.hartbrothers
       Share a single set of build-aux scripts (e.g. config.guess, missing).
       Add ntp_libntp.m4 and ntp_ipv6.m4 to reduce configure.ac duplication.
       Warn and exit build/flock-build if bootstrap needs to be run.
-    
 
   Makefile.am@1.104 +10 -40
     move m4 subdir to sntp/m4.
@@ -120128,7 +120445,6 @@ ChangeSet@1.2422.1.18, 2011-01-12 05:23:49+00:00, davehart@shiny.ad.hartbrothers
   sntp/m4/ntp_libntp.m4@1.1 +281 -0
     Add configure --without-sntp option to disable building sntp and
       sntp/tests.  withsntp=no in the environment changes the default.
-    
 
   sntp/m4/ntp_libntp.m4@1.0 +0 -0
 
@@ -121319,15 +121635,12 @@ ChangeSet@1.2420, 2011-01-06 04:02:24+00:00, davehart@shiny.ad.hartbrothers.com
   ChangeLog@1.757 +2 -0
     [Bug 1773] openssl not detected during ./configure.
     [Bug 1774] Segfaults if cryptostats enabled and built without OpenSSL.
-    
 
   m4/ntp_openssl.m4@1.11 +16 -22
     [Bug 1773] openssl not detected during ./configure.
-    
 
   ntpd/ntp_config.c@1.282 +12 -0
     [Bug 1774] Segfaults if cryptostats enabled and built without OpenSSL.
-    
 
   ntpd/ntp_util.c@1.91 +2 -10
     filegen_register() timingstats and cryptostats unconditionally, so we do
@@ -121460,7 +121773,6 @@ ChangeSet@1.2417, 2011-01-05 07:35:12+00:00, davehart@shiny.ad.hartbrothers.com
       entrypoints to avoid crashing, particularly if refclock_open() fails.
     Enable tickadj-like taming of wildly off-spec Windows clock using
       NTPD_TICKADJ_PPM env. var. specifying baseline slew.
-    
 
   include/ntp_refclock.h@1.28 +1 -2
     Remove refclock_ioctl() declaration, it's private to ntp_refclock.c
@@ -121553,7 +121865,6 @@ ChangeSet@1.2417, 2011-01-05 07:35:12+00:00, davehart@shiny.ad.hartbrothers.com
   ports/winnt/ntpd/nt_clockstuff.c@1.48 +26 -3
     Enable tickadj-like taming of wildly off-spec Windows clock using
       NTPD_TICKADJ_PPM env. var. specifying baseline slew.
-    
 
   ports/winnt/vs2008/ntpd/ntpd.vcproj@1.37 +13 -25
     Add refclock_fg, refclock_ulink, refclock_zyfer.c references.
@@ -121683,7 +121994,6 @@ ChangeSet@1.2413, 2011-01-04 06:27:59+00:00, davehart@shiny.ad.hartbrothers.com
     Enable raw tty line discipline in Windows port.
     Allow tty open/close/open to succeed on Windows port.
     Enable ACTS and CHU reference clock drivers on Windows.
-    
 
   include/ntp_machine.h@1.31 +0 -17
     consolidate windows/posix compatibility shims in ntp_types.h
@@ -124097,7 +124407,6 @@ ChangeSet@1.2082.44.4, 2010-12-19 00:59:46+00:00, davehart@shiny.ad.hartbrothers
   ChangeLog@1.496.60.2 +2 -1
     [Bug 1760] ntpd Windows interpolation cannot be disabled.
     Upgrade to libopts 34.0.9 from AutoGen 5.11.6pre5.
-    
 
   ports/winnt/ntpd/nt_clockstuff.c@1.38.1.4 +3 -1
     [Bug 1760] ntpd Windows interpolation cannot be disabled.
@@ -124660,7 +124969,6 @@ ChangeSet@1.2082.4.175, 2010-12-16 04:42:37+00:00, davehart@shiny.ad.hartbrother
     * [Bug 1754] --version output should be more verbose.
     * Suppress ntp-keygen OpenSSL version display for --help, --version,
       display both build and runtime OpenSLL versions when they differ.
-    
 
   include/Makefile.am@1.38.1.1 +1 -0
     add ntp_libopts.h
@@ -125189,7 +125497,6 @@ ChangeSet@1.2082.40.17, 2010-12-12 07:11:37+00:00, davehart@shiny.ad.hartbrother
       Use setsockopt(IP[V6]_MULTICAST_IF) before each send to multicast to
       select the local source address, using the correct socket is not
       enough.
-    
 
   include/isc/mem.h@1.4 +9 -8
     use macro-arg-protecting () only where helpful.
@@ -126491,7 +126798,6 @@ ChangeSet@1.2082.40.3, 2010-11-23 12:26:32+00:00, davehart@shiny.ad.hartbrothers
 
   sntp/configure.ac@1.31.1.5 +49 -1
     workaround for HP-UX /usr/include/machine/sys/getppdp.h gcc4 break.
-    
 
 ChangeSet@1.2082.40.2, 2010-11-23 09:49:49+00:00, davehart@shiny.ad.hartbrothers.com
   correct m4 quoting to quiet autoreconf warnings
@@ -126692,7 +126998,6 @@ ChangeSet@1.2290, 2010-11-21 23:12:16+00:00, davehart@shiny.ad.hartbrothers.com
     [Bug 1618] Unreachable code in jjy_start().
     JJY driver improvements for Tristate JJY01/02, including changes
       to its clockstats format.
-    
 
 ChangeSet@1.2082.4.171, 2010-11-21 23:03:15+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1618] jjy_start() unreachable code.
@@ -128794,7 +129099,6 @@ ChangeSet@1.2248, 2010-11-03 21:24:43+00:00, davehart@shiny.ad.hartbrothers.com
   ChangeLog@1.639 +2 -0
     [Bug 1697] filegen implementation should be improved.
     Refactor calendar functions in terms of new common code.
-    
 
   configure.ac@1.494 +4 -3
     Add sizeof(short) test since we now depend on SIZEOF_SHORT
@@ -131661,19 +131965,15 @@ ChangeSet@1.2082.4.114, 2010-10-14 14:07:21+00:00, davehart@shiny.ad.hartbrother
 
 ChangeSet@1.2082.4.113, 2010-10-14 09:38:42+00:00, davehart@shiny.ad.hartbrothers.com
   ntpsnmpd, libntpq warning cleanup.
-  
 
   ChangeLog@1.496.26.84 +5 -1
     ntpsnmpd, libntpq warning cleanup.
-    
 
   ntpq/libntpq.c@1.3.1.2 +1 -1
     ntpsnmpd, libntpq warning cleanup.
-    
 
   ntpsnmpd/ntpsnmpd.c@1.3.1.3 +1 -2
     ntpsnmpd, libntpq warning cleanup.
-    
 
 ChangeSet@1.2082.4.112, 2010-10-14 07:51:07+00:00, stenn@deacon.udel.edu
   NTP_4_2_6P3_RC3
@@ -132108,45 +132408,36 @@ ChangeSet@1.2082.27.1, 2010-10-12 01:16:13+00:00, davehart@shiny.ad.hartbrothers
 ChangeSet@1.2082.26.3, 2010-10-09 10:10:10+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
   [Bug 1659] Support Truetime Satellite Clocks on Windows.
-  
 
   ChangeLog@1.496.49.2 +4 -2
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ntpd/refclock_arbiter.c@1.16 +34 -9
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
-    
 
   ntpd/refclock_true.c@1.11.1.2 +15 -0
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ports/winnt/include/config.h@1.79.1.2 +2 -0
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ports/winnt/vc6/ntpd.dsp@1.39.1.3 +0 -2
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ports/winnt/vs2003/ntpd.vcproj@1.4.1.1 +4 -8
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ports/winnt/vs2005/ntpd.vcproj@1.4.1.1 +0 -4
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
   ports/winnt/vs2008/ntpd/ntpd.vcproj@1.21.1.2 +0 -4
     [Bug 1567] Support Arbiter 1093C Satellite Clock on Windows.
     [Bug 1659] Support Truetime Satellite Clocks on Windows.
-    
 
 ChangeSet@1.2156.1.80, 2010-10-06 10:09:59+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P61
@@ -133687,35 +133978,28 @@ ChangeSet@1.2082.22.8, 2010-09-18 01:25:26-04:00, stenn@deacon.udel.edu
 
 ChangeSet@1.2082.22.7, 2010-09-17 04:20:03+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1344] ntpd on Windows exits without logging cause.
-  
 
   ChangeLog@1.496.47.5 +4 -0
     [Bug 1344] ntpd on Windows exits without logging cause.
-    
 
   ports/winnt/ntpd/nt_clockstuff.c@1.38.1.3 +4 -2
     [Bug 1344] ntpd on Windows exits without logging cause.
-    
 
 ChangeSet@1.2156.1.32, 2010-09-16 19:32:11+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1629] 4.2.7p50 configure.ac changes invalidate config.cache.
   [Bug 1630] 4.2.7p50 cannot bootstrap on Autoconf 2.61.
-  
 
   ChangeLog@1.622.1.1 +2 -0
     [Bug 1629] 4.2.7p50 configure.ac changes invalidate config.cache.
     [Bug 1630] 4.2.7p50 cannot bootstrap on Autoconf 2.61.
-    
 
   configure.ac@1.483.1.7 +34 -36
     [Bug 1629] 4.2.7p50 configure.ac changes invalidate config.cache.
     [Bug 1630] 4.2.7p50 cannot bootstrap on Autoconf 2.61.
-    
 
   sntp/configure.ac@1.36 +27 -13
     [Bug 1629] 4.2.7p50 configure.ac changes invalidate config.cache.
     [Bug 1630] 4.2.7p50 cannot bootstrap on Autoconf 2.61.
-    
 
 ChangeSet@1.2156.1.31, 2010-09-16 06:21:34+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P50
@@ -137577,15 +137861,12 @@ ChangeSet@1.2144.1.4, 2010-06-01 20:21:04+02:00, linus@beam.(none)
 
 ChangeSet@1.2082.4.95, 2010-05-31 18:59:05+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1565] sntp/crypto.c compile fails on MacOS over vsnprintf().
-  
 
   ChangeLog@1.496.26.69 +1 -0
     [Bug 1565] sntp/crypto.c compile fails on MacOS over vsnprintf().
-    
 
   sntp/configure.ac@1.31.1.2 +1 -1
     [Bug 1565] sntp/crypto.c compile fails on MacOS over vsnprintf().
-    
 
 ChangeSet@1.2144.1.3, 2010-05-28 15:31:29+02:00, linus@beam.(none)
   Tuned makefile.am
@@ -137883,15 +138164,12 @@ ChangeSet@1.2139, 2010-05-17 21:32:08+00:00, davehart@shiny.ad.hartbrothers.com
 
 ChangeSet@1.2082.4.92, 2010-05-13 15:39:47+00:00, davehart@shiny.ad.hartbrothers.com
   * [Bug 1555] 4.2.6p2-RC3 sntp illegal C (mixed code and declarations).
-  
 
   ChangeLog@1.496.26.66 +4 -0
     * [Bug 1555] 4.2.6p2-RC3 sntp illegal C (mixed code and declarations).
-    
 
   sntp/networking.c@1.29.1.6 +5 -3
     * [Bug 1555] 4.2.6p2-RC3 sntp illegal C (mixed code and declarations).
-    
 
 ChangeSet@1.2137, 2010-05-11 10:10:19+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P31
@@ -138251,7 +138529,6 @@ ChangeSet@1.2082.4.85, 2010-05-09 06:33:09+00:00, davehart@shiny.ad.hartbrothers
       like it and the indentation looks correct.  This was not a big change.
       The files were mostly consistent before.
       12. Eliminated LOTS of blank lines.
-    
 
   sntp/crypto.h@1.8 +12 -6
     [Bug 1459] sntp MD5 authentication does not work with ntpd.
@@ -138283,7 +138560,6 @@ ChangeSet@1.2082.4.85, 2010-05-09 06:33:09+00:00, davehart@shiny.ad.hartbrothers
       like it and the indentation looks correct.  This was not a big change.
       The files were mostly consistent before.
       12. Eliminated LOTS of blank lines.
-    
 
   sntp/main.c@1.24.1.1 +110 -103
     [Bug 1459] sntp MD5 authentication does not work with ntpd.
@@ -138315,7 +138591,6 @@ ChangeSet@1.2082.4.85, 2010-05-09 06:33:09+00:00, davehart@shiny.ad.hartbrothers
       like it and the indentation looks correct.  This was not a big change.
       The files were mostly consistent before.
       12. Eliminated LOTS of blank lines.
-    
 
   sntp/networking.c@1.29.1.4 +216 -432
     [Bug 1325] unreachable code in sntp recv_bcst_data().
@@ -138348,7 +138623,6 @@ ChangeSet@1.2082.4.85, 2010-05-09 06:33:09+00:00, davehart@shiny.ad.hartbrothers
       like it and the indentation looks correct.  This was not a big change.
       The files were mostly consistent before.
       12. Eliminated LOTS of blank lines.
-    
 
   sntp/networking.h@1.18 +3 -3
     [Bug 1459] sntp MD5 authentication does not work with ntpd.
@@ -138380,7 +138654,6 @@ ChangeSet@1.2082.4.85, 2010-05-09 06:33:09+00:00, davehart@shiny.ad.hartbrothers
       like it and the indentation looks correct.  This was not a big change.
       The files were mostly consistent before.
       12. Eliminated LOTS of blank lines.
-    
 
 ChangeSet@1.2133, 2010-05-06 10:09:32+00:00, stenn@deacon.udel.edu
   NTP_4_2_7P30
@@ -139257,7 +139530,6 @@ ChangeSet@1.2082.4.74, 2010-04-16 13:59:44+00:00, davehart@shiny.ad.hartbrothers
 ChangeSet@1.2082.4.71, 2010-04-14 21:16:25+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1518] Windows ntpd should lock to one processor more
     conservatively.
-  
 
   ChangeLog@1.496.44.1 +5 -0
     [Bug 1518] Windows ntpd should lock to one processor more
@@ -139280,7 +139552,6 @@ ChangeSet@1.2082.19.2, 2010-04-14 20:55:27+00:00, davehart@shiny.ad.hartbrothers
   html/authopt.html@1.60 +29 -7
     Update html/authopt.html controlkey, requestkey, and trustedkey docs,
       add range syntax to trustedkey docs.
-    
 
 ChangeSet@1.2082.18.3, 2010-04-14 04:44:52+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1503] Auto-enabling of monitor for "restrict ... limited" wrong.
@@ -139456,7 +139727,6 @@ ChangeSet@1.2112.6.1, 2010-04-11 23:13:44+00:00, davehart@shiny.ad.hartbrothers.
       miscopt.html, and miscopt.txt.
     Modify full MRU list preemption when full to match "discard monitor"
       documentation, by removing exception for count == 1.
-    
 
   html/accopt.html@1.34 +19 -12
     clarify "discard monitor".
@@ -140508,14 +140778,12 @@ ChangeSet@1.2110.1.19, 2010-03-07 20:01:29+00:00, davehart@shiny.ad.hartbrothers
     within the "restrict ... limited" default limit set by
     "discard minimum 1", plus 1s of enforcement slop.
   Respect KoD rate-limiting responses from ntpd.
-  
 
   ntpdate/ntpdate.c@1.73 +39 -11
     rate limit ntpdate packets to 2s interval per server to stay
       within the "restrict ... limited" default limit set by
       "discard minimum 1", plus 1s of enforcement slop.
     Respect KoD rate-limiting responses from ntpd.
-    
 
   ntpdate/ntpdate.h@1.11 +2 -1
     rate limit ntpdate packets to 2s interval per server to stay
@@ -140643,7 +140911,6 @@ ChangeSet@1.2110.1.16, 2010-03-04 17:17:47+00:00, davehart@shiny.ad.hartbrothers
   ntpq/ntpq.c@1.105 +100 -51
     bump MAXFRAGS from 24 to 64 to enable larger responses.
     add show_error_msg(), doqueryex() for mrulist().
-    
 
   ntpq/ntpq.h@1.12 +11 -2
     add show_error_msg(), doqueryex() for mrulist().
@@ -141112,21 +141379,17 @@ ChangeSet@1.2113, 2010-02-25 00:53:22-05:00, clemens@pogo.udel.edu
     Note that we default to an initial OFF state, since this seems most
     reasonable till the driver gets to the RUN state.  Once in the RUN
     state, we determine if we should turn the PPS signal on/off each cycle.
-    
 
   ntpd/refclock_oncore.c@1.85 +2 -2
     Just an indent and change a LOG_INFO -> LOG_DEBUG to reduce default output.
-    
 
   ntpd/refclock_oncore.c@1.84 +3 -11
     Cleaner solution to flipping FLAG_PPS on/off in oncore_get_timestamp.
-    
 
   ntpd/refclock_oncore.c@1.83 +12 -12
     The source for the oncore driver uses tabs wherever possible to
     replace strings of blanks.  Replace blanks with tabs from a
     previous patch that did not adhere to this strategy.
-    
 
 ChangeSet@1.2110.1.4, 2010-02-24 06:25:27+00:00, davehart@shiny.ad.hartbrothers.com
   new peer variable "srchost" shown instead of 0.0.0.0 srcadr in
@@ -141259,7 +141522,6 @@ ChangeSet@1.2110.1.2, 2010-02-20 17:52:58+00:00, davehart@shiny.ad.hartbrothers.
     add MDF_POOL, rename MDF_ACLNT -> MDF_UCLNT to cover both
       manycastclient and pool ephemeral associations.
     add MDF_SOLICIT_MASK (MDF_ACAST | MDF_POOL).
-    
 
   include/ntp_config.h@1.66.1.4 +2 -2
     change address_node->type (family) type from short to u_short.
@@ -141362,7 +141624,6 @@ ChangeSet@1.2110.1.1, 2010-02-17 09:54:32+00:00, davehart@shiny.ad.hartbrothers.
     Remove more workarounds unneeded since we require ISO C90 AKA ANSI C:
       - remove fallback implementations for memmove(), memset, strstr().
       - do not test for memcpy().
-    
 
   flock-build@1.44.1.1 +26 -21
     fix bug with SIMUL=2 flock-build -1
@@ -141384,7 +141645,6 @@ ChangeSet@1.2110.1.1, 2010-02-17 09:54:32+00:00, davehart@shiny.ad.hartbrothers.
     Combine IPv4 and IPv6 restrict list entry structures into one
       variable-size structure with a union at the end of V4 and v6
       addresses, enabling removal of duplicated code.
-    
 
   include/ntp_config.h@1.66.1.3 +19 -18
     add uint u to attr_val.value union.
@@ -141492,7 +141752,6 @@ ChangeSet@1.2110.1.1, 2010-02-17 09:54:32+00:00, davehart@shiny.ad.hartbrothers.
       mon_entry.rmtadr.
     no point in memset(p, 0, size); then memcpy(p, src, size);.
     combine mon_entry.version and mon_entry.mode into mon_entry.vn_mode.
-    
 
   ntpd/ntp_peer.c@1.128 +184 -224
     maintain and use linked list of associations (struct peer) in ntpd,
@@ -141544,7 +141803,6 @@ ChangeSet@1.2110.1.1, 2010-02-17 09:54:32+00:00, davehart@shiny.ad.hartbrothers.
   ntpd/ntp_timer.c@1.58 +23 -28
     maintain and use linked list of associations (struct peer) in ntpd,
       avoiding walking 128 hash table entries to iterate over peers.
-    
 
   ntpd/ntp_util.c@1.77 +3 -0
     #include <unistd.h> for getpid().
@@ -141611,7 +141869,6 @@ ChangeSet@1.2082.4.63, 2010-02-15 23:19:19+00:00, davehart@shiny.ad.hartbrothers
   Correct CHU, dumbclock, and WWVB drivers to check for 0 returned from
     refclock_open() on failure.
   Correct "SIMUL=4 ./flock-build -1" to prioritize -1/--one.
-  
 
   ChangeLog@1.496.26.44 +9 -0
     [Bug 1464] synchronization source wrong for refclocks ARCRON_MSF (27)
@@ -141620,7 +141877,6 @@ ChangeSet@1.2082.4.63, 2010-02-15 23:19:19+00:00, davehart@shiny.ad.hartbrothers
     Correct CHU, dumbclock, and WWVB drivers to check for 0 returned from
       refclock_open() on failure.
     Correct "SIMUL=4 ./flock-build -1" to prioritize -1/--one.
-    
 
   flock-build@1.45 +26 -21
     Correct "SIMUL=4 ./flock-build -1" to prioritize -1/--one.
@@ -141743,13 +141999,11 @@ ChangeSet@1.2102.2.1, 2010-02-09 18:19:12+00:00, davehart@shiny.ad.hartbrothers.
   [Bug 1483] hostname in ntp.conf "restrict" parameter rejected.
   Use all addresses for each restrict by hostname.
   Use async DNS to resolve trap directive hostnames.
-  
 
   ChangeLog@1.533.2.1 +3 -0
     [Bug 1483] hostname in ntp.conf "restrict" parameter rejected.
     Use all addresses for each restrict by hostname.
     Use async DNS to resolve trap directive hostnames.
-    
 
   include/ntp_config.h@1.66.1.2 +13 -2
     add settrap_params structure for trap_name_resolved()
@@ -142622,7 +142876,6 @@ ChangeSet@1.2082.4.52, 2010-02-03 04:58:33+00:00, davehart@shiny.ad.hartbrothers
   ntpd/refclock_bancomm.c@1.12 +28 -21
     Convert many sprintf() calls to snprintf(), also strcpy(), strcat().
     Fix widely cut-n-pasted bug in refclock shutdown after failed start.
-    
 
   ntpd/refclock_chronolog.c@1.9 +10 -10
     Convert many sprintf() calls to snprintf(), also strcpy(), strcat().
@@ -143285,7 +143538,6 @@ ChangeSet@1.2084.1.25, 2010-01-27 18:45:33+00:00, davehart@shiny.ad.hartbrothers
     after fork() with a different curdir.
   eliminate hand-crafted byte-swapping code from refclock_palisade.c in
     preference to using htonl(), htons().  Tested by Fernando Hauscarriaga.
-  
 
   BitKeeper/etc/ignore@1.75 +4 -2
     add *.vcproj.*.user
@@ -147250,7 +147502,6 @@ ChangeSet@1.2068, 2009-11-26 07:04:26+00:00, hart@pogo.udel.edu
   
   sntp/depsver.mf is 'generated' (copied) from top-level depsver.mf
     by bootstrap script
-  
 
   BitKeeper/deleted/.del-depsver.mf~797b9b4e1db319be@1.2 +0 -0
     Delete: sntp/depsver.mf
@@ -147355,14 +147606,12 @@ ChangeSet@1.2060.3.48, 2009-11-23 17:43:13+00:00, davehart@shiny.ad.hartbrothers
   [Bug 1389] buffer overflow in refclock_oncore.c
   [Bug 1391] .texi usage text from installed, not built binaries.
   Correct *-opts.h dependency so default 'get' action isn't used.
-  
 
   ChangeLog@1.496.1.56 +4 -0
     [Bug 1387] Storage leak in ntp_intres (minor).
     [Bug 1389] buffer overflow in refclock_oncore.c
     [Bug 1391] .texi usage text from installed, not built binaries.
     Correct *-opts.h dependency so default 'get' action isn't used.
-    
 
   configure.ac@1.459.1.14 +3 -4
     [Bug 1391] .texi usage text from installed, not built binaries.
@@ -147513,7 +147762,6 @@ ChangeSet@1.2060.3.45, 2009-11-17 19:43:44+00:00, davehart@shiny.ad.hartbrothers
     * [Bug 1142] nodebug builds shed no light on -d, -D option failure.
     * [Bug 1179] point out the problem with -i/--jaildir and -u/--user when
       they are disabled by configure.
-    
 
   ntpd/cmd_args.c@1.56 +9 -41
     [Bug 1142] nodebug builds shed no light on -d, -D option failure.
@@ -148915,7 +149163,6 @@ ChangeSet@1.2060.15.1, 2009-11-07 07:57:11+00:00, davehart@shiny.ad.hartbrothers
   ChangeLog@1.496.10.1 +2 -0
     [Bug 1366] ioctl(TIOCSCTTY, 0) fails on NetBSD *[0-2].* > 3.99.7.
     CID 87 dead code in ntpq.c atoascii().
-    
 
   configure.ac@1.459.2.3 +44 -26
     [Bug 1366] ioctl(TIOCSCTTY, 0) fails on NetBSD *[0-2].* > 3.99.7.
@@ -149143,7 +149390,6 @@ ChangeSet@1.2060.9.13, 2009-11-05 00:24:26+00:00, davehart@shiny.ad.hartbrothers
   remove testing leftover #undef OPENSSL
   warning cleanup
   linking with libntp now requires -lcrypto / libeay32.lib
-  
 
   include/ntp_stdlib.h@1.37 +8 -0
     #define NID_md5 when not building with OpenSSL
@@ -149889,7 +150135,6 @@ ChangeSet@1.2060.7.1, 2009-10-25 11:25:16+00:00, davehart@shiny.ad.hartbrothers.
     protect netinet/in.h inclusion with #ifdef HAVE_NETINET_IN_H.
     stay within array bounds in clockstat() even if calling code
       misbehaves.
-    
 
   ports/winnt/vc6/libntp.dsp@1.43.2.1 +1 -1
     move lib_strbuf.h from libntp to include
@@ -152253,7 +152498,6 @@ ChangeSet@1.2014, 2009-09-27 06:53:59+00:00, davehart@shiny.ad.hartbrothers.com
   Compiling ntp_parser.y using BSD make correctly places ntp_parser.h
     in the top-level ntpd directory instead of A.*/ntpd.
   bootstrap script updated to remove potentially stale .deps dirs.
-  
 
   ChangeLog@1.449.1.2 +6 -0
     Updated build and flock-build scripts.  flock-build --one is a way
@@ -152262,7 +152506,6 @@ ChangeSet@1.2014, 2009-09-27 06:53:59+00:00, davehart@shiny.ad.hartbrothers.com
     Compiling ntp_parser.y using BSD make correctly places ntp_parser.h
       in the top-level ntpd directory instead of A.*/ntpd.
     bootstrap script updated to remove potentially stale .deps dirs.
-    
 
   bootstrap@1.24 +8 -0
     remove .deps directories to handle source code shuffles
@@ -154265,7 +154508,6 @@ ChangeSet@1.2005, 2009-09-22 19:22:09+00:00, davehart@shiny.ad.hartbrothers.com
     add implicit "nic ignore all" rule before any rules from ntp.conf, so
       "nic listen eth0" alone means the same as "-I eth0".
     add wildcard match class for interface/nic rules.
-    
 
   ntpd/ntp_parser.c@1.49 +595 -595
     Bison product
@@ -155523,12 +155765,10 @@ ChangeSet@1.1976.1.1, 2009-09-06 04:00:32+00:00, davehart@shiny.ad.hartbrothers.
       when making ntp_parser.[ch].  There is no need to commit
       or distribute ntp_parser.output, it is only useful when
       testing ntp_parser.y changes.
-    
 
   ntpd/ntp_config.c@1.211 +11 -10
     enable yydebug verbose parser output with -D5 and higher
     [Bug 1295] config_trap() bug introduced with dumper in 4.2.5p203
-    
 
   ntpd/ntp_control.c@1.120 +2 -1
     truncate saveconfig output file at open so remnants of longer file
@@ -155547,13 +155787,11 @@ ChangeSet@1.1976.1.1, 2009-09-06 04:00:32+00:00, davehart@shiny.ad.hartbrothers.
     make all terminal T_ tokens type Integer so they can be used in
       actions as $1, $2, etc:  { imaginary_func($2) } instead of
       { imaginary_func(T_Sometoken) }
-    
 
   ntpd/ntp_scanner.c@1.23 +56 -27
     fix $1 style references to T_ values by setting yylval.Integer to the
       T_ token for simple tokens with no other semantic value
     improve debug output:  yylex: lexeme 'trap' -> T_Trap
-    
 
 ChangeSet@1.1978, 2009-09-02 14:15:16-04:00, mayer@pogo.udel.edu
   [Bug 1294]
@@ -156041,7 +156279,6 @@ ChangeSet@1.1968.3.2, 2009-08-29 21:22:45+00:00, davehart@shiny.ad.hartbrothers.
   document saveconfig in html/ntpq.html.
   add ./configure --disable-saveconfig to build a smaller ntpd.
   log saveconfig failures and successes to syslog.
-  
 
   ChangeLog@1.413.3.1 +13 -0
     [Bug 1293] make configuration dumper ready for release, specifically:
@@ -156057,7 +156294,6 @@ ChangeSet@1.1968.3.2, 2009-08-29 21:22:45+00:00, davehart@shiny.ad.hartbrothers.
     document saveconfig in html/ntpq.html.
     add ./configure --disable-saveconfig to build a smaller ntpd.
     log saveconfig failures and successes to syslog.
-    
 
   html/ntpq.html@1.32 +13 -8
     document "config-from-file" and "saveconfig"
@@ -156463,7 +156699,6 @@ ChangeSet@1.1968.1.1, 2009-08-26 00:48:46+00:00, davehart@shiny.ad.hartbrothers.
     save KoD file even if one wasn't loaded
     create directories if needed while writing KoD file
     clean up confusion over kod_db being an array of pointers or structs
-    
 
   sntp/kod_management.h@1.7 +8 -9
     use time_t for KoD timestamp instead of uint
@@ -158733,7 +158968,6 @@ ChangeSet@1.1935, 2009-07-29 04:13:53+00:00, davehart@shiny.ad.hartbrothers.com
     are consistent.
   [Bug 1275] CID 45: CID 46: old sntp uses uninitialized guesses[0],
     precs[0].
-  
 
   ChangeLog@1.389 +6 -0
     [Bug 1272] gsoc_sntp IPv6 build problems under HP-UX 10.
@@ -158742,7 +158976,6 @@ ChangeSet@1.1935, 2009-07-29 04:13:53+00:00, davehart@shiny.ad.hartbrothers.com
       are consistent.
     [Bug 1275] CID 45: CID 46: old sntp uses uninitialized guesses[0],
       precs[0].
-    
 
   gsoc_sntp/networking.c@1.22 +11 -3
     [Bug 1272] gsoc_sntp IPv6 build problems under HP-UX 10.
@@ -158754,12 +158987,10 @@ ChangeSet@1.1935, 2009-07-29 04:13:53+00:00, davehart@shiny.ad.hartbrothers.com
 
   ntpd/refclock_palisade.c@1.26 +3 -9
     [Bug 1273] CID 10: Palisade leaks unit struct in error path.
-    
 
   sntp/main.c@1.10 +3 -0
     [Bug 1275] CID 45: CID 46: old sntp uses uninitialized guesses[0],
       precs[0].
-    
 
 ChangeSet@1.1934, 2009-07-27 07:54:24-04:00, stenn@whimsy.udel.edu
   NTP_4_2_5P195
@@ -159102,7 +159333,6 @@ ChangeSet@1.1926, 2009-07-25 01:12:25+00:00, davehart@shiny.ad.hartbrothers.com
     negative descriptors.
   [Bug 1270] CID 70: gsoc_sntp recv_bcst_data mdevadr.ipv6mr_interface
     uninitialized.
-  
 
   ChangeLog@1.382 +14 -0
     [Bug 1261] CID 34: simulate_server() rbuf.msg_flags uninitialized.
@@ -159119,18 +159349,15 @@ ChangeSet@1.1926, 2009-07-25 01:12:25+00:00, davehart@shiny.ad.hartbrothers.com
       negative descriptors.
     [Bug 1270] CID 70: gsoc_sntp recv_bcst_data mdevadr.ipv6mr_interface
       uninitialized.
-    
 
   gsoc_sntp/main.c@1.16 +7 -10
     [Bug 1264] CID 64: gsoc_sntp on_wire() frees wrong ptr receiving KoD.
     [Bug 1265] CID 65: CID 66: gsoc_sntp on_wire() leaks x_pkt, r_pkt.
-    
 
   gsoc_sntp/networking.c@1.21 +3 -3
     [Bug 1268] CID 63: resolve_hosts() leaks error message buffer.
     [Bug 1270] CID 70: gsoc_sntp recv_bcst_data mdevadr.ipv6mr_interface
       uninitialized.
-    
 
   ntpd/ntp_io.c@1.293 +2 -0
     [Bug 1269] CID 74: use assertion to ensure move_fd() does not return
@@ -159139,31 +159366,25 @@ ChangeSet@1.1926, 2009-07-25 01:12:25+00:00, davehart@shiny.ad.hartbrothers.com
   ntpd/ntpsim.c@1.22 +3 -0
     [Bug 1261] CID 34: simulate_server() rbuf.msg_flags uninitialized.
     [Bug 1262] CID 35: xpkt.mac uninitialized in simulate_server().
-    
 
   ntpd/refclock_arc.c@1.21 +129 -127
     [Bug 1263] CID 37: CID 38: CID 40: CID 43: multiple refclocks 
       uninitialized tm_zone (arc, chronolog, dumbclock, pcf).
-    
 
   ntpd/refclock_chronolog.c@1.8 +2 -0
     [Bug 1263] CID 37: CID 38: CID 40: CID 43: multiple refclocks 
       uninitialized tm_zone (arc, chronolog, dumbclock, pcf).
-    
 
   ntpd/refclock_datum.c@1.12 +2 -0
     [Bug 1266] CID 39: datum_pts_start() uninitialized arg.c_ospeed.
-    
 
   ntpd/refclock_dumbclock.c@1.13 +20 -26
     [Bug 1263] CID 37: CID 38: CID 40: CID 43: multiple refclocks 
       uninitialized tm_zone (arc, chronolog, dumbclock, pcf).
-    
 
   ntpd/refclock_pcf.c@1.9 +2 -0
     [Bug 1263] CID 37: CID 38: CID 40: CID 43: multiple refclocks 
       uninitialized tm_zone (arc, chronolog, dumbclock, pcf).
-    
 
   ports/winnt/include/config.h@1.72 +2 -1
     Enable dumbclock, Chronolog refclock drivers in Windows ntpd
@@ -159287,7 +159508,6 @@ ChangeSet@1.1922.1.1, 2009-07-24 06:41:17+00:00, davehart@shiny.ad.hartbrothers.
   [Bug 1259] CID 59: gsoc_sntp recv_bcast_data() fails to free(rdata)
     on error paths.
   [Bug 1260] CID 60: gsoc_sntp recvpkt() fails to free(rdata).
-  
 
   ChangeLog@1.378.1.1 +15 -0
     [Bug 965] CID 42: ss_family uninitialized.
@@ -159305,52 +159525,43 @@ ChangeSet@1.1922.1.1, 2009-07-24 06:41:17+00:00, davehart@shiny.ad.hartbrothers.
     [Bug 1259] CID 59: gsoc_sntp recv_bcast_data() fails to free(rdata)
       on error paths.
     [Bug 1260] CID 60: gsoc_sntp recvpkt() fails to free(rdata).
-    
 
   gsoc_sntp/crypto.c@1.6 +8 -10
     use sizeof(buf) rather than hardcode
     [Bug 1253] CID 50: gsoc_sntp/crypto.c auth_init() always returns a 
       list with one entry.
     [Bug 1257] CID 57: gsoc_sntp auth_init() fails to fclose(keyfile).
-    
 
   gsoc_sntp/kod_management.c@1.9 +55 -40
     [Bug 1250] CID 53: kod_init_kod_db() overruns kod_db malloc'd buffer.
     [Bug 1251] CID 68: search_entry() mishandles dst argument.
-    
 
   gsoc_sntp/main.c@1.15 +25 -26
     [Bug 1251] CID 68: search_entry() mishandles dst argument.
     [Bug 1258] CID 54: gsoc_sntp resolve_hosts() needs simplification.
-    
 
   gsoc_sntp/networking.c@1.20 +35 -58
     [Bug 1258] CID 54: gsoc_sntp resolve_hosts() needs simplification.
     [Bug 1259] CID 59: gsoc_sntp recv_bcast_data() fails to free(rdata)
       on error paths.
     [Bug 1260] CID 60: gsoc_sntp recvpkt() fails to free(rdata).
-    
 
   gsoc_sntp/networking.h@1.13 +1 -1
     [Bug 1258] CID 54: gsoc_sntp resolve_hosts() needs simplification.
-    
 
   gsoc_sntp/utilities.c@1.7 +9 -2
     [Bug 1254] CID 56: tv_to_str() leaks a struct tm each call.
     [Bug 1255] CID 55: pkt_output() leaks a copy of each packet.
-    
 
   include/ntp_assert.h@1.3 +46 -13
     [Bug 1256] CID 51: Coverity doesn't recognize our assertion macros as
       terminal.
-    
 
   ntpd/refclock_nmea.c@1.42 +1 -0
     [Bug 965] CID 42: ss_family uninitialized.
 
   ntpdc/ntpdc.c@1.66 +9 -2
     [Bug 1252] CID 32: Quiet Coverity warning with assertion.
-    
 
   ports/winnt/libntp/libntp.vcproj@1.11 +4 -0
     add ntp_assert.h reference
@@ -162401,7 +162612,6 @@ ChangeSet@1.1881.3.1, 2009-06-17 17:02:49-04:00, clemens@pogo.udel.edu
   ntpd/refclock_oncore.c@1.74 +6 -2
     BUG[1218] The comment on where the oncore driver gets its input file does not
      * agree with the code.  Change the comment.
-    
 
   ntpd/refclock_oncore.c@1.73 +11 -6
     BUG[no bug report] Change exit statements to return(0) in ONCORE driver top
@@ -162409,7 +162619,6 @@ ChangeSet@1.1881.3.1, 2009-06-17 17:02:49-04:00, clemens@pogo.udel.edu
 
   ntpd/refclock_oncore.c@1.72 +4 -0
     BUG[no bug report] A bytes available message for the input subsystem (Debug message).
-    
 
   ntpd/refclock_oncore.c@1.71 +8 -1
     BUG[no bug report] This code adds a message for TRAIM messages.  Users often worry about the
@@ -162945,15 +163154,12 @@ ChangeSet@1.1877.2.1, 2009-06-05 23:35:04+00:00, davehart@shiny.ad.hartbrothers.
   [Bug 1204] Unix-style refclock device paths on Windows
   [Bug 1205] partial fix, disable RDTSC use by default on Windows
   Enable ONCORE, ARCRON refclocks on Windows (untested)
-  
-  
 
   ChangeLog@1.340.2.1 +4 -0
     [Bug 1084] PPSAPI for ntpd on Windows with DLL backends
     [Bug 1204] Unix-style refclock device paths on Windows
     [Bug 1205] partial fix, disable RDTSC use by default on Windows
     Enable ONCORE, ARCRON refclocks on Windows (untested)
-    
 
   include/ntp_types.h@1.13 +14 -0
     [Bug 1204] Unix-style refclock device paths on Windows
@@ -163367,19 +163573,16 @@ ChangeSet@1.1872, 2009-05-23 02:02:18+00:00, davehart@shiny.ad.hartbrothers.com
   Bug [1041] manycastclient fails with 4.2.5p120.
     (fixed by Dave Mills' prior delta to ntp_peer.c xmt -> aorg)
   Bug [1196] VC6 winsock2.h does not define SO_EXLUSIVEADDRUSE.
-  
 
   ChangeLog@1.335 +3 -1
     Bug [1041] manycastclient fails with 4.2.5p120.
     Bug [1196] VC6 winsock2.h does not define SO_EXLUSIVEADDRUSE.
-    
 
   ntpd/ntp_io.c@1.285 +17 -6
     disambiguate two identical DPRINTFs in findbcastinter()
 
   ports/winnt/include/config.h@1.65 +7 -0
     Bug [1196] VC6 winsock2.h does not define SO_EXLUSIVEADDRUSE.
-    
 
 ChangeSet@1.1869.1.1, 2009-05-22 21:16:18-04:00, stenn@whimsy.udel.edu
   xmt/aorg and leap_expire fixes from Dave Mills
@@ -163564,11 +163767,9 @@ ChangeSet@1.1867, 2009-05-21 05:30:18+00:00, davehart@shiny.ad.hartbrothers.com
 
   ntpd/ntp_parser.c@1.38 +1000 -955
     Bison output from ntp_parser.y
-    
 
   ntpd/ntp_parser.h@1.22 +225 -225
     Bison output from ntp_parser.y
-    
 
   ntpd/ntp_parser.y@1.33 +50 -22
     [Bug 1192] restrict -4 default / restrict -6 default lost with new
@@ -164716,7 +164917,6 @@ ChangeSet@1.1846, 2009-05-06 17:29:45+00:00, davehart@shiny.ad.hartbrothers.com
   ChangeLog@1.311 +2 -0
     Clean up configure.ac NTP_CACHEVERSION interface, display cache version
     when clearing.  Fixes a regression.
-    
 
   configure.ac@1.442 +16 -25
     Simplify configure.ac NTP_CACHEVERSION interface, update comments
@@ -164974,7 +165174,6 @@ ChangeSet@1.1837, 2009-05-04 02:05:29+00:00, davehart@shiny.ad.hartbrothers.com
   ---
   ntp_cacheversion.m4: clear even other version stamps when flushing
   cache iff we are the top configure this invocation.
-  
 
   ChangeLog@1.305 +3 -1
     Fix msntp link problem on Solaris when configured before parent
@@ -165103,13 +165302,11 @@ ChangeSet@1.1833.1.2, 2009-05-03 05:08:34+00:00, davehart@shiny.ad.hartbrothers.
     ../../libparse/parse.c:211: warning: implicit declaration of function 'bcopy'
     ../../libparse/parse.c:211: warning: incompatible implicit declaration of built-
     in function 'bcopy'
-    
 
   include/ntp_string.h@1.4 +12 -5
     ../../libparse/parse.c:211: warning: implicit declaration of function 'bcopy'
     ../../libparse/parse.c:211: warning: incompatible implicit declaration of built-
     in function 'bcopy'
-    
 
   libntp/ntp_lineedit.c@1.3 +1 -0
     implicit free decl warning
@@ -165838,7 +166035,6 @@ ChangeSet@1.1816.1.1, 2009-04-28 06:59:44+00:00, davehart@shiny.ad.hartbrothers.
     * Re-enable gcc -Wstrict-prototypes when not building with OpenSSL
     * Enable gcc -Wstrict-overflow
     * ntpq/ntpdc emit newline after accepting password on Windows
-    
 
   configure.ac@1.434.1.1 +40 -26
     enable -Wstrict-overflow, use -Wno-strict-prototypes only w/OpenSSL
@@ -166238,7 +166434,6 @@ ChangeSet@1.1807.2.1, 2009-04-25 08:08:01+00:00, davehart@shiny.ad.hartbrothers.
     leaks to stand out in leaks reported after exit.
   * Ensure termination of strings in ports/winnt/libisc/isc_strerror.c
     and quiet compiler warnings.
-  
 
   ChangeLog@1.280.2.1 +10 -0
     [Bug 1165] config parser leak
@@ -167047,7 +167242,6 @@ ChangeSet@1.1436.21.2, 2009-04-14 01:33:01+00:00, davehart@shiny.ad.hartbrothers
 ChangeSet@1.1436.21.1, 2009-04-14 01:28:08+00:00, davehart@shiny.ad.hartbrothers.com
   [Bug 1157] quiet OpenSSL warnings, clean up configure.ac
   make flock-build quit before causing harm if another has not completed
-  
 
   ChangeLog@1.1.16.1 +4 -0
     [Bug 1157] quiet OpenSSL warnings, clean up configure.ac
@@ -168197,15 +168391,12 @@ ChangeSet@1.1796.6.1, 2009-03-20 01:31:56+00:00, davehart@shiny.ad.hartbrothers.
 
   ChangeLog@1.268.5.1 +1 -0
     [Bug 873] Windows serial refclock proper TTY line discipline emulation
-    
 
   ntpd/ntp_io.c@1.275.1.1 +25 -22
     [Bug 873] Windows serial refclock proper TTY line discipline emulation
-    
 
   ntpd/ntpd.c@1.98 +17 -29
     slightly reduce #ifdef SYS_WINNT forest
-    
 
   ntpd/refclock_dumbclock.c@1.10 +6 -5
     [Bug 873] Windows serial refclock proper TTY line discipline emulation
@@ -168218,7 +168409,6 @@ ChangeSet@1.1796.6.1, 2009-03-20 01:31:56+00:00, davehart@shiny.ad.hartbrothers.
 
   ntpd/refclock_palisade.c@1.22 +6 -5
     [Bug 873] Windows serial refclock proper TTY line discipline emulation
-    
 
   ports/winnt/include/ntp_iocompletionport.h@1.15 +8 -9
     [Bug 873] Windows serial refclock proper TTY line discipline emulation
@@ -172811,7 +173001,7 @@ ChangeSet@1.1436.15.5, 2008-08-17 06:16:19-04:00, stenn@whimsy.udel.edu
 
 ChangeSet@1.1436.15.4, 2008-08-17 05:30:47-04:00, stenn@whimsy.udel.edu
   NTP_4_2_4P5
-  TAG: NTP_4_2_4P5
+  TAG: NTP_4_2_4P5 (currently on 1.1436.15.11)
 
   ChangeLog@1.1.1.43 +3 -0
     NTP_4_2_4P5
@@ -199307,7 +199497,7 @@ ChangeSet@1.1353.1.91, 2006-07-28 07:42:56-04:00, stenn@whimsy.udel.edu
 
 ChangeSet@1.1251.94.42, 2006-07-28 07:02:21-04:00, stenn@whimsy.udel.edu
   NTP_4_2_2P3
-  TAG: NTP_4_2_2P3
+  TAG: NTP_4_2_2P3 (currently on 1.1251.94.46)
 
   packageinfo.sh@1.27.15.1 +1 -1
     NTP_4_2_2P3
@@ -201326,7 +201516,7 @@ ChangeSet@1.1347.2.3, 2006-06-13 07:27:18-04:00, stenn@whimsy.udel.edu
 
 ChangeSet@1.1251.94.6, 2006-06-13 07:02:41-04:00, stenn@whimsy.udel.edu
   NTP_4_2_2P0_RC
-  TAG: NTP_4_2_2P0_RC
+  TAG: NTP_4_2_2P0_RC (currently on 1.1251.94.8)
 
   packageinfo.sh@1.27.1.4 +1 -1
     NTP_4_2_2P0_RC
@@ -201346,7 +201536,7 @@ ChangeSet@1.1347.2.1, 2006-06-12 07:47:44-04:00, stenn@whimsy.udel.edu
 
 ChangeSet@1.1251.94.4, 2006-06-12 07:03:05-04:00, stenn@whimsy.udel.edu
   NTP_4_2_2P0_RC
-  TAG: NTP_4_2_2P0_RC
+  TAG: NTP_4_2_2P0_RC (currently on 1.1251.94.8)
 
   packageinfo.sh@1.27.1.3 +2 -2
     NTP_4_2_2P0_RC
@@ -208572,7 +208762,6 @@ ChangeSet@1.1251.8.1, 2004-12-20 20:36:18-05:00, stenn@whimsy.udel.edu
     [Bug 378]: Added macros for Danny
 
 ChangeSet@1.1251.7.26, 2004-12-18 04:55:09+00:00, abe@pogo.udel.edu
-  
 
   BitKeeper/etc/logging_ok@1.51 +1 -0
     Logging to logging@openlogging.org accepted
@@ -211728,7 +211917,6 @@ ChangeSet@1.1152.14.10, 2004-01-10 02:27:07-05:00, stenn@pogo.udel.edu
     
     He found an error in determining the ONCORE M12/M12+T. (thanks)
     Rather than his #ifdef, I have corrected the code.
-    
 
 ChangeSet@1.1152.19.3, 2004-01-08 18:21:43-05:00, mayer@pogo.udel.edu
   Make call to get_scopeid conditional
