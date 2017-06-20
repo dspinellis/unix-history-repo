@@ -1,7 +1,7 @@
 # Unix History Repository
 The history and evolution of the Unix operating system is made available
 as a revision management repository, covering the period from its
-inception in 1970 as a 2.5 thousand line kernel and 26 commands,
+inception in 1970 as a 2500 line kernel and 26 commands,
 to 2017 as a widely-used 27 million line system. The 1.1GB repository
 contains about half a million commits and more than two thousand merges.
 The repository employs Git system for its storage and is hosted on GitHub.
