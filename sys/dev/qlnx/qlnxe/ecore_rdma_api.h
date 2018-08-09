@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Cavium, Inc. 
+ * Copyright (c) 2018-2019 Cavium, Inc.
  * All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -25,16 +25,18 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *
  * $FreeBSD$
- *
  */
 
 #ifndef __ECORE_RDMA_API_H__
 #define __ECORE_RDMA_API_H__
 
+#ifndef LINUX_REMOVE
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif
+#endif
 
+#ifndef __EXTRACT__LINUX__
 
 enum ecore_roce_ll2_tx_dest
 {
@@ -56,13 +58,6 @@ enum ecore_roce_ll2_tx_dest
 #define ECORE_RDMA_MAX_CNQ_SIZE               (0xFFFF) /* 2^16 - 1 */
 
 /* rdma interface */
-enum ecore_rdma_tid_type
-{
-	ECORE_RDMA_TID_REGISTERED_MR,
-	ECORE_RDMA_TID_FMR,
-	ECORE_RDMA_TID_MW_TYPE1,
-	ECORE_RDMA_TID_MW_TYPE2A
-};
 
 enum ecore_roce_qp_state {
 	ECORE_ROCE_QP_STATE_RESET, /* Reset */
@@ -72,6 +67,21 @@ enum ecore_roce_qp_state {
 	ECORE_ROCE_QP_STATE_SQD,   /* Send Queue Draining */
 	ECORE_ROCE_QP_STATE_ERR,   /* Error */
 	ECORE_ROCE_QP_STATE_SQE    /* Send Queue Error */
+};
+
+enum ecore_rdma_qp_type {
+	ECORE_RDMA_QP_TYPE_RC,
+	ECORE_RDMA_QP_TYPE_XRC_INI,
+	ECORE_RDMA_QP_TYPE_XRC_TGT,
+	ECORE_RDMA_QP_TYPE_INVAL = 0xffff,
+};
+
+enum ecore_rdma_tid_type
+{
+	ECORE_RDMA_TID_REGISTERED_MR,
+	ECORE_RDMA_TID_FMR,
+	ECORE_RDMA_TID_MW_TYPE1,
+	ECORE_RDMA_TID_MW_TYPE2A
 };
 
 typedef
@@ -245,18 +255,52 @@ struct ecore_roce_dcqcn_params {
 
 	/* fields for notification point */
 	u32	cnp_send_timeout;
+	u8	cnp_dscp;
+	u8	cnp_vlan_priority;
 
 	/* fields for reaction point */
 	u32	rl_bc_rate;  /* Byte Counter Limit. */
-	u16	rl_max_rate; /* Maximum rate in 1.6 Mbps resolution */
-	u16	rl_r_ai;     /* Active increase rate */
-	u16	rl_r_hai;    /* Hyper active increase rate */
-	u16	dcqcn_g;     /* Alpha update gain in 1/64K resolution */
+	u32	rl_max_rate; /* Maximum rate in Mbps resolution */
+	u32	rl_r_ai;     /* Active increase rate */
+	u32	rl_r_hai;    /* Hyper active increase rate */
+	u32	dcqcn_gd;    /* Alpha denominator */
 	u32	dcqcn_k_us;  /* Alpha update interval */
 	u32	dcqcn_timeout_us;
 };
 
+struct ecore_rdma_glob_cfg {
+	/* global tunables affecting all QPs created after they are
+	 * set.
+	 */
+	u8 vlan_pri_en;
+	u8 vlan_pri;
+	u8 ecn_en;
+	u8 ecn;
+	u8 dscp_en;
+	u8 dscp;
+};
+
+#ifndef LINUX_REMOVE
+#define ECORE_RDMA_DCSP_BIT_MASK			0x01
+#define ECORE_RDMA_DCSP_EN_BIT_MASK			0x02
+#define ECORE_RDMA_ECN_BIT_MASK				0x04
+#define ECORE_RDMA_ECN_EN_BIT_MASK			0x08
+#define ECORE_RDMA_VLAN_PRIO_BIT_MASK		0x10
+#define ECORE_RDMA_VLAN_PRIO_EN_BIT_MASK	0x20
+
+enum _ecore_status_t
+ecore_rdma_set_glob_cfg(struct ecore_hwfn *p_hwfn,
+			struct ecore_rdma_glob_cfg *in_params,
+			u32 glob_cfg_bits);
+
+enum _ecore_status_t
+ecore_rdma_get_glob_cfg(struct ecore_hwfn *p_hwfn,
+			struct ecore_rdma_glob_cfg *out_params);
+#endif /* LINUX_REMOVE */
+
 #ifdef CONFIG_ECORE_IWARP
+
+#define ECORE_IWARP_MAX_LIS_BACKLOG		(256)
 
 #define ECORE_MPA_RTR_TYPE_NONE		0 /* No RTR type */
 #define ECORE_MPA_RTR_TYPE_ZERO_SEND	(1 << 0)
@@ -309,6 +353,54 @@ struct ecore_rdma_add_user_out_params {
 	u16	wid_count;
 };
 
+enum roce_mode
+{
+	ROCE_V1,
+	ROCE_V2_IPV4,
+	ROCE_V2_IPV6,
+	MAX_ROCE_MODE
+};
+
+/* ECORE GID can be used as IPv4/6 address in RoCE v2 */
+union ecore_gid {
+	u8 bytes[16];
+	u16 words[8];
+	u32 dwords[4];
+	u64 qwords[2];
+	u32 ipv4_addr;
+};
+
+struct ecore_rdma_register_tid_in_params {
+	/* input variables (given by miniport) */
+	u32	itid; /* index only, 18 bit long, lkey = itid << 8 | key */
+	enum ecore_rdma_tid_type tid_type;
+	u8	key;
+	u16	pd;
+	bool	local_read;
+	bool	local_write;
+	bool	remote_read;
+	bool	remote_write;
+	bool	remote_atomic;
+	bool	mw_bind;
+	u64	pbl_ptr;
+	bool	pbl_two_level;
+	u8	pbl_page_size_log; /* for the pages that contain the pointers
+		       * to the MR pages
+		       */
+	u8	page_size_log; /* for the MR pages */
+	u32	fbo;
+	u64	length; /* only lower 40 bits are valid */
+	u64	vaddr;
+	bool	zbva;
+	bool	phy_mr;
+	bool	dma_mr;
+
+	/* DIF related fields */
+	bool	dif_enabled;
+	u64	dif_error_addr;
+	u64	dif_runt_addr;
+};
+
 /*Returns the CQ CID or zero in case of failure */
 struct ecore_rdma_create_cq_in_params {
 	/* input variables (given by miniport) */
@@ -326,6 +418,34 @@ struct ecore_rdma_create_cq_in_params {
 	u16	int_timeout;
 };
 
+struct ecore_rdma_create_srq_in_params	{
+	u64 pbl_base_addr;
+	u64 prod_pair_addr;
+	u16 num_pages;
+	u16 pd_id;
+	u16 page_size;
+
+	/* XRC related only */
+	bool is_xrc;
+	u16 xrcd_id;
+	u32 cq_cid;
+	bool reserved_key_en;
+};
+
+struct ecore_rdma_destroy_cq_in_params {
+	/* input variables (given by miniport) */
+	u16 icid;
+};
+
+struct ecore_rdma_destroy_cq_out_params {
+	/* output variables, provided to the upper layer */
+
+	/* Sequence number of completion notification sent for the CQ on
+	 * the associated CNQ
+	 */
+	u16	num_cq_notif;
+};
+#endif
 
 struct ecore_rdma_resize_cq_in_params {
 	/* input variables (given by miniport) */
@@ -340,14 +460,7 @@ struct ecore_rdma_resize_cq_in_params {
 		       */
 };
 
-
-enum roce_mode
-{
-	ROCE_V1,
-	ROCE_V2_IPV4,
-	ROCE_V2_IPV6,
-	MAX_ROCE_MODE
-};
+#ifndef __EXTRACT__LINUX__
 
 struct ecore_rdma_create_qp_in_params {
 	/* input variables (given by miniport) */
@@ -369,6 +482,8 @@ struct ecore_rdma_create_qp_in_params {
 	u64	rq_pbl_ptr;	/* Not relevant for iWARP */
 	u16	srq_id;
 	u8	stats_queue;
+	enum	ecore_rdma_qp_type qp_type;
+	u16	xrcd_id;
 };
 
 struct ecore_rdma_create_qp_out_params {
@@ -379,29 +494,6 @@ struct ecore_rdma_create_qp_out_params {
 	dma_addr_t	rq_pbl_phys;
 	void		*sq_pbl_virt;
 	dma_addr_t	sq_pbl_phys;
-};
-
-struct ecore_rdma_destroy_cq_in_params {
-	/* input variables (given by miniport) */
-	u16 icid;
-};
-
-struct ecore_rdma_destroy_cq_out_params {
-	/* output variables, provided to the upper layer */
-
-	/* Sequence number of completion notification sent for the CQ on
-	 * the associated CNQ
-	 */
-	u16	num_cq_notif;
-};
-
-/* ECORE GID can be used as IPv4/6 address in RoCE v2 */
-union ecore_gid {
-	u8 bytes[16];
-	u16 words[8];
-	u32 dwords[4];
-	u64 qwords[2];
-	u32 ipv4_addr;
 };
 
 struct ecore_rdma_modify_qp_in_params {
@@ -497,43 +589,9 @@ struct ecore_rdma_query_qp_out_params {
 	bool		sqd_async;
 };
 
-struct ecore_rdma_register_tid_in_params {
-	/* input variables (given by miniport) */
-	u32	itid; /* index only, 18 bit long, lkey = itid << 8 | key */
-	enum ecore_rdma_tid_type tid_type;
-	u8	key;
-	u16	pd;
-	bool	local_read;
-	bool	local_write;
-	bool	remote_read;
-	bool	remote_write;
-	bool	remote_atomic;
-	bool	mw_bind;
-	u64	pbl_ptr;
-	bool	pbl_two_level;
-	u8	pbl_page_size_log; /* for the pages that contain the pointers
-		       * to the MR pages
-		       */
-	u8	page_size_log; /* for the MR pages */
-	u32	fbo;
-	u64	length; /* only lower 40 bits are valid */
-	u64	vaddr;
-	bool	zbva;
-	bool	phy_mr;
-	bool	dma_mr;
-
-	/* DIF related fields */
-	bool	dif_enabled;
-	u64	dif_error_addr;
-	u64	dif_runt_addr;
-};
-
-struct ecore_rdma_create_srq_in_params	{
-	u64 pbl_base_addr;
-	u64 prod_pair_addr;
-	u16 num_pages;
-	u16 pd_id;
-	u16 page_size;
+struct ecore_rdma_destroy_qp_out_params {
+	u32		sq_cq_prod;
+	u32		rq_cq_prod;
 };
 
 struct ecore_rdma_create_srq_out_params {
@@ -542,12 +600,15 @@ struct ecore_rdma_create_srq_out_params {
 
 struct ecore_rdma_destroy_srq_in_params {
 	u16 srq_id;
+	bool is_xrc;
 };
 
 struct ecore_rdma_modify_srq_in_params {
 	u32 wqe_limit;
 	u16 srq_id;
+	bool is_xrc;
 };
+#endif
 
 struct ecore_rdma_resize_cq_out_params {
 	/* output variables, provided to the upper layer */
@@ -564,6 +625,7 @@ struct ecore_rdma_resize_cnq_in_params {
 	u64	pbl_ptr;
 };
 
+#ifndef __EXTRACT__LINUX__
 struct ecore_rdma_stats_out_params {
 	u64	sent_bytes;
 	u64	sent_pkts;
@@ -575,6 +637,11 @@ struct ecore_rdma_stats_out_params {
 	u64	retransmit_events;	/* wraps at 32 bits */
 	u64	silent_drops;		/* wraps at 16 bits */
 	u64	rnr_nacks_sent;		/* wraps at 16 bits */
+
+	/* RoCE DCQCN */
+	u64	ecn_pkt_rcv;
+	u64	cnp_pkt_rcv;
+	u64	cnp_pkt_sent;
 
 	/* iWARP only */
 	u64	iwarp_tx_fast_rxmit_cnt;
@@ -593,7 +660,14 @@ struct ecore_rdma_counters_out_params {
 	u64	max_qp;
 	u64	tid_count;
 	u64	max_tid;
+	u64	srq_count;
+	u64	max_srq;
+	u64	xrc_srq_count;
+	u64	max_xrc_srq;
+	u64	xrcd_count;
+	u64	max_xrcd;
 };
+#endif
 
 enum _ecore_status_t
 ecore_rdma_add_user(void *rdma_cxt,
@@ -635,7 +709,8 @@ ecore_rdma_destroy_cq(void *rdma_cxt,
 
 enum _ecore_status_t
 ecore_rdma_destroy_qp(void *rdma_cxt,
-		      struct ecore_rdma_qp *qp);
+		      struct ecore_rdma_qp *qp,
+		      struct ecore_rdma_destroy_qp_out_params *out_params);
 
 enum _ecore_status_t
 ecore_roce_destroy_ud_qp(void *rdma_cxt, u16 cid);
@@ -643,6 +718,12 @@ ecore_roce_destroy_ud_qp(void *rdma_cxt, u16 cid);
 void
 ecore_rdma_free_pd(void *rdma_cxt,
 		   u16	pd);
+
+enum _ecore_status_t
+ecore_rdma_alloc_xrcd(void *rdma_cxt, u16 *xrcd_id);
+
+void
+ecore_rdma_free_xrcd(void  *rdma_cxt, u16 xrcd_id);
 
 void
 ecore_rdma_free_tid(void *rdma_cxt,
@@ -699,28 +780,49 @@ enum _ecore_status_t
 ecore_rdma_query_counters(void *rdma_cxt,
 			  struct ecore_rdma_counters_out_params *out_parms);
 
-u32 ecore_rdma_get_sb_id(void *p_hwfn, u32 rel_sb_id);
+u32 ecore_rdma_get_sb_id(struct ecore_hwfn *p_hwfn, u32 rel_sb_id);
 
-u32 ecore_rdma_query_cau_timer_res(void *p_hwfn);
+#ifndef LINUX_REMOVE
+u32 ecore_rdma_query_cau_timer_res(void);
+#endif
 
 void ecore_rdma_cnq_prod_update(void *rdma_cxt, u8 cnq_index, u16 prod);
 
 void ecore_rdma_resc_free(struct ecore_hwfn *p_hwfn);
 
+enum _ecore_status_t
+ecore_rdma_create_srq(void *rdma_cxt,
+		      struct ecore_rdma_create_srq_in_params *in_params,
+		      struct ecore_rdma_create_srq_out_params *out_params);
+
+enum _ecore_status_t
+ecore_rdma_destroy_srq(void *rdma_cxt,
+		       struct ecore_rdma_destroy_srq_in_params *in_params);
+
+enum _ecore_status_t
+ecore_rdma_modify_srq(void *rdma_cxt,
+		      struct ecore_rdma_modify_srq_in_params *in_params);
+
 #ifdef CONFIG_ECORE_IWARP
 
 /* iWARP API */
 
+#ifndef __EXTRACT__LINUX__
 
 enum ecore_iwarp_event_type {
 	ECORE_IWARP_EVENT_MPA_REQUEST, /* Passive side request received */
 	ECORE_IWARP_EVENT_PASSIVE_COMPLETE, /* Passive side established
 					     * ( ack on mpa response )
 					     */
+	ECORE_IWARP_EVENT_LISTEN_PAUSE_COMP, /* Passive side will drop
+					      * MPA requests
+					      */
 	ECORE_IWARP_EVENT_ACTIVE_COMPLETE, /* Active side reply received */
 	ECORE_IWARP_EVENT_DISCONNECT,
 	ECORE_IWARP_EVENT_CLOSE,
+    /* Slow/Error path events start from here */
 	ECORE_IWARP_EVENT_IRQ_FULL,
+	ECORE_IWARP_ERROR_EVENTS_START = ECORE_IWARP_EVENT_IRQ_FULL,
 	ECORE_IWARP_EVENT_RQ_EMPTY,
 	ECORE_IWARP_EVENT_LLP_TIMEOUT,
 	ECORE_IWARP_EVENT_REMOTE_PROTECTION_ERROR,
@@ -834,6 +936,7 @@ struct ecore_iwarp_tcp_abort_in {
 	void *ep_context;
 };
 
+#endif
 
 enum _ecore_status_t
 ecore_iwarp_connect(void *rdma_cxt,
@@ -860,7 +963,7 @@ enum _ecore_status_t
 ecore_iwarp_send_rtr(void *rdma_cxt, struct ecore_iwarp_send_rtr_in *iparams);
 
 enum _ecore_status_t
-ecore_iwarp_tcp_abort(void *rdma_cxt, struct ecore_iwarp_tcp_abort_in *iparams);
+ecore_iwarp_pause_listen(void *rdma_cxt, void *handle, bool pause, bool comp);
 
 #endif /* CONFIG_ECORE_IWARP */
 
