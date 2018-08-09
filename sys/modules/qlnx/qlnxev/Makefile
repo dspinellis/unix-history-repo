@@ -24,7 +24,7 @@
 # *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # *  POSSIBILITY OF SUCH DAMAGE.
 # */
-#/*
+# /*
 # * File : Makefile
 # * Author : David C Somayajulu, Cavium, Inc., San Jose, CA 95131.
 # */
@@ -34,18 +34,19 @@
 
 .PATH: ${SRCTOP}/sys/dev/qlnx/qlnxe
 
-#.PATH: ${.CURDIR}
+#.PATH: ${.CURDIR}/../qlnxe
 
-KMOD=if_qlnxe
+KMOD=if_qlnxev
 
-SRCS=ecore_cxt.c ecore_dcbx.c ecore_dev.c ecore_hw.c 
+SRCS=ecore_cxt.c ecore_dcbx.c ecore_dev.c ecore_hw.c
 SRCS+=ecore_init_fw_funcs.c ecore_int.c ecore_mcp.c
 SRCS+=ecore_sp_commands.c ecore_spq.c ecore_l2.c
 SRCS+=ecore_init_ops.c ecore_dbg_fw_funcs.c
 SRCS+=ecore_mng_tlv.c
 
-#SRCS+=ecore_sriov.c
-#SRCS+=ecore_vf.c
+#SRIOV related
+SRCS+=ecore_sriov.c
+SRCS+=ecore_vf.c
 
 SRCS+=qlnx_ioctl.c
 SRCS+=qlnx_os.c
@@ -53,24 +54,26 @@ SRCS+=qlnx_os.c
 SRCS+= device_if.h
 SRCS+= bus_if.h
 SRCS+= pci_if.h
-#SRCS+= pci_iov_if.h
+SRCS+= pci_iov_if.h
 
-CWARNEXTRA += -Wno-cast-qual
+.include <bsd.kmod.mk>
 
-#CFLAGS += -DQLNX_DEBUG
+CFLAGS += -DQLNX_DEBUG
 CFLAGS += -DECORE_PACKAGE
 CFLAGS += -DCONFIG_ECORE_L2
 CFLAGS += -DECORE_CONFIG_DIRECT_HWFN
 
-#CFLAGS += -g
-#CFLAGS += -fno-inline
+CFLAGS+= -I${SRCTOP}/sys/compat/linuxkpi/common/include
+
+CFLAGS += -g
+CFLAGS += -fno-inline
 
 #CFLAGS += -DQLNX_SOFT_LRO
 #CFLAGS += -DQLNX_QSORT_LRO
 #CFLAGS += -DQLNX_MAX_COALESCE
-#CFLAGS += -DQLNX_USER_LLDP
 
-#CFLAGS += -DCONFIG_ECORE_SRIOV
+#SRIOV related
+CFLAGS += -DCONFIG_ECORE_SRIOV
+CFLAGS += -DQLNX_VF
 
-.include <bsd.kmod.mk>
-
+CWARNFLAGS+= -Wno-cast-qual
