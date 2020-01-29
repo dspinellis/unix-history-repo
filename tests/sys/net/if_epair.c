@@ -1,8 +1,5 @@
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
- *
- * Copyright (c) 1999 Marcel Moolenaar
- * All rights reserved.
+ * Copyright (c) 2020   Kristof Provost <kp@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,41 +25,49 @@
  * $FreeBSD$
  */
 
-#ifndef _LINUX_MIB_H_
-#define _LINUX_MIB_H_
+#include <sys/ioctl.h>
+#include <sys/linker.h>
+#include <sys/module.h>
+#include <sys/param.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-#ifdef SYSCTL_DECL
-SYSCTL_DECL(_compat_linux);
-#endif
+#include <net/if.h>
 
-void	linux_osd_jail_register(void);
-void	linux_osd_jail_deregister(void);
+#include <fcntl.h>
+#include <stdio.h>
 
-void	linux_get_osname(struct thread *td, char *dst);
+#include <atf-c.h>
 
-void	linux_get_osrelease(struct thread *td, char *dst);
+ATF_TC(params);
+ATF_TC_HEAD(params, tc)
+{
+        atf_tc_set_md_var(tc, "require.user", "root");
+}
 
-int	linux_get_oss_version(struct thread *td);
+ATF_TC_BODY(params, tc)
+{
+	struct ifreq ifr;
+	int s;
 
-int	linux_kernver(struct thread *td);
+	s = kldload("if_epair");
+	if (s != 0)
+		atf_tc_fail("Failed to load if_epair");
 
-#define	LINUX_KVERSION		3
-#define	LINUX_KPATCHLEVEL	2
-#define	LINUX_KSUBLEVEL		0
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0)
+		atf_tc_fail("Failed to create socket");
 
-#define	LINUX_KERNVER(a,b,c)	(((a) << 16) + ((b) << 8) + (c))
-#define	LINUX_VERSION_CODE	LINUX_KERNVER(LINUX_KVERSION,		\
-				    LINUX_KPATCHLEVEL, LINUX_KSUBLEVEL)
-#define	LINUX_KERNVERSTR(x)	#x
-#define	LINUX_XKERNVERSTR(x)	LINUX_KERNVERSTR(x)
-#define	LINUX_VERSION_STR	LINUX_XKERNVERSTR(LINUX_KVERSION.LINUX_KPATCHLEVEL.LINUX_KSUBLEVEL)
+        bzero(&ifr, sizeof(ifr));
+	ifr.ifr_data = (caddr_t)-1;
+        (void) strlcpy(ifr.ifr_name, "epair", sizeof(ifr.ifr_name));
 
-#define	LINUX_KERNVER_2004000	LINUX_KERNVER(2,4,0)
-#define	LINUX_KERNVER_2006000	LINUX_KERNVER(2,6,0)
+	ioctl(s, SIOCIFCREATE2, &ifr);
+}
 
-#define	linux_use26(t)		(linux_kernver(t) >= LINUX_KERNVER_2006000)
+ATF_TP_ADD_TCS(tp)
+{
+        ATF_TP_ADD_TC(tp, params);
 
-extern int linux_ignore_ip_recverr;
-extern int linux_preserve_vstatus;
-
-#endif /* _LINUX_MIB_H_ */
+	return (atf_no_error());
+}
