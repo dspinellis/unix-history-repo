@@ -1,6 +1,6 @@
 /******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
-** version 3.31.0.  By combining all the individual C code files into this
+** version 3.31.1.  By combining all the individual C code files into this
 ** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
@@ -1165,9 +1165,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.31.0"
-#define SQLITE_VERSION_NUMBER 3031000
-#define SQLITE_SOURCE_ID      "2020-01-22 18:38:59 f6affdd41608946fcfcea914ece149038a8b25a62bbe719ed2561c649b86d824"
+#define SQLITE_VERSION        "3.31.1"
+#define SQLITE_VERSION_NUMBER 3031001
+#define SQLITE_SOURCE_ID      "2020-01-27 19:55:54 3bfa9cc97da10598521b342961df8f5f68c7388fa117345eeb516eaa837bb4d6"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -56233,30 +56233,48 @@ SQLITE_PRIVATE int sqlite3PagerOpen(
   **     Database file handle            (pVfs->szOsFile bytes)
   **     Sub-journal file handle         (journalFileSize bytes)
   **     Main journal file handle        (journalFileSize bytes)
-  **     \0\1\0 journal prefix           (3 bytes)
-  **     Journal filename                (nPathname+8+1 bytes)
-  **     \2\0 WAL prefix                 (2 bytes)
-  **     WAL filename                    (nPathname+4+1 bytes)
-  **     \3\0 database prefix            (2 bytes)
+  **     \0\0\0\0 database prefix        (4 bytes)
   **     Database file name              (nPathname+1 bytes)
   **     URI query parameters            (nUriByte bytes)
-  **     \0\0 terminator                 (2 bytes)
+  **     Journal filename                (nPathname+8+1 bytes)
+  **     WAL filename                    (nPathname+4+1 bytes)
+  **     \0\0\0 terminator               (3 bytes)
+  **
+  ** Some 3rd-party software, over which we have no control, depends on
+  ** the specific order of the filenames and the \0 separators between them
+  ** so that it can (for example) find the database filename given the WAL
+  ** filename without using the sqlite3_filename_database() API.  This is a
+  ** misuse of SQLite and a bug in the 3rd-party software, but the 3rd-party
+  ** software is in widespread use, so we try to avoid changing the filename
+  ** order and formatting if possible.  In particular, the details of the
+  ** filename format expected by 3rd-party software should be as follows:
+  **
+  **   - Main Database Path
+  **   - \0
+  **   - Multiple URI components consisting of:
+  **     - Key
+  **     - \0
+  **     - Value
+  **     - \0
+  **   - \0
+  **   - Journal Path
+  **   - \0
+  **   - WAL Path (zWALName)
+  **   - \0
   */
   pPtr = (u8 *)sqlite3MallocZero(
     ROUND8(sizeof(*pPager)) +            /* Pager structure */
     ROUND8(pcacheSize) +                 /* PCache object */
     ROUND8(pVfs->szOsFile) +             /* The main db file */
     journalFileSize * 2 +                /* The two journal files */
-    3 +                                  /* Journal prefix */
-    nPathname + 8 + 1 +                  /* Journal filename */
-#ifndef SQLITE_OMIT_WAL
-    2 +                                  /* WAL prefix */
-    nPathname + 4 + 1 +                  /* WAL filename */
-#endif
-    2 +                                  /* Database prefix */
+    4 +                                  /* Database prefix */
     nPathname + 1 +                      /* database filename */
     nUriByte +                           /* query parameters */
-    2                                    /* Terminator */
+    nPathname + 8 + 1 +                  /* Journal filename */
+#ifndef SQLITE_OMIT_WAL
+    nPathname + 4 + 1 +                  /* WAL filename */
+#endif
+    3                                    /* Terminator */
   );
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
@@ -56270,9 +56288,20 @@ SQLITE_PRIVATE int sqlite3PagerOpen(
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
 
+  /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
+                                          pPtr += 4;  /* Skip zero prefix */
+  pPager->zFilename = (char*)pPtr;
+  if( nPathname>0 ){
+    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname + 1;
+    if( zUri ){
+      memcpy(pPtr, zUri, nUriByte);       pPtr += nUriByte;
+    }else{
+                                          pPtr++;
+    }
+  }
+
 
   /* Fill in Pager.zJournal */
-  pPtr[1] = '\001';                       pPtr += 3;
   if( nPathname>0 ){
     pPager->zJournal = (char*)pPtr;
     memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
@@ -56283,12 +56312,10 @@ SQLITE_PRIVATE int sqlite3PagerOpen(
 #endif
   }else{
     pPager->zJournal = 0;
-    pPtr++;
   }
 
 #ifndef SQLITE_OMIT_WAL
   /* Fill in Pager.zWal */
-  pPtr[0] = '\002'; pPtr[1] = 0;          pPtr += 2;
   if( nPathname>0 ){
     pPager->zWal = (char*)pPtr;
     memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname;
@@ -56299,20 +56326,8 @@ SQLITE_PRIVATE int sqlite3PagerOpen(
 #endif
   }else{
     pPager->zWal = 0;
-    pPtr++;
   }
 #endif
-
-  /* Fill in the Pager.zFilename and pPager.zQueryParam fields */
-  pPtr[0] = '\003'; pPtr[1] = 0;          pPtr += 2;
-  pPager->zFilename = (char*)pPtr;
-  if( nPathname>0 ){
-    memcpy(pPtr, zPathname, nPathname);   pPtr += nPathname + 1;
-    if( zUri ){
-      memcpy(pPtr, zUri, nUriByte);    /* pPtr += nUriByte; // not needed */
-    }
-    /* Double-zero terminator implied by the sqlite3MallocZero */
-  }
 
   if( nPathname ) sqlite3DbFree(0, zPathname);
   pPager->pVfs = pVfs;
@@ -58433,8 +58448,8 @@ SQLITE_PRIVATE int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
 ** sqlite3_uri_parameter() and sqlite3_filename_database() and friends.
 */
 SQLITE_PRIVATE const char *sqlite3PagerFilename(const Pager *pPager, int nullIfMemDb){
-  static const char zFake[] = { 0x00, 0x01, 0x00, 0x00, 0x00 };
-  return (nullIfMemDb && pPager->memDb) ? &zFake[3] : pPager->zFilename;
+  static const char zFake[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  return (nullIfMemDb && pPager->memDb) ? &zFake[4] : pPager->zFilename;
 }
 
 /*
@@ -117491,6 +117506,9 @@ SQLITE_PRIVATE int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocas
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   nExpr = pExpr->x.pList->nExpr;
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, nExpr, SQLITE_UTF8, 0);
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  if( pDef==0 ) return 0;
+#endif
   if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
@@ -122767,11 +122785,11 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.26.0 and later */
 #define sqlite3_normalized_sql         sqlite3_api->normalized_sql
 /* Version 3.28.0 and later */
-#define sqlite3_stmt_isexplain         sqlite3_api->isexplain
-#define sqlite3_value_frombind         sqlite3_api->frombind
+#define sqlite3_stmt_isexplain         sqlite3_api->stmt_isexplain
+#define sqlite3_value_frombind         sqlite3_api->value_frombind
 /* Version 3.30.0 and later */
 #define sqlite3_drop_modules           sqlite3_api->drop_modules
-/* Version 3.31.0 andn later */
+/* Version 3.31.0 and later */
 #define sqlite3_hard_heap_limit64      sqlite3_api->hard_heap_limit64
 #define sqlite3_uri_key                sqlite3_api->uri_key
 #define sqlite3_filename_database      sqlite3_api->filename_database
@@ -163283,6 +163301,21 @@ SQLITE_API int sqlite3_test_control(int op, ...){
 }
 
 /*
+** The Pager stores the Database filename, Journal filename, and WAL filename
+** consecutively in memory, in that order.  The database filename is prefixed
+** by four zero bytes.  Locate the start of the database filename by searching
+** backwards for the first byte following four consecutive zero bytes.
+**
+** This only works if the filename passed in was obtained from the Pager.
+*/
+static const char *databaseName(const char *zName){
+  while( zName[-1]!=0 || zName[-2]!=0 || zName[-3]!=0 || zName[-4]!=0 ){
+    zName--;
+  }
+  return zName;
+}
+
+/*
 ** This is a utility routine, useful to VFS implementations, that checks
 ** to see if a database file was a URI that contained a specific query 
 ** parameter, and if so obtains the value of the query parameter.
@@ -163295,6 +163328,7 @@ SQLITE_API int sqlite3_test_control(int op, ...){
 */
 SQLITE_API const char *sqlite3_uri_parameter(const char *zFilename, const char *zParam){
   if( zFilename==0 || zParam==0 ) return 0;
+  zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] ){
     int x = strcmp(zFilename, zParam);
@@ -163310,6 +163344,7 @@ SQLITE_API const char *sqlite3_uri_parameter(const char *zFilename, const char *
 */
 SQLITE_API const char *sqlite3_uri_key(const char *zFilename, int N){
   if( zFilename==0 || N<0 ) return 0;
+  zFilename = databaseName(zFilename);
   zFilename += sqlite3Strlen30(zFilename) + 1;
   while( zFilename[0] && (N--)>0 ){
     zFilename += sqlite3Strlen30(zFilename) + 1;
@@ -163344,25 +163379,6 @@ SQLITE_API sqlite3_int64 sqlite3_uri_int64(
 }
 
 /*
-** The Pager stores the Journal filename, WAL filename, and Database filename
-** consecutively in memory, in that order, with prefixes \000\001\000,
-** \002\000, and \003\000, in that order.  Thus the three names look like query
-** parameters if you start at the first prefix.
-**
-** This routine backs up a filename to the start of the first prefix.
-**
-** This only works if the filenamed passed in was obtained from the Pager.
-*/
-static const char *startOfNameList(const char *zName){
-  while( zName[0]!='\001' || zName[1]!=0 ){
-    zName -= 3;
-    while( zName[0]!='\000' ){ zName--; }
-    zName++;
-  }
-  return zName-1;
-}
-
-/*
 ** Translate a filename that was handed to a VFS routine into the corresponding
 ** database, journal, or WAL file.
 **
@@ -163373,14 +163389,26 @@ static const char *startOfNameList(const char *zName){
 ** corruption.
 */
 SQLITE_API const char *sqlite3_filename_database(const char *zFilename){
+  return databaseName(zFilename);
   return sqlite3_uri_parameter(zFilename - 3, "\003");
 }
 SQLITE_API const char *sqlite3_filename_journal(const char *zFilename){
-  const char *z = sqlite3_uri_parameter(startOfNameList(zFilename), "\001");
-  return ALWAYS(z) && z[0] ? z : 0;
+  zFilename = databaseName(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  while( zFilename[0] ){
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+    zFilename += sqlite3Strlen30(zFilename) + 1;
+  }
+  return zFilename + 1;
 }
 SQLITE_API const char *sqlite3_filename_wal(const char *zFilename){
-  return sqlite3_uri_parameter(startOfNameList(zFilename), "\002");
+#ifdef SQLITE_OMIT_WAL
+  return 0;
+#else
+  zFilename = sqlite3_filename_journal(zFilename);
+  zFilename += sqlite3Strlen30(zFilename) + 1;
+  return zFilename;
+#endif
 }
 
 /*
@@ -219999,8 +220027,8 @@ static int fts5QueryCksum(
 ** contain valid utf-8, return non-zero.
 */
 static int fts5TestUtf8(const char *z, int n){
-  assert_nc( n>0 );
   int i = 0;
+  assert_nc( n>0 );
   while( i<n ){
     if( (z[i] & 0x80)==0x00 ){
       i++;
@@ -223639,7 +223667,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2020-01-22 18:38:59 f6affdd41608946fcfcea914ece149038a8b25a62bbe719ed2561c649b86d824", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2020-01-27 19:55:54 3bfa9cc97da10598521b342961df8f5f68c7388fa117345eeb516eaa837bb4d6", -1, SQLITE_TRANSIENT);
 }
 
 /*
@@ -228412,9 +228440,9 @@ SQLITE_API int sqlite3_stmt_init(
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB) */
 
 /************** End of stmt.c ************************************************/
-#if __LINE__!=228415
+#if __LINE__!=228443
 #undef SQLITE_SOURCE_ID
-#define SQLITE_SOURCE_ID      "2020-01-22 18:38:59 f6affdd41608946fcfcea914ece149038a8b25a62bbe719ed2561c649b86alt2"
+#define SQLITE_SOURCE_ID      "2020-01-27 19:55:54 3bfa9cc97da10598521b342961df8f5f68c7388fa117345eeb516eaa837balt2"
 #endif
 /* Return the source-id for this library */
 SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
