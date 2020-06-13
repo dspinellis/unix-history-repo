@@ -1,6 +1,6 @@
 /******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
-** version 3.32.0.  By combining all the individual C code files into this
+** version 3.32.2.  By combining all the individual C code files into this
 ** single large file, the entire code can be compiled as a single translation
 ** unit.  This allows many compilers to do optimizations that would not be
 ** possible if the files were compiled separately.  Performance improvements
@@ -1162,9 +1162,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.32.0"
-#define SQLITE_VERSION_NUMBER 3032000
-#define SQLITE_SOURCE_ID      "2020-05-22 17:46:16 5998789c9c744bce92e4cff7636bba800a75574243d6977e1fc8281e360f8d5a"
+#define SQLITE_VERSION        "3.32.2"
+#define SQLITE_VERSION_NUMBER 3032002
+#define SQLITE_SOURCE_ID      "2020-06-04 12:58:43 ec02243ea6ce33b090870ae55ab8aa2534b54d216d45c4aa2fdbb00e86861e8c"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -17843,7 +17843,7 @@ struct Token {
 ** code for a SELECT that contains aggregate functions.
 **
 ** If Expr.op==TK_AGG_COLUMN or TK_AGG_FUNCTION then Expr.pAggInfo is a
-** pointer to this structure.  The Expr.iColumn field is the index in
+** pointer to this structure.  The Expr.iAgg field is the index in
 ** AggInfo.aCol[] or AggInfo.aFunc[] of information needed to generate
 ** code for that node.
 **
@@ -19082,6 +19082,9 @@ SQLITE_PRIVATE int sqlite3WalkSelectFrom(Walker*, Select*);
 SQLITE_PRIVATE int sqlite3ExprWalkNoop(Walker*, Expr*);
 SQLITE_PRIVATE int sqlite3SelectWalkNoop(Walker*, Select*);
 SQLITE_PRIVATE int sqlite3SelectWalkFail(Walker*, Select*);
+SQLITE_PRIVATE int sqlite3WalkerDepthIncrease(Walker*,Select*);
+SQLITE_PRIVATE void sqlite3WalkerDepthDecrease(Walker*,Select*);
+
 #ifdef SQLITE_DEBUG
 SQLITE_PRIVATE void sqlite3SelectWalkAssert2(Walker*, Select*);
 #endif
@@ -28277,6 +28280,13 @@ static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
 #define etBUFSIZE SQLITE_PRINT_BUF_SIZE  /* Size of the output buffer */
 
 /*
+** Hard limit on the precision of floating-point conversions.
+*/
+#ifndef SQLITE_PRINTF_PRECISION_LIMIT
+# define SQLITE_FP_PRECISION_LIMIT 100000000
+#endif
+
+/*
 ** Render a string given by "fmt" into the StrAccum object.
 */
 SQLITE_API void sqlite3_str_vappendf(
@@ -28476,6 +28486,8 @@ SQLITE_API void sqlite3_str_vappendf(
     **   xtype                       The class of the conversion.
     **   infop                       Pointer to the appropriate info struct.
     */
+    assert( width>=0 );
+    assert( precision>=(-1) );
     switch( xtype ){
       case etPOINTER:
         flag_long = sizeof(char*)==sizeof(i64) ? 2 :
@@ -28597,6 +28609,11 @@ SQLITE_API void sqlite3_str_vappendf(
         length = 0;
 #else
         if( precision<0 ) precision = 6;         /* Set default precision */
+#ifdef SQLITE_FP_PRECISION_LIMIT
+        if( precision>SQLITE_FP_PRECISION_LIMIT ){
+          precision = SQLITE_FP_PRECISION_LIMIT;
+        }
+#endif
         if( realvalue<0.0 ){
           realvalue = -realvalue;
           prefix = '-';
@@ -28879,7 +28896,7 @@ SQLITE_API void sqlite3_str_vappendf(
         }
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-        /* For %q, %Q, and %w, the precision is the number of byte (or
+        /* For %q, %Q, and %w, the precision is the number of bytes (or
         ** characters if the ! flags is present) to use from the input.
         ** Because of the extra quoting characters inserted, the number
         ** of output characters may be larger than the precision.
@@ -29964,8 +29981,9 @@ SQLITE_PRIVATE void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 m
 #endif 
       }
       if( pExpr->op==TK_AGG_FUNCTION ){
-        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s",
-                             pExpr->op2, pExpr->u.zToken, zFlgs);
+        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q%s iAgg=%d agg=%p",
+                             pExpr->op2, pExpr->u.zToken, zFlgs,
+                             pExpr->iAgg, pExpr->pAggInfo);
       }else if( pExpr->op2!=0 ){
         const char *zOp2;
         char zBuf[8];
@@ -62135,12 +62153,14 @@ SQLITE_PRIVATE int sqlite3WalSnapshotRecover(Wal *pWal){
 SQLITE_PRIVATE int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int cnt = 0;                    /* Number of TryBeginRead attempts */
+#ifdef SQLITE_ENABLE_SNAPSHOT
+  int bChanged = 0;
+  WalIndexHdr *pSnapshot = pWal->pSnapshot;
+#endif
 
   assert( pWal->ckptLock==0 );
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
-  int bChanged = 0;
-  WalIndexHdr *pSnapshot = pWal->pSnapshot;
   if( pSnapshot ){
     if( memcmp(pSnapshot, &pWal->hdr, sizeof(WalIndexHdr))!=0 ){
       bChanged = 1;
@@ -85800,6 +85820,8 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
     goto no_mem;
   }
   assert( p->rc==SQLITE_OK || (p->rc&0xff)==SQLITE_BUSY );
+  testcase( p->rc!=SQLITE_OK );
+  p->rc = SQLITE_OK;
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
   assert( p->explain==0 );
@@ -97465,6 +97487,43 @@ SQLITE_PRIVATE int sqlite3WalkSelect(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+/* Increase the walkerDepth when entering a subquery, and
+** descrease when leaving the subquery.
+*/
+SQLITE_PRIVATE int sqlite3WalkerDepthIncrease(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pSelect);
+  pWalker->walkerDepth++;
+  return WRC_Continue;
+}
+SQLITE_PRIVATE void sqlite3WalkerDepthDecrease(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pSelect);
+  pWalker->walkerDepth--;
+}
+
+
+/*
+** No-op routine for the parse-tree walker.
+**
+** When this routine is the Walker.xExprCallback then expression trees
+** are walked without any actions being taken at each node.  Presumably,
+** when this routine is used for Walker.xExprCallback then 
+** Walker.xSelectCallback is set to do something useful for every 
+** subquery in the parser tree.
+*/
+SQLITE_PRIVATE int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  return WRC_Continue;
+}
+
+/*
+** No-op routine for the parse-tree walker for SELECT statements.
+** subquery in the parser tree.
+*/
+SQLITE_PRIVATE int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  return WRC_Continue;
+}
+
 /************** End of walker.c **********************************************/
 /************** Begin file resolve.c *****************************************/
 /*
@@ -97493,6 +97552,8 @@ SQLITE_PRIVATE int sqlite3WalkSelect(Walker *pWalker, Select *p){
 **
 ** incrAggFunctionDepth(pExpr,n) is the main routine.  incrAggDepth(..)
 ** is a helper function - a callback for the tree walker.
+**
+** See also the sqlite3WindowExtraAggFuncDepth() routine in window.c
 */
 static int incrAggDepth(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION ) pExpr->op2 += pWalker->u.n;
@@ -103234,7 +103295,10 @@ expr_code_doover:
   switch( op ){
     case TK_AGG_COLUMN: {
       AggInfo *pAggInfo = pExpr->pAggInfo;
-      struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
+      struct AggInfo_col *pCol;
+      assert( pAggInfo!=0 );
+      assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+      pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
         assert( pCol->iMem>0 );
         return pCol->iMem;
@@ -103534,7 +103598,10 @@ expr_code_doover:
     }
     case TK_AGG_FUNCTION: {
       AggInfo *pInfo = pExpr->pAggInfo;
-      if( pInfo==0 ){
+      if( pInfo==0
+       || NEVER(pExpr->iAgg<0)
+       || NEVER(pExpr->iAgg>=pInfo->nFunc)
+      ){
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %s()", pExpr->u.zToken);
       }else{
@@ -105290,15 +105357,6 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   }
   return WRC_Continue;
 }
-static int analyzeAggregatesInSelect(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth++;
-  return WRC_Continue;
-}
-static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pSelect);
-  pWalker->walkerDepth--;
-}
 
 /*
 ** Analyze the pExpr expression looking for aggregate functions and
@@ -105312,8 +105370,8 @@ static void analyzeAggregatesInSelectEnd(Walker *pWalker, Select *pSelect){
 SQLITE_PRIVATE void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   Walker w;
   w.xExprCallback = analyzeAggregate;
-  w.xSelectCallback = analyzeAggregatesInSelect;
-  w.xSelectCallback2 = analyzeAggregatesInSelectEnd;
+  w.xSelectCallback = sqlite3WalkerDepthIncrease;
+  w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
   w.walkerDepth = 0;
   w.u.pNC = pNC;
   w.pParse = 0;
@@ -122035,7 +122093,7 @@ SQLITE_PRIVATE void sqlite3GenerateConstraintChecks(
       sqlite3TableAffinity(v, pTab, regNewData+1);
       bAffinityDone = 1;
     }
-    VdbeNoopComment((v, "uniqueness check for %s", pIdx->zName));
+    VdbeNoopComment((v, "prep index %s", pIdx->zName));
     iThisCur = iIdxCur+ix;
 
 
@@ -134007,29 +134065,6 @@ static int selectExpander(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
-/*
-** No-op routine for the parse-tree walker.
-**
-** When this routine is the Walker.xExprCallback then expression trees
-** are walked without any actions being taken at each node.  Presumably,
-** when this routine is used for Walker.xExprCallback then 
-** Walker.xSelectCallback is set to do something useful for every 
-** subquery in the parser tree.
-*/
-SQLITE_PRIVATE int sqlite3ExprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return WRC_Continue;
-}
-
-/*
-** No-op routine for the parse-tree walker for SELECT statements.
-** subquery in the parser tree.
-*/
-SQLITE_PRIVATE int sqlite3SelectWalkNoop(Walker *NotUsed, Select *NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return WRC_Continue;
-}
-
 #if SQLITE_DEBUG
 /*
 ** Always assert.  This xSelectCallback2 implementation proves that the
@@ -135200,7 +135235,7 @@ SQLITE_PRIVATE int sqlite3Select(
 #if SELECTTRACE_ENABLED
     if( sqlite3SelectTrace & 0x400 ){
       int ii;
-      SELECTTRACE(0x400,pParse,p,("After aggregate analysis:\n"));
+      SELECTTRACE(0x400,pParse,p,("After aggregate analysis %p:\n", &sAggInfo));
       sqlite3TreeViewSelect(0, p, 0);
       for(ii=0; ii<sAggInfo.nColumn; ii++){
         sqlite3DebugPrintf("agg-column[%d] iMem=%d\n",
@@ -151245,6 +151280,23 @@ static ExprList *exprListAppendList(
 }
 
 /*
+** When rewriting a query, if the new subquery in the FROM clause
+** contains TK_AGG_FUNCTION nodes that refer to an outer query,
+** then we have to increase the Expr->op2 values of those nodes
+** due to the extra subquery layer that was added.
+**
+** See also the incrAggDepth() routine in resolve.c
+*/
+static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_AGG_FUNCTION
+   && pExpr->op2>=pWalker->walkerDepth
+  ){
+    pExpr->op2++;
+  }
+  return WRC_Continue;
+}
+
+/*
 ** If the SELECT statement passed as the second argument does not invoke
 ** any SQL window functions, this function is a no-op. Otherwise, it 
 ** rewrites the SELECT statement so that window function xStep functions
@@ -151353,6 +151405,7 @@ SQLITE_PRIVATE int sqlite3WindowRewrite(Parse *pParse, Select *p){
     p->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
     if( p->pSrc ){
       Table *pTab2;
+      Walker w;
       p->pSrc->a[0].pSelect = pSub;
       sqlite3SrcListAssignCursors(pParse, p->pSrc);
       pSub->selFlags |= SF_Expanded;
@@ -151368,6 +151421,11 @@ SQLITE_PRIVATE int sqlite3WindowRewrite(Parse *pParse, Select *p){
         pTab->tabFlags |= TF_Ephemeral;
         p->pSrc->a[0].pTab = pTab;
         pTab = pTab2;
+        memset(&w, 0, sizeof(w));
+        w.xExprCallback = sqlite3WindowExtraAggFuncDepth;
+        w.xSelectCallback = sqlite3WalkerDepthIncrease;
+        w.xSelectCallback2 = sqlite3WalkerDepthDecrease;
+        sqlite3WalkSelect(&w, pSub);
       }
     }else{
       sqlite3SelectDelete(db, pSub);
@@ -224766,7 +224824,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2020-05-22 17:46:16 5998789c9c744bce92e4cff7636bba800a75574243d6977e1fc8281e360f8d5a", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2020-06-04 12:58:43 ec02243ea6ce33b090870ae55ab8aa2534b54d216d45c4aa2fdbb00e86861e8c", -1, SQLITE_TRANSIENT);
 }
 
 /*
@@ -229549,9 +229607,9 @@ SQLITE_API int sqlite3_stmt_init(
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB) */
 
 /************** End of stmt.c ************************************************/
-#if __LINE__!=229552
+#if __LINE__!=229610
 #undef SQLITE_SOURCE_ID
-#define SQLITE_SOURCE_ID      "2020-05-22 17:46:16 5998789c9c744bce92e4cff7636bba800a75574243d6977e1fc8281e360falt2"
+#define SQLITE_SOURCE_ID      "2020-06-04 12:58:43 ec02243ea6ce33b090870ae55ab8aa2534b54d216d45c4aa2fdbb00e8686alt2"
 #endif
 /* Return the source-id for this library */
 SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
