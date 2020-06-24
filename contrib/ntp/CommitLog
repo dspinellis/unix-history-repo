@@ -1,3 +1,700 @@
+ChangeSet@1.3911, 2020-06-23 02:22:19-07:00, ntpreleng@ntp-build.tal1.ntfo.org
+  NTP_4_2_8P15
+  TAG: NTP_4_2_8P15
+
+  ChangeLog@1.1985 +1 -0
+    NTP_4_2_8P15
+
+  ntpd/invoke-ntp.conf.texi@1.222 +1 -1
+    NTP_4_2_8P15
+
+  ntpd/invoke-ntp.keys.texi@1.207 +1 -1
+    NTP_4_2_8P15
+
+  ntpd/invoke-ntpd.texi@1.521 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.conf.5man@1.256 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.conf.5mdoc@1.256 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.conf.html@1.204 +1 -1
+    NTP_4_2_8P15
+
+  ntpd/ntp.conf.man.in@1.256 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.conf.mdoc.in@1.256 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.keys.5man@1.241 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.keys.5mdoc@1.241 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.keys.html@1.202 +1 -1
+    NTP_4_2_8P15
+
+  ntpd/ntp.keys.man.in@1.241 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntp.keys.mdoc.in@1.241 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntpd-opts.c@1.544 +7 -7
+    NTP_4_2_8P15
+
+  ntpd/ntpd-opts.h@1.543 +3 -3
+    NTP_4_2_8P15
+
+  ntpd/ntpd.1ntpdman@1.350 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntpd.1ntpdmdoc@1.350 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntpd.html@1.195 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntpd.man.in@1.350 +2 -2
+    NTP_4_2_8P15
+
+  ntpd/ntpd.mdoc.in@1.350 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/invoke-ntpdc.texi@1.518 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc-opts.c@1.537 +7 -7
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc-opts.h@1.536 +3 -3
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc.1ntpdcman@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc.1ntpdcmdoc@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc.html@1.364 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc.man.in@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpdc/ntpdc.mdoc.in@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/invoke-ntpq.texi@1.528 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/ntpq-opts.c@1.546 +7 -7
+    NTP_4_2_8P15
+
+  ntpq/ntpq-opts.h@1.544 +3 -3
+    NTP_4_2_8P15
+
+  ntpq/ntpq.1ntpqman@1.356 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/ntpq.1ntpqmdoc@1.356 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/ntpq.html@1.195 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/ntpq.man.in@1.356 +2 -2
+    NTP_4_2_8P15
+
+  ntpq/ntpq.mdoc.in@1.356 +2 -2
+    NTP_4_2_8P15
+
+  ntpsnmpd/invoke-ntpsnmpd.texi@1.520 +1 -1
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd-opts.c@1.539 +7 -7
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd-opts.h@1.538 +3 -3
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdman@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd.1ntpsnmpdmdoc@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd.html@1.188 +1 -1
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd.man.in@1.349 +2 -2
+    NTP_4_2_8P15
+
+  ntpsnmpd/ntpsnmpd.mdoc.in@1.349 +2 -2
+    NTP_4_2_8P15
+
+  packageinfo.sh@1.546 +2 -2
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjman@1.110 +2 -2
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/calc_tickadj.1calc_tickadjmdoc@1.111 +2 -2
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/calc_tickadj.html@1.111 +1 -1
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/calc_tickadj.man.in@1.109 +2 -2
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/calc_tickadj.mdoc.in@1.111 +2 -2
+    NTP_4_2_8P15
+
+  scripts/calc_tickadj/invoke-calc_tickadj.texi@1.114 +1 -1
+    NTP_4_2_8P15
+
+  scripts/invoke-plot_summary.texi@1.132 +2 -2
+    NTP_4_2_8P15
+
+  scripts/invoke-summary.texi@1.131 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/invoke-ntp-wait.texi@1.342 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait-opts@1.78 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitman@1.338 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait.1ntp-waitmdoc@1.339 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait.html@1.360 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait.man.in@1.338 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntp-wait/ntp-wait.mdoc.in@1.339 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/invoke-ntpsweep.texi@1.129 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep-opts@1.80 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepman@1.117 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep.1ntpsweepmdoc@1.117 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep.html@1.132 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep.man.in@1.117 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntpsweep/ntpsweep.mdoc.in@1.118 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/invoke-ntptrace.texi@1.131 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace-opts@1.80 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace.1ntptraceman@1.117 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace.1ntptracemdoc@1.118 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace.html@1.133 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace.man.in@1.117 +2 -2
+    NTP_4_2_8P15
+
+  scripts/ntptrace/ntptrace.mdoc.in@1.119 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary-opts@1.81 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary.1plot_summaryman@1.130 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary.1plot_summarymdoc@1.130 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary.html@1.135 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary.man.in@1.130 +2 -2
+    NTP_4_2_8P15
+
+  scripts/plot_summary.mdoc.in@1.130 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary-opts@1.80 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary.1summaryman@1.129 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary.1summarymdoc@1.129 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary.html@1.134 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary.man.in@1.129 +2 -2
+    NTP_4_2_8P15
+
+  scripts/summary.mdoc.in@1.129 +2 -2
+    NTP_4_2_8P15
+
+  scripts/update-leap/invoke-update-leap.texi@1.30 +1 -1
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap-opts@1.31 +2 -2
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap.1update-leapman@1.30 +2 -2
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap.1update-leapmdoc@1.30 +2 -2
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap.html@1.31 +1 -1
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap.man.in@1.30 +2 -2
+    NTP_4_2_8P15
+
+  scripts/update-leap/update-leap.mdoc.in@1.30 +2 -2
+    NTP_4_2_8P15
+
+  sntp/invoke-sntp.texi@1.520 +2 -2
+    NTP_4_2_8P15
+
+  sntp/sntp-opts.c@1.540 +7 -7
+    NTP_4_2_8P15
+
+  sntp/sntp-opts.h@1.538 +3 -3
+    NTP_4_2_8P15
+
+  sntp/sntp.1sntpman@1.355 +2 -2
+    NTP_4_2_8P15
+
+  sntp/sntp.1sntpmdoc@1.355 +2 -2
+    NTP_4_2_8P15
+
+  sntp/sntp.html@1.536 +2 -2
+    NTP_4_2_8P15
+
+  sntp/sntp.man.in@1.355 +2 -2
+    NTP_4_2_8P15
+
+  sntp/sntp.mdoc.in@1.355 +2 -2
+    NTP_4_2_8P15
+
+  util/invoke-ntp-keygen.texi@1.523 +2 -2
+    NTP_4_2_8P15
+
+  util/ntp-keygen-opts.c@1.542 +7 -7
+    NTP_4_2_8P15
+
+  util/ntp-keygen-opts.h@1.540 +3 -3
+    NTP_4_2_8P15
+
+  util/ntp-keygen.1ntp-keygenman@1.351 +2 -2
+    NTP_4_2_8P15
+
+  util/ntp-keygen.1ntp-keygenmdoc@1.351 +2 -2
+    NTP_4_2_8P15
+
+  util/ntp-keygen.html@1.196 +2 -2
+    NTP_4_2_8P15
+
+  util/ntp-keygen.man.in@1.351 +2 -2
+    NTP_4_2_8P15
+
+  util/ntp-keygen.mdoc.in@1.351 +2 -2
+    NTP_4_2_8P15
+
+ChangeSet@1.3910, 2020-06-23 02:05:32-07:00, ntpreleng@ntp-build.tal1.ntfo.org
+  ntp-4.2.8p15
+
+  packageinfo.sh@1.545 +1 -1
+    ntp-4.2.8p15
+
+ChangeSet@1.3908, 2020-06-09 07:12:27-04:00, stenn@psp-deb2.ntp.org
+  p15 updates
+
+  ChangeLog@1.1983 +1 -1
+    p15 updates
+
+  NEWS@1.214 +1 -1
+    p15 updates
+
+ChangeSet@1.3896.1.22, 2020-06-09 07:09:18-04:00, stenn@psp-deb2.ntp.org
+  3670
+
+  ChangeLog@1.1974.1.14 +1 -1
+    3670
+
+  NEWS@1.205.1.7 +3 -1
+    3670
+
+ChangeSet@1.3896.1.21, 2020-06-09 08:39:26+02:00, perlinger@ntp.org
+  [Bug 3670] Deleted statements come back
+
+  ChangeLog@1.1974.1.13 +3 -0
+    [Bug 3670] Deleted statements come back
+
+  ntpd/ntp_proto.c@1.437 +4 -19
+    [Bug 3670] Deleted statements come back
+
+ChangeSet@1.3906, 2020-05-31 09:52:14+00:00, stenn@psp-deb1.ntp.org
+  update the expected releease date
+
+  NEWS@1.213 +1 -1
+    update the expected releease date
+
+ChangeSet@1.3896.9.3, 2020-05-31 09:49:39+00:00, stenn@psp-deb1.ntp.org
+  Update ChangeLog and NEWS files for 3644
+
+  ChangeLog@1.1974.1.12 +1 -3
+    Update ChangeLog and NEWS files for 3644
+
+  NEWS@1.205.1.6 +2 -1
+    Update ChangeLog and NEWS files for 3644
+
+ChangeSet@1.3896.9.2, 2020-05-31 09:47:05+00:00, stenn@psp-deb1.ntp.org
+  [Bug 3644]: Do we want to log an event in this case?
+
+  ntpd/ntp_timer.c@1.99 +2 -0
+    [Bug 3644]: Do we want to log an event in this case?
+
+ChangeSet@1.3896.9.1, 2020-05-31 11:13:45+02:00, perlinger@ntp.org
+  [Bug 3644] Unsynchronized server (minsane not satisfied) selected as candidate
+
+  ChangeLog@1.1974.1.11 +3 -0
+    [Bug 3644] Unsynchronized server (minsane not satisfied) selected as candidate
+
+  include/ntp.h@1.233 +1 -1
+    [Bug 3644] Unsynchronized server [...] selected as candidate
+     - comment typo
+
+  ntpd/ntp_proto.c@1.436 +2 -3
+    [Bug 3644] Unsynchronized server (minsane not satisfied) selected as candidate
+
+  ntpd/ntp_timer.c@1.98 +24 -9
+    [Bug 3644] Unsynchronized server (minsane not satisfied) selected as candidate
+     - according to DLM, we should go S16/UNSYNCED if we have no proper orphan config
+
+ChangeSet@1.3896.1.19, 2020-05-25 12:42:46+02:00, nb241700@md2g3rcc.ad001.siemens.net
+  [Bug 3667] decodenetnum fails with numeric port
+   - windows compilation issues
+
+  libntp/decodenetnum.c@1.21 +1 -1
+    [Bug 3667] decodenetnum fails with numeric port
+     - windows compilation issues ('sa_family_t' is POSIX, now ANSI/MSVC)
+
+  libntp/strdup.c@1.11 +3 -3
+    [Bug 3667] decodenetnum fails with numeric port
+     - windows compilation issues (typo+cast in memchr replacement)
+
+  ports/winnt/include/config.h@1.117 +2 -0
+    [Bug 3667] decodenetnum fails with numeric port
+     - windows compilation issues (have memchr() and strnlen() in MSVC)
+
+ChangeSet@1.3896.1.18, 2020-05-22 06:07:28+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS file with 3667
+
+  NEWS@1.205.1.5 +3 -1
+    Update NEWS file with 3667
+
+ChangeSet@1.3896.1.17, 2020-05-22 06:05:45+00:00, stenn@psp-deb1.ntp.org
+  cleanup
+
+  ChangeLog@1.1974.1.10 +2 -4
+    cleanup
+
+ChangeSet@1.3896.1.16, 2020-05-22 06:04:57+00:00, stenn@psp-deb1.ntp.org
+  indentation tweaks
+
+  tests/libntp/sockaddrtest.c@1.5 +7 -7
+    indentation tweaks
+
+ChangeSet@1.3896.1.15, 2020-05-20 09:44:15+02:00, perlinger@ntp.org
+  [Bug 3667] decodenetnum fails with numeric port
+
+  ChangeLog@1.1974.1.9 +4 -0
+    [Bug 3667] decodenetnum fails with numeric port
+
+  configure.ac@1.619 +1 -1
+    [Bug 3667] decodenetnum fails with numeric port
+     sidekick: implement strnlen() and memchr() for ancient hosts (pogo.udel.edu...)
+
+  include/l_stdlib.h@1.21 +9 -0
+    [Bug 3667] decodenetnum fails with numeric port
+     sidekick: implement strnlen() and memchr() for ancient hosts (pogo.udel.edu...)
+
+  libntp/decodenetnum.c@1.20 +123 -77
+    [Bug 3667] decodenetnum fails with numeric port
+     - rewrite in terms of inet_pton() and strtoul(), no getaddrinfo() any more
+
+  libntp/strdup.c@1.10 +29 -3
+    [Bug 3667] decodenetnum fails with numeric port
+     sidekick: implement strnlen() and memchr() for ancient hosts (pogo.udel.edu...)
+
+  tests/libntp/decodenetnum.c@1.13 +94 -6
+    [Bug 3667] decodenetnum fails with numeric port
+     - additional tests
+
+  tests/libntp/netof.c@1.10 +2 -0
+    Bug 3667 - decodenetnum fails with numeric port
+     - clear address buffers before use
+
+  tests/libntp/run-decodenetnum.c@1.14 +8 -2
+    [Bug 3667] decodenetnum fails with numeric port
+     - regenerated
+
+  tests/libntp/sockaddrtest.c@1.4 +2 -1
+    [Bug 3667] decodenetnum fails with numeric port
+     - include scope id in IPv6 compare
+
+ChangeSet@1.3896.1.14, 2020-05-14 03:45:40-07:00, harlan@psp-at0.tal1.ntfo.org
+  Added 3660 to the NEWS file
+
+  NEWS@1.205.1.4 +3 -1
+    Added 3660 to the NEWS file
+
+ChangeSet@1.3896.8.1, 2020-05-14 03:14:44-07:00, harlan@psp-at0.tal1.ntfo.org
+  [Bug 3660] Manycast orphan mode startup discovery problem
+
+  ChangeLog@1.1974.8.1 +5 -0
+    [Bug 3660] Manycast orphan mode startup discovery problem
+
+  ntpd/ntp_proto.c@1.432.2.1 +2 -1
+    [Bug 3660] Manycast orphan mode startup discovery problem
+
+ChangeSet@1.3896.1.12, 2020-05-10 11:26:21+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS
+
+  NEWS@1.205.1.3 +3 -1
+    Update NEWS
+
+ChangeSet@1.3896.1.11, 2020-05-10 09:44:50+00:00, stenn@psp-deb1.ntp.org
+  Merge cleanup
+
+  ChangeLog@1.1974.1.7 +2 -4
+    Merge cleanup
+
+ChangeSet@1.3896.1.10, 2020-05-09 08:20:44+02:00, perlinger@ntp.org
+  [Bug 3666] avoid unlimited receive buffer allocation
+
+  BitKeeper/etc/ignore@1.95 +1 -0
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - (sidekick) ignore the '.vs' directory of VS2017 & above
+
+  ChangeLog@1.1974.1.6 +4 -0
+    [Bug 3666] avoid unlimited receive buffer allocation
+
+  include/recvbuff.h@1.28 +23 -7
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - buffer count limit is 4096 now, always enforced
+     - API change for urgent buffers
+
+  lib/isc/win32/include/isc/int.h@1.5 +3 -1
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - (sidekick) define standard reserved macros only if not yet defined!
+
+  libntp/recvbuff.c@1.44 +131 -73
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - don't exceed RECV_TOOMANY allocated buffers
+     - keep emergency reserve for clocks
+
+  libntp/timexsup.c@1.3 +3 -4
+    [bug 3666] avoid unlimited receive buffer allocation
+     - (sidekick) fix some warnings of clang on lp64 targets
+
+  ntpd/ntp_io.c@1.432 +23 -13
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - support urgent buffer reserve for refclocks
+
+  ntpd/refclock_parse.c@1.89 +1 -1
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - support urgent buffer reserve for refclocks
+
+  ntpdate/ntpdate.c@1.106 +1 -1
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - get_free_recv_buffer() API change
+
+  ports/winnt/libntp/messages.h@1.3 +1 -1
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - (sidekick) regenerated
+
+  ports/winnt/ntpd/ntp_iocompletionport.c@1.81 +63 -38
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - reuse last buffer ASAP if no new buffer available
+     - typos and some internal renaming
+
+  tests/libntp/recvbuff.c@1.8 +2 -2
+    [Bug 3666] avoid unlimited receive buffer allocation
+     - internal API changes
+
+ChangeSet@1.3896.1.9, 2020-05-05 03:53:50+00:00, stenn@psp-deb1.ntp.org
+  Update NEWS with 3639
+
+  NEWS@1.205.1.2 +3 -1
+    Update NEWS with 3639
+
+ChangeSet@1.3896.1.7, 2020-04-20 08:14:39+00:00, stenn@psp-deb1.ntp.org
+  NEWS and bug 3664
+
+  NEWS@1.205.1.1 +2 -1
+    NEWS and bug 3664
+
+ChangeSet@1.3896.7.1, 2020-04-16 17:50:44+02:00, burnicki@psp-deb1.ntp.org
+  Enable openSSL CMAC support on Windows.
+
+  ChangeLog@1.1974.7.1 +2 -0
+    Enable openSSL CMAC support on Windows.
+
+  ports/winnt/include/config.h@1.116 +2 -0
+    Enable openSSL CMAC support on Windows.
+
+ChangeSet@1.3899, 2020-04-11 09:59:23+00:00, stenn@psp-deb1.ntp.org
+  update
+
+  NEWS@1.206 +1 -0
+    update
+
+ChangeSet@1.3896.1.5, 2020-04-11 09:35:19+00:00, stenn@psp-deb1.ntp.org
+  update
+
+  NEWS@1.205 +2 -2
+    update
+
+ChangeSet@1.3896.1.3, 2020-04-11 08:10:59+00:00, stenn@psp-deb1.ntp.org
+  update
+
+  NEWS@1.204 +3 -1
+    update
+
+ChangeSet@1.3896.2.3, 2020-04-11 07:21:36+00:00, stenn@psp-deb1.ntp.org
+  update
+
+  NEWS@1.203 +1 -0
+    update
+
+ChangeSet@1.3896.3.3, 2020-04-11 07:12:47+00:00, stenn@psp-deb1.ntp.org
+  update
+
+  NEWS@1.202 +22 -0
+    update
+
+ChangeSet@1.3896.6.4, 2020-04-07 17:51:25+02:00, burnicki@psp-deb1.ntp.org
+  [Bug 3662] Fix build errors on Windows with VS2008.
+
+  ChangeLog@1.1974.6.1 +2 -0
+    [Bug 3662] Fix build errors on Windows with VS2008.
+
+ChangeSet@1.3896.6.3, 2020-04-07 17:49:08+02:00, burnicki@psp-deb1.ntp.org
+  Fix unused variable warning in ntpdate.c.
+
+  ntpdate/ntpdate.c@1.105 +2 -1
+    Fix unused variable warning.
+
+ChangeSet@1.3896.6.2, 2020-04-07 17:48:25+02:00, burnicki@psp-deb1.ntp.org
+  Fix compiling refclock_palisade.c   
+  Don't have variable declarations after code.
+
+  ntpd/refclock_palisade.c@1.49 +25 -23
+    Don't have variable declarations after code.
+
+ChangeSet@1.3896.6.1, 2020-04-07 17:47:02+02:00, burnicki@psp-deb1.ntp.org
+  Fix prototype in ntpd/refclock_nmea.c
+
+  ntpd/refclock_nmea.c@1.85 +1 -1
+    Fix prototype in ntpd/refclock_nmea.c
+
+ChangeSet@1.3896.5.1, 2020-04-05 10:10:12+02:00, perlinger@ntp.org
+  [Bug 3646] Avoid sync with unsync orphan
+
+  ChangeLog@1.1974.5.1 +4 -0
+    [Bug 3646] Avoid sync with unsync orphan
+
+  ntpd/ntp_proto.c@1.432.1.1 +21 -0
+    [Bug 3646] Avoid sync with unsync orphan
+
+ChangeSet@1.3896.4.1, 2020-04-05 09:53:25+02:00, perlinger@ntp.org
+  [Bug 3653] Refclock jitter RMS calculation
+
+  ChangeLog@1.1974.4.1 +4 -0
+    [Bug 3653] Refclock jitter RMS calculation
+
+  ntpd/ntp_refclock.c@1.132 +36 -36
+    [Bug 3653] Refclock jitter RMS calculation
+
+ChangeSet@1.3896.3.1, 2020-04-04 08:57:51+02:00, perlinger@ntp.org
+  [Bug 3655] ntpdc memstats hash counts
+
+  ChangeLog@1.1974.3.1 +4 -0
+    [Bug 3655] ntpdc memstats hash counts
+
+  ntpd/ntp_request.c@1.132 +1 -1
+    [Bug 3655] ntpdc memstats hash counts
+
+ChangeSet@1.3896.2.1, 2020-04-04 08:48:51+02:00, perlinger@ntp.org
+  [Bug 3657] Wrong "Autokey group mismatch" debug message
+
+  ChangeLog@1.1974.2.1 +3 -0
+    [Bug 3657] Wrong "Autokey group mismatch" debug message
+
+  ntpd/ntp_proto.c@1.433 +3 -2
+    [Bug 3657] Wrong "Autokey group mismatch" debug message
+
+ChangeSet@1.3896.1.1, 2020-04-04 08:38:06+02:00, perlinger@ntp.org
+  [Bug 3659] ntp-4.2.8p14 fails to build <perlinger@ntp.org>
+
+  ChangeLog@1.1974.1.1 +3 -0
+    [Bug 3659] ntp-4.2.8p14 fails to build <perlinger@ntp.org>
+
+  include/ntp_config.h@1.90 +0 -10
+    [Bug 3659] ntp-4.2.8p14 fails to build <perlinger@ntp.org>
+     - move global declaration of 'psl' from header to static declaration in code
+
+  ntpd/ntp_config.c@1.376 +10 -0
+    [Bug 3659] ntp-4.2.8p14 fails to build <perlinger@ntp.org>
+     - move global declaration of 'psl' from header to static declaration in code
+
+ChangeSet@1.3897, 2020-04-01 16:49:43+02:00, perlinger@ntp.org
+  [Bug 3661] memory leak with AES128CMAC keys
+
+  ChangeLog@1.1975 +3 -0
+    [Bug 3661] memory leak with AES128CMAC keys
+
+  libntp/a_md5encrypt.c@1.52 +1 -1
+    [Bug 3661] memory leak with AES128CMAC keys
+     - free context, not just cleaning up internally
+
+  sntp/crypto.c@1.40 +2 -1
+    [Bug 3661] memory leak with AES128CMAC keys
+     - free context, not just cleaning up internally
+
 ChangeSet@1.3896, 2020-03-03 17:42:43-08:00, ntpreleng@ntp-build.tal1.ntfo.org
   NTP_4_2_8P14
   TAG: NTP_4_2_8P14
@@ -675,7 +1372,7 @@ ChangeSet@1.3892, 2020-03-03 16:05:38-08:00, ntpreleng@ntp-build.tal1.ntfo.org
   ntpd/ntp_config.c@1.374 +2 -2
     provide get_pollskew() for simulator
 
-ChangeSet@1.3844.24.1, 2020-03-03 03:30:13-08:00, ntpreleng@ntp-build.tal1.ntfo.org
+ChangeSet@1.3844.25.1, 2020-03-03 03:30:13-08:00, ntpreleng@ntp-build.tal1.ntfo.org
   NTP_4_2_8P13
   TAG: NTP_4_2_8P13 (currently on 1.3894)
 
@@ -933,7 +1630,7 @@ ChangeSet@1.3880, 2020-02-17 08:48:45+00:00, stenn@psp-deb1.ntp.org
 ChangeSet@1.3879, 2020-02-17 08:11:42+00:00, stenn@psp-deb1.ntp.org
   updates
 
-  ChangeLog@1.1968.34.1 +2 -0
+  ChangeLog@1.1968.35.1 +2 -0
 
 ChangeSet@1.3877.1.2, 2020-02-08 23:00:11+00:00, stenn@psp-deb1.ntp.org
   html/confopt.html cleanup
@@ -1288,6 +1985,22 @@ ChangeSet@1.3878, 2020-01-29 06:03:13+00:00, stenn@psp-deb1.ntp.org
 
   ntpd/ntp_proto.c@1.427.1.1 +8 -0
     Initial pass at fixes for bug 3596
+
+ChangeSet@1.3844.24.1, 2020-01-21 12:49:14+00:00, abe@psp-deb1.ntp.org
+  driver40.html, refclock_jjy.c, driver40-ja.html, ChangeLog:
+    refclock_jjy: TS-JJY0x can skip time sync depending on the STUS reply.
+
+  ChangeLog@1.1968.34.1 +3 -0
+    refclock_jjy: TS-JJY0x can skip time sync depending on the STUS reply.
+
+  html/drivers/driver40-ja.html@1.8 +10 -2
+    refclock_jjy: TS-JJY0x can skip time sync depending on the STUS reply.
+
+  html/drivers/driver40.html@1.23 +9 -2
+    refclock_jjy: TS-JJY0x can skip time sync depending on the STUS reply.
+
+  ntpd/refclock_jjy.c@1.37 +76 -32
+    refclock_jjy: TS-JJY0x can skip time sync depending on the STUS reply.
 
 ChangeSet@1.3873.4.2, 2020-01-18 04:46:30-05:00, stenn@psp-deb2.ntp.org
   [Bug 3637] Emit the version of ntpd in saveconfig
