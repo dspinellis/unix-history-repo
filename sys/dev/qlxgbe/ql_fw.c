@@ -149068,4 +149068,3 @@ unsigned char ql83xx_firmware[] = {
   0x36, 0x37, 0x20, 0x0a
 };
 unsigned int ql83xx_firmware_len = 1788328;
-
