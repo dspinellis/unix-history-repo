@@ -89,7 +89,7 @@ More tags and branches are available.
 ## Cool things you can do
 
 The easiest thing you can do is to
-watch the repository's [Gource Visualization](https://youtu.be/S7JB0mhrGCQ).
+watch the repository's [Gource Visualization](https://youtu.be/iX-A7-n7g5Y).
 
 If you have a broadband network connection and about 1.5GB of free disk space,
 you can download the repository and run Git commands that go back decades.
